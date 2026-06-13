@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "Organization": {
+      "title": "Organization Tenant",
+      "description": "Root boundary for all enterprise data in a multi-tenant environment.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "SUSPENDED", "ARCHIVED"] },
+        "createdAt": { "type": "string", "format": "timestamp" }
+      },
+      "required": ["name", "status"]
+    },
+    "OrganizationMember": {
+      "title": "Organization Member",
+      "description": "Cross-reference mapping user UID to organizational roles.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "role": { "type": "string", "enum": ["SUPER_ADMIN", "ORG_ADMIN", "PROJECT_DIRECTOR", "PROJECT_MANAGER", "SITE_ENGINEER", "PROCUREMENT_OFFICER", "FINANCE", "CLIENT", "VENDOR"] },
+        "joinedAt": { "type": "string", "format": "timestamp" }
+      },
+      "required": ["uid", "role"]
+    },
+    "Project": {
+      "title": "Project Master Record",
+      "description": "Core project container bounded within an organization.",
+      "type": "object",
+      "properties": {
+        "orgId": { "type": "string" },
+        "name": { "type": "string" },
+        "status": { "type": "string", "enum": ["PLANNING", "ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"] },
+        "createdAt": { "type": "string", "format": "timestamp" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["orgId", "name", "status", "createdAt", "createdBy"]
+    },
+    "FinancialRecord": {
+      "title": "Financial Transaction",
+      "description": "Immutable ledger entry for project costs and budgets.",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["BUDGET", "ACTUAL", "FORECAST"] },
+        "category": { "type": "string", "enum": ["MATERIAL", "LABOR", "EQUIPMENT", "SUBCONTRACTOR", "OTHER"] },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
+        "referenceId": { "type": "string" }
+      },
+      "required": ["amount", "type", "category", "status"]
+    },
+    "ProcurementOrder": {
+      "title": "Procurement Order",
+      "description": "PO tracking integrated with cost and inventory.",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["DRAFT", "PENDING_APPROVAL", "APPROVED", "REJECTED", "DELIVERED"] },
+        "totalAmount": { "type": "number" },
+        "vendorId": { "type": "string" },
+        "approvedBy": { "type": "string" },
+        "approvedAt": { "type": "string", "format": "timestamp" }
+      },
+      "required": ["status", "totalAmount", "vendorId"]
+    }
+  },
+  "firestore": {
+    "/organizations/{orgId}": {
+      "schema": { "$ref": "#/entities/Organization" },
+      "description": "Root boundary enforcing tenant isolation."
+    },
+    "/organizations/{orgId}/members/{userId}": {
+      "schema": { "$ref": "#/entities/OrganizationMember" },
+      "description": "Role assignments controlling DB gates and Cloud Function validation."
+    },
+    "/organizations/{orgId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Core project node."
+    },
+    "/organizations/{orgId}/projects/{projectId}/financials/{financeId}": {
+      "schema": { "$ref": "#/entities/FinancialRecord" },
+      "description": "Restricted ledger for cost reporting and payroll."
+    },
+    "/organizations/{orgId}/projects/{projectId}/procurement/{poId}": {
+      "schema": { "$ref": "#/entities/ProcurementOrder" },
+      "description": "Purchasing module with strict status transition rules."
+    }
+  }
+}

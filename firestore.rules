@@ -1,0 +1,138 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // -------------------------------------------------------------------------
+    // 0. GLOBAL SAFETY NET
+    // -------------------------------------------------------------------------
+    
+    // -------------------------------------------------------------------------
+    // ROLE HELPERS
+    // -------------------------------------------------------------------------
+    function getUserRole() {
+      // Returns the user's role from their profile document
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function isSiteEngineer() {
+      return getUserRole() == 'Site Engineer';
+    }
+    
+    function isAdminOrManager() {
+      let role = getUserRole();
+      return role == 'Admin' || role == 'Project Manager' || role == 'Owner';
+    }
+
+    function isWorkDateKolkataToday(workDateStr) {
+      let nowKolkata = timestamp.fromMillis(request.time.toMillis() + 19800000);
+      let y = string(nowKolkata.year());
+      let m = string(nowKolkata.month());
+      let d = string(nowKolkata.day());
+      let pattern = '^' + y + '-0?' + m + '-0?' + d + '$';
+      return workDateStr.matches(pattern);
+    }
+
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    match /projects/{projectId} {
+      allow read, write: if true;
+      match /{collection}/{docId} {
+        allow read, write: if collection != 'dailyLogs' && collection != 'purchase_orders';
+      }
+      match /purchase_orders/{poId} {
+        allow read: if true;
+        allow create: if request.auth != null && (isAdminOrManager() || isSiteEngineer());
+        allow update: if request.auth != null && (
+          isAdminOrManager() || 
+          (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft' && request.resource.data.status == 'Draft')
+        );
+        allow delete: if request.auth != null && (
+          isAdminOrManager() || 
+          (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft')
+        );
+      }
+      match /dailyLogs/{logId} {
+        allow read: if true;
+        allow create: if request.auth != null && (isSiteEngineer() || isAdminOrManager());
+        allow update: if request.auth != null && (
+           isAdminOrManager() || 
+           (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && isWorkDateKolkataToday(resource.data.workDate) && isWorkDateKolkataToday(request.resource.data.workDate))
+        );
+        allow delete: if request.auth != null && (
+           isAdminOrManager() || 
+           (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && isWorkDateKolkataToday(resource.data.workDate))
+        );
+      }
+    }
+
+    match /bot_sessions/{sessionId} {
+      allow read, write: if true;
+    }
+
+    match /organizations/{orgId} {
+      allow read, write: if true;
+      match /projects/{projectId} {
+        allow read, write: if true;
+        match /{collection}/{docId} {
+          allow read, write: if collection != 'dailyLogs' && collection != 'purchase_orders';
+        }
+        match /purchase_orders/{poId} {
+          allow read: if true;
+          allow create: if request.auth != null && (isAdminOrManager() || isSiteEngineer());
+          allow update: if request.auth != null && (
+            isAdminOrManager() || 
+            (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft' && request.resource.data.status == 'Draft')
+          );
+          allow delete: if request.auth != null && (
+            isAdminOrManager() || 
+            (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft')
+          );
+        }
+        match /dailyLogs/{logId} {
+          allow read: if true;
+          allow create: if request.auth != null && (isSiteEngineer() || isAdminOrManager());
+          allow update: if request.auth != null && (
+             isAdminOrManager() || 
+             (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && isWorkDateKolkataToday(resource.data.workDate) && isWorkDateKolkataToday(request.resource.data.workDate))
+          );
+          allow delete: if request.auth != null && (
+             isAdminOrManager() || 
+             (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && isWorkDateKolkataToday(resource.data.workDate))
+          );
+        }
+      }
+    }
+    
+    // Fallback for everything else missing explicitly (except we want to secure dailyLogs and purchase_orders)
+    match /{path=**}/purchase_orders/{poId} {
+      allow read: if true;
+      allow create: if request.auth != null && (isAdminOrManager() || isSiteEngineer());
+      allow update: if request.auth != null && (
+         isAdminOrManager() || 
+         (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft' && request.resource.data.status == 'Draft')
+      );
+      allow delete: if request.auth != null && (
+         isAdminOrManager() || 
+         (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft')
+      );
+    }
+    match /{path=**}/dailyLogs/{logId} {
+      allow read: if true;
+      allow create: if request.auth != null && (isSiteEngineer() || isAdminOrManager());
+      allow update: if request.auth != null && (
+         isAdminOrManager() || 
+         (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && isWorkDateKolkataToday(resource.data.workDate) && isWorkDateKolkataToday(request.resource.data.workDate))
+      );
+      allow delete: if request.auth != null && (
+         isAdminOrManager() || 
+         (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && isWorkDateKolkataToday(resource.data.workDate))
+      );
+    }
+    
+    // We intentionally removed the global wildcard to enforce the dailyLogs permissions securely.
+    // In production, all collections must be explicitly modeled.
+  }
+}

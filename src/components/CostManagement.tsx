@@ -1,0 +1,1956 @@
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  db,
+  collection,
+  onSnapshot,
+  query,
+  addDoc,
+  updateDoc,
+  doc,
+  deleteDoc,
+  getDoc,
+  handleFirestoreError,
+  OperationType,
+} from "../firebase";
+import {
+  CostEntry,
+  Task,
+  InventoryItem,
+  LaborRateCard,
+  Vendor,
+  DailyLaborLog,
+  MaterialIssue,
+} from "../types";
+import {
+  IndianRupee,
+  TrendingUp,
+  PieChart,
+  Plus,
+  Calendar,
+  ListTree,
+  ChevronRight,
+  ChevronDown,
+  FileText,
+  Download,
+  Save,
+  Edit3,
+  Check,
+  X,
+  AlertCircle,
+  Trash2,
+  Layers,
+  MapPin,
+  Search,
+  Info,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
+import { motion, AnimatePresence } from "motion/react";
+import { ClientPaymentsView } from "./ClientPaymentsView";
+import { useProjectDataQuery } from "../hooks/queries";
+import { useQueryClient } from "@tanstack/react-query";
+
+interface CostManagementProps {
+  projectId: string;
+}
+
+export const CostManagement: React.FC<CostManagementProps> = ({
+  projectId,
+}) => {
+  const queryClient = useQueryClient();
+  const { data: entries = [] } = useProjectDataQuery<CostEntry>(projectId, "costs");
+  const { data: tasks = [] } = useProjectDataQuery<Task>(projectId, "tasks");
+  const { data: inventory = [] } = useProjectDataQuery<InventoryItem>(projectId, "inventory");
+  const { data: rateCards = [] } = useProjectDataQuery<LaborRateCard>(projectId, "labor_rate_cards");
+  const { data: vendors = [] } = useProjectDataQuery<Vendor>(projectId, "suppliers");
+  const { data: vendorLedger = [] } = useProjectDataQuery<any>(projectId, "ledger");
+  const { data: laborLogs = [] } = useProjectDataQuery<DailyLaborLog>(projectId, "labor_logs");
+  const { data: materialIssues = [] } = useProjectDataQuery<MaterialIssue>(projectId, "material_issues");
+  const { data: clientPayments = [] } = useProjectDataQuery<any>(projectId, "client_payments");
+
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200,
+  );
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  const [isAdding, setIsAdding] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<
+    "dashboard" | "wbs" | "report" | "payments" | "direct_costs"
+  >("dashboard");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [filterTag, setFilterTag] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [showLaborBreakdown, setShowLaborBreakdown] = useState<string | null>(
+    null,
+  );
+  const [showMaterialBreakdown, setShowMaterialBreakdown] = useState<
+    string | null
+  >(null);
+
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    tasks.forEach((task) => {
+      task.activityCodes?.forEach((code) => tags.add(code));
+    });
+    return Array.from(tags).sort();
+  }, [tasks]);
+
+  const groupedTasks = useMemo(() => {
+    let filtered = tasks;
+
+    // Only get root tasks for normal view to prevent duplicates
+    if (!filterTag && !searchTerm) {
+      filtered = filtered.filter((t) => !t.parentId);
+    } else {
+      if (filterTag) {
+        filtered = filtered.filter((t) => t.activityCodes?.includes(filterTag));
+      }
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        filtered = filtered.filter(
+          (t) =>
+            t.name.toLowerCase().includes(term) ||
+            t.phase?.toLowerCase().includes(term) ||
+            t.location?.toLowerCase().includes(term),
+        );
+      }
+    }
+
+    const phases: Record<string, Record<string, Task[]>> = {};
+
+    filtered.forEach((task) => {
+      const phase = task.phase || "Unassigned Phase";
+      const location = task.location || "Unassigned Location";
+
+      const isSearchActive = !!(filterTag || searchTerm);
+
+      if (isSearchActive || !task.parentId) {
+        if (!phases[phase]) phases[phase] = {};
+        if (!phases[phase][location]) phases[phase][location] = [];
+        phases[phase][location].push(task);
+      }
+    });
+
+    // Sort phases and locations alphabetically, and tasks by startDate
+    const sortedPhases: Record<string, Record<string, Task[]>> = {};
+    Object.keys(phases)
+      .sort()
+      .forEach((phase) => {
+        sortedPhases[phase] = {};
+        Object.keys(phases[phase])
+          .sort()
+          .forEach((location) => {
+            sortedPhases[phase][location] = [...phases[phase][location]].sort(
+              (a, b) => (a.startDate || "").localeCompare(b.startDate || ""),
+            );
+          });
+      });
+
+    return sortedPhases;
+  }, [tasks, filterTag, searchTerm]);
+
+  // Helper to calculate roll-ups for a task
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<Partial<Task>>({});
+
+  const [newEntry, setNewEntry] = useState<Partial<CostEntry>>({
+    description: "",
+    amount: 0,
+    type: "Actual",
+    category: "Material",
+    date: new Date().toISOString().split("T")[0],
+    taskId: "",
+  });
+
+  const uniqueCategories = useMemo(() => {
+    const cats = entries.map((e) => e.category).filter(Boolean);
+    return Array.from(new Set([...cats, "Material", "Labor", "Equipment", "Subcontractor", "Transport", "Other"]));
+  }, [entries]);
+
+  const taskTotalsMap = useMemo(() => {
+    const totals: Record<string, { plannedMaterial: number, actualMaterial: number, plannedLabor: number, actualLabor: number, plannedOther: number, actualOther: number, totalPlanned: number, totalActual: number }> = {};
+    
+    // Bottom-up calculation: first leaf nodes, then parents
+    const getTotals = (taskId: string) => {
+      if (totals[taskId]) return totals[taskId];
+
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return { plannedMaterial: 0, actualMaterial: 0, plannedLabor: 0, actualLabor: 0, plannedOther: 0, actualOther: 0, totalPlanned: 0, totalActual: 0 };
+
+      const children = tasks.filter((t) => t.parentId === taskId);
+
+      let plannedMaterial = 0;
+      let actualMaterial = 0;
+      let plannedLabor = 0;
+      let actualLabor = 0;
+      let plannedOther = 0;
+      let actualOther = 0;
+
+      if (children.length > 0) {
+        children.forEach((child) => {
+          const childTotals = getTotals(child.id);
+          plannedMaterial += childTotals.plannedMaterial;
+          actualMaterial += childTotals.actualMaterial;
+          plannedLabor += childTotals.plannedLabor;
+          actualLabor += childTotals.actualLabor;
+          plannedOther += childTotals.plannedOther;
+          actualOther += childTotals.actualOther;
+        });
+      } else {
+        const budgetEntries = entries.filter(e => e.taskId === taskId && e.type === "Budget");
+        const actualEntries = entries.filter(e => e.taskId === taskId && e.type === "Actual");
+
+        const budgetMat = budgetEntries.filter(e => e.category === "Material").reduce((sum, e) => sum + e.amount, 0);
+        const budgetLab = budgetEntries.filter(e => e.category === "Labor").reduce((sum, e) => sum + e.amount, 0);
+        const budgetOther = budgetEntries.filter(e => e.category !== "Material" && e.category !== "Labor").reduce((sum, e) => sum + e.amount, 0);
+
+        plannedMaterial = (task.plannedMaterialCost || 0) + budgetMat;
+        plannedLabor = (task.plannedLaborCost || 0) + budgetLab;
+        plannedOther = (task.plannedOtherCost || 0) + budgetOther;
+
+        const entryMat = actualEntries.filter((e) => e.category === "Material").reduce((sum, e) => sum + e.amount, 0);
+        const issueMat = materialIssues.filter((i) => i.taskId === taskId).reduce((sum, i) => sum + i.items.reduce((s, it) => s + it.totalPrice, 0), 0);
+        actualMaterial = entryMat + issueMat;
+
+        const entryLab = actualEntries.filter((e) => e.category === "Labor").reduce((sum, e) => sum + e.amount, 0);
+        const logLab = laborLogs.filter((log) => log.items.some((item) => item.taskId === taskId)).reduce((sum, log) => sum + log.items.filter((item) => item.taskId === taskId).reduce((s, i) => s + i.cost, 0), 0);
+        actualLabor = entryLab + logLab;
+
+        actualOther = actualEntries.filter((e) => e.category !== "Material" && e.category !== "Labor").reduce((sum, e) => sum + e.amount, 0);
+      }
+
+      const totalPlanned = plannedMaterial + plannedLabor + plannedOther;
+      const totalActual = actualMaterial + actualLabor + actualOther;
+
+      totals[taskId] = { plannedMaterial, actualMaterial, plannedLabor, actualLabor, plannedOther, actualOther, totalPlanned, totalActual };
+      return totals[taskId];
+    };
+
+    tasks.forEach(t => getTotals(t.id));
+    return totals;
+  }, [tasks, entries, materialIssues, laborLogs]);
+
+  // Helper wrapper
+  const getTaskTotals = (task: Task, allTasks?: Task[], allEntries?: CostEntry[]) => {
+    return taskTotalsMap[task.id] || { plannedMaterial: 0, actualMaterial: 0, plannedLabor: 0, actualLabor: 0, plannedOther: 0, actualOther: 0, totalPlanned: 0, totalActual: 0 };
+  };
+
+  const stats = useMemo(() => {
+    // Direct entries (not linked to tasks)
+    const unlinkedEntries = entries.filter((e) => !e.taskId);
+    const budgetedEntries = unlinkedEntries
+      .filter((e) => e.type === "Budget")
+      .reduce((acc, curr) => acc + curr.amount, 0);
+    const actualEntries = unlinkedEntries
+      .filter((e) => e.type === "Actual")
+      .reduce((acc, curr) => acc + curr.amount, 0);
+
+    // Task-based costs
+    const rootTasks = tasks.filter((t) => !t.parentId);
+
+    let budgetedTasks = 0;
+    let actualTasks = 0;
+    
+    // Unlinked category breakdown
+    let materialPlanned = unlinkedEntries.filter(e => e.type === "Budget" && e.category === "Material").reduce((a,c) => a + c.amount, 0);
+    let materialActual = unlinkedEntries.filter(e => e.type === "Actual" && e.category === "Material").reduce((a,c) => a + c.amount, 0);
+    let laborPlanned = unlinkedEntries.filter(e => e.type === "Budget" && e.category === "Labor").reduce((a,c) => a + c.amount, 0);
+    let laborActual = unlinkedEntries.filter(e => e.type === "Actual" && e.category === "Labor").reduce((a,c) => a + c.amount, 0);
+    let otherPlanned = unlinkedEntries.filter(e => e.type === "Budget" && e.category !== "Material" && e.category !== "Labor").reduce((a,c) => a + c.amount, 0);
+    let otherActual = unlinkedEntries.filter(e => e.type === "Actual" && e.category !== "Material" && e.category !== "Labor").reduce((a,c) => a + c.amount, 0);
+
+    rootTasks.forEach((t) => {
+      const totals = getTaskTotals(t, tasks, entries);
+      budgetedTasks += totals.totalPlanned;
+      actualTasks += totals.totalActual;
+      materialPlanned += totals.plannedMaterial;
+      materialActual += totals.actualMaterial;
+      laborPlanned += totals.plannedLabor;
+      laborActual += totals.actualLabor;
+      otherPlanned += totals.plannedOther;
+      otherActual += totals.actualOther;
+    });
+
+    const totalBudgeted = budgetedEntries + budgetedTasks;
+    const totalActual = actualEntries + actualTasks;
+
+    const chartData = [
+      { name: "Material", Budget: materialPlanned, Actual: materialActual },
+      { name: "Labor", Budget: laborPlanned, Actual: laborActual },
+      { name: "Direct Cost", Budget: otherPlanned, Actual: otherActual },
+    ];
+
+    return {
+      totalBudgeted,
+      totalActual,
+      chartData,
+      budgetedTasks,
+      actualTasks,
+      materialPlanned,
+      materialActual,
+      laborPlanned,
+      laborActual,
+      otherPlanned,
+      otherActual,
+    };
+  }, [entries, tasks, laborLogs, materialIssues]);
+
+  const flattenedTasks = useMemo(() => {
+    const result: { id: string; name: string; level: number }[] = [];
+    const buildFlatList = (parentId: string | null | undefined, level: number) => {
+      tasks
+        .filter((t) => (t.parentId || null) === (parentId || null))
+        .sort((a,b) => (a.startDate || "").localeCompare(b.startDate || ""))
+        .forEach((task) => {
+          result.push({ id: task.id, name: task.name, level });
+          buildFlatList(task.id, level + 1);
+        });
+    };
+    buildFlatList(null, 0);
+    return result;
+  }, [tasks]);
+
+  const handleAddEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const path = `projects/${projectId}/costs`;
+    try {
+      if (newEntry.id) {
+        // First rollback the old entry's impact if we have one
+        const oldEntry = entries.find((e) => e.id === newEntry.id);
+        if (oldEntry && oldEntry.taskId) {
+          const task = tasks.find((t) => t.id === oldEntry.taskId);
+          if (task) {
+            const rollbackData: any = {};
+            const isActual = oldEntry.type === "Actual";
+            
+            if (oldEntry.category === "Material") {
+              const field = isActual ? "actualMaterialCost" : "plannedMaterialCost";
+              rollbackData[field] = Math.max(0, (task[field] || 0) - (oldEntry.amount || 0));
+            } else if (oldEntry.category === "Labor") {
+              const field = isActual ? "actualLaborCost" : "plannedLaborCost";
+              rollbackData[field] = Math.max(0, (task[field] || 0) - (oldEntry.amount || 0));
+            } else {
+              const field = isActual ? "actualOtherCost" : "plannedOtherCost";
+              rollbackData[field] = Math.max(0, (task[field] || 0) - (oldEntry.amount || 0));
+            }
+            
+            const currentActual = isActual ? (task.actualCost || 0) - (oldEntry.amount || 0) : task.actualCost || 0;
+            const currentBudget = !isActual ? (task.budgetedCost || 0) - (oldEntry.amount || 0) : task.budgetedCost || 0;
+            
+            rollbackData.actualCost = Math.max(0, currentActual);
+            rollbackData.budgetedCost = Math.max(0, currentBudget);
+            
+            await updateDoc(doc(db, `projects/${projectId}/tasks`, oldEntry.taskId), rollbackData);
+          }
+        }
+        
+        // Update the actual entry doc
+        const entryData = { ...newEntry, projectId };
+        await updateDoc(doc(db, path, newEntry.id), entryData);
+        
+        // Re-apply the new impact if there's a new task
+        if (newEntry.taskId) {
+           // We need fresh task data since we just updated the task
+           // But since local state won't instantly reflect the DB we just compute delta from what we know or let the onSnapshot handle the final consistent view
+           // It's safer to re-fetch or use logic. Let's just refetch or rely on existing task state with our delta.
+           const taskRef = doc(db, `projects/${projectId}/tasks`, newEntry.taskId);
+           const taskDoc = await getDoc(taskRef);
+           if (taskDoc.exists()) {
+             const t = taskDoc.data();
+             const applyData: any = {};
+             const isActual = newEntry.type === "Actual";
+             if (newEntry.category === "Material") {
+               const field = isActual ? "actualMaterialCost" : "plannedMaterialCost";
+               applyData[field] = (t[field] || 0) + (newEntry.amount || 0);
+             } else if (newEntry.category === "Labor") {
+               const field = isActual ? "actualLaborCost" : "plannedLaborCost";
+               applyData[field] = (t[field] || 0) + (newEntry.amount || 0);
+             } else {
+               const field = isActual ? "actualOtherCost" : "plannedOtherCost";
+               applyData[field] = (t[field] || 0) + (newEntry.amount || 0);
+             }
+             
+             applyData.actualCost = isActual ? (t.actualCost || 0) + (newEntry.amount || 0) : t.actualCost || 0;
+             applyData.budgetedCost = !isActual ? (t.budgetedCost || 0) + (newEntry.amount || 0) : t.budgetedCost || 0;
+             
+             await updateDoc(taskRef, applyData);
+           }
+        }
+
+      } else {
+        // Adding new entry
+        const entryData = {
+          ...newEntry,
+          projectId,
+        };
+        const docRef = await addDoc(collection(db, path), entryData);
+
+        // If linked to a task, update the task's actual/planned costs
+        if (newEntry.taskId) {
+          const task = tasks.find((t) => t.id === newEntry.taskId);
+          if (task) {
+            const updateData: any = {};
+            const isActual = newEntry.type === "Actual";
+
+            if (newEntry.category === "Material") {
+              const field = isActual
+                ? "actualMaterialCost"
+                : "plannedMaterialCost";
+              updateData[field] = (task[field] || 0) + (newEntry.amount || 0);
+            } else if (newEntry.category === "Labor") {
+              const field = isActual ? "actualLaborCost" : "plannedLaborCost";
+              updateData[field] = (task[field] || 0) + (newEntry.amount || 0);
+            } else {
+              const field = isActual ? "actualOtherCost" : "plannedOtherCost";
+              updateData[field] = (task[field] || 0) + (newEntry.amount || 0);
+            }
+
+            // Recalculate totals
+            const currentActual = isActual
+              ? (task.actualCost || 0) + (newEntry.amount || 0)
+              : task.actualCost || 0;
+            const currentBudget = !isActual
+              ? (task.budgetedCost || 0) + (newEntry.amount || 0)
+              : task.budgetedCost || 0;
+
+            updateData.actualCost = currentActual;
+            updateData.budgetedCost = currentBudget;
+
+            await updateDoc(
+              doc(db, `projects/${projectId}/tasks`, newEntry.taskId),
+              updateData,
+            );
+          }
+        }
+      }
+
+      setIsAdding(false);
+      setNewEntry({
+        description: "",
+        amount: 0,
+        type: "Actual",
+        category: "Material",
+        date: new Date().toISOString().split("T")[0],
+        taskId: "",
+      });
+      // Invalidate queries to refetch 
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId] });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, path);
+    }
+  };
+
+  const handleDeleteEntry = async (entry: CostEntry) => {
+    const path = `projects/${projectId}/costs/${entry.id}`;
+    try {
+      // If linked to a task, update the task's actual/planned costs
+      if (entry.taskId) {
+        const task = tasks.find((t) => t.id === entry.taskId);
+        if (task) {
+          const updateData: any = {};
+          const isActual = entry.type === "Actual";
+
+          if (entry.category === "Material") {
+            const field = isActual
+              ? "actualMaterialCost"
+              : "plannedMaterialCost";
+            updateData[field] = Math.max(
+              0,
+              (task[field] || 0) - (entry.amount || 0),
+            );
+          } else if (entry.category === "Labor") {
+            const field = isActual ? "actualLaborCost" : "plannedLaborCost";
+            updateData[field] = Math.max(
+              0,
+              (task[field] || 0) - (entry.amount || 0),
+            );
+          } else {
+            const field = isActual ? "actualOtherCost" : "plannedOtherCost";
+            updateData[field] = Math.max(
+              0,
+              (task[field] || 0) - (entry.amount || 0),
+            );
+          }
+
+          // Recalculate totals
+          const currentActual = isActual
+            ? Math.max(0, (task.actualCost || 0) - (entry.amount || 0))
+            : task.actualCost || 0;
+          const currentBudget = !isActual
+            ? Math.max(0, (task.budgetedCost || 0) - (entry.amount || 0))
+            : task.budgetedCost || 0;
+
+          updateData.actualCost = currentActual;
+          updateData.budgetedCost = currentBudget;
+
+          await updateDoc(
+            doc(db, `projects/${projectId}/tasks`, entry.taskId),
+            updateData,
+          );
+        }
+      }
+
+      await deleteDoc(doc(db, `projects/${projectId}/costs`, entry.id));
+      setDeletingId(null);
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId] });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, path);
+    }
+  };
+
+  const handleSaveTaskCosts = async (taskId: string) => {
+    const path = `projects/${projectId}/tasks/${taskId}`;
+    try {
+      // Calculate aggregate budgeted cost for consistency
+      const budgetedCost =
+        (editValues.plannedMaterialCost || 0) +
+        (editValues.plannedLaborCost || 0) +
+        (editValues.plannedOtherCost || 0);
+
+      await updateDoc(doc(db, `projects/${projectId}/tasks`, taskId), {
+        ...editValues,
+        budgetedCost,
+      });
+      setEditingTaskId(null);
+      setEditValues({});
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId] });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  };
+
+  const exportToCSV = () => {
+    const headers = [
+      "Task Name",
+      "Planned Material",
+      "Actual Material",
+      "Planned Labor",
+      "Actual Labor",
+      "Planned Other",
+      "Actual Other",
+      "Total Planned",
+      "Total Actual",
+      "Variance",
+    ];
+
+    const rows = tasks.map((task) => {
+      const totals = getTaskTotals(task, tasks, entries);
+      return [
+        task.name,
+        totals.plannedMaterial,
+        totals.actualMaterial,
+        totals.plannedLabor,
+        totals.actualLabor,
+        totals.plannedOther,
+        totals.actualOther,
+        totals.totalPlanned,
+        totals.totalActual,
+        totals.totalPlanned - totals.totalActual,
+      ].join(",");
+    });
+
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `Project_Cost_Report_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const startEditing = (task: Task) => {
+    setEditingTaskId(task.id);
+    setEditValues({
+      plannedMaterialCost: task.plannedMaterialCost || 0,
+      plannedLaborCost: task.plannedLaborCost || 0,
+      plannedOtherCost: task.plannedOtherCost || 0,
+    });
+  };
+
+  const renderReportRow = (task: Task, level: number = 0) => {
+    const children = tasks
+      .filter((t) => t.parentId === task.id)
+      .sort((a, b) => (a.startDate || "").localeCompare(b.startDate || ""));
+    const totals = getTaskTotals(task, tasks, entries);
+    const variance = totals.totalPlanned - totals.totalActual;
+    return (
+      <React.Fragment key={`report-${task.id}`}>
+        <tr className={task.type === "Summary" ? "font-bold bg-panel/30" : ""}>
+          <td className="py-4">
+            <div style={{ paddingLeft: `${level * 24}px` }} className="flex items-center gap-2">
+              {level > 0 && <span className="w-3 h-px bg-slate-300" />}
+              {task.name}
+            </div>
+          </td>
+          <td className="py-4 text-right">
+            <div className="text-xs">₹{totals.plannedMaterial.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+            <div className="text-[10px] text-ink-muted">₹{totals.actualMaterial.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+          </td>
+          <td className="py-4 text-right">
+            <div className="text-xs">₹{totals.plannedLabor.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+            <div className="text-[10px] text-ink-muted">₹{totals.actualLabor.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+          </td>
+          <td className="py-4 text-right">
+            <div className="text-xs">₹{totals.plannedOther.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+            <div className="text-[10px] text-ink-muted">₹{totals.actualOther.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+          </td>
+          <td className="py-4 text-right font-bold">
+            ₹{totals.totalPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+          </td>
+          <td className="py-4 text-right font-bold">
+            ₹{totals.totalActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+          </td>
+          <td className={`py-4 text-right font-bold ${variance < 0 ? "text-red-500" : "text-emerald-500"}`}>
+            ₹{variance.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+          </td>
+          <td className="py-4 text-right">
+            <span className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${variance < 0 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>
+              {variance < 0 ? "Over Budget" : "On Track"}
+            </span>
+          </td>
+        </tr>
+        {children.map((child) => renderReportRow(child, level + 1))}
+      </React.Fragment>
+    );
+  };
+
+  const renderCostRow = (task: Task, level: number = 0) => {
+    const children = tasks
+      .filter((t) => t.parentId === task.id)
+      .sort((a, b) => (a.startDate || "").localeCompare(b.startDate || ""));
+    const isExpanded = expanded[task.id];
+    const totals = getTaskTotals(task, tasks, entries);
+    const isEditing = editingTaskId === task.id;
+
+    return (
+      <React.Fragment key={task.id}>
+        <tr
+          className={`border-b hover:bg-panel transition-colors ${task.type === "Summary" ? "bg-panel/50" : ""}`}
+        >
+          <td
+            className="p-2 md:p-3"
+            style={{ paddingLeft: level * (windowWidth < 768 ? 12 : 32) + 16 }}
+          >
+            <div className="flex items-center gap-1.5 md:gap-2 min-w-0">
+              <div
+                className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full shrink-0 ${
+                  task.type === "Summary" ? "bg-slate-900" : "bg-indigo-500"
+                }`}
+              />
+              {children.length > 0 && (
+                <button
+                  onClick={() =>
+                    setExpanded((prev) => ({
+                      ...prev,
+                      [task.id]: !prev[task.id],
+                    }))
+                  }
+                  className="shrink-0"
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="w-3 h-3 md:w-4 md:h-4" />
+                  ) : (
+                    <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
+                  )}
+                </button>
+              )}
+              <span
+                className={`truncate text-[10px] md:text-sm ${task.type === "Summary" ? "font-black text-ink" : "font-medium"}`}
+              >
+                {task.name}
+              </span>
+            </div>
+          </td>
+
+          {/* Material */}
+          <td className="p-3 text-right hidden sm:table-cell">
+            {isEditing ? (
+              <input
+                type="number"
+                className="w-20 border rounded px-1 text-right bg-surface text-ink"
+                value={editValues.plannedMaterialCost}
+                onChange={(e) =>
+                  setEditValues({
+                    ...editValues,
+                    plannedMaterialCost: Number(e.target.value),
+                  })
+                }
+              />
+            ) : (
+              <div className="text-[10px] font-medium text-ink-muted">
+                ₹{totals.plannedMaterial.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+            )}
+          </td>
+          <td className="p-3 text-right hidden sm:table-cell bg-panel/30">
+            <div className="flex flex-col items-end">
+              <div className="text-[11px] font-black text-indigo-600">
+                ₹{totals.actualMaterial.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+              {totals.actualMaterial > 0 && task.type !== "Summary" && (
+                <button
+                  onClick={() =>
+                    setShowMaterialBreakdown(
+                      showMaterialBreakdown === task.id ? null : task.id,
+                    )
+                  }
+                  className={`flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest mt-1 p-1 rounded hover:bg-divider apple-transition ${showMaterialBreakdown === task.id ? "text-ink bg-panel" : "text-ink-muted"}`}
+                >
+                  <Info className="w-2.5 h-2.5" /> Details
+                </button>
+              )}
+            </div>
+          </td>
+
+          {/* Labor */}
+          <td className="p-3 text-right hidden md:table-cell">
+            {isEditing ? (
+              <input
+                type="number"
+                className="w-20 border rounded px-1 text-right bg-surface text-ink"
+                value={editValues.plannedLaborCost}
+                onChange={(e) =>
+                  setEditValues({
+                    ...editValues,
+                    plannedLaborCost: Number(e.target.value),
+                  })
+                }
+              />
+            ) : (
+              <div className="text-[10px] font-medium text-ink-muted">
+                ₹{totals.plannedLabor.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+            )}
+          </td>
+          <td className="p-3 text-right hidden md:table-cell bg-panel/30">
+            <div className="flex flex-col items-end">
+              <div className="text-[11px] font-black text-indigo-600">
+                ₹{totals.actualLabor.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+              {totals.actualLabor > 0 && task.type !== "Summary" && (
+                <button
+                  onClick={() =>
+                    setShowLaborBreakdown(
+                      showLaborBreakdown === task.id ? null : task.id,
+                    )
+                  }
+                  className={`flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest mt-1 p-1 rounded hover:bg-indigo-100 apple-transition ${showLaborBreakdown === task.id ? "text-indigo-600 bg-indigo-50" : "text-ink-muted"}`}
+                >
+                  <Info className="w-2.5 h-2.5" /> Details
+                </button>
+              )}
+            </div>
+          </td>
+
+          {/* Other */}
+          <td className="p-3 text-right hidden xl:table-cell">
+            {isEditing ? (
+              <input
+                type="number"
+                className="w-20 border rounded px-1 text-right bg-surface text-ink"
+                value={editValues.plannedOtherCost}
+                onChange={(e) =>
+                  setEditValues({
+                    ...editValues,
+                    plannedOtherCost: Number(e.target.value),
+                  })
+                }
+              />
+            ) : (
+              <div className="text-[10px] font-medium text-ink-muted">
+                ₹{totals.plannedOther.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+            )}
+          </td>
+          <td className="p-3 text-right hidden xl:table-cell bg-panel/30">
+            <div className="text-[11px] font-black text-indigo-600">
+              ₹{totals.actualOther.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            </div>
+          </td>
+
+          {/* Totals */}
+          <td className="p-3 text-right font-medium text-ink-muted border-l">
+            ₹{totals.totalPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+          </td>
+          <td className="p-3 text-right font-black text-primary bg-indigo-50/30">
+            ₹{totals.totalActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+          </td>
+
+          <td className="p-3 text-center">
+            {totals.totalPlanned - totals.totalActual < 0 ? (
+              <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full text-[8px] font-black uppercase tracking-widest">
+                Over
+              </span>
+            ) : (
+              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-600 rounded-full text-[8px] font-black uppercase tracking-widest">
+                Track
+              </span>
+            )}
+          </td>
+
+          <td className="p-3 text-right">
+            {isEditing ? (
+              <div className="flex gap-1 justify-end">
+                <button
+                  onClick={() => handleSaveTaskCosts(task.id)}
+                  className="p-1 bg-emerald-100 text-emerald-600 rounded hover:bg-emerald-200"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setEditingTaskId(null)}
+                  className="p-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => startEditing(task)}
+                className="p-1 text-ink-muted hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
+            )}
+          </td>
+        </tr>
+        {isExpanded &&
+          !filterTag &&
+          !searchTerm &&
+          children.map((child) => renderCostRow(child, level + 1))}
+
+        {showLaborBreakdown === task.id && (
+          <tr className="bg-indigo-50/30">
+            <td colSpan={11} className="p-2 md:p-6 border-b border-indigo-100">
+              <div className="bg-surface rounded-2xl border border-indigo-100 shadow-sm overflow-hidden">
+                <div className="bg-indigo-600 px-4 py-2 flex justify-between items-center">
+                  <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest">
+                    Labor Deployment Breakdown
+                  </span>
+                  <button onClick={() => setShowLaborBreakdown(null)}>
+                    <X className="w-3 h-3 text-white" />
+                  </button>
+                </div>
+                <div className="overflow-x-auto scroller-hide">
+                  <table className="w-full text-[9px] md:text-[10px] min-w-[600px]">
+                    <thead>
+                      <tr className="bg-indigo-50 text-indigo-900 font-bold uppercase tracking-wider">
+                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">Contractor</th>
+                        <th className="p-2 text-left">Role</th>
+                        <th className="p-2 text-right">Headcount</th>
+                        <th className="p-2 text-right">Shifts</th>
+                        <th className="p-2 text-right">Rate</th>
+                        <th className="p-2 text-right">Total Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {laborLogs
+                        .filter((log) =>
+                          log.items.some((item) => item.taskId === task.id),
+                        )
+                        .flatMap((log) =>
+                          log.items
+                            .filter((item) => item.taskId === task.id)
+                            .map((item, idx) => (
+                              <tr
+                                key={`${log.id}-${idx}`}
+                                className="border-t border-indigo-50 hover:bg-indigo-50/50"
+                              >
+                                <td className="p-2 font-medium">{log.date}</td>
+                                <td className="p-2 text-ink-muted font-bold">
+                                  {log.vendorName || "General"}
+                                </td>
+                                <td className="p-2 italic">{item.role}</td>
+                                <td className="p-2 text-right">
+                                  {item.headcount}
+                                </td>
+                                <td className="p-2 text-right">
+                                  {item.shifts}
+                                </td>
+                                <td className="p-2 text-right">
+                                  ₹{item.rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                                </td>
+                                <td className="p-2 text-right font-black text-indigo-600">
+                                  ₹{item.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                                </td>
+                              </tr>
+                            )),
+                        )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </td>
+          </tr>
+        )}
+
+        {showMaterialBreakdown === task.id && (
+          <tr className="bg-panel">
+            <td colSpan={11} className="p-2 md:p-6 border-b border-divider">
+              <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
+                <div className="bg-slate-800 px-4 py-2 flex justify-between items-center">
+                  <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest">
+                    Material Issue Breakdown
+                  </span>
+                  <button onClick={() => setShowMaterialBreakdown(null)}>
+                    <X className="w-3 h-3 text-white" />
+                  </button>
+                </div>
+                <div className="overflow-x-auto scroller-hide">
+                  <table className="w-full text-[9px] md:text-[10px] min-w-[500px]">
+                    <thead>
+                      <tr className="bg-panel text-ink font-bold uppercase tracking-wider">
+                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">Material Name</th>
+                        <th className="p-2 text-right">Quantity</th>
+                        <th className="p-2 text-right">Unit Rate</th>
+                        <th className="p-2 text-right">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {materialIssues
+                        .filter((issue) => issue.taskId === task.id)
+                        .flatMap((issue) =>
+                          issue.items.map((item, idx) => (
+                            <tr
+                              key={`${issue.id}-${idx}`}
+                              className="border-t border-divider hover:bg-panel"
+                            >
+                              <td className="p-2 font-medium">
+                                {issue.issueDate}
+                              </td>
+                              <td className="p-2 font-bold text-ink/80">
+                                {item.name}
+                              </td>
+                              <td className="p-2 text-right">
+                                {item.quantity}
+                              </td>
+                              <td className="p-2 text-right">
+                                ₹{item.unitCost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                              </td>
+                              <td className="p-2 text-right font-black text-ink">
+                                ₹{item.totalPrice.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                              </td>
+                            </tr>
+                          )),
+                        )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </td>
+          </tr>
+        )}
+      </React.Fragment>
+    );
+  };
+
+  return (
+    <div className="space-y-10 pb-32">
+      <div className="apple-glass p-6 rounded-[32px] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
+        <div className="flex gap-2 bg-surface/30 p-1 rounded-xl w-full md:w-fit max-w-full overflow-x-auto scrollbar-hide ring-1 ring-white/20 shadow-inner">
+          {(["dashboard", "wbs", "direct_costs", "report", "payments"] as const).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className={`flex-1 md:flex-none px-4 md:px-8 py-2 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.2em] apple-transition whitespace-nowrap ${viewMode === mode ? "bg-primary text-white shadow-lg" : "text-ink-muted hover:text-ink"}`}
+            >
+              {mode === "dashboard"
+                ? "Overview"
+                : mode === "wbs"
+                  ? "Task Costs"
+                  : mode === "direct_costs"
+                    ? "Direct Costs"
+                    : mode === "report"
+                      ? "Full Report"
+                      : "Payments"}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <button
+            onClick={exportToCSV}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-surface/30 text-ink-muted px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-surface/50 hover:text-ink shadow-sm apple-transition"
+          >
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
+          <button
+            onClick={() => {
+              setNewEntry({
+                description: "",
+                amount: 0,
+                type: "Actual",
+                category: "Material",
+                date: new Date().toISOString().split("T")[0],
+                taskId: "",
+              });
+              setIsAdding(true);
+            }}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-white px-8 py-3.5 md:py-2.5 rounded-xl text-[10px] sm:text-xs md:text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/80 apple-transition shadow-xl shadow-[#007AFF]/20"
+          >
+            <Plus className="w-4 h-4" /> <span>Add Transaction</span>
+          </button>
+        </div>
+      </div>
+
+      {viewMode === "dashboard" && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            {[
+              {
+                title: "Total Cost",
+                planned: stats.totalBudgeted,
+                actual: stats.totalActual,
+                icon: IndianRupee,
+              },
+              {
+                title: "Labor Cost",
+                planned: stats.laborPlanned,
+                actual: stats.laborActual,
+                icon: PieChart,
+              },
+              {
+                title: "Material Cost",
+                planned: stats.materialPlanned,
+                actual: stats.materialActual,
+                icon: Layers,
+              },
+            ].map((stat, idx) => {
+              const variance = stat.planned - stat.actual;
+              const isOver = variance < 0;
+              const percentage = stat.planned > 0 ? (stat.actual / stat.planned) * 100 : 0;
+
+              return (
+                <div
+                  key={idx}
+                  className="bg-surface border border-white/20 p-6 rounded-3xl shadow-sm hover:shadow-md apple-transition"
+                >
+                  <div className="flex justify-between items-center mb-6">
+                    <h4 className="text-[15px] font-bold text-ink flex items-center gap-2">
+                      <stat.icon className="w-5 h-5 text-ink-muted" />
+                      {stat.title}
+                    </h4>
+                    <span
+                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                        isOver
+                          ? "bg-red-50 text-red-600 border border-red-200"
+                          : "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                      }`}
+                    >
+                      {isOver ? "Over Budget" : "On Track"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <div className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-1">
+                          Planned
+                        </div>
+                        <div className="text-xl font-bold text-ink tracking-tight">
+                          ₹{stat.planned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-1">
+                          Actual
+                        </div>
+                        <div className="text-xl font-bold text-primary tracking-tight">
+                          ₹{stat.actual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="h-2 w-full bg-panel rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-1000 ${
+                          isOver ? "bg-red-500" : percentage > 80 ? "bg-amber-400" : "bg-emerald-500"
+                        }`}
+                        style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+                      />
+                    </div>
+
+                    <div className="flex justify-between items-center pt-2 border-t border-white/10">
+                      <div className="text-xs font-medium text-ink-muted">Variance</div>
+                      <div
+                        className={`text-sm font-bold ${
+                          isOver ? "text-red-500" : "text-emerald-500"
+                        }`}
+                      >
+                        {isOver ? "-" : "+"}₹{Math.abs(variance).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-12 xl:col-span-8 apple-glass p-6 md:p-10 squircle-24">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 md:mb-10">
+                <div>
+                  <h3 className="text-xl md:text-[24px] font-semibold text-ink tracking-tight mb-1">
+                    Cost by Category
+                  </h3>
+                  <p className="text-xs md:text-[15px] text-ink-muted font-medium uppercase tracking-[0.05em]">
+                    Planned vs Actual spending
+                  </p>
+                </div>
+                <div className="flex gap-4 md:gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-[#34C759]" />
+                    <span className="text-[11px] md:text-[13px] font-medium text-ink-muted">
+                      Planned
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-primary" />
+                    <span className="text-[11px] md:text-[13px] font-medium text-ink-muted">
+                      Actual
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="h-[300px] md:h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={stats.chartData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="rgba(0,0,0,0.05)"
+                    />
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#8E8E93", fontWeight: 600, fontSize: 13 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#8E8E93", fontWeight: 600, fontSize: 13 }}
+                      tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "rgba(0,0,0,0.02)" }}
+                      contentStyle={{
+                        borderRadius: "24px",
+                        border: "1px solid var(--divider)",
+                        backdropFilter: "blur(10px)",
+                        backgroundColor: "var(--surface)",
+                        opacity: 0.9,
+                        boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+                        padding: "20px",
+                      }}
+                      itemStyle={{
+                        fontWeight: 700,
+                        fontSize: "13px",
+                        color: "var(--ink)",
+                      }}
+                      formatter={(value: number) => [
+                        `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
+                        "",
+                      ]}
+                    />
+                    <Bar
+                      dataKey="Budget"
+                      fill="#34C759"
+                      radius={[8, 8, 0, 0]}
+                      barSize={40}
+                    />
+                    <Bar
+                      dataKey="Actual"
+                      fill="#007AFF"
+                      radius={[8, 8, 0, 0]}
+                      barSize={40}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="lg:col-span-12 xl:col-span-4 bg-surface-dark p-8 squircle-24 shadow-2xl relative overflow-hidden flex flex-col">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary blur-[80px] opacity-20" />
+              <h3 className="text-[17px] font-bold text-white tracking-tight mb-8 flex items-center gap-3 relative z-10">
+                <div className="bg-surface/10 p-2 rounded-xl">
+                  <Calendar className="w-5 h-5 text-primary" />
+                </div>
+                Latest Transactions
+              </h3>
+
+              <div className="flex-1 space-y-4 relative z-10 overflow-y-auto pr-2 scrollbar-hide">
+                {entries
+                  .sort(
+                    (a, b) =>
+                      new Date(b.date).getTime() - new Date(a.date).getTime(),
+                  )
+                  .slice(0, 15)
+                  .map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="bg-surface/5 border border-white/5 p-5 rounded-3xl group hover:bg-surface/10 apple-transition flex justify-between items-center"
+                    >
+                      <div>
+                        <div className="font-bold text-white text-[15px] tracking-tight mb-1">
+                          {entry.description}
+                        </div>
+                        <div className="text-[12px] text-white/30 font-medium">
+                          {entry.category} • {entry.date}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div
+                          className={`text-[15px] font-bold font-mono tracking-tighter ${entry.type === "Actual" ? "text-primary" : "text-[#34C759]"}`}
+                        >
+                          ₹{entry.amount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                        </div>
+                        <div className="text-[11px] font-medium text-white/20 uppercase tracking-widest mt-1">
+                          {entry.type}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              <div className="pt-8 mt-4 border-t border-white/5 relative z-10 flex justify-between items-end">
+                <div>
+                  <p className="text-[13px] font-medium text-white/30 mb-1">
+                    Recent Flow
+                  </p>
+                  <p className="text-2xl font-bold text-white tracking-tighter">
+                    ₹
+                    {entries
+                      .slice(0, 15)
+                      .reduce((sum, e) => sum + e.amount, 0)
+                      .toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </p>
+                </div>
+                <button className="text-[13px] font-bold text-primary hover:text-white apple-transition">
+                  View All
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {viewMode === "wbs" && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-surface p-3 md:p-4 rounded-xl border shadow-sm">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+              <input
+                type="text"
+                placeholder="Search WBS tasks..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-panel border rounded-lg text-xs md:text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div className="flex items-center gap-2 bg-panel px-3 py-2 rounded-lg border">
+              <ListTree className="w-3.5 h-3.5 md:w-4 md:h-4 text-ink-muted" />
+              <select
+                className="bg-transparent text-[10px] md:text-xs font-bold outline-none flex-1"
+                value={filterTag}
+                onChange={(e) => setFilterTag(e.target.value)}
+              >
+                <option value="">All Activity Codes</option>
+                {allTags.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Legend for clarity */}
+          <div className="flex gap-6 px-4 py-2 bg-panel/50 rounded-lg border border-dashed border-divider">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm border bg-surface" />
+              <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
+                Planned (Budget)
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm bg-indigo-600" />
+              <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">
+                Actual (Spent)
+              </span>
+            </div>
+            <div className="text-[10px] text-ink-muted italic ml-auto">
+              * Click the pencil icon to set budgets; add transactions for
+              actuals.
+            </div>
+          </div>
+
+          <div className="bg-surface rounded-xl border shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs md:text-sm border-collapse">
+                <thead>
+                  <tr className="bg-slate-900 text-white text-[9px] md:text-[10px] font-bold uppercase tracking-widest">
+                    <th className="p-2 md:p-3 text-left min-w-[120px] md:min-w-[250px]">
+                      WBS Task Hierarchy
+                    </th>
+                    <th
+                      className="p-3 text-center border-l border-white/10 hidden md:table-cell"
+                      colSpan={2}
+                    >
+                      Material Costs
+                    </th>
+                    <th
+                      className="p-3 text-center border-l border-white/10 hidden md:table-cell"
+                      colSpan={2}
+                    >
+                      Labor Costs
+                    </th>
+                    <th
+                      className="p-3 text-center border-l border-white/10 hidden xl:table-cell"
+                      colSpan={2}
+                    >
+                      Direct Costs
+                    </th>
+                    <th className="p-3 text-right border-l border-white/10">
+                      Planned Total
+                    </th>
+                    <th className="p-3 text-right">Actual Spent</th>
+                    <th className="p-3 text-center hidden sm:table-cell">
+                      Status
+                    </th>
+                    <th className="p-3 w-12 md:w-20"></th>
+                  </tr>
+                  <tr className="bg-slate-800 text-white/50 text-[8px] font-black uppercase tracking-[0.2em] border-t border-white/5">
+                    <th className="p-1 px-3 text-left">Items</th>
+                    <th className="p-1 text-center hidden md:table-cell border-l border-white/5">
+                      Budget
+                    </th>
+                    <th className="p-1 text-center hidden md:table-cell">
+                      Spent
+                    </th>
+                    <th className="p-1 text-center hidden md:table-cell border-l border-white/5">
+                      Budget
+                    </th>
+                    <th className="p-1 text-center hidden md:table-cell">
+                      Spent
+                    </th>
+                    <th className="p-1 text-center hidden xl:table-cell border-l border-white/5">
+                      Budget
+                    </th>
+                    <th className="p-1 text-center hidden xl:table-cell">
+                      Spent
+                    </th>
+                    <th
+                      className="p-1 text-right border-l border-white/5"
+                      colSpan={4}
+                    >
+                      Summaries
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(groupedTasks).map(([phase, locations]) => (
+                    <React.Fragment key={phase}>
+                      <tr className="bg-panel/30">
+                        <td
+                          colSpan={11}
+                          className="p-4 px-6 border-y border-divider"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-sm">
+                              <Layers className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-600 block leading-none mb-1">
+                                Project Phase
+                              </span>
+                              <span className="text-sm font-black text-ink leading-none">
+                                {phase}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                      {Object.entries(locations).map(([location, locTasks]) => (
+                        <React.Fragment key={`${phase}-${location}`}>
+                          <tr className="bg-panel/50">
+                            <td
+                              colSpan={11}
+                              className="p-2 px-10 border-b border-divider"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="p-1 bg-emerald-100 text-emerald-600 rounded">
+                                  <MapPin className="w-3 h-3" />
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                                  Location:{" "}
+                                  <span className="text-ink">{location}</span>
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                          {locTasks.map((task) => renderCostRow(task, 0))}
+                        </React.Fragment>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {tasks.length === 0 && (
+              <div className="p-20 text-center text-ink-muted italic">
+                No tasks found. Add tasks in the WBS view to manage costs here.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {viewMode === "direct_costs" && (
+        <div className="bg-surface rounded-2xl border shadow-sm overflow-hidden">
+          <div className="p-6 border-b bg-panel/30 flex justify-between items-center">
+            <h3 className="text-lg font-bold text-ink">Direct Cost Entries</h3>
+            <button
+              onClick={() => {
+                setNewEntry({
+                  description: "",
+                  amount: 0,
+                  type: "Actual",
+                  category: "Material",
+                  date: new Date().toISOString().split("T")[0],
+                  taskId: "",
+                });
+                setIsAdding(true);
+              }}
+              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Add Direct Cost
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-panel border-b text-[10px] font-black uppercase tracking-wider text-ink-muted">
+                <tr>
+                  <th className="p-4 rounded-tl-xl">Date</th>
+                  <th className="p-4">Description</th>
+                  <th className="p-4">Category (Head)</th>
+                  <th className="p-4">Type</th>
+                  <th className="p-4 text-right">Amount (₹)</th>
+                  <th className="p-4 w-10"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                {entries.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-ink-muted italic">
+                      No direct costs recorded yet.
+                    </td>
+                  </tr>
+                ) : (
+                  entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((entry) => (
+                    <tr key={entry.id} className="border-b last:border-0 hover:bg-panel/50 transition-colors">
+                      <td className="p-4 font-medium">{new Date(entry.date).toLocaleDateString()}</td>
+                      <td className="p-4">{entry.description || "-"}</td>
+                      <td className="p-4">
+                        <span className="bg-surface border px-2 py-1 rounded text-xs font-medium">
+                          {entry.category}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"}`}>
+                          {entry.type}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right font-bold text-ink">
+                        {entry.amount?.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={() => {
+                              setNewEntry(entry);
+                              setIsAdding(true);
+                            }}
+                            className="p-1 text-ink-muted hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                            title="Edit record"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeletingId(entry.id)}
+                            className="p-1 text-ink-muted hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                            title="Delete record"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {viewMode === "report" && (
+        <div className="bg-surface p-10 rounded-xl border shadow-sm print:shadow-none print:border-none">
+          <div className="flex justify-between items-start mb-10 border-b pb-8">
+            <div>
+              <h1 className="text-3xl font-black text-ink mb-2">
+                Project Cost Analysis Report
+              </h1>
+              <p className="text-ink-muted">
+                Generated on {new Date().toLocaleDateString()} • Detailed WBS
+                Breakdown
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-bold text-indigo-600 uppercase tracking-widest">
+                BuildFlow Pro
+              </div>
+              <div className="text-[10px] opacity-50">
+                Enterprise Construction Management
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+            <div className="bg-panel p-4 md:p-6 rounded-2xl border">
+              <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
+                Material
+              </div>
+              <div className="flex justify-between items-end">
+                <div>
+                  <div className="text-xl md:text-2xl font-bold">
+                    ₹{stats.materialActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[9px] opacity-50">Actual</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-bold text-emerald-600">
+                    ₹{stats.materialPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[9px] opacity-50">Planned</div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-panel p-4 md:p-6 rounded-2xl border">
+              <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
+                Labor
+              </div>
+              <div className="flex justify-between items-end">
+                <div>
+                  <div className="text-xl md:text-2xl font-bold">
+                    ₹{stats.laborActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[9px] opacity-50">Actual</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-bold text-emerald-600">
+                    ₹{stats.laborPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[9px] opacity-50">Planned</div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-panel p-4 md:p-6 rounded-2xl border">
+              <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
+                Direct Cost
+              </div>
+              <div className="flex justify-between items-end">
+                <div>
+                  <div className="text-xl md:text-2xl font-bold">
+                    ₹{stats.otherActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[9px] opacity-50">Actual</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-bold text-emerald-600">
+                    ₹{stats.otherPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[9px] opacity-50">Planned</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-sm mb-12 min-w-[700px]">
+              <thead>
+                <tr className="border-b-2 border-slate-900">
+                  <th className="text-left py-4 font-black uppercase tracking-widest text-[10px]">
+                    Task Description
+                  </th>
+                  <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
+                    Material (P/A)
+                  </th>
+                  <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
+                    Labor (P/A)
+                  </th>
+                  <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
+                    Direct Cost (P/A)
+                  </th>
+                  <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
+                    Planned Total
+                  </th>
+                  <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
+                    Actual Total
+                  </th>
+                  <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
+                    Variance
+                  </th>
+                  <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {Object.entries(groupedTasks).map(([phase, locations]) => (
+                  <React.Fragment key={phase}>
+                    <tr className="bg-panel/30">
+                      <td colSpan={8} className="p-4 px-6 border-y border-divider">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-sm">
+                            <Layers className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-600 block leading-none mb-1">
+                              Project Phase
+                            </span>
+                            <span className="text-sm font-black text-ink leading-none">
+                              {phase}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                    {Object.entries(locations).map(([location, locTasks]) => (
+                      <React.Fragment key={`${phase}-${location}`}>
+                        <tr className="bg-panel/50">
+                          <td colSpan={8} className="p-2 px-10 border-b border-divider">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1 bg-emerald-100 text-emerald-600 rounded">
+                                <MapPin className="w-3 h-3" />
+                              </div>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                                Location: <span className="text-ink">{location}</span>
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                        {locTasks.map((task) => renderReportRow(task, 0))}
+                      </React.Fragment>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-4 border-slate-900 bg-slate-900 text-white">
+                  <td className="p-4 font-black uppercase tracking-widest">
+                    Project Totals
+                  </td>
+                  <td className="p-4 text-right">
+                    <div className="text-xs">₹{stats.materialPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+                    <div className="text-[10px] text-white/70">₹{stats.materialActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+                  </td>
+                  <td className="p-4 text-right">
+                    <div className="text-xs">₹{stats.laborPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+                    <div className="text-[10px] text-white/70">₹{stats.laborActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+                  </td>
+                  <td className="p-4 text-right">
+                    <div className="text-xs">₹{stats.otherPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+                    <div className="text-[10px] text-white/70">₹{stats.otherActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+                  </td>
+                  <td className="p-4 text-right font-black">
+                    ₹{stats.totalBudgeted.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </td>
+                  <td className="p-4 text-right font-black">
+                    ₹{stats.totalActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </td>
+                  <td className="p-4 text-right font-black">
+                    ₹
+                    {(stats.totalBudgeted - stats.totalActual).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div className="bg-indigo-50 p-8 rounded-3xl border border-indigo-100 flex items-start gap-4">
+            <AlertCircle className="w-6 h-6 text-indigo-600 shrink-0" />
+            <div>
+              <h4 className="font-bold text-indigo-900 mb-1">
+                Executive Summary
+              </h4>
+              <p className="text-sm text-indigo-700 leading-relaxed">
+                The project is currently{" "}
+                {stats.totalBudgeted - stats.totalActual >= 0
+                  ? "under"
+                  : "over"}{" "}
+                budget by ₹
+                {Math.abs(
+                  stats.totalBudgeted - stats.totalActual,
+                ).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                . Material costs represent{" "}
+                {Math.round((stats.materialActual / stats.totalActual) * 100) ||
+                  0}
+                % of the total expenditure. Labor costs are at{" "}
+                {Math.round((stats.laborActual / stats.totalActual) * 100) || 0}
+                % of actual spend.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewMode === "payments" && (
+        <ClientPaymentsView
+          projectId={projectId}
+          clientPayments={clientPayments}
+          vendorLedger={vendorLedger}
+          vendors={vendors}
+          costEntries={entries}
+        />
+      )}
+
+      {/* Modals */}
+      <AnimatePresence>
+        {isAdding && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-surface rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl"
+            >
+              <div className="bg-primary p-8 text-white flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-bold">{newEntry.id ? "Edit Transaction" : "Add Transaction"}</h3>
+                  <p className="text-[#E5E5EA] text-xs font-medium uppercase tracking-widest mt-1">
+                    Direct Cost Ledger
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAdding(false);
+                    setNewEntry({
+                      description: "",
+                      amount: 0,
+                      type: "Actual",
+                      category: "Material",
+                      date: new Date().toISOString().split("T")[0],
+                      taskId: "",
+                    });
+                  }}
+                  className="p-2 hover:bg-surface/10 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <form onSubmit={handleAddEntry} className="p-8 space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
+                      Task Link (Optional)
+                    </label>
+                    <select
+                      className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-semibold outline-none appearance-none"
+                      value={newEntry.taskId}
+                      onChange={(e) =>
+                        setNewEntry({ ...newEntry, taskId: e.target.value })
+                      }
+                    >
+                      <option value="">Project Wide (General)</option>
+                      {flattenedTasks.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {"\u00A0".repeat(t.level * 2)}
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
+                      Description
+                    </label>
+                    <input
+                      required
+                      placeholder="e.g. Fuel for generator"
+                      className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-semibold outline-none"
+                      value={newEntry.description}
+                      onChange={(e) =>
+                        setNewEntry({
+                          ...newEntry,
+                          description: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
+                        Amount (₹)
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-black text-primary outline-none"
+                        value={newEntry.amount || ""}
+                        onChange={(e) =>
+                          setNewEntry({
+                            ...newEntry,
+                            amount: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
+                        Type
+                      </label>
+                      <select
+                        className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-semibold outline-none appearance-none"
+                        value={newEntry.type}
+                        onChange={(e) =>
+                          setNewEntry({
+                            ...newEntry,
+                            type: e.target.value as any,
+                          })
+                        }
+                      >
+                        <option value="Actual">Actual Spend</option>
+                        <option value="Budget">Planned Budget</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
+                        Category (Head)
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        list="cost-categories-list"
+                        className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-semibold outline-none focus:ring-2 focus:ring-primary/20 apple-transition"
+                        placeholder="e.g. Material, Labor, Transport..."
+                        value={newEntry.category}
+                        onChange={(e) =>
+                          setNewEntry({
+                            ...newEntry,
+                            category: e.target.value as any,
+                          })
+                        }
+                      />
+                      <datalist id="cost-categories-list">
+                        {uniqueCategories.map((cat, idx) => (
+                          <option key={idx} value={cat} />
+                        ))}
+                      </datalist>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
+                        Date
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-semibold outline-none"
+                        value={newEntry.date}
+                        onChange={(e) =>
+                          setNewEntry({ ...newEntry, date: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-primary text-white py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-primary/80 transition-all shadow-xl shadow-[#007AFF]/20"
+                >
+                  Save Transaction
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {deletingId && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-surface rounded-3xl w-full max-w-sm overflow-hidden"
+            >
+              <div className="p-6 text-center space-y-4">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Trash2 className="w-8 h-8 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-ink">Delete Entry?</h3>
+                  <p className="text-sm text-ink-muted mt-2">
+                    Are you sure you want to delete this cost entry? This action cannot be undone and will update task costs.
+                  </p>
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => setDeletingId(null)}
+                    className="flex-1 py-3.5 bg-panel hover:bg-divider rounded-2xl font-bold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      const entry = entries.find((e) => e.id === deletingId);
+                      if (entry) handleDeleteEntry(entry);
+                    }}
+                    className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};

@@ -1,0 +1,218 @@
+import React, { useState, useEffect, Component } from "react";
+import {
+  auth,
+  db,
+  googleProvider,
+  signInWithPopup,
+  collection,
+  onSnapshot,
+  query,
+  where,
+  addDoc,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  getDocs,
+  writeBatch,
+  handleFirestoreError,
+  OperationType,
+} from "./firebase";
+import {
+  UserProfile,
+  Project,
+  Task,
+  DependencyType,
+  TaskDependency,
+} from "./types";
+import { Layout } from "./components/Layout";
+import { GanttChart } from "./components/GanttChart";
+import { WBSView } from "./components/WBSView";
+import { InventoryView } from "./components/InventoryView";
+import { ProcurementView } from "./components/ProcurementView";
+import MaterialConsumptionView from "./components/MaterialConsumptionView";
+import { LaborTrackingView } from "./components/LaborTrackingView";
+import { CostManagement } from "./components/CostManagement";
+import { DocumentVault } from "./components/DocumentVault";
+import { DashboardView } from "./components/DashboardView";
+import { SettingsView } from "./components/SettingsView";
+import { EnterpriseAuthView } from "./components/EnterpriseAuthView";
+import {
+  Construction,
+  Plus,
+  ArrowRight,
+  Loader2,
+  ShieldCheck,
+  AlertCircle,
+  RefreshCw,
+  Trash2,
+  Settings,
+  Info,
+  X,
+  LogOut,
+  Image as ImageIcon,
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+
+import { useAuthInit } from "./hooks/useAuth";
+import { useProjectsQuery } from "./hooks/queries";
+import { useAuthStore, useProjectStore, useUIStore } from "./store";
+
+import { LoginPage } from "./pages/LoginPage";
+import { PortfolioPage } from "./pages/PortfolioPage";
+import { ProjectDashboard } from "./pages/ProjectDashboard";
+
+export const AuthContext = React.createContext<{ user: UserProfile | null }>({
+  user: null,
+});
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: any;
+}
+
+class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  props: ErrorBoundaryProps;
+  state: ErrorBoundaryState = { hasError: false, error: null };
+
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.props = props;
+  }
+
+  static getDerivedStateFromError(error: any): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      let errorMessage = "An unexpected error occurred.";
+      try {
+        const parsed = JSON.parse(this.state.error.message);
+        errorMessage = `Firestore Error: ${parsed.error} during ${parsed.operationType} on ${parsed.path}`;
+      } catch (e) {
+        errorMessage = this.state.error?.message || errorMessage;
+      }
+
+      return (
+        <div className="h-screen flex items-center justify-center p-6">
+          <div className="max-w-md w-full apple-glass p-12 squircle-24 text-center">
+            <div className="bg-[#FF3B30]/10 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-[#FF3B30]/20">
+              <AlertCircle className="w-10 h-10 text-[#FF3B30]" />
+            </div>
+            <h2 className="text-[24px] font-bold text-ink mb-3">
+              Something went wrong
+            </h2>
+            <p className="text-[15px] text-ink-muted mb-10 leading-relaxed">
+              {errorMessage}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full bg-surface-dark text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-black apple-transition shadow-xl"
+            >
+              <RefreshCw className="w-5 h-5" /> Reload Application
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
+  );
+}
+
+function AppContent() {
+  // Initialize stores globally
+  useAuthInit();
+
+  const user = useAuthStore((state) => state.user);
+  const loading = useAuthStore((state) => state.loading);
+  const isLoggingIn = useAuthStore((state) => state.isLoggingIn);
+  const login = useAuthStore((state) => state.login);
+
+  const { data: projects = [] } = useProjectsQuery();
+  const activeProject = useProjectStore((state) => state.activeProject);
+  const setActiveProject = useProjectStore((state) => state.setActiveProject);
+
+  const viewingSettings = useUIStore((state) => state.viewingSettings);
+  const setViewingSettings = useUIStore((state) => state.setViewingSettings);
+
+  const visibleProjects = projects.filter((p) => {
+    if (user?.role === "Admin") return true;
+    const access = user?.projectAccess?.[p.id];
+    if (access === "none") return false;
+    if (access === "read" || access === "write") return true;
+    if (p.ownerId === user?.uid) return true;
+    return false;
+  });
+
+  useEffect(() => {
+    // If activeProject is no longer visible, reset it
+    if (
+      activeProject &&
+      !visibleProjects.find((p) => p.id === activeProject.id)
+    ) {
+      setActiveProject(null);
+    }
+  }, [visibleProjects, activeProject, setActiveProject]);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-900 text-white">
+        <Loader2 className="w-12 h-12 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage isLoggingIn={isLoggingIn} onLogin={login} />;
+  }
+
+  if (!activeProject) {
+    if (viewingSettings) {
+      return (
+        <SettingsView
+          onBack={() => setViewingSettings(false)}
+          currentUser={user}
+        />
+      );
+    }
+
+    return (
+      <PortfolioPage
+        user={user}
+        visibleProjects={visibleProjects}
+        onProjectSelect={setActiveProject}
+        onSettingsClick={() => setViewingSettings(true)}
+      />
+    );
+  }
+
+  return (
+    <ProjectDashboard
+      user={user}
+      activeProject={activeProject}
+      onUpdateProject={(p) => setActiveProject(p)}
+      onBack={() => setActiveProject(null)}
+    />
+  );
+}
