@@ -86,6 +86,40 @@ export const CostManagement: React.FC<CostManagementProps> = ({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (!projectId) return;
+    const hasUnlinked = entries.some((e) => !e.taskId);
+    if (hasUnlinked) {
+      const overheadTask = tasks.find(
+        (t) => t.name === "Project Overhead" && t.isSystemGenerated
+      );
+      if (!overheadTask) {
+        const createOverhead = async () => {
+          try {
+             const { addDoc, collection } = await import("firebase/firestore");
+             const { db } = await import("../firebase");
+             await addDoc(collection(db, `projects/${projectId}/tasks`), {
+                 projectId,
+                 name: "Project Overhead",
+                 type: "Summary",
+                 isSystemGenerated: true,
+                 phase: "Project Overheads",
+                 location: "Global",
+                 startDate: new Date().toISOString().split("T")[0],
+                 endDate: new Date().toISOString().split("T")[0],
+                 duration: 1,
+                 progress: 0,
+             });
+          } catch (e) {
+             console.error("Failed to create Project Overhead task", e);
+          }
+        };
+        createOverhead();
+      }
+    }
+  }, [entries, tasks, projectId]);
+
   const [isAdding, setIsAdding] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<
@@ -206,8 +240,9 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           actualOther += childTotals.actualOther;
         });
       } else {
-        const budgetEntries = entries.filter(e => e.taskId === taskId && e.type === "Budget");
-        const actualEntries = entries.filter(e => e.taskId === taskId && e.type === "Actual");
+        const isOverhead = task.name === "Project Overhead" && task.isSystemGenerated;
+        const budgetEntries = entries.filter(e => (e.taskId === taskId || (isOverhead && !e.taskId)) && e.type === "Budget");
+        const actualEntries = entries.filter(e => (e.taskId === taskId || (isOverhead && !e.taskId)) && e.type === "Actual");
 
         const budgetMat = budgetEntries.filter(e => e.category === "Material").reduce((sum, e) => sum + e.amount, 0);
         const budgetLab = budgetEntries.filter(e => e.category === "Labor").reduce((sum, e) => sum + e.amount, 0);
@@ -251,28 +286,19 @@ export const CostManagement: React.FC<CostManagementProps> = ({
   };
 
   const stats = useMemo(() => {
-    // Direct entries (not linked to tasks)
-    const unlinkedEntries = entries.filter((e) => !e.taskId);
-    const budgetedEntries = unlinkedEntries
-      .filter((e) => e.type === "Budget")
-      .reduce((acc, curr) => acc + curr.amount, 0);
-    const actualEntries = unlinkedEntries
-      .filter((e) => e.type === "Actual")
-      .reduce((acc, curr) => acc + curr.amount, 0);
-
     // Task-based costs
     const rootTasks = tasks.filter((t) => !t.parentId);
 
     let budgetedTasks = 0;
     let actualTasks = 0;
     
-    // Unlinked category breakdown
-    let materialPlanned = unlinkedEntries.filter(e => e.type === "Budget" && e.category === "Material").reduce((a,c) => a + c.amount, 0);
-    let materialActual = unlinkedEntries.filter(e => e.type === "Actual" && e.category === "Material").reduce((a,c) => a + c.amount, 0);
-    let laborPlanned = unlinkedEntries.filter(e => e.type === "Budget" && e.category === "Labor").reduce((a,c) => a + c.amount, 0);
-    let laborActual = unlinkedEntries.filter(e => e.type === "Actual" && e.category === "Labor").reduce((a,c) => a + c.amount, 0);
-    let otherPlanned = unlinkedEntries.filter(e => e.type === "Budget" && e.category !== "Material" && e.category !== "Labor").reduce((a,c) => a + c.amount, 0);
-    let otherActual = unlinkedEntries.filter(e => e.type === "Actual" && e.category !== "Material" && e.category !== "Labor").reduce((a,c) => a + c.amount, 0);
+    // Category breakdown
+    let materialPlanned = 0;
+    let materialActual = 0;
+    let laborPlanned = 0;
+    let laborActual = 0;
+    let otherPlanned = 0;
+    let otherActual = 0;
 
     rootTasks.forEach((t) => {
       const totals = getTaskTotals(t, tasks, entries);
@@ -286,8 +312,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       otherActual += totals.actualOther;
     });
 
-    const totalBudgeted = budgetedEntries + budgetedTasks;
-    const totalActual = actualEntries + actualTasks;
+    const totalBudgeted = budgetedTasks;
+    const totalActual = actualTasks;
 
     const chartData = [
       { name: "Material", Budget: materialPlanned, Actual: materialActual },
@@ -314,7 +340,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
     const result: { id: string; name: string; level: number }[] = [];
     const buildFlatList = (parentId: string | null | undefined, level: number) => {
       tasks
-        .filter((t) => (t.parentId || null) === (parentId || null))
+        .filter((t) => (t.parentId || null) === (parentId || null) && !t.isSystemGenerated)
         .sort((a,b) => (a.startDate || "").localeCompare(b.startDate || ""))
         .forEach((task) => {
           result.push({ id: task.id, name: task.name, level });
@@ -829,7 +855,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <X className="w-4 h-4" />
                 </button>
               </div>
-            ) : (
+            ) : task.isSystemGenerated ? null : (
               <button
                 onClick={() => startEditing(task)}
                 className="p-1 text-ink-muted hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all"
@@ -1816,6 +1842,11 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         </option>
                       ))}
                     </select>
+                    {!newEntry.taskId && (
+                      <p className="text-[9px] text-ink-muted ml-1 italic mt-1">
+                        Unlinked costs are tracked under Project Overhead.
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">

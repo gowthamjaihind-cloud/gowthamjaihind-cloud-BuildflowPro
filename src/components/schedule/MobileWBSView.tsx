@@ -92,7 +92,7 @@ export const MobileWBSView: React.FC<MobileWBSViewProps> = ({ projectId, onOpenF
   const [currentParentId, setCurrentParentId] = useState<string | null>(null);
   const [sheetState, setSheetState] = useState<{ isOpen: boolean; mode: "add" | "edit"; task: any | null } | null>(null);
 
-  const { roots, nodeMap } = useMemo(() => buildTree(rawTasks), [rawTasks]);
+  const { roots, nodeMap } = useMemo(() => buildTree(rawTasks.filter(t => !t.isSystemGenerated)), [rawTasks]);
 
   const currentNodes = useMemo(() => {
     if (viewMode === "outline") return []; // custom render for outline

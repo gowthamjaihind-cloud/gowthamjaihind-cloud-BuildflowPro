@@ -80,7 +80,7 @@ interface WBSViewProps {
 
 export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
   const { data: rawTasks = [] } = useTasksQuery(projectId);
-  const tasks = useMemo(() => calculateCPM(rawTasks), [rawTasks]);
+  const tasks = useMemo(() => calculateCPM(rawTasks.filter(t => !t.isSystemGenerated)), [rawTasks]);
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200,
   );

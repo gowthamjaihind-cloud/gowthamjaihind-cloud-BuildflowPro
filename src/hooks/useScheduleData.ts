@@ -48,7 +48,9 @@ export function useScheduleData(projectId: string) {
     const tasksQuery = query(collection(db, tenantPath));
 
     const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
-      const parsedTasks: ScheduleTask[] = snapshot.docs.map(doc => {
+      const parsedTasks: ScheduleTask[] = snapshot.docs
+        .filter(doc => !doc.data().isSystemGenerated)
+        .map(doc => {
         const data = doc.data();
         
         let status: TaskStatus = 'scheduled';

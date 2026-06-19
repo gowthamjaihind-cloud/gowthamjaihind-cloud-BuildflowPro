@@ -27,7 +27,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const { tasks: scheduleTasks, phases, loading: scheduleLoading } = useScheduleData(activeProjectId);
 
   const calculateGlobalProgress = () => {
-    const activeTasks = legacyTasks.filter((t) => t.type === "Task");
+    const activeTasks = legacyTasks.filter((t) => t.type === "Task" && !t.isSystemGenerated);
     if (activeTasks.length === 0) return 0;
     const totalDuration = activeTasks.reduce(
       (acc, t) => acc + (Number(t.duration) || 1),
@@ -41,15 +41,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   const calculateNetworkIntegrity = () => {
-    if (legacyTasks.length === 0) return 100;
-    const withDates = legacyTasks.filter((t) => t.startDate && t.endDate).length;
-    const withDeps = legacyTasks.filter(
+    const validTasks = legacyTasks.filter(t => !t.isSystemGenerated);
+    if (validTasks.length === 0) return 100;
+    const withDates = validTasks.filter((t) => t.startDate && t.endDate).length;
+    const withDeps = validTasks.filter(
       (t) =>
         (t.dependencies?.length || 0) > 0 ||
         (t.advancedDependencies?.length || 0) > 0,
     ).length;
     const integrity =
-      ((withDates / legacyTasks.length) * 0.6 + (withDeps / legacyTasks.length) * 0.4) *
+      ((withDates / validTasks.length) * 0.6 + (withDeps / validTasks.length) * 0.4) *
       100;
     return Math.min(100, Math.round(integrity));
   };
@@ -108,7 +109,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </p>
             <div className="flex gap-4 mt-1">
               <div className="text-[10px] md:text-[11px] font-bold">
-                <span className="text-primary mr-1">{legacyTasks.length}</span>Tasks
+                <span className="text-primary mr-1">{legacyTasks.filter(t => !t.isSystemGenerated).length}</span>Tasks
               </div>
               <div className="text-[10px] md:text-[11px] font-bold">
                 <span className="text-[#34C759] mr-1">98%</span>Uptime

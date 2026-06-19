@@ -116,6 +116,7 @@ export interface Task {
   lastPhotos?: string[];
   activeRoles?: string[];
   lastRemarks?: string;
+  isSystemGenerated?: boolean;
 }
 
 export interface InventoryItem {
