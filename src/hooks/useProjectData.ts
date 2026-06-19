@@ -6,6 +6,7 @@ export function useProjectData<T>(
     | "inventory"
     | "suppliers"
     | "purchase_orders"
+    | "goodsReceiptNotes"
     | "costs"
     | "labor_rate_cards"
     | "ledger"

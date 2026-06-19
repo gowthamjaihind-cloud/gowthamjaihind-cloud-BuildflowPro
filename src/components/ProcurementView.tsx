@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { PurchaseOrderTab } from "./purchase/PurchaseOrderTab";
+import { GoodsReceiptTab } from "./purchase/GoodsReceiptTab";
+import { MaterialReceiptForm } from "./purchase/MaterialReceiptForm";
 import {
   db,
   collection,
@@ -20,6 +22,8 @@ import {
   MaterialReceipt,
   VendorLedgerEntry,
   InventoryItem,
+  PurchaseOrder,
+  GoodsReceiptNote
 } from "../types";
 import {
   Truck,
@@ -49,25 +53,29 @@ import {
   Wallet,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useUIStore } from "../store";
+import { useUIStore, useAuthStore } from "../store";
 // Removed unused import
 
 interface ProcurementViewProps {
   projectId: string;
 }
 
-type Tab = "purchase_orders" | "receipts" | "ledger" | "vendors";
+type Tab = "purchase_orders" | "goods_receipt" | "receipts" | "ledger" | "vendors";
 
 export const ProcurementView: React.FC<ProcurementViewProps> = ({
   projectId,
 }) => {
   const strictDataEntry = true;
+  const { user } = useAuthStore();
+  const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
 
   const [activeTab, setActiveTab] = useState<Tab>("purchase_orders");
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [receipts, setReceipts] = useState<MaterialReceipt[]>([]);
   const [ledger, setLedger] = useState<VendorLedgerEntry[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [grns, setGrns] = useState<GoodsReceiptNote[]>([]);
 
   // Modals
   const [isAddingVendor, setIsAddingVendor] = useState(false);
@@ -121,6 +129,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     amount: 0,
     date: new Date().toISOString().split("T")[0],
     description: "",
+    receiptId: "",
+    overrideReason: "",
   });
 
   useEffect(() => {
@@ -128,6 +138,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     const receiptsPath = `projects/${projectId}/receipts`;
     const ledgerPath = `projects/${projectId}/ledger`;
     const inventoryPath = `projects/${projectId}/inventory`;
+    const poPath = `projects/${projectId}/purchase_orders`;
+    const grnPath = `projects/${projectId}/goodsReceiptNotes`;
 
     const unsubVendors = onSnapshot(
       query(collection(db, vendorsPath)),
@@ -175,11 +187,29 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       (error) => handleFirestoreError(error, OperationType.LIST, inventoryPath),
     );
 
+    const unsubPOs = onSnapshot(
+      query(collection(db, poPath)),
+      (snapshot) => {
+        setPurchaseOrders(snapshot.docs.map(doc => doc.data() as PurchaseOrder));
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, poPath)
+    );
+
+    const unsubGRNs = onSnapshot(
+      query(collection(db, grnPath)),
+      (snapshot) => {
+        setGrns(snapshot.docs.map(doc => doc.data() as GoodsReceiptNote));
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, grnPath)
+    );
+
     return () => {
       unsubVendors();
       unsubReceipts();
       unsubLedger();
       unsubInventory();
+      unsubPOs();
+      unsubGRNs();
     };
   }, [projectId]);
 
@@ -251,20 +281,6 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           (vendorDoc.data() as Vendor).outstandingBalance || 0;
 
         if (oldData) {
-          for (const item of oldData.items) {
-            if (!item.itemId) continue;
-            const invDoc = inventoryItemDocs[item.itemId];
-            if (invDoc && invDoc.exists()) {
-              const invData = inventoryState[item.itemId];
-              const updatedQty = Math.max(
-                0,
-                (invData.quantity || 0) - item.quantity,
-              );
-              transaction.update(invDoc.ref, { quantity: updatedQty });
-              invData.quantity = updatedQty;
-            }
-          }
-
           const ovDoc = oldVendorDoc || vendorDoc;
           if (ovDoc && ovDoc.exists()) {
             const ovData = ovDoc.data() as Vendor;
@@ -299,21 +315,6 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           ledgerId: ledgerRef.id,
         });
 
-        for (const item of validItems) {
-          const itemDoc = inventoryItemDocs[item.itemId];
-          if (itemDoc && itemDoc.exists()) {
-            const currentData = inventoryState[item.itemId];
-            const newQuantity = (currentData.quantity || 0) + item.quantity;
-
-            transaction.update(itemDoc.ref, {
-              quantity: newQuantity,
-              unitCost: item.unitRate,
-            });
-            currentData.quantity = newQuantity;
-            currentData.unitCost = item.unitRate;
-          }
-        }
-
         transaction.set(ledgerRef, {
           projectId,
           vendorId: vendorDoc.id,
@@ -340,7 +341,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         items: [],
       });
     } catch (error) {
-      console.error("GRN Failed:", error);
+      console.error("Receipt save failed:", error);
     }
   };
 
@@ -363,39 +364,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         );
         const vendorSnapshot = await transaction.get(vendorRef);
 
-        const invSnapshots: { [id: string]: any } = {};
-        const inventoryState: { [id: string]: InventoryItem } = {};
-        for (const item of receiptData.items) {
-          if (item.itemId) {
-            const invRef = doc(
-              db,
-              `projects/${projectId}/inventory/${item.itemId}`,
-            );
-            if (!invSnapshots[item.itemId]) {
-              const snap = await transaction.get(invRef);
-              invSnapshots[item.itemId] = snap;
-              if (snap.exists()) {
-                inventoryState[item.itemId] = snap.data() as InventoryItem;
-              }
-            }
-          }
-        }
-
         // --- WRITES ---
-        for (const item of receiptData.items) {
-          if (item.itemId) {
-            const invSnap = invSnapshots[item.itemId];
-            if (invSnap && invSnap.exists()) {
-              const invData = inventoryState[item.itemId];
-              const updatedQty = Math.max(0, (invData.quantity || 0) - item.quantity);
-              transaction.update(invSnap.ref, {
-                quantity: updatedQty,
-              });
-              invData.quantity = updatedQty;
-            }
-          }
-        }
-
         if (vendorSnapshot.exists()) {
           transaction.update(vendorRef, {
             outstandingBalance:
@@ -412,7 +381,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       });
       setIsDeletingReceipt(null);
     } catch (error) {
-      console.error("Delete GRN Failed:", error);
+      console.error("Delete Receipt Failed:", error);
     } finally {
       setIsDeleting(false);
     }
@@ -420,6 +389,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
 
   const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdminOrOwner) return;
     if (!newPayment.supplierId || newPayment.amount <= 0) return;
     try {
       if (editingPaymentId) {
@@ -464,6 +434,18 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           if (!vendorDoc.exists()) return;
 
           const ledgerRef = doc(collection(db, `projects/${projectId}/ledger`));
+          
+          let overrideFields = {};
+          if (newPayment.receiptId) {
+             const rcpt = receipts.find(r => r.id === newPayment.receiptId);
+             if (rcpt && rcpt.matchStatus === "Has Discrepancies") {
+                overrideFields = {
+                   overriddenBy: user?.displayName || user?.email || user?.uid || "Admin",
+                   overrideReason: newPayment.overrideReason || "Discrepancy accepted"
+                };
+             }
+          }
+
           transaction.set(ledgerRef, {
             projectId,
             vendorId: newPayment.supplierId,
@@ -471,7 +453,9 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             type: "DEBIT",
             amount: newPayment.amount,
             referenceType: "PAYMENT",
+            referenceId: newPayment.receiptId || undefined,
             description: newPayment.description || "Payment to Vendor",
+            ...overrideFields
           });
 
           transaction.update(vendorRef, {
@@ -798,15 +782,17 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               </div>
 
               <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setNewPayment({ ...newPayment, supplierId: vendor.id });
-                    setIsAddingPayment(true);
-                  }}
-                  className="flex-[1.5] bg-slate-900 text-white py-2.5 md:py-3.5 rounded-lg md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-slate-800 apple-transition shadow-md shadow-slate-100"
-                >
-                  Payment
-                </button>
+                {isAdminOrOwner && (
+                  <button
+                    onClick={() => {
+                      setNewPayment({ ...newPayment, supplierId: vendor.id, receiptId: "", overrideReason: "" });
+                      setIsAddingPayment(true);
+                    }}
+                    className="flex-[1.5] bg-slate-900 text-white py-2.5 md:py-3.5 rounded-lg md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-slate-800 apple-transition shadow-md shadow-slate-100"
+                  >
+                    Payment
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setActiveTab("ledger");
@@ -878,14 +864,21 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     <div className="font-bold text-ink tracking-tight text-base md:text-lg leading-none mb-1 truncate max-w-[150px]">
                       {receipt.supplierName}
                     </div>
-                    <div className="text-[8px] md:text-[10px] font-bold text-ink-muted uppercase tracking-widest">
-                      Partner
-                    </div>
+                    {receipt.poNumber && (
+                       <div className="text-[8px] md:text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1">
+                         PO: {receipt.poNumber}
+                       </div>
+                    )}
                   </td>
                   <td className="px-6 md:px-10 py-5 md:py-8">
-                    <span className="font-mono text-[9px] md:text-[10px] font-bold text-indigo-600 bg-indigo-50/50 px-2 md:px-3 py-1 md:py-1.5 rounded-xl border border-indigo-100/50 shadow-sm">
-                      {receipt.invoiceNumber}
-                    </span>
+                    <div className="flex items-center gap-2">
+                       <span className="font-mono text-[9px] md:text-[10px] font-bold text-indigo-600 bg-indigo-50/50 px-2 md:px-3 py-1 md:py-1.5 rounded-xl border border-indigo-100/50 shadow-sm">
+                         {receipt.invoiceNumber}
+                       </span>
+                       {receipt.matchStatus === "Fully Matched" && <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Matched</span>}
+                       {receipt.matchStatus === "Has Discrepancies" && <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">Discrepancy</span>}
+                       {receipt.matchStatus === "Unlinked" && <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-slate-500 bg-slate-50 px-2 py-1 rounded-lg">Unlinked</span>}
+                    </div>
                   </td>
                   <td className="px-6 md:px-10 py-5 md:py-8">
                     <div className="flex flex-wrap gap-1.5 md:gap-2 max-w-[200px] md:max-w-[300px]">
@@ -1048,13 +1041,18 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           "Unknown Partner"}
                       </div>
                       <div className="text-[8px] md:text-[10px] font-black text-indigo-500/50 uppercase tracking-widest">
-                        {entry.referenceType || "OFS"}
+                        {entry.referenceType === "GRN" ? "MATERIAL INVOICE" : (entry.referenceType || "OFS")}
                       </div>
                     </td>
                     <td className="px-6 md:px-10 py-5 md:py-8">
                       <div className="text-[11px] md:text-xs font-medium text-ink-muted tracking-tight leading-relaxed max-w-[200px] md:max-w-[300px] line-clamp-2">
                         {entry.description}
                       </div>
+                      {entry.overrideReason && (
+                        <div className="text-[8px] md:text-[9px] font-bold text-amber-600 mt-1 uppercase tracking-widest border border-amber-200/50 bg-amber-50 px-1.5 py-0.5 rounded-md inline-block">
+                          ⚠️ Override: {entry.overrideReason}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 md:px-10 py-5 md:py-8 text-right font-bold text-ink text-base md:text-lg font-mono tracking-tighter">
                       {entry.type === "CREDIT"
@@ -1159,13 +1157,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     <div className="space-y-6 md:space-y-12 pb-24 md:pb-32">
       <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 md:gap-8 bg-surface/70 backdrop-blur-xl p-4 md:p-6 rounded-[24px] md:rounded-[32px] border border-white shadow-sm">
         <div className="flex gap-2 bg-panel/50 p-1 md:p-1.5 rounded-xl md:rounded-2xl w-full md:w-fit overflow-x-auto scrollbar-hide ring-1 ring-slate-200/50">
-          {(["purchase_orders", "receipts", "ledger", "vendors"] as Tab[]).map((tab) => (
+          {(["purchase_orders", "goods_receipt", "receipts", "ledger", "vendors"] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`flex-1 md:flex-none px-4 md:px-8 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] md:tracking-[0.2em] apple-transition whitespace-nowrap ${activeTab === tab ? "bg-surface shadow-sm text-indigo-600 ring-1 ring-slate-200" : "text-ink-muted hover:text-ink/80"}`}
             >
-              {tab === "purchase_orders" ? "Purchase Orders" : tab === "receipts" ? "Receipts" : tab === "ledger" ? "Ledger" : "Vendors"}
+              {tab === "purchase_orders" ? "Purchase Orders" : tab === "goods_receipt" ? "Goods Receipt" : tab === "receipts" ? "Receipts" : tab === "ledger" ? "Ledger" : "Vendors"}
             </button>
           ))}
         </div>
@@ -1195,6 +1193,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           transition={{ duration: 0.2 }}
         >
           {activeTab === "purchase_orders" && <PurchaseOrderTab projectId={projectId} />}
+          {activeTab === "goods_receipt" && <GoodsReceiptTab projectId={projectId} />}
           {activeTab === "vendors" && renderVendors()}
           {activeTab === "receipts" && renderReceipts()}
           {activeTab === "ledger" && renderLedger()}
@@ -1506,6 +1505,59 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     }
                   />
                 </div>
+                
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
+                    Invoice (Optional)
+                  </label>
+                  <select
+                    className="w-full bg-panel p-4 rounded-xl font-bold appearance-none"
+                    value={newPayment.receiptId}
+                    onChange={(e) => {
+                       const rcptId = e.target.value;
+                       const rcpt = receipts.find(r => r.id === rcptId);
+                       setNewPayment({
+                         ...newPayment,
+                         receiptId: rcptId,
+                         amount: rcpt ? rcpt.totalAmount : newPayment.amount
+                       });
+                    }}
+                  >
+                    <option value="">No Invoice (Advance/General)</option>
+                    {receipts.filter(r => r.supplierId === newPayment.supplierId).map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.invoiceNumber} - ₹{r.totalAmount.toLocaleString("en-IN")} ({r.matchStatus || "Unlinked"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {(() => {
+                   const selectedRcpt = receipts.find(r => r.id === newPayment.receiptId);
+                   if (selectedRcpt && selectedRcpt.matchStatus === "Has Discrepancies") {
+                      return (
+                        <div className="space-y-1 bg-amber-50 p-4 rounded-xl border border-amber-200">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-amber-700 ml-1">
+                            Discrepancy Override Reason
+                          </label>
+                          <input
+                            required
+                            placeholder="Why are we paying this despite the discrepancy?"
+                            className="w-full bg-white p-3 rounded-xl font-bold border border-amber-300 placeholder:text-amber-300"
+                            value={newPayment.overrideReason}
+                            onChange={(e) =>
+                              setNewPayment({
+                                ...newPayment,
+                                overrideReason: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      );
+                   }
+                   return null;
+                })()}
+
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
                     Notes
@@ -1534,254 +1586,19 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         )}
 
         {isAddingReceipt && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-surface rounded-[24px] md:rounded-[32px] w-full max-w-4xl overflow-hidden my-auto shadow-2xl"
-            >
-              <div className="bg-emerald-700 p-6 md:p-8 text-white flex justify-between items-center">
-                <div>
-                  <h3 className="text-xl md:text-2xl font-black">
-                    {isEditingReceipt ? "Edit Receipt" : "Add Material Receipt"}
-                  </h3>
-                  <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-widest mt-1">
-                    Goods Receipt Note (GRN)
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAddingReceipt(false);
-                    setIsEditingReceipt(false);
-                    setSelectedReceipt(null);
-                  }}
-                  className="p-2 hover:bg-surface/10 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5 md:w-6 md:h-6" />
-                </button>
-              </div>
-              <form
-                onSubmit={handleAddReceipt}
-                className="p-5 md:p-8 space-y-6 md:space-y-8"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                  <div className="space-y-1.5 md:space-y-2">
-                    <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
-                      Vendor
-                    </label>
-                    <select
-                      required
-                      className="w-full bg-panel p-3.5 md:p-4 rounded-xl md:rounded-2xl text-sm font-bold appearance-none border-2 border-transparent focus:border-emerald-500 outline-none"
-                      value={newReceipt.supplierId}
-                      onChange={(e) =>
-                        setNewReceipt({
-                          ...newReceipt,
-                          supplierId: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Select Vendor</option>
-                      {vendors.map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5 md:space-y-2">
-                    <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
-                      Invoice / Ref No.
-                    </label>
-                    <input
-                      required
-                      placeholder="INV-001"
-                      className="w-full bg-panel p-3.5 md:p-4 rounded-xl md:rounded-2xl text-sm font-bold border-2 border-transparent focus:border-emerald-500 outline-none"
-                      value={newReceipt.invoiceNumber}
-                      onChange={(e) =>
-                        setNewReceipt({
-                          ...newReceipt,
-                          invoiceNumber: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1.5 md:space-y-2">
-                    <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
-                      Date
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      className="w-full bg-panel p-3.5 md:p-4 rounded-xl md:rounded-2xl text-sm font-bold border-2 border-transparent focus:border-emerald-500 outline-none"
-                      value={newReceipt.receiptDate}
-                      onChange={(e) =>
-                        setNewReceipt({
-                          ...newReceipt,
-                          receiptDate: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-ink">
-                      Items Received
-                    </h4>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setNewReceipt({
-                          ...newReceipt,
-                          items: [
-                            ...(newReceipt.items || []),
-                            {
-                              itemId: "",
-                              name: "",
-                              quantity: 0,
-                              unit: "units",
-                              unitRate: 0,
-                              totalPrice: 0,
-                            },
-                          ],
-                        })
-                      }
-                      className="text-emerald-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all"
-                    >
-                      <Plus className="w-3 h-3" /> Add Item
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {newReceipt.items?.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-panel p-4 rounded-2xl border border-divider"
-                      >
-                        <div className="col-span-1 md:col-span-4 space-y-1">
-                          <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted">
-                            Material
-                          </label>
-                          <select
-                            required
-                            className="w-full bg-surface border rounded-xl p-2.5 text-xs font-bold"
-                            value={item.itemId}
-                            onChange={(e) => {
-                              const invItem = inventory.find(
-                                (i) => i.id === e.target.value,
-                              );
-                              const items = [...newReceipt.items!];
-                              items[idx] = {
-                                ...item,
-                                itemId: e.target.value,
-                                name: invItem?.name || "",
-                                unit: invItem?.unit || "units",
-                                unitRate: invItem?.unitCost || 0,
-                              };
-                              setNewReceipt({ ...newReceipt, items });
-                            }}
-                          >
-                            <option value="">Select Material</option>
-                            {inventory.map((i) => (
-                              <option key={i.id} value={i.id}>
-                                {i.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="col-span-1 md:col-span-2 space-y-1">
-                          <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted">
-                            Quantity
-                          </label>
-                          <input
-                            type="number"
-                            required
-                            className="w-full bg-surface border rounded-xl p-2.5 text-xs font-bold"
-                            value={item.quantity || 0}
-                            onChange={(e) => {
-                              const qty = parseFloat(e.target.value) || 0;
-                              const items = [...newReceipt.items!];
-                              items[idx] = {
-                                ...item,
-                                quantity: qty,
-                                totalPrice: qty * item.unitRate,
-                              };
-                              setNewReceipt({ ...newReceipt, items });
-                            }}
-                          />
-                        </div>
-                        <div className="col-span-1 md:col-span-2 space-y-1">
-                          <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted">
-                            Unit Rate (₹)
-                          </label>
-                          <input
-                            type="number"
-                            required
-                            className="w-full bg-surface border rounded-xl p-2.5 text-xs font-bold"
-                            value={item.unitRate || 0}
-                            onChange={(e) => {
-                              const rate = parseFloat(e.target.value) || 0;
-                              const items = [...newReceipt.items!];
-                              items[idx] = {
-                                ...item,
-                                unitRate: rate,
-                                totalPrice: item.quantity * rate,
-                              };
-                              setNewReceipt({ ...newReceipt, items });
-                            }}
-                          />
-                        </div>
-                        <div className="col-span-1 md:col-span-3 space-y-1">
-                          <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted">
-                            Total Price
-                          </label>
-                          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-2.5 text-xs font-black text-emerald-700 text-right">
-                            ₹{item.totalPrice.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                          </div>
-                        </div>
-                        <div className="col-span-1 md:col-span-1 flex justify-center pb-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const items = newReceipt.items!.filter(
-                                (_, i) => i !== idx,
-                              );
-                              setNewReceipt({ ...newReceipt, items });
-                            }}
-                            className="text-red-400 hover:text-red-600 p-2"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col md:flex-row justify-between items-center border-t pt-8 gap-6">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                      Total Valuation
-                    </p>
-                    <p className="text-4xl font-black text-ink tracking-tighter">
-                      ₹
-                      {newReceipt.items
-                        ?.reduce((sum, i) => sum + i.totalPrice, 0)
-                        .toLocaleString("en-IN", { maximumFractionDigits: 0 }) || 0}
-                    </p>
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full md:w-auto bg-emerald-600 text-white px-12 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-emerald-100 hover:bg-emerald-700 transition-all"
-                  >
-                    {isEditingReceipt ? "Update Receipt" : "Save Receipt"}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
+          <MaterialReceiptForm
+            projectId={projectId}
+            vendors={vendors}
+            inventory={inventory}
+            allPOs={purchaseOrders}
+            allGRNs={grns}
+            existingReceipt={isEditingReceipt ? selectedReceipt : null}
+            onClose={() => {
+              setIsAddingReceipt(false);
+              setIsEditingReceipt(false);
+              setSelectedReceipt(null);
+            }}
+          />
         )}
       </AnimatePresence>
     </div>

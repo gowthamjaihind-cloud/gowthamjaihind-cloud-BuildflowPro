@@ -51,7 +51,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 
 import { useProjectData } from "../hooks/useProjectData";
-import { useTaskStore } from "../store";
+import { useTaskStore, useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTasksQuery } from "../hooks/queries";
 
@@ -64,7 +64,8 @@ type Tab = "rates" | "billing";
 export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
   projectId,
 }) => {
-  const strictDataEntry = true;
+  const { user } = useAuthStore();
+  const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
 
   const [activeTab, setActiveTab] = useState<Tab>("rates");
   const queryClient = useQueryClient();
@@ -168,6 +169,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     net: number,
     logIds: string[],
   ) => {
+    if (!isAdminOrOwner) return;
     if (isProcessing) return;
     setIsProcessing(true);
     const path = `projects/${projectId}/ra_bills`;
@@ -376,7 +378,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         {rate.role}
                       </h3>
 
-                      {!strictDataEntry && (
+                      {isAdminOrOwner && (
                         <div className="flex justify-start gap-2 opacity-0 group-hover:opacity-100 apple-transition transform translate-y-2 group-hover:translate-y-0">
                           <button
                             onClick={() => {
@@ -494,20 +496,22 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                   </div>
                 </div>
 
-                <button
-                  onClick={() =>
-                    handleGenerateRABill(
-                      bill.vendor,
-                      bill.grossAmount,
-                      bill.netPayable,
-                      bill.logIds,
-                    )
-                  }
-                  disabled={isProcessing}
-                  className="w-full xl:w-auto bg-slate-900 text-white px-8 md:px-10 py-4 md:py-5 rounded-xl md:rounded-2xl font-black uppercase tracking-[0.2em] text-[9px] md:text-[10px] hover:bg-slate-800 apple-transition shadow-lg shadow-slate-200 disabled:opacity-50 relative z-10 active:scale-95"
-                >
-                  {isProcessing ? "Certifying..." : "Certify RA"}
-                </button>
+                {isAdminOrOwner && (
+                  <button
+                    onClick={() =>
+                      handleGenerateRABill(
+                        bill.vendor,
+                        bill.grossAmount,
+                        bill.netPayable,
+                        bill.logIds,
+                      )
+                    }
+                    disabled={isProcessing}
+                    className="w-full xl:w-auto bg-slate-900 text-white px-8 md:px-10 py-4 md:py-5 rounded-xl md:rounded-2xl font-black uppercase tracking-[0.2em] text-[9px] md:text-[10px] hover:bg-slate-800 apple-transition shadow-lg shadow-slate-200 disabled:opacity-50 relative z-10 active:scale-95"
+                  >
+                    {isProcessing ? "Certifying..." : "Certify RA"}
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -551,7 +555,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                     <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/80 text-center">
                       Status
                     </th>
-                    {!strictDataEntry && <th className="px-6 md:px-10 py-4 md:py-6 text-right"></th>}
+                    {isAdminOrOwner && <th className="px-6 md:px-10 py-4 md:py-6 text-right"></th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -582,7 +586,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                           {bill.status}
                         </span>
                       </td>
-                      {!strictDataEntry && (
+                      {isAdminOrOwner && (
                         <td className="px-6 md:px-10 py-6 md:py-8 text-right">
                           <button
                             onClick={() => handleDeleteRABill(bill.id)}
@@ -597,7 +601,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                   {raBills.length === 0 && (
                     <tr>
                       <td
-                        colSpan={strictDataEntry ? 6 : 7}
+                        colSpan={!isAdminOrOwner ? 6 : 7}
                         className="px-6 md:px-10 py-20 md:py-32 text-center"
                       >
                         <Calculator className="w-12 h-12 md:w-16 md:h-16 text-ink-muted mx-auto mb-4" />
@@ -628,7 +632,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         .reduce((sum, b) => sum + b.netAmount, 0)
                         .toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                     </td>
-                    {!strictDataEntry && <td colSpan={2}></td>}
+                    {isAdminOrOwner && <td colSpan={2}></td>}
                   </tr>
                 </tfoot>
               </table>
@@ -637,6 +641,61 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         </div>
       </div>
     );
+  };
+
+  const handleExportCSV = () => {
+    let headers: string[] = [];
+    let rows: any[][] = [];
+
+    if (activeTab === "rates") {
+      headers = [
+        "Supplier",
+        "Role/Trade",
+        "Daily Rate",
+        "UOM",
+        "Last Updated"
+      ];
+      rows = rateCards.map(rate => [
+        `"${rate.vendorName || ""}"`,
+        `"${rate.role || ""}"`,
+        rate.dailyRate,
+        `"${rate.uom || ""}"`,
+        rate.updatedAt ? (rate.updatedAt as any).seconds ? new Date((rate.updatedAt as any).seconds * 1000).toLocaleDateString() : new Date(rate.updatedAt as any).toLocaleDateString() : ""
+      ]);
+    } else {
+      headers = [
+        "RA Bill No",
+        "Supplier",
+        "Date",
+        "Gross Amount",
+        "Deductions",
+        "Net Payable",
+        "Status"
+      ];
+      rows = raBills.map(bill => [
+        `"${bill.billNumber || ""}"`,
+        `"${bill.vendorName || ""}"`,
+        `"${bill.billDate || ""}"`,
+        bill.grossAmount,
+        bill.deductions,
+        bill.netAmount,
+        `"${bill.status || ""}"`
+      ]);
+    }
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `${projectId}_${activeTab}_export.csv`,
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -662,7 +721,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
             </span>
           </div>
           <button
-            onClick={() => {}}
+            onClick={handleExportCSV}
             className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-lg md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-800 apple-transition shadow-lg shadow-slate-200"
           >
             <Download className="w-3.5 h-3.5 md:w-4 md:h-4" /> Export

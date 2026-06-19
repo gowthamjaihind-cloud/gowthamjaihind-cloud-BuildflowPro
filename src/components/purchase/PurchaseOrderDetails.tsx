@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { motion } from "motion/react";
-import { X, CheckCircle, Download, FileText, Trash2, Loader2 } from "lucide-react";
-import { PurchaseOrder } from "../../types";
+import { motion, AnimatePresence } from "motion/react";
+import { X, CheckCircle, Download, FileText, Trash2, Loader2, PackagePlus } from "lucide-react";
+import { PurchaseOrder, GoodsReceiptNote } from "../../types";
 import { useAuthStore } from "../../store";
-import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
+import { GoodsReceiptForm } from "./GoodsReceiptForm";
+import { GoodsReceiptDetails } from "./GoodsReceiptDetails";
 
 interface PurchaseOrderDetailsProps {
   po: PurchaseOrder;
@@ -16,6 +18,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
   const user = useAuthStore(state => state.user);
   const [isApproving, setIsApproving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showGRNForm, setShowGRNForm] = useState(false);
 
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
   const canEditOrDelete = po.status === "Draft" && (isAdminOrOwner || po.createdByUid === user?.uid);
@@ -150,6 +153,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                         <tr className="bg-divider/30 text-[10px] font-bold text-ink-muted uppercase tracking-widest border-b border-divider">
                            <th className="p-4">Item</th>
                            <th className="p-4 text-right">Qty</th>
+                           <th className="p-4 text-right">Received</th>
                            <th className="p-4 text-right">Rate</th>
                            <th className="p-4 text-right">Amount</th>
                         </tr>
@@ -159,6 +163,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                            <tr key={i} className="border-b border-divider/50 last:border-none">
                               <td className="p-4">{item.name}</td>
                               <td className="p-4 text-right font-mono">{item.orderedQty} {item.unit}</td>
+                              <td className="p-4 text-right font-mono text-green-600 font-bold">{item.receivedQty || 0} {item.unit}</td>
                               <td className="p-4 text-right font-mono">₹{item.rate.toLocaleString("en-IN")}</td>
                               <td className="p-4 text-right font-mono text-ink">₹{item.amount.toLocaleString("en-IN")}</td>
                            </tr>
@@ -166,7 +171,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                      </tbody>
                      <tfoot className="bg-indigo-50 border-t border-indigo-100">
                         <tr>
-                           <td colSpan={3} className="p-4 text-right text-[11px] font-black text-indigo-400 uppercase tracking-widest">Total Amount</td>
+                           <td colSpan={4} className="p-4 text-right text-[11px] font-black text-indigo-400 uppercase tracking-widest">Total Amount</td>
                            <td className="p-4 text-right text-lg font-black font-mono text-indigo-600 tracking-tight">₹{po.totalAmount.toLocaleString("en-IN")}</td>
                         </tr>
                      </tfoot>
@@ -182,7 +187,12 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
             </div>
          </div>
 
-         <div className="p-6 border-t border-divider bg-panel flex justify-end gap-4 shrink-0">
+         <div className="p-6 border-t border-divider bg-panel flex flex-wrap justify-end gap-4 shrink-0">
+            {(po.status === "Approved" || po.status === "Partially Received") && (
+               <button onClick={() => setShowGRNForm(true)} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(5,150,105,0.2)]">
+                 <PackagePlus className="w-4 h-4" /> Record Goods Receipt
+               </button>
+            )}
             {canEditOrDelete && (
                <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer">
                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} Delete Draft
@@ -195,6 +205,16 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
             )}
          </div>
       </motion.div>
+
+      <AnimatePresence>
+         {showGRNForm && po && (
+            <GoodsReceiptForm
+               po={po}
+               projectId={projectId}
+               onClose={() => setShowGRNForm(false)}
+            />
+         )}
+      </AnimatePresence>
     </div>
   );
 };

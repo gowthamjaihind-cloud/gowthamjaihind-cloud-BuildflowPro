@@ -8,4 +8,4 @@ export * from "./notifications";
 export * from "./audit";
 export * from "./ai";
 export * from "./dailyLogs";
-export * from "./receipts";
+export * from "./goodsReceipt";

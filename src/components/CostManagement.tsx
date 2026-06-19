@@ -74,7 +74,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
   const { data: vendors = [] } = useProjectDataQuery<Vendor>(projectId, "suppliers");
   const { data: vendorLedger = [] } = useProjectDataQuery<any>(projectId, "ledger");
   const { data: laborLogs = [] } = useProjectDataQuery<DailyLaborLog>(projectId, "labor_logs");
-  const { data: materialIssues = [] } = useProjectDataQuery<MaterialIssue>(projectId, "material_issues");
+  const { data: dailyLogs = [] } = useProjectDataQuery<any>(projectId, "dailyLogs");
   const { data: clientPayments = [] } = useProjectDataQuery<any>(projectId, "client_payments");
 
   const [windowWidth, setWindowWidth] = useState(
@@ -171,15 +171,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
     description: "",
     amount: 0,
     type: "Actual",
-    category: "Material",
+    category: "Labor",
     date: new Date().toISOString().split("T")[0],
     taskId: "",
   });
-
-  const uniqueCategories = useMemo(() => {
-    const cats = entries.map((e) => e.category).filter(Boolean);
-    return Array.from(new Set([...cats, "Material", "Labor", "Equipment", "Subcontractor", "Transport", "Other"]));
-  }, [entries]);
 
   const taskTotalsMap = useMemo(() => {
     const totals: Record<string, { plannedMaterial: number, actualMaterial: number, plannedLabor: number, actualLabor: number, plannedOther: number, actualOther: number, totalPlanned: number, totalActual: number }> = {};
@@ -223,8 +218,14 @@ export const CostManagement: React.FC<CostManagementProps> = ({
         plannedOther = (task.plannedOtherCost || 0) + budgetOther;
 
         const entryMat = actualEntries.filter((e) => e.category === "Material").reduce((sum, e) => sum + e.amount, 0);
-        const issueMat = materialIssues.filter((i) => i.taskId === taskId).reduce((sum, i) => sum + i.items.reduce((s, it) => s + it.totalPrice, 0), 0);
-        actualMaterial = entryMat + issueMat;
+        const logMat = dailyLogs.filter((log: any) => log.taskId === taskId).reduce((sum: number, log: any) => {
+          return sum + (log.materials || []).reduce((s: number, m: any) => {
+            const invItem = inventory.find(i => i.id === m.materialId);
+            const unitCost = invItem ? (invItem.avgUnitCost ?? invItem.unitCost) : 0;
+            return s + (m.quantity * unitCost);
+          }, 0);
+        }, 0);
+        actualMaterial = entryMat + logMat;
 
         const entryLab = actualEntries.filter((e) => e.category === "Labor").reduce((sum, e) => sum + e.amount, 0);
         const logLab = laborLogs.filter((log) => log.items.some((item) => item.taskId === taskId)).reduce((sum, log) => sum + log.items.filter((item) => item.taskId === taskId).reduce((s, i) => s + i.cost, 0), 0);
@@ -242,7 +243,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
     tasks.forEach(t => getTotals(t.id));
     return totals;
-  }, [tasks, entries, materialIssues, laborLogs]);
+  }, [tasks, entries, dailyLogs, laborLogs, inventory]);
 
   // Helper wrapper
   const getTaskTotals = (task: Task, allTasks?: Task[], allEntries?: CostEntry[]) => {
@@ -307,7 +308,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       otherPlanned,
       otherActual,
     };
-  }, [entries, tasks, laborLogs, materialIssues]);
+  }, [entries, tasks, taskTotalsMap]);
 
   const flattenedTasks = useMemo(() => {
     const result: { id: string; name: string; level: number }[] = [];
@@ -326,6 +327,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newEntry.category?.toLowerCase() === "material") {
+      alert("Material costs are tracked automatically from daily logs — log consumption via the Daily Log screen instead");
+      return;
+    }
     const path = `projects/${projectId}/costs`;
     try {
       if (newEntry.id) {
@@ -443,7 +448,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
         description: "",
         amount: 0,
         type: "Actual",
-        category: "Material",
+        category: "Labor",
         date: new Date().toISOString().split("T")[0],
         taskId: "",
       });
@@ -844,8 +849,9 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             <td colSpan={11} className="p-2 md:p-6 border-b border-indigo-100">
               <div className="bg-surface rounded-2xl border border-indigo-100 shadow-sm overflow-hidden">
                 <div className="bg-indigo-600 px-4 py-2 flex justify-between items-center">
-                  <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest">
+                  <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
                     Labor Deployment Breakdown
+                    <span className="bg-[#FF9500]/20 text-[#FF9500] border border-[#FF9500]/50 px-1 py-0.5 rounded text-[7px]" title="Legacy source — pending labour-cost trigger">(legacy source)</span>
                   </span>
                   <button onClick={() => setShowLaborBreakdown(null)}>
                     <X className="w-3 h-3 text-white" />
@@ -911,7 +917,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
                 <div className="bg-slate-800 px-4 py-2 flex justify-between items-center">
                   <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest">
-                    Material Issue Breakdown
+                    Material Consumption (Daily Logs)
                   </span>
                   <button onClick={() => setShowMaterialBreakdown(null)}>
                     <X className="w-3 h-3 text-white" />
@@ -929,31 +935,42 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {materialIssues
-                        .filter((issue) => issue.taskId === task.id)
-                        .flatMap((issue) =>
-                          issue.items.map((item, idx) => (
+                      {dailyLogs
+                        .filter((log: any) => log.taskId === task.id && log.materials && log.materials.length > 0)
+                        .flatMap((log: any) =>
+                          log.materials.map((m: any, idx: number) => {
+                             const invItem = inventory.find(i => i.id === m.materialId);
+                             const unitCost = invItem ? (invItem.avgUnitCost ?? invItem.unitCost) : 0;
+                             const subtotal = m.quantity * unitCost;
+                             // Safely handle timestamp or string
+                             let displayDate = "";
+                             if (log.workDate) {
+                               if (typeof log.workDate === "string") displayDate = log.workDate;
+                               else if (log.workDate.seconds) displayDate = new Date(log.workDate.seconds * 1000).toISOString().split("T")[0];
+                             }
+                             return (
                             <tr
-                              key={`${issue.id}-${idx}`}
+                              key={`${log.id}-${idx}`}
                               className="border-t border-divider hover:bg-panel"
                             >
                               <td className="p-2 font-medium">
-                                {issue.issueDate}
+                                {displayDate}
                               </td>
                               <td className="p-2 font-bold text-ink/80">
-                                {item.name}
+                                {m.name}
                               </td>
                               <td className="p-2 text-right">
-                                {item.quantity}
+                                {m.quantity}
                               </td>
                               <td className="p-2 text-right">
-                                ₹{item.unitCost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                                ₹{unitCost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                               </td>
                               <td className="p-2 text-right font-black text-ink">
-                                ₹{item.totalPrice.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                                ₹{subtotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                               </td>
                             </tr>
-                          )),
+                            );
+                          }),
                         )}
                     </tbody>
                   </table>
@@ -1002,7 +1019,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 description: "",
                 amount: 0,
                 type: "Actual",
-                category: "Material",
+                category: "Labor",
                 date: new Date().toISOString().split("T")[0],
                 taskId: "",
               });
@@ -1051,6 +1068,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     <h4 className="text-[15px] font-bold text-ink flex items-center gap-2">
                       <stat.icon className="w-5 h-5 text-ink-muted" />
                       {stat.title}
+                      {stat.title === "Labor Cost" && <span className="text-[8px] md:text-[9px] text-[#FF9500] bg-[#FF9500]/10 border border-[#FF9500]/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-widest whitespace-nowrap" title="Legacy source — pending labour-cost trigger">(legacy source)</span>}
                     </h4>
                     <span
                       className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
@@ -1329,7 +1347,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       className="p-3 text-center border-l border-white/10 hidden md:table-cell"
                       colSpan={2}
                     >
-                      Labor Costs
+                      Labor Costs <span className="text-[7px] text-[#FF9500] uppercase tracking-tighter" title="Legacy source — pending labour-cost trigger">(legacy source)</span>
                     </th>
                     <th
                       className="p-3 text-center border-l border-white/10 hidden xl:table-cell"
@@ -1563,8 +1581,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </div>
             </div>
             <div className="bg-panel p-4 md:p-6 rounded-2xl border">
-              <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
-                Labor
+              <div className="text-[10px] font-bold uppercase opacity-50 mb-2 flex justify-between items-center">
+                Labor <span className="text-[7px] text-[#FF9500] normal-case bg-[#FF9500]/10 border border-[#FF9500]/20 px-1 py-0.5 rounded ml-2" title="Legacy source — pending labour-cost trigger">(legacy source)</span>
               </div>
               <div className="flex justify-between items-end">
                 <div>
@@ -1613,7 +1631,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     Material (P/A)
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
-                    Labor (P/A)
+                    Labor (P/A) <span className="text-[7px] text-[#FF9500] block normal-case" title="Legacy source — pending labour-cost trigger">(legacy source)</span>
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
                     Direct Cost (P/A)
@@ -1861,12 +1879,9 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
                         Category (Head)
                       </label>
-                      <input
-                        type="text"
+                      <select
                         required
-                        list="cost-categories-list"
-                        className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-semibold outline-none focus:ring-2 focus:ring-primary/20 apple-transition"
-                        placeholder="e.g. Material, Labor, Transport..."
+                        className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-semibold outline-none focus:ring-2 focus:ring-primary/20 apple-transition appearance-none"
                         value={newEntry.category}
                         onChange={(e) =>
                           setNewEntry({
@@ -1874,12 +1889,17 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             category: e.target.value as any,
                           })
                         }
-                      />
-                      <datalist id="cost-categories-list">
-                        {uniqueCategories.map((cat, idx) => (
-                          <option key={idx} value={cat} />
-                        ))}
-                      </datalist>
+                      >
+                        <option value="" disabled>Select category (e.g. Fuel, Equipment rental, Transport...)</option>
+                        <option value="Labor">Labor</option>
+                        <option value="Equipment">Equipment</option>
+                        <option value="Subcontractor">Subcontractor</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Other">Other</option>
+                        {newEntry.id && newEntry.category === "Material" && (
+                          <option value="Material">Material (Legacy)</option>
+                        )}
+                      </select>
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">

@@ -11,6 +11,7 @@ export interface Project {
 }
 
 export type UserRole =
+  | "Owner"
   | "Admin"
   | "Project Manager"
   | "Site Engineer"
@@ -123,6 +124,7 @@ export interface InventoryItem {
   materialId: string;
   name: string;
   category: string;
+  code?: string;
   groupCode?: string;
   quantity: number;
   consumed?: number;
@@ -188,6 +190,36 @@ export interface PurchaseOrder {
   createdAt: string;
 }
 
+export interface GoodsReceiptNote {
+  id: string;
+  grnNumber: string;
+  projectId: string;
+  poId: string;
+  poNumber: string;
+  vendorId: string;
+  vendorName: string;
+  receiptDate: string;
+  challanNumber?: string;
+  lineItems: GRNLineItem[];
+  materialIds?: string[];
+  photoUrls?: string[];
+  notes?: string;
+  createdByUid: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface GRNLineItem {
+  poLineRef: string;
+  materialId: string;
+  name: string;
+  orderedQty: number;
+  receivedQty: number;
+  acceptedQty: number;
+  rejectedQty: number;
+  unit: string;
+}
+
 export interface ReceiptLineItem {
   itemId: string;
   materialId: string;
@@ -195,6 +227,7 @@ export interface ReceiptLineItem {
   quantity: number;
   unitRate: number;
   totalPrice: number;
+  poLineRef?: string;
 }
 
 export interface MaterialReceipt {
@@ -208,6 +241,11 @@ export interface MaterialReceipt {
   notes?: string;
   items: ReceiptLineItem[];
   ledgerId?: string;
+  poId?: string;
+  poNumber?: string;
+  grnIds?: string[];
+  grnNumbers?: string[];
+  matchStatus?: "Fully Matched" | "Has Discrepancies" | "Unlinked";
 }
 
 export interface LaborLogLineItem {
@@ -248,6 +286,8 @@ export interface VendorLedgerEntry {
     | "LABOR_REVERSAL";
   referenceId?: string;
   description: string;
+  overriddenBy?: string;
+  overrideReason?: string;
 }
 
 export interface SupplierLedgerEntry extends VendorLedgerEntry {}
