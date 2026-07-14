@@ -1,5 +1,6 @@
 {
   "name": "BuildFlow Pro",
   "description": "Enterprise-grade construction management platform with advanced WBS hierarchy, CPM scheduling, inventory lifecycle, procurement ledger, and labor tracking.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

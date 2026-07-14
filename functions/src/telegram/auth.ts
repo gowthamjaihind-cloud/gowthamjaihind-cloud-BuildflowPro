@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import { getSession, setSession, BotSession } from "./session";
+import { BotSession } from "./session";
 
 const db = admin.firestore();
 

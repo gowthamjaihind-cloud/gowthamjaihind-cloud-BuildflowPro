@@ -1,14 +1,11 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
-import * as admin from "firebase-admin";
 import { TelegramApi } from "./api";
-import { getSession, setSession, clearSession, clearStep } from "./session";
+import { getSession, setSession, clearStep } from "./session";
 import { checkRateLimit, redeemLinkCode, validateSession } from "./auth";
 
 const BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = defineSecret("TELEGRAM_WEBHOOK_SECRET");
-
-const db = admin.firestore();
 
 export const telegramWebhook = onRequest(
   {
