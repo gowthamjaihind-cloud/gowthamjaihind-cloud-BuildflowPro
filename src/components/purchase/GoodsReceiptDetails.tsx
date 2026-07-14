@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { X, Trash2, Loader2, Image as ImageIcon } from "lucide-react";
-import { GoodsReceiptNote } from "../../types";
+import { GoodsReceiptNote, PurchaseOrder } from "../../types";
 import { useAuthStore } from "../../store";
-import { doc, deleteDoc } from "firebase/firestore";
+import { doc, deleteDoc, runTransaction, addDoc, collection } from "firebase/firestore";
 import { db } from "../../firebase";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface GoodsReceiptDetailsProps {
   grn: GoodsReceiptNote;
@@ -14,11 +15,11 @@ interface GoodsReceiptDetailsProps {
 
 export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, projectId, onClose }) => {
   const user = useAuthStore(state => state.user);
+  const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner" || user?.role === "Project Manager";
-  const isCreatorSameDay = user?.uid === grn.createdByUid && new Date().toISOString().split("T")[0] === grn.createdAt.split("T")[0];
-  const canEditOrDelete = isAdminOrOwner || isCreatorSameDay;
+  const canEditOrDelete = isAdminOrOwner || user?.uid === grn.createdByUid;
 
   const tenantPath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
   const grnRef = doc(db, `${tenantPath}/goodsReceiptNotes`, grn.id);
@@ -28,11 +29,97 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
     if (!confirm("Are you sure you want to delete this GRN? This will revert the received quantities on the PO and Inventory.")) return;
     setIsDeleting(true);
     try {
-      await deleteDoc(grnRef);
+      await runTransaction(db, async (transaction) => {
+        const materialIds = Array.from(new Set((grn.lineItems || []).map(i => i.poLineRef).filter(Boolean))) as string[];
+        const inventoryItemDocs: { [id: string]: any } = {};
+        for (const matId of materialIds) {
+          const itemRef = doc(db, `${tenantPath}/inventory`, matId);
+          inventoryItemDocs[matId] = await transaction.get(itemRef);
+        }
+
+        let poData: any = null;
+        let vendorDoc: any = null;
+
+        if (grn.poId) {
+          const poRef = doc(db, `${tenantPath}/purchase_orders`, grn.poId);
+          const poDoc = await transaction.get(poRef);
+          
+          if (poDoc.exists()) {
+             poData = poDoc.data() as PurchaseOrder;
+             const vendorRef = doc(db, `${tenantPath}/suppliers`, poData.vendorId);
+             vendorDoc = await transaction.get(vendorRef);
+             const updatedLineItems = (poData.lineItems || []).map(item => {
+                const grnItem = (grn.lineItems || []).find(i => i.poLineRef === item.itemId);
+                if (grnItem) {
+                   return { ...item, receivedQty: Math.max(0, (item.receivedQty || 0) - (grnItem.acceptedQty || 0)) };
+                }
+                return item;
+             });
+             
+             const isFullyReceived = updatedLineItems.every(i => (i.receivedQty || 0) >= i.orderedQty);
+             
+             transaction.update(poRef, { 
+               lineItems: updatedLineItems,
+               status: isFullyReceived ? "Completed" : "Approved"
+             });
+          }
+        }
+        
+        // Reverse Vendor Balance if applicable
+        if (poData && vendorDoc && vendorDoc.exists()) {
+            let totalAmount = 0;
+            (grn.lineItems || []).forEach(grnItem => {
+                const poItem = poData.lineItems?.find((i: any) => i.itemId === grnItem.poLineRef);
+                if (poItem) {
+                    totalAmount += grnItem.acceptedQty * poItem.rate;
+                }
+            });
+            transaction.update(vendorDoc.ref, {
+                outstandingBalance: Math.max(0, (vendorDoc.data().outstandingBalance || 0) - totalAmount)
+            });
+        }
+
+        // Delete Ledger and Cost Entries
+        if (grn.ledgerId) {
+            const ledgerRef = doc(db, `${tenantPath}/ledger`, grn.ledgerId);
+            transaction.delete(ledgerRef);
+        }
+        if (grn.costEntryId) {
+            const costRef = doc(db, `${tenantPath}/costs`, grn.costEntryId);
+            transaction.delete(costRef);
+        }
+
+        for (const matId of materialIds) {
+          const snap = inventoryItemDocs[matId];
+          if (snap && snap.exists()) {
+             const data = snap.data();
+             const totalAcceptedForThisMaterial = (grn.lineItems || []).filter(i => i.poLineRef === matId).reduce((acc, curr) => acc + curr.acceptedQty, 0);
+             transaction.update(snap.ref, {
+               quantity: Math.max(0, (data.quantity || 0) - totalAcceptedForThisMaterial)
+             });
+          }
+        }
+
+        transaction.delete(grnRef);
+      });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'goodsReceiptNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'purchase_orders'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'ledger'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'costs'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'suppliers'] });
       onClose();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Failed to delete GRN");
+      try {
+        await addDoc(collection(db, "errorLogs"), {
+          message: e.message || "No message",
+          stack: e.stack || "No stack",
+          timestamp: new Date().toISOString(),
+          context: "delete GRN"
+        });
+      } catch(logErr) {}
+      alert(e.message || JSON.stringify(e) || "Failed to delete GRN");
     } finally {
       setIsDeleting(false);
     }
@@ -127,7 +214,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
 
          {canEditOrDelete && (
             <div className="p-6 border-t border-divider bg-panel flex justify-end gap-4 shrink-0">
-               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer">
+               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} Delete GRN
                </button>
             </div>

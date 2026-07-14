@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { query, onSnapshot, doc, setDoc } from "firebase/firestore";
 import { collection, db } from "../firebase";
 import { useAuthStore } from "../store";
+import { getProjectSubCollectionPath } from "../utils/projectPath";
 
 export type TaskStatus = 'scheduled' | 'in_progress' | 'blocked' | 'done';
 
@@ -44,7 +45,7 @@ export function useScheduleData(projectId: string) {
       return;
     }
 
-    const tenantPath = user.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}/tasks` : `projects/${projectId}/tasks`;
+    const tenantPath = getProjectSubCollectionPath(projectId, "tasks");
     const tasksQuery = query(collection(db, tenantPath));
 
     const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {

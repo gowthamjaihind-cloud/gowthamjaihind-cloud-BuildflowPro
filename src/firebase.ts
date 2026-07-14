@@ -34,7 +34,8 @@ export const db = initializeFirestore(
   app,
   {
     ignoreUndefinedProperties: true,
-    localCache: persistentLocalCache(),
+    localCache: memoryLocalCache(),
+    experimentalForceLongPolling: true,
   },
   firebaseConfig.firestoreDatabaseId,
 );

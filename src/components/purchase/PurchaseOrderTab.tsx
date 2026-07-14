@@ -40,13 +40,13 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                placeholder="Search POs..."
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
-               className="w-full pl-9 pr-4 py-2 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+               className="w-full pl-9 pr-4 py-2 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#A3711C] focus:ring-1 focus:ring-[#A3711C] transition-colors"
              />
            </div>
            <select
              value={statusFilter}
              onChange={(e) => setStatusFilter(e.target.value)}
-             className="px-4 py-2 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-indigo-500 transition-colors appearance-none pr-8 cursor-pointer relative"
+             className="px-4 py-2 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#A3711C] transition-colors appearance-none pr-8 cursor-pointer relative"
            >
              <option value="All">All Statuses</option>
              <option value="Draft">Draft</option>
@@ -58,7 +58,7 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
         
         <button
           onClick={() => setIsFormOpen(true)}
-          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#A3711C] hover:bg-[#8a5d16] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition"
         >
           <Plus className="w-4 h-4" /> New PO
         </button>
@@ -88,10 +88,10 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                     <tr 
                       key={po.id} 
                       onClick={() => setSelectedPO(po)}
-                      className="border-b border-divider/50 hover:bg-indigo-50/30 transition cursor-pointer group"
+                      className="border-b border-divider/50 hover:bg-[#F3E8D2]/30 transition cursor-pointer group"
                     >
                       <td className="p-4 align-middle">
-                        <div className="font-mono text-xs font-bold text-ink group-hover:text-indigo-600 transition-colors">
+                        <div className="font-mono text-xs font-bold text-ink group-hover:text-[#A3711C] transition-colors">
                           {po.poNumber}
                         </div>
                       </td>
@@ -105,9 +105,9 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                         ₹{po.totalAmount.toLocaleString("en-IN")}
                       </td>
                       <td className="p-4 align-middle">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest ${
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                           po.status === 'Draft' ? 'bg-gray-100 text-gray-600' :
-                          po.status === 'Approved' ? 'bg-blue-50 text-blue-600' :
+                          po.status === 'Approved' ? 'bg-[#E3E8F0] text-[#4A6FA5]' :
                           po.status === 'Partially Received' ? 'bg-yellow-50 text-yellow-600' :
                           'bg-green-50 text-green-600'
                         }`}>

@@ -1,3 +1,4 @@
+import { useAuthStore } from "./authStore";
 import { create } from "zustand";
 import {
   db,
@@ -20,6 +21,7 @@ import {
   MaterialIssue,
   ProjectDocument,
 } from "../types";
+import { getProjectSubCollectionPath } from "../utils/projectPath";
 
 interface CacheKey {
   projectId: string;
@@ -106,7 +108,7 @@ export const useProjectDataStore = create<ProjectDataState>((set, get) => ({
     set((state) => ({ loading: { ...state.loading, [key]: true } }));
 
     try {
-      const path = `projects/${projectId}/${type}`;
+      const path = getProjectSubCollectionPath(projectId, type);
       let q = query(collection(db, path));
       if (orderByField) {
         q = query(collection(db, path), orderBy(orderByField, orderDirection));
@@ -123,10 +125,11 @@ export const useProjectDataStore = create<ProjectDataState>((set, get) => ({
       return data;
     } catch (error) {
       set((state) => ({ loading: { ...state.loading, [key]: false } }));
+      const path = getProjectSubCollectionPath(projectId, type);
       handleFirestoreError(
         error,
         OperationType.LIST,
-        `projects/${projectId}/${type}`,
+        path,
       );
       return [];
     }

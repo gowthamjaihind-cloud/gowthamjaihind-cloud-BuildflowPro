@@ -13,6 +13,15 @@ import {
 } from "../firebase";
 import { ProjectDocument, Task } from "../types";
 import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
+import { compressImage } from "../utils/imageCompressor";
+import { useAuthStore } from "../store";
+import {
   FileText,
   Upload,
   Search,
@@ -36,6 +45,11 @@ interface DocumentVaultProps {
 }
 
 export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
+
+  const user = useAuthStore((state) => state.user);
+  const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
+  const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
+
   const [docs, setDocs] = useState<ProjectDocument[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,6 +59,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
   const [viewMode, setViewMode] = useState<"List" | "Gallery">("List");
   const [filterTaskId, setFilterTaskId] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [newDoc, setNewDoc] = useState<Partial<ProjectDocument>>({
     name: "",
     type: "PDF",
@@ -72,7 +87,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
   ];
 
   useEffect(() => {
-    const path = `projects/${projectId}/documents`;
+    const path = `${basePath}/documents`;
     const q = query(collection(db, path));
     const unsubDocs = onSnapshot(
       q,
@@ -88,7 +103,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
       },
     );
 
-    const tasksPath = `projects/${projectId}/tasks`;
+    const tasksPath = `${basePath}/tasks`;
     const unsubTasks = onSnapshot(
       query(collection(db, tasksPath)),
       (snapshot) => {
@@ -135,26 +150,42 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth.currentUser) return;
-    const path = `projects/${projectId}/documents`;
+    const path = `${basePath}/documents`;
+
+    setIsUploadingFile(true);
 
     try {
       let finalUrl = newDoc.url;
+      let storagePath = "";
 
-      // In a real app, you would upload the selectedFile to Firebase Storage here
-      // and get the download URL. For simulation, we create a temporary local URL if a file was chosen.
       if (selectedFile) {
-        finalUrl = URL.createObjectURL(selectedFile);
+        const sRef = storageRef(
+          getStorage(),
+          `${basePath}/documents/${Date.now()}_${selectedFile.name}`,
+        );
+        storagePath = sRef.fullPath;
+        if (newDoc.type === "Image") {
+          const compressed = await compressImage(selectedFile);
+          await uploadBytes(sRef, compressed);
+        } else {
+          await uploadBytes(sRef, selectedFile);
+        }
+        finalUrl = await getDownloadURL(sRef);
+      }
+
+      if (!finalUrl) {
+        throw new Error("No file selected or external URL provided.");
       }
 
       await addDoc(collection(db, path), {
         ...newDoc,
-        url:
-          finalUrl ||
-          "https://storage.googleapis.com/simulated-storage/file-not-found",
+        url: finalUrl,
+        storagePath,
         projectId,
         uploadedBy: auth.currentUser.uid,
         uploadedAt: new Date().toISOString(),
       });
+      setIsUploadingFile(false);
       setIsUploading(false);
       setSelectedFile(null);
       setTagInput("");
@@ -168,12 +199,15 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
         tags: [],
       });
     } catch (error) {
+      setIsUploadingFile(false);
+      console.error("Upload failed", error);
+      alert("Failed to upload document. Please try again.");
       handleFirestoreError(error, OperationType.CREATE, path);
     }
   };
 
   const handleUpdateTaskLink = async (docId: string, taskId: string) => {
-    const path = `projects/${projectId}/documents/${docId}`;
+    const path = `${basePath}/documents/${docId}`;
     try {
       await updateDoc(doc(db, path), { taskId });
     } catch (error) {
@@ -182,6 +216,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
   };
 
   const filteredDocs = docs.filter((d) => {
+    if (d.deleted === true) return false;
     const matchesSearch =
       d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       d.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -208,6 +243,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
   };
 
   const handleBulkDelete = async () => {
+    if (!isAdminOrOwner) return;
     if (
       !window.confirm(
         `Are you sure you want to delete ${selectedDocIds.length} documents?`,
@@ -217,9 +253,22 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
     setIsBulkUpdating(true);
     try {
       for (const id of selectedDocIds) {
-        const path = `projects/${projectId}/documents/${id}`;
-        // In a real app, delete from storage first if needed
-        await updateDoc(doc(db, path), { deleted: true }); // Simulated soft delete or just use actual delete if config allows
+        const docToDelete = docs.find((d) => d.id === id);
+        if (docToDelete?.storagePath) {
+          try {
+            await deleteObject(
+              storageRef(getStorage(), docToDelete.storagePath),
+            );
+          } catch (storageError) {
+            console.error(
+              `Failed to delete storage object ${docToDelete.storagePath}`,
+              storageError,
+            );
+            // Non-fatal if object already gone
+          }
+        }
+        const path = `${basePath}/documents/${id}`;
+        await updateDoc(doc(db, path), { deleted: true });
       }
       setSelectedDocIds([]);
     } catch (error) {
@@ -232,10 +281,11 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
   const handleBulkUpdateAccess = async (
     level: "Public" | "Internal" | "Confidential",
   ) => {
+    if (!isAdminOrOwner) return;
     setIsBulkUpdating(true);
     try {
       for (const id of selectedDocIds) {
-        const path = `projects/${projectId}/documents/${id}`;
+        const path = `${basePath}/documents/${id}`;
         await updateDoc(doc(db, path), { accessLevel: level });
       }
       setSelectedDocIds([]);
@@ -255,9 +305,9 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-surface/50 backdrop-blur-xl p-5 md:p-6 rounded-[32px] border border-white shadow-sm gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-surface/50 backdrop-blur-xl p-5 md:p-6 rounded-2xl border border-white shadow-sm gap-6">
         <h2 className="text-xl md:text-2xl font-black flex items-center gap-3 md:gap-4 text-ink tracking-tight">
-          <div className="p-2.5 md:p-3 bg-primary text-white rounded-2xl shadow-lg shadow-indigo-100">
+          <div className="p-2.5 md:p-3 bg-primary text-white rounded-2xl shadow-lg shadow-[#F3E8D2]">
             <FileText className="w-5 h-5 md:w-6 md:h-6" />
           </div>
           Digital Project Vault
@@ -279,7 +329,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
           </div>
           <button
             onClick={() => setIsUploading(true)}
-            className="flex-1 md:flex-none bg-primary text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] md:text-[10px] flex items-center justify-center gap-2 hover:bg-primary/80 apple-transition shadow-xl shadow-[#007AFF]/20"
+            className="flex-1 md:flex-none bg-primary text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] md:text-[10px] flex items-center justify-center gap-2 hover:bg-primary/80 apple-transition shadow-xl shadow-primary/20"
           >
             <Upload className="w-4 h-4" /> Upload
           </button>
@@ -289,7 +339,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
       {selectedDocIds.length > 0 && (
         <div className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] md:bottom-10 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white rounded-3xl p-4 md:p-6 shadow-2xl flex flex-col md:flex-row items-center gap-6 animate-in slide-in-from-bottom-10 w-[90%] md:w-auto">
           <div className="flex items-center gap-4">
-            <div className="bg-indigo-500 text-white w-10 h-10 rounded-2xl flex items-center justify-center font-black">
+            <div className="bg-[#F3E8D2]0 text-white w-10 h-10 rounded-2xl flex items-center justify-center font-black">
               {selectedDocIds.length}
             </div>
             <div>
@@ -311,24 +361,34 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
             >
               <Download size={14} /> Download Set
             </button>
-            <div className="relative group">
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors">
-                <ShieldCheck size={14} /> Access Level
-              </button>
-              <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-slate-800 rounded-2xl p-2 border border-slate-700 shadow-2xl min-w-[160px]">
-                {(["Public", "Internal", "Confidential"] as const).map(
-                  (level) => (
-                    <button
-                      key={level}
-                      onClick={() => handleBulkUpdateAccess(level)}
-                      className="w-full text-left px-4 py-2 hover:bg-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest text-ink-muted hover:text-white transition-colors"
-                    >
-                      Set to {level}
-                    </button>
-                  ),
-                )}
-              </div>
-            </div>
+            {isAdminOrOwner && (
+              <>
+                <button
+                  onClick={handleBulkDelete}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-red-900/40 hover:bg-red-900/60 text-red-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors"
+                >
+                  <Trash2 size={14} /> Delete
+                </button>
+                <div className="relative group">
+                  <button className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors">
+                    <ShieldCheck size={14} /> Access Level
+                  </button>
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-slate-800 rounded-2xl p-2 border border-slate-700 shadow-2xl min-w-[160px]">
+                    {(["Public", "Internal", "Confidential"] as const).map(
+                      (level) => (
+                        <button
+                          key={level}
+                          onClick={() => handleBulkUpdateAccess(level)}
+                          className="w-full text-left px-4 py-2 hover:bg-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest text-ink-muted hover:text-white transition-colors"
+                        >
+                          Set to {level}
+                        </button>
+                      ),
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
             <button
               onClick={() => setSelectedDocIds([])}
               className="px-6 py-2.5 text-ink-muted hover:text-white transition-colors text-[9px] font-black uppercase tracking-widest"
@@ -385,7 +445,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <form
             onSubmit={handleUpload}
-            className="bg-surface w-full max-w-2xl p-6 md:p-8 rounded-[40px] border shadow-2xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 relative my-auto max-h-[95vh] overflow-y-auto custom-scrollbar"
+            className="bg-surface w-full max-w-2xl p-5 md:p-6 rounded-2xl border shadow-2xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 relative my-auto max-h-[95vh] overflow-y-auto custom-scrollbar"
           >
             <button
               type="button"
@@ -416,14 +476,14 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               />
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-4 border-dashed rounded-[32px] p-8 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 ${
+                className={`border-4 border-dashed rounded-2xl p-5 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 ${
                   selectedFile
                     ? "border-emerald-200 bg-emerald-50/30"
-                    : "border-divider hover:border-indigo-100 hover:bg-panel"
+                    : "border-divider hover:border-[#F3E8D2] hover:bg-panel"
                 }`}
               >
                 <div
-                  className={`p-4 rounded-3xl ${selectedFile ? "bg-emerald-100 text-emerald-600" : "bg-indigo-50 text-indigo-500"}`}
+                  className={`p-4 rounded-3xl ${selectedFile ? "bg-emerald-100 text-emerald-600" : "bg-[#F3E8D2] text-[#F3E8D2]0"}`}
                 >
                   {selectedFile ? (
                     <File className="w-8 h-8" />
@@ -436,7 +496,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                     <p className="font-black text-ink">{selectedFile.name}</p>
                     <p className="text-[10px] text-ink-muted uppercase tracking-widest font-bold">
                       {(selectedFile.size / 1024 / 1024).toFixed(2)} MB • Ready
-                      for simulated upload
+                      to upload
                     </p>
                   </div>
                 ) : (
@@ -457,7 +517,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 Category & Organisation
               </label>
               <select
-                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-ink"
+                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-bold text-ink"
                 value={newDoc.category}
                 onChange={(e) =>
                   setNewDoc({ ...newDoc, category: e.target.value })
@@ -481,7 +541,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               </label>
               <input
                 required
-                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-ink/80"
+                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-bold text-ink/80"
                 value={newDoc.name}
                 placeholder="Financial Audit 2024"
                 onChange={(e) => setNewDoc({ ...newDoc, name: e.target.value })}
@@ -493,7 +553,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 Related WBS Task
               </label>
               <select
-                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-ink"
+                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-bold text-ink"
                 value={newDoc.taskId}
                 onChange={(e) =>
                   setNewDoc({ ...newDoc, taskId: e.target.value })
@@ -513,7 +573,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 Document Type
               </label>
               <select
-                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-ink"
+                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-bold text-ink"
                 value={newDoc.type}
                 onChange={(e) => setNewDoc({ ...newDoc, type: e.target.value })}
               >
@@ -529,7 +589,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 Access Level
               </label>
               <select
-                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-ink"
+                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-bold text-ink"
                 value={newDoc.accessLevel}
                 onChange={(e) =>
                   setNewDoc({ ...newDoc, accessLevel: e.target.value as any })
@@ -548,7 +608,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 <div className="relative">
                   <Paperclip className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                   <input
-                    className="w-full pl-11 pr-4 py-3 border-2 border-divider rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-xs text-ink-muted"
+                    className="w-full pl-11 pr-4 py-3 border-2 border-divider rounded-2xl focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-mono text-xs text-ink-muted"
                     placeholder="https://storage.google.com/..."
                     value={newDoc.url}
                     onChange={(e) =>
@@ -563,7 +623,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 Search Tags (Comma separated)
               </label>
               <input
-                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-ink"
+                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-bold text-ink"
                 value={tagInput}
                 placeholder="Team, Lunch, Safety, VIP Visit"
                 onChange={(e) => {
@@ -586,38 +646,45 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   setIsUploading(false);
                   setSelectedFile(null);
                 }}
-                className="px-8 py-4 rounded-2xl text-ink-muted hover:bg-panel transition-colors"
+                disabled={isUploadingFile}
+                className="px-8 py-4 rounded-2xl text-ink-muted hover:bg-panel transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="bg-indigo-600 text-white px-12 py-4 rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all flex items-center gap-2"
+                disabled={isUploadingFile}
+                className="bg-[#A3711C] text-white px-12 py-4 rounded-2xl hover:bg-[#8a5d16] shadow-xl shadow-[#F3E8D2] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Upload className="w-4 h-4" /> Start Upload
+                {isUploadingFile ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Uploading...
+                  </span>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" /> Start Upload
+                  </>
+                )}
               </button>
             </div>
-            <p className="md:col-span-2 text-[9px] text-ink-muted text-center uppercase tracking-widest">
-              Note: This is a simulated upload. In production, files are saved
-              to Firebase Storage.
-            </p>
           </form>
         </div>
       )}
 
       {viewMode === "List" ? (
-        <div className="bg-surface rounded-[32px] border shadow-sm border-divider overflow-x-auto scroller-hide">
+        <div className="bg-surface rounded-2xl border shadow-sm border-divider overflow-x-auto scroller-hide">
           <table className="w-full text-left min-w-[900px]">
             <thead>
               <tr className="bg-panel border-b">
                 <th className="px-8 py-5 w-12">
                   <button
                     onClick={toggleSelectAll}
-                    className="text-ink-muted hover:text-indigo-600 transition-colors"
+                    className="text-ink-muted hover:text-[#A3711C] transition-colors"
                   >
                     {selectedDocIds.length === filteredDocs.length &&
                     filteredDocs.length > 0 ? (
-                      <CheckSquare className="w-5 h-5 text-indigo-600" />
+                      <CheckSquare className="w-5 h-5 text-[#A3711C]" />
                     ) : (
                       <Square className="w-5 h-5" />
                     )}
@@ -650,12 +717,12 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 return (
                   <tr
                     key={docItem.id}
-                    className={`hover:bg-panel transition-colors group ${isSelected ? "bg-indigo-50/50" : ""}`}
+                    className={`hover:bg-panel transition-colors group ${isSelected ? "bg-[#F3E8D2]/50" : ""}`}
                   >
                     <td className="px-8 py-6">
                       <button
                         onClick={() => toggleSelect(docItem.id)}
-                        className={`transition-colors ${isSelected ? "text-indigo-600" : "text-ink-muted group-hover:text-ink-muted"}`}
+                        className={`transition-colors ${isSelected ? "text-[#A3711C]" : "text-ink-muted group-hover:text-ink-muted"}`}
                       >
                         {isSelected ? (
                           <CheckSquare className="w-5 h-5" />
@@ -666,7 +733,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
-                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl group-hover:bg-indigo-100 transition-colors">
+                        <div className="p-3 bg-[#F3E8D2] text-[#A3711C] rounded-2xl group-hover:bg-[#F3E8D2] transition-colors">
                           <FileText className="w-5 h-5" />
                         </div>
                         <div>
@@ -682,10 +749,10 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-2">
                         <LinkIcon
-                          className={`w-3.5 h-3.5 ${task ? "text-indigo-500" : "text-ink-muted"}`}
+                          className={`w-3.5 h-3.5 ${task ? "text-[#F3E8D2]0" : "text-ink-muted"}`}
                         />
                         <select
-                          className="bg-transparent border-none text-xs font-bold text-ink focus:ring-0 cursor-pointer hover:text-indigo-600"
+                          className="bg-transparent border-none text-xs font-bold text-ink focus:ring-0 cursor-pointer hover:text-[#A3711C]"
                           value={docItem.taskId || ""}
                           onChange={(e) =>
                             handleUpdateTaskLink(docItem.id, e.target.value)
@@ -731,7 +798,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         href={docItem.url || "#"}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all"
+                        className="inline-flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#A3711C] transition-all"
                       >
                         View File <ExternalLink className="w-3 h-3" />
                       </a>
@@ -760,10 +827,10 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               return (
                 <div
                   key={photo.id}
-                  className={`group relative aspect-square rounded-[32px] overflow-hidden border transition-all cursor-pointer ${
+                  className={`group relative aspect-square rounded-2xl overflow-hidden border transition-all cursor-pointer ${
                     isSelected
-                      ? "border-indigo-500 shadow-xl ring-4 ring-indigo-500/10"
-                      : "border-divider bg-panel shadow-sm hover:shadow-xl hover:shadow-indigo-100"
+                      ? "border-[#F3E8D2]0 shadow-xl ring-4 ring-[#A3711C]/10"
+                      : "border-divider bg-panel shadow-sm hover:shadow-xl hover:shadow-[#F3E8D2]"
                   }`}
                   onClick={(e) => {
                     if (e.metaKey || e.ctrlKey) {
@@ -780,7 +847,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   />
 
                   <div
-                    className={`absolute top-4 left-4 z-20 transition-all ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                    className={`absolute top-4 left-4 z-20 transition-all ${isSelected ? "opacity-100" : "opacity-100"}`}
                   >
                     <button
                       onClick={(e) => {
@@ -789,8 +856,8 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                       }}
                       className={`p-2 rounded-xl backdrop-blur-md shadow-lg transition-all ${
                         isSelected
-                          ? "bg-indigo-600 text-white"
-                          : "bg-surface/90 text-ink-muted hover:text-indigo-600"
+                          ? "bg-[#A3711C] text-white"
+                          : "bg-surface/90 text-ink-muted hover:text-[#A3711C]"
                       }`}
                     >
                       {isSelected ? (
@@ -801,7 +868,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                     </button>
                   </div>
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-6 flex flex-col justify-end">
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent transition-opacity p-6 flex flex-col justify-end">
                     <p className="text-white font-black text-[10px] uppercase tracking-widest mb-1 truncate">
                       {photo.name}
                     </p>
@@ -814,7 +881,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         {photo.tags.map((tag, i) => (
                           <span
                             key={i}
-                            className="text-[7px] px-1.5 py-0.5 bg-indigo-500 text-white rounded font-bold uppercase tracking-tighter"
+                            className="text-[7px] px-1.5 py-0.5 bg-[#F3E8D2]0 text-white rounded font-bold uppercase tracking-tighter"
                           >
                             #{tag}
                           </span>
@@ -822,14 +889,14 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                       </div>
                     )}
                   </div>
-                  <div className="absolute top-4 right-4 bg-surface/90 backdrop-blur p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-4 right-4 bg-surface/90 backdrop-blur p-2 rounded-xl transition-opacity">
                     <ExternalLink size={14} className="text-ink" />
                   </div>
                 </div>
               );
             })}
           {filteredDocs.filter((d) => d.type === "Image").length === 0 && (
-            <div className="col-span-full py-32 flex flex-col items-center justify-center bg-panel/50 rounded-[40px] border-2 border-dashed border-divider">
+            <div className="col-span-full py-32 flex flex-col items-center justify-center bg-panel/50 rounded-2xl border-2 border-dashed border-divider">
               <Camera size={48} className="text-ink-muted mb-4" />
               <p className="text-[10px] font-black text-ink-muted uppercase tracking-widest">
                 No site photos found in the vault

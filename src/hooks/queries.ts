@@ -4,6 +4,7 @@ import { db, collection, query, orderBy, getDocs, handleFirestoreError, Operatio
 import { useEffect } from "react";
 import { Project, Task } from "../types";
 import { useAuthStore } from "../store";
+import { getProjectBasePath, getProjectSubCollectionPath } from "../utils/projectPath";
 
 export function useProjectDataQuery<T>(
   projectId: string,
@@ -12,10 +13,7 @@ export function useProjectDataQuery<T>(
   orderDirection: "asc" | "desc" = "desc"
 ) {
   const user = useAuthStore((state) => state.user);
-  
-  // Use organization boundary if set, otherwise fallback for local dev compatibility
-  const tenantPath = user?.currentOrgId ? `organizations/${user.currentOrgId}` : "";
-  const basePath = tenantPath ? `${tenantPath}/projects/${projectId}` : `projects/${projectId}`;
+  const basePath = getProjectBasePath(projectId);
 
   return useQuery({
     queryKey: ['projectData', projectId, type, orderByField, orderDirection],
@@ -46,9 +44,49 @@ export function useProjectsQuery() {
     queryKey: queryKeys.projects,
     queryFn: async () => {
       if (!user) return [];
-      const tenantPath = user.currentOrgId ? `organizations/${user.currentOrgId}/projects` : "projects";
-      const snapshot = await getDocs(query(collection(db, tenantPath)));
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Project);
+      
+      const projectsList: Project[] = [];
+      const seenIds = new Set<string>();
+
+      // 1. Always fetch from root projects collection
+      try {
+        const rootSnapshot = await getDocs(query(collection(db, "projects")));
+        rootSnapshot.docs.forEach(doc => {
+          if (!seenIds.has(doc.id)) {
+            seenIds.add(doc.id);
+            projectsList.push({ id: doc.id, ...doc.data() } as Project);
+          }
+        });
+      } catch (err) {
+        console.error("Failed to fetch root projects:", err);
+      }
+
+      // 2. Fetch from tenant projects if orgId is set
+      if (user.currentOrgId) {
+        try {
+          const tenantPath = `organizations/${user.currentOrgId}/projects`;
+          const tenantSnapshot = await getDocs(query(collection(db, tenantPath)));
+          tenantSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const projectObj = { id: doc.id, orgId: user.currentOrgId, ...data } as any as Project;
+            
+            if (!seenIds.has(doc.id)) {
+              seenIds.add(doc.id);
+              projectsList.push(projectObj);
+            } else {
+              // If already added from root but this is tenant-scoped, prefer the tenant-scoped details
+              const idx = projectsList.findIndex(p => p.id === doc.id);
+              if (idx !== -1) {
+                projectsList[idx] = projectObj;
+              }
+            }
+          });
+        } catch (err) {
+          console.error(`Failed to fetch tenant projects for ${user.currentOrgId}:`, err);
+        }
+      }
+
+      return projectsList;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
@@ -62,9 +100,28 @@ export function useProjectQuery(projectId: string) {
     queryKey: queryKeys.project(projectId),
     queryFn: async () => {
       if (!user || !projectId) return null;
-      const tenantPath = user.currentOrgId ? `organizations/${user.currentOrgId}/projects` : "projects";
-      const snapshot = await getDoc(doc(db, tenantPath, projectId));
-      return { id: snapshot.id, ...snapshot.data() } as Project;
+      
+      // Try tenant path first if user has currentOrgId
+      if (user.currentOrgId) {
+        try {
+          const tenantPath = `organizations/${user.currentOrgId}/projects`;
+          const snapshot = await getDoc(doc(db, tenantPath, projectId));
+          if (snapshot.exists()) {
+            return { id: snapshot.id, orgId: user.currentOrgId, ...snapshot.data() } as any as Project;
+          }
+        } catch (err) {
+          console.error("Failed to fetch project from tenant path:", err);
+        }
+      }
+
+      // Fallback to root projects collection
+      const snapshot = await getDoc(doc(db, "projects", projectId));
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        return { id: snapshot.id, orgId: data.orgId || undefined, ...data } as any as Project;
+      }
+
+      return null;
     },
     enabled: !!user && !!projectId,
     staleTime: 5 * 60 * 1000,
@@ -78,7 +135,7 @@ export function useTasksQuery(projectId: string) {
     queryKey: queryKeys.tasks(projectId),
     queryFn: async () => {
       if (!user || !projectId) return [];
-      const tenantPath = user.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}/tasks` : `projects/${projectId}/tasks`;
+      const tenantPath = getProjectSubCollectionPath(projectId, "tasks");
       const snapshot = await getDocs(query(collection(db, tenantPath)));
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Task);
     },

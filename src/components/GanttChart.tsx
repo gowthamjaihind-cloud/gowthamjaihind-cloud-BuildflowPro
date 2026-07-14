@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useBreakpoint } from "../hooks/useBreakpoint";
 import {
   format,
   differenceInDays,
@@ -49,20 +50,14 @@ export const GanttChart: React.FC<GanttChartProps> = ({
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
     null,
   );
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1200,
-  );
+  const breakpoint = useBreakpoint();
   const containerRef = useRef<HTMLDivElement>(null);
   const rowsRef = useRef<HTMLDivElement>(null);
-
-  const [hoveredTask, setHoveredTask] = useState<{task: Task, x: number, y: number} | null>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  const [hoveredTask, setHoveredTask] = useState<{
+    task: Task;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const [dragState, setDragState] = useState<{
     taskId: string;
@@ -77,30 +72,42 @@ export const GanttChart: React.FC<GanttChartProps> = ({
     const processMove = (clientX: number) => {
       if (!dragState) return;
       const scale = zoomLevel === "day" ? 1 : zoomLevel === "week" ? 7 : 30;
-      const dayWidth = zoomLevel === "day" ? 40 : zoomLevel === "week" ? 100 : 200;
-      
+      const baseWidths = { day: 40, week: 100, month: 200 };
+      const breakpointMultiplier =
+        breakpoint === "mobile" ? 1 : breakpoint === "tablet" ? 1.15 : 1;
+      const dayWidth = Math.round(baseWidths[zoomLevel] * breakpointMultiplier);
+
       let deltaX = clientX - dragState.initialX;
       let deltaDays = Math.round((deltaX / dayWidth) * scale);
-      
-      setDragState(prev => prev ? { ...prev, currentDeltaDays: deltaDays } : null);
+
+      setDragState((prev) =>
+        prev ? { ...prev, currentDeltaDays: deltaDays } : null,
+      );
     };
 
     const handleGlobalMouseMove = (e: MouseEvent) => processMove(e.clientX);
-    const handleGlobalTouchMove = (e: TouchEvent) => processMove(e.touches[0].clientX);
+    const handleGlobalTouchMove = (e: TouchEvent) =>
+      processMove(e.touches[0].clientX);
 
     const processEnd = () => {
       if (dragState) {
         if (dragState.currentDeltaDays !== 0) {
-           const task = tasks.find(t => t.id === dragState.taskId);
-           if (task && onTaskUpdate) {
-             const newStart = addDays(new Date(dragState.initialStartDate), dragState.type === "resizeEnd" ? 0 : dragState.currentDeltaDays);
-             const newEnd = addDays(new Date(dragState.initialEndDate), dragState.type === "resizeStart" ? 0 : dragState.currentDeltaDays);
-             onTaskUpdate({
-               ...task,
-               startDate: newStart.toISOString().split("T")[0],
-               endDate: newEnd.toISOString().split("T")[0]
-             });
-           }
+          const task = tasks.find((t) => t.id === dragState.taskId);
+          if (task && onTaskUpdate) {
+            const newStart = addDays(
+              new Date(dragState.initialStartDate),
+              dragState.type === "resizeEnd" ? 0 : dragState.currentDeltaDays,
+            );
+            const newEnd = addDays(
+              new Date(dragState.initialEndDate),
+              dragState.type === "resizeStart" ? 0 : dragState.currentDeltaDays,
+            );
+            onTaskUpdate({
+              ...task,
+              startDate: newStart.toISOString().split("T")[0],
+              endDate: newEnd.toISOString().split("T")[0],
+            });
+          }
         }
         setDragState(null);
       }
@@ -123,7 +130,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
         window.removeEventListener("touchcancel", handleGlobalTouchEnd);
       };
     }
-  }, [dragState, zoomLevel, tasks, onTaskUpdate]);
+  }, [dragState, zoomLevel, tasks, onTaskUpdate, breakpoint]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (linkingFrom && rowsRef.current) {
@@ -154,13 +161,13 @@ export const GanttChart: React.FC<GanttChartProps> = ({
   }, [tasks]);
 
   const filteredTasks = useMemo(() => {
-    const validBaseTasks = tasks.filter(t => {
+    const validBaseTasks = tasks.filter((t) => {
       if (!t.startDate || !t.endDate) return false;
       const start = new Date(t.startDate);
       const end = new Date(t.endDate);
       return !isNaN(start.getTime()) && !isNaN(end.getTime());
     });
-    
+
     const baseTasks = filterTag
       ? validBaseTasks.filter((t) => t.activityCodes?.includes(filterTag))
       : validBaseTasks;
@@ -244,8 +251,12 @@ export const GanttChart: React.FC<GanttChartProps> = ({
     };
   }, [filteredTasks, zoomLevel]);
 
-  const dayWidth = zoomLevel === "day" ? 40 : zoomLevel === "week" ? 100 : 200;
-  const nameColWidth = windowWidth < 640 ? 100 : windowWidth < 1024 ? 180 : 250;
+  const baseWidths = { day: 40, week: 100, month: 200 };
+  const breakpointMultiplier =
+    breakpoint === "mobile" ? 1 : breakpoint === "tablet" ? 1.15 : 1;
+  const dayWidth = Math.round(baseWidths[zoomLevel] * breakpointMultiplier);
+  const nameColWidth =
+    breakpoint === "mobile" ? 100 : breakpoint === "tablet" ? 200 : 250;
 
   const rowVirtualizer = useVirtualizer({
     count: filteredTasks.length,
@@ -265,7 +276,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 onClick={() => setZoomLevel(level)}
                 className={`flex-1 sm:flex-none px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-md transition-all ${
                   zoomLevel === level
-                    ? "bg-surface text-indigo-600 shadow-sm"
+                    ? "bg-surface text-[#A3711C] shadow-sm"
                     : "text-ink-muted hover:text-ink/80"
                 }`}
               >
@@ -314,7 +325,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
         ref={containerRef}
         onMouseMove={handleMouseMove}
         className="overflow-x-auto border rounded-xl bg-surface shadow-sm scrollbar-hide select-none"
-        style={{ WebkitOverflowScrolling: 'touch' }}
+        style={{ WebkitOverflowScrolling: "touch" }}
       >
         <div
           style={{ width: timeline.length * dayWidth + nameColWidth }}
@@ -356,8 +367,8 @@ export const GanttChart: React.FC<GanttChartProps> = ({
           </div>
 
           {/* Rows */}
-          <div 
-            className="relative" 
+          <div
+            className="relative"
             ref={rowsRef}
             style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
           >
@@ -510,17 +521,30 @@ export const GanttChart: React.FC<GanttChartProps> = ({
               const taskEnd = new Date(task.endDate);
               const scale =
                 zoomLevel === "day" ? 1 : zoomLevel === "week" ? 7 : 30;
-              
+
               const isDraggingThis = dragState?.taskId === task.id;
-              const currentDeltaDays = isDraggingThis ? dragState.currentDeltaDays : 0;
-              
-              const displayStart = addDays(taskStart, isDraggingThis && dragState.type !== "resizeEnd" ? currentDeltaDays : 0);
-              const displayEnd = addDays(taskEnd, isDraggingThis && dragState.type !== "resizeStart" ? currentDeltaDays : 0);
+              const currentDeltaDays = isDraggingThis
+                ? dragState.currentDeltaDays
+                : 0;
+
+              const displayStart = addDays(
+                taskStart,
+                isDraggingThis && dragState.type !== "resizeEnd"
+                  ? currentDeltaDays
+                  : 0,
+              );
+              const displayEnd = addDays(
+                taskEnd,
+                isDraggingThis && dragState.type !== "resizeStart"
+                  ? currentDeltaDays
+                  : 0,
+              );
 
               const left =
                 (differenceInDays(displayStart, startDate) / scale) * dayWidth;
               const width =
-                ((differenceInDays(displayEnd, displayStart) + 1) / scale) * dayWidth;
+                ((differenceInDays(displayEnd, displayStart) + 1) / scale) *
+                dayWidth;
               const isCritical = showCriticalPath && task.isCritical;
 
               return (
@@ -541,7 +565,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                             ? "bg-slate-700 shadow-sm"
                             : isCritical
                               ? "bg-gradient-to-r from-red-500 to-rose-600 shadow-[0_0_10px_rgba(239,68,68,0.4)]"
-                              : "bg-gradient-to-r from-indigo-500 to-blue-600 shadow-sm"
+                              : "bg-[#A3711C] shadow-sm"
                       }`}
                     />
                     <div className="flex flex-col min-w-0">
@@ -551,7 +575,8 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                         {task.name}
                       </span>
                       <span className="text-[9px] text-ink-muted truncate hidden sm:block">
-                        {format(taskStart, "MMM d")} - {format(taskEnd, "MMM d")}
+                        {format(taskStart, "MMM d")} -{" "}
+                        {format(taskEnd, "MMM d")}
                       </span>
                     </div>
                   </div>
@@ -569,14 +594,14 @@ export const GanttChart: React.FC<GanttChartProps> = ({
 
                     {/* Task Bar */}
                     <div
-                      className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] text-white font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${isDraggingThis ? "opacity-70 ring-2 ring-indigo-400 ring-offset-1" : ""} ${
+                      className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] text-white font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${isDraggingThis ? "opacity-70 ring-2 ring-[#A3711C] ring-offset-1" : ""} ${
                         task.type === "Milestone"
                           ? "bg-gradient-to-br from-amber-400 to-orange-500 w-7 !rounded-sm rotate-45 justify-center border-2 border-white cursor-pointer"
                           : task.type === "Summary"
                             ? "bg-slate-700 cursor-pointer"
                             : isCritical
                               ? "bg-gradient-to-r from-red-500 to-rose-600 cursor-move"
-                              : "bg-gradient-to-r from-indigo-500 to-blue-600 cursor-move"
+                              : "bg-[#A3711C] cursor-move"
                       }`}
                       style={{
                         left: left,
@@ -592,35 +617,35 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                           initialX: e.clientX,
                           initialStartDate: task.startDate,
                           initialEndDate: task.endDate,
-                          currentDeltaDays: 0
+                          currentDeltaDays: 0,
                         });
                       }}
                       onClick={(e) => {
                         // For touch devices, show popup on tap
-                        if (windowWidth < 768) {
+                        if (breakpoint === "mobile") {
                           setHoveredTask({
                             task,
                             x: e.clientX,
-                            y: e.clientY
+                            y: e.clientY,
                           });
                           setTimeout(() => setHoveredTask(null), 3000);
                         }
                       }}
                       onMouseEnter={(e) => {
-                        if (windowWidth >= 768) {
+                        if (breakpoint !== "mobile") {
                           setHoveredTask({
                             task,
                             x: e.clientX,
-                            y: e.clientY
+                            y: e.clientY,
                           });
                         }
                       }}
                       onMouseMove={(e) => {
-                        if (windowWidth >= 768) {
+                        if (breakpoint !== "mobile") {
                           setHoveredTask({
                             task,
                             x: e.clientX,
-                            y: e.clientY
+                            y: e.clientY,
                           });
                         }
                       }}
@@ -632,7 +657,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                     >
                       {/* Linking Start Handle (Left Circle) */}
                       <div
-                        className="absolute -left-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-indigo-500 rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
+                        className="absolute -left-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-[#F3E8D2]0 rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
                         title="Link to this task"
                         onMouseUp={(e) => {
                           if (linkingFrom && linkingFrom.taskId !== task.id) {
@@ -658,7 +683,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                               initialX: e.clientX,
                               initialStartDate: task.startDate,
                               initialEndDate: task.endDate,
-                              currentDeltaDays: 0
+                              currentDeltaDays: 0,
                             });
                           }}
                         />
@@ -666,7 +691,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
 
                       {/* Linking End Handle (Right Circle) */}
                       <div
-                        className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-indigo-500 rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
+                        className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-[#F3E8D2]0 rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
                         title="Drag to link to another task"
                         onMouseDown={(e) => {
                           const rect = e.currentTarget.getBoundingClientRect();
@@ -713,7 +738,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                               initialX: e.clientX,
                               initialStartDate: task.startDate,
                               initialEndDate: task.endDate,
-                              currentDeltaDays: 0
+                              currentDeltaDays: 0,
                             });
                           }}
                         />
@@ -730,16 +755,16 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                             style={{ width: `${task.progress}%` }}
                           />
                           <div className="relative z-10 flex items-center justify-between w-full px-1 pointer-events-none overflow-hidden">
-                             {width > 60 && (
-                               <span className="truncate font-semibold drop-shadow-md">
-                                 {task.name}
-                               </span>
-                             )}
-                             {width > 30 && (
-                               <span className="ml-auto font-bold opacity-90 drop-shadow-md">
-                                 {task.progress}%
-                               </span>
-                             )}
+                            {width > 60 && (
+                              <span className="truncate font-semibold drop-shadow-md">
+                                {task.name}
+                              </span>
+                            )}
+                            {width > 30 && (
+                              <span className="ml-auto font-bold opacity-90 drop-shadow-md">
+                                {task.progress}%
+                              </span>
+                            )}
                           </div>
                         </>
                       )}
@@ -760,7 +785,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className={`fixed z-50 w-64 bg-slate-900/95 backdrop-blur-md text-white rounded-xl shadow-2xl border border-slate-700/50 p-4 ${windowWidth < 768 ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            className={`fixed z-50 w-64 bg-slate-900/95 backdrop-blur-md text-white rounded-xl shadow-2xl border border-slate-700/50 p-4 ${breakpoint === "mobile" ? "pointer-events-auto" : "pointer-events-none"}`}
             style={{
               left: hoveredTask.x + 15,
               top: hoveredTask.y + 15,
@@ -768,48 +793,65 @@ export const GanttChart: React.FC<GanttChartProps> = ({
           >
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-2">
-                <h4 className="font-bold text-sm leading-tight text-white">{hoveredTask.task.name}</h4>
+                <h4 className="font-bold text-sm leading-tight text-white">
+                  {hoveredTask.task.name}
+                </h4>
                 {hoveredTask.task.type === "Milestone" ? (
-                   <span className="shrink-0 inline-flex items-center justify-center bg-amber-500/20 text-amber-300 rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">
-                     Milestone
-                   </span>
+                  <span className="shrink-0 inline-flex items-center justify-center bg-amber-500/20 text-amber-300 rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                    Milestone
+                  </span>
                 ) : (
-                   <span className="shrink-0 font-mono text-xs font-bold text-slate-300">
-                     {hoveredTask.task.progress}%
-                   </span>
+                  <span className="shrink-0 font-mono text-xs font-bold text-slate-300">
+                    {hoveredTask.task.progress}%
+                  </span>
                 )}
               </div>
-              
+
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-slate-800/80 p-2 rounded-lg">
-                  <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mb-1">Start</div>
-                  <div className="font-medium text-slate-200">{format(new Date(hoveredTask.task.startDate), "MMM d, yyyy")}</div>
-                </div>
-                <div className="bg-slate-800/80 p-2 rounded-lg">
-                  <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mb-1">End</div>
-                  <div className="font-medium text-slate-200">{format(new Date(hoveredTask.task.endDate), "MMM d, yyyy")}</div>
-                </div>
-              </div>
-              
-              {hoveredTask.task.activityCodes && hoveredTask.task.activityCodes.length > 0 && (
-                <div className="pt-1">
-                  <div className="flex flex-wrap gap-1.5">
-                    {hoveredTask.task.activityCodes.map(code => (
-                      <span key={code} className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-300">
-                        {code}
-                      </span>
-                    ))}
+                  <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mb-1">
+                    Start
+                  </div>
+                  <div className="font-medium text-slate-200">
+                    {format(
+                      new Date(hoveredTask.task.startDate),
+                      "MMM d, yyyy",
+                    )}
                   </div>
                 </div>
-              )}
-              {windowWidth < 768 && (
+                <div className="bg-slate-800/80 p-2 rounded-lg">
+                  <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mb-1">
+                    End
+                  </div>
+                  <div className="font-medium text-slate-200">
+                    {format(new Date(hoveredTask.task.endDate), "MMM d, yyyy")}
+                  </div>
+                </div>
+              </div>
+
+              {hoveredTask.task.activityCodes &&
+                hoveredTask.task.activityCodes.length > 0 && (
+                  <div className="pt-1">
+                    <div className="flex flex-wrap gap-1.5">
+                      {hoveredTask.task.activityCodes.map((code) => (
+                        <span
+                          key={code}
+                          className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-300"
+                        >
+                          {code}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              {breakpoint === "mobile" && (
                 <button
-                   className="w-full mt-2 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg pointer-events-auto"
-                   onClick={(e) => {
-                     e.stopPropagation();
-                     setHoveredTask(null);
-                     onTaskClick?.(hoveredTask.task);
-                   }}
+                  className="w-full mt-2 py-1.5 bg-[#A3711C] hover:bg-[#8a5d16] text-white text-xs font-bold rounded-lg pointer-events-auto"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setHoveredTask(null);
+                    onTaskClick?.(hoveredTask.task);
+                  }}
                 >
                   Edit Task
                 </button>

@@ -1,8 +1,16 @@
 import React from "react";
 import { motion } from "motion/react";
-import { Construction, Info, Users, RefreshCw } from "lucide-react";
+import {
+  Construction,
+  Info,
+  Users,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle2,
+} from "lucide-react";
 import { WBSView } from "./WBSView";
 import { auth } from "../firebase";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTasksQuery } from "../hooks/queries";
 import { Task } from "../types";
 
@@ -24,10 +32,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   handleAddDependency,
 }) => {
   const { data: legacyTasks = [] } = useTasksQuery(activeProjectId);
-  const { tasks: scheduleTasks, phases, loading: scheduleLoading } = useScheduleData(activeProjectId);
+  const {
+    tasks: scheduleTasks,
+    phases,
+    loading: scheduleLoading,
+  } = useScheduleData(activeProjectId);
 
   const calculateGlobalProgress = () => {
-    const activeTasks = legacyTasks.filter((t) => t.type === "Task" && !t.isSystemGenerated);
+    const activeTasks = legacyTasks.filter(
+      (t) => t.type === "Task" && !t.isSystemGenerated,
+    );
     if (activeTasks.length === 0) return 0;
     const totalDuration = activeTasks.reduce(
       (acc, t) => acc + (Number(t.duration) || 1),
@@ -40,32 +54,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return Math.round(weightedProgress / (totalDuration || 1));
   };
 
-  const calculateNetworkIntegrity = () => {
-    const validTasks = legacyTasks.filter(t => !t.isSystemGenerated);
-    if (validTasks.length === 0) return 100;
-    const withDates = validTasks.filter((t) => t.startDate && t.endDate).length;
-    const withDeps = validTasks.filter(
+  const calculateTasksAtRisk = () => {
+    const validTasks = scheduleTasks.filter((t) => !t.isSystemGenerated);
+    const today = new Date().toISOString().split("T")[0];
+
+    const atRisk = validTasks.filter(
       (t) =>
-        (t.dependencies?.length || 0) > 0 ||
-        (t.advancedDependencies?.length || 0) > 0,
-    ).length;
-    const integrity =
-      ((withDates / validTasks.length) * 0.6 + (withDeps / validTasks.length) * 0.4) *
-      100;
-    return Math.min(100, Math.round(integrity));
+        (t.endDate && t.endDate < today && t.status !== "Completed") ||
+        t.status === "Delayed",
+    );
+
+    const criticalCount = atRisk.filter((t) => t.isCritical).length;
+
+    return {
+      count: atRisk.length,
+      criticalCount,
+    };
   };
 
   const completionPercentage = calculateGlobalProgress();
-  const integrityScore = calculateNetworkIntegrity();
+  const tasksAtRisk = calculateTasksAtRisk();
 
   const handleTaskUpdate = async (task: Task) => {
     try {
       const { doc, updateDoc } = await import("../firebase");
-      const taskRef = doc(await import("../firebase").then(m => m.db), `projects/${activeProjectId}/tasks`, task.id);
+      const taskRef = doc(
+        await import("../firebase").then((m) => m.db),
+        `projects/${activeProjectId}/tasks`,
+        task.id,
+      );
       await updateDoc(taskRef, {
         startDate: task.startDate,
         endDate: task.endDate,
-        progress: task.progress
+        progress: task.progress,
       });
     } catch (error) {
       console.error("Error updating task:", error);
@@ -84,9 +105,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </header>
 
       {/* Top Row: Compact Info Panels */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         {/* Profile Panel (Reduced Size) */}
-        <section className="apple-glass p-5 squircle-24 flex items-center gap-5">
+        <section className="apple-glass p-5 md:p-6 squircle-24 flex items-center gap-5">
           <div className="relative shrink-0">
             <img
               src={
@@ -97,7 +118,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               alt="Profile"
             />
             <div className="absolute -bottom-1 -right-1 bg-surface p-1 rounded-lg shadow-md border border-white/40">
-              <Users className="w-3 md:w-3.5 h-3 md:h-3.5 text-primary" />
+              <Users className="w-3 md:w-4 h-3 md:h-4 text-primary" />
             </div>
           </div>
           <div className="min-w-0">
@@ -107,11 +128,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <p className="text-[12px] md:text-[13px] text-ink-muted font-medium">
               Project Director
             </p>
-            <div className="flex gap-4 mt-1">
-              <div className="text-[10px] md:text-[11px] font-bold">
-                <span className="text-primary mr-1">{legacyTasks.filter(t => !t.isSystemGenerated).length}</span>Tasks
+            <div className="flex flex-wrap gap-2 xl:gap-4 mt-1">
+              <div className="text-[10px] md:text-xs font-bold whitespace-nowrap">
+                <span className="text-primary mr-1">
+                  {legacyTasks.filter((t) => !t.isSystemGenerated).length}
+                </span>
+                Tasks
               </div>
-              <div className="text-[10px] md:text-[11px] font-bold">
+              <div className="text-[10px] md:text-xs font-bold whitespace-nowrap">
                 <span className="text-[#34C759] mr-1">98%</span>Uptime
               </div>
             </div>
@@ -119,7 +143,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </section>
 
         {/* Global Progress Panel */}
-        <section className="apple-glass p-5 squircle-24 flex flex-col justify-center">
+        <section className="apple-glass p-5 md:p-6 squircle-24 flex flex-col justify-center">
           <div className="flex justify-between items-center mb-2 md:mb-3">
             <h3 className="text-xs md:text-[15px] font-bold text-ink">
               Completion
@@ -133,37 +157,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               initial={{ width: 0 }}
               animate={{ width: `${completionPercentage}%` }}
               transition={{ duration: 1, ease: [0.2, 0, 0, 1] }}
-              className="h-full bg-gradient-to-r from-primary to-[#5856D6]"
+              className="h-full bg-gradient-to-r from-primary to-[#C8924A]"
             />
           </div>
         </section>
 
-        {/* Network Integrity Panel */}
-        <section className="bg-surface-dark p-5 squircle-24 text-white shadow-xl relative overflow-hidden flex flex-col justify-center sm:col-span-2 lg:col-span-1">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-primary blur-[60px] opacity-40" />
+        {/* Tasks at Risk Panel */}
+        <section className="bg-surface-dark p-5 md:p-6 squircle-24 text-white shadow-xl relative overflow-hidden flex flex-col justify-center">
           <div className="flex justify-between items-center mb-2 md:mb-3 relative z-10">
-            <h4 className="text-xs md:text-[15px] font-bold">
-              Network Integrity
-            </h4>
+            <h4 className="text-xs md:text-[15px] font-bold">Tasks at Risk</h4>
             <span className="text-[15px] md:text-[17px] font-mono font-bold">
-              {integrityScore}%
+              {tasksAtRisk.count > 0 ? tasksAtRisk.count : "0"}
             </span>
           </div>
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="flex-1 h-1.5 md:h-2 bg-surface/10 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${integrityScore}%` }}
-                className="h-full bg-primary"
-              />
-            </div>
+          <div className="relative z-10">
+            {tasksAtRisk.count === 0 ? (
+              <div className="flex items-center gap-2 text-emerald-400">
+                <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="text-sm md:text-base font-bold">
+                  All tasks on track
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1 md:gap-1.5">
+                <div className="flex items-center gap-2 text-amber-400">
+                  <AlertTriangle className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="text-sm md:text-base font-bold">
+                    Require attention
+                  </span>
+                </div>
+                {tasksAtRisk.criticalCount > 0 && (
+                  <span className="text-xs md:text-sm text-rose-400 font-bold bg-rose-500/10 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full inline-block w-max">
+                    {tasksAtRisk.criticalCount} on critical path
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </section>
       </div>
 
       {/* Phase Strips */}
       <div className="grid grid-cols-1 mb-8">
-        <PhaseStrips phases={phases} onNavigate={() => console.log('Navigate to full schedule')} />
+        <PhaseStrips
+          phases={phases}
+          onNavigate={() => console.log("Navigate to full schedule")}
+        />
       </div>
 
       {/* Large Visualizations (Increased Width) */}
@@ -177,8 +216,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Timeline
             </span>
           </div>
-          <div className="apple-glass rounded-t-[24px] md:rounded-[32px] overflow-hidden p-0 shadow-sm border border-white/10">
-            <ScheduleView projectId={activeProjectId} tasks={scheduleTasks} loading={scheduleLoading} onAddDependency={handleAddDependency} onTaskUpdate={handleTaskUpdate} />
+          <div className="apple-glass rounded-2xl overflow-hidden p-0 shadow-sm border border-white/10">
+            <ScheduleView
+              projectId={activeProjectId}
+              tasks={scheduleTasks}
+              loading={scheduleLoading}
+              onAddDependency={handleAddDependency}
+              onTaskUpdate={handleTaskUpdate}
+            />
           </div>
         </section>
 
@@ -191,62 +236,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               WBS Hierarchy
             </span>
           </div>
-          <div className="apple-glass rounded-[24px] md:rounded-[32px] overflow-hidden p-1 shadow-sm overflow-x-auto">
+          <div className="apple-glass rounded-2xl overflow-hidden p-1 shadow-sm overflow-x-auto">
             <WBSView projectId={activeProjectId} />
           </div>
         </section>
-      </div>
-
-      {/* Footer / Activities */}
-      <div className="hidden lg:block border-t border-surface-dark/5 pt-8">
-        <h4 className="text-[13px] font-bold text-ink-muted uppercase tracking-widest mb-6 px-2">
-          Recent Activity
-        </h4>
-        <div className="flex gap-4 overflow-x-auto pb-4 px-2 scrollbar-hide">
-          {[
-            {
-              id: "act-1",
-              type: "Update",
-              msg: "Foundation schedule updated",
-              time: "2m ago",
-              color: "bg-[#5856D6]",
-            },
-            {
-              id: "act-2",
-              type: "Alert",
-              msg: "Inventory depletion: Cement",
-              time: "15m ago",
-              color: "bg-[#FF3B30]",
-            },
-            {
-              id: "act-3",
-              type: "Status",
-              msg: "Procurement cycle synced",
-              time: "1h ago",
-              color: "bg-[#34C759]",
-            },
-            {
-              id: "act-4",
-              type: "Note",
-              msg: "Labor metrics recalculated",
-              time: "4h ago",
-              color: "bg-primary",
-            },
-          ].map((activity) => (
-            <div
-              key={activity.id}
-              className="min-w-[280px] bg-surface/40 p-4 rounded-2xl border border-white/60 flex gap-3 shadow-sm"
-            >
-              <div className={`w-1 h-8 rounded-full ${activity.color}`} />
-              <div>
-                <div className="text-[12px] font-bold">{activity.type}</div>
-                <div className="text-[13px] text-ink-muted truncate max-w-[200px]">
-                  {activity.msg}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );

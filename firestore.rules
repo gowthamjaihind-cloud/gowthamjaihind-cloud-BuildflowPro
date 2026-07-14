@@ -26,26 +26,20 @@ service cloud.firestore {
     }
 
     function isWorkDateKolkataToday(workDateStr) {
-      let nowKolkata = timestamp.fromMillis(request.time.toMillis() + 19800000);
-      let y = string(nowKolkata.year());
-      let m = string(nowKolkata.month());
-      let d = string(nowKolkata.day());
-      let pattern = '^' + y + '-0?' + m + '-0?' + d + '$';
-      return workDateStr.matches(pattern);
+      let workDateTimestamp = timestamp.value(workDateStr + 'T00:00:00Z');
+      let diff = request.time.toMillis() - workDateTimestamp.toMillis();
+      return diff > -86400000 && diff < 172800000;
     }
     
     function isCreatedAtKolkataToday(isoStr) {
-      let nowKolkata = timestamp.fromMillis(request.time.toMillis() + 19800000);
-      let y = string(nowKolkata.year());
-      let m = string(nowKolkata.month());
-      let d = string(nowKolkata.day());
-      // Handle the fact that YYYY-MM-DD has leading zeros for month and day in standard ISO
-      let mm = m.size() == 1 ? '0' + m : m;
-      let dd = d.size() == 1 ? '0' + d : d;
-      let pattern = '^' + y + '-' + mm + '-' + dd + 'T.*';
-      return isoStr.matches(pattern);
+      let createdTime = timestamp.value(isoStr);
+      let diff = request.time.toMillis() - createdTime.toMillis();
+      return diff >= 0 && diff < 172800000;
     }
 
+    match /errorLogs/{logId} {
+      allow read, write: if true;
+    }
     match /users/{userId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null 
@@ -63,7 +57,22 @@ service cloud.firestore {
       allow write: if request.auth != null && isAdminOrManager();
       
       match /{collection}/{docId} {
-        allow read, write: if request.auth != null && collection != 'dailyLogs' && collection != 'purchase_orders' && collection != 'goodsReceiptNotes' && collection != 'system' && collection != 'ledger' && collection != 'ra_bills' && collection != 'labor_rate_cards';
+        allow read, write: if request.auth != null && collection != 'dailyLogs' && collection != 'purchase_orders' && collection != 'goodsReceiptNotes' && collection != 'system' && collection != 'ledger' && collection != 'ra_bills' && collection != 'labor_rate_cards' && collection != 'client_payments' && collection != 'documents' && collection != 'estimates';
+      }
+      match /estimates/{estimateId} {
+        allow read, create: if request.auth != null;
+        allow update: if request.auth != null && (
+          (request.resource.data.status == resource.data.status) || isAdminOrManager()
+        );
+        allow delete: if request.auth != null && isAdminOrManager();
+      }
+      match /documents/{docId} {
+        allow read, create: if request.auth != null;
+        allow update, delete: if request.auth != null && isAdminOrManager();
+      }
+      match /client_payments/{paymentId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && isAdminOrManager();
       }
       match /ra_bills/{billId} {
         allow read: if request.auth != null;
@@ -78,22 +87,27 @@ service cloud.firestore {
         allow create: if request.auth != null && (
           request.resource.data.referenceType != 'PAYMENT' || isAdminOrManager()
         );
-        allow update, delete: if false;
+        allow update, delete: if request.auth != null && isAdminOrManager();
       }
       match /system/poCounter {
         allow read: if request.auth != null;
-        allow write: if request.auth != null && request.resource.data.count == resource.data.count + 1; 
+        allow write: if request.auth != null; 
       }
       match /system/grnCounter {
         allow read: if request.auth != null;
-        allow write: if request.auth != null && request.resource.data.count == resource.data.count + 1;
+        allow write: if request.auth != null;
+      }
+      match /system/estimateCounter {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null;
       }
       match /goodsReceiptNotes/{grnId} {
         allow read: if request.auth != null;
         allow create: if request.auth != null;
         allow update, delete: if request.auth != null && (
           isAdminOrManager() || 
-          (resource.data.createdByUid == request.auth.uid && isCreatedAtKolkataToday(resource.data.createdAt))
+          isSiteEngineer() ||
+          (resource.data.createdByUid == request.auth.uid)
         );
       }
       match /purchase_orders/{poId} {
@@ -102,8 +116,9 @@ service cloud.firestore {
           && request.resource.data.status == 'Draft'
           && request.resource.data.createdByUid == request.auth.uid;
         allow update: if request.auth != null && (
-          (isAdminOrManager()) || 
-          (resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft' && request.resource.data.status == 'Draft')
+          isAdminOrManager() || 
+          (isSiteEngineer()) ||
+          (resource.data.createdByUid == request.auth.uid)
         );
         allow delete: if request.auth != null && (
           isAdminOrManager() || 
@@ -124,10 +139,17 @@ service cloud.firestore {
       }
     }
 
+    match /bot_link_codes/{code} {
+      allow create: if isAdminOrManager();
+      allow read, update, delete: if false;
+    }
+
+    match /bot_rate_limits/{chatId} {
+      allow read, write: if false;
+    }
+
     match /bot_sessions/{sessionId} {
-      allow read, write: if false; 
-      // Typically used for server-to-server (e.g. Telegram Bot webhooks) which bypass rules via Admin SDK.
-      // Deny all client access here.
+      allow read, write: if false;
     }
 
     match /organizations/{orgId} {
@@ -139,7 +161,22 @@ service cloud.firestore {
         allow write: if request.auth != null && isAdminOrManager();
         
         match /{collection}/{docId} {
-          allow read, write: if request.auth != null && collection != 'dailyLogs' && collection != 'purchase_orders' && collection != 'goodsReceiptNotes' && collection != 'system' && collection != 'ledger' && collection != 'ra_bills' && collection != 'labor_rate_cards';
+          allow read, write: if request.auth != null && collection != 'dailyLogs' && collection != 'purchase_orders' && collection != 'goodsReceiptNotes' && collection != 'system' && collection != 'ledger' && collection != 'ra_bills' && collection != 'labor_rate_cards' && collection != 'client_payments' && collection != 'documents' && collection != 'estimates';
+        }
+        match /estimates/{estimateId} {
+          allow read, create: if request.auth != null;
+          allow update: if request.auth != null && (
+            (request.resource.data.status == resource.data.status) || isAdminOrManager()
+          );
+          allow delete: if request.auth != null && isAdminOrManager();
+        }
+        match /documents/{docId} {
+          allow read, create: if request.auth != null;
+          allow update, delete: if request.auth != null && isAdminOrManager();
+        }
+        match /client_payments/{paymentId} {
+          allow read: if request.auth != null;
+          allow write: if request.auth != null && isAdminOrManager();
         }
         match /ra_bills/{billId} {
           allow read: if request.auth != null;
@@ -154,22 +191,27 @@ service cloud.firestore {
           allow create: if request.auth != null && (
             request.resource.data.referenceType != 'PAYMENT' || isAdminOrManager()
           );
-          allow update, delete: if false;
+          allow update, delete: if request.auth != null && isAdminOrManager();
         }
         match /system/poCounter {
           allow read: if request.auth != null;
-          allow write: if request.auth != null && request.resource.data.count == resource.data.count + 1;
+          allow write: if request.auth != null;
         }
         match /system/grnCounter {
           allow read: if request.auth != null;
-          allow write: if request.auth != null && request.resource.data.count == resource.data.count + 1;
+          allow write: if request.auth != null;
+        }
+        match /system/estimateCounter {
+          allow read: if request.auth != null;
+          allow write: if request.auth != null;
         }
         match /goodsReceiptNotes/{grnId} {
           allow read: if request.auth != null;
           allow create: if request.auth != null;
           allow update, delete: if request.auth != null && (
             isAdminOrManager() || 
-            (resource.data.createdByUid == request.auth.uid && isCreatedAtKolkataToday(resource.data.createdAt))
+            isSiteEngineer() ||
+            (resource.data.createdByUid == request.auth.uid)
           );
         }
         match /purchase_orders/{poId} {
@@ -178,8 +220,9 @@ service cloud.firestore {
             && request.resource.data.status == 'Draft'
             && request.resource.data.createdByUid == request.auth.uid;
           allow update: if request.auth != null && (
-            (isAdminOrManager()) || 
-            (resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft' && request.resource.data.status == 'Draft')
+            isAdminOrManager() || 
+            (isSiteEngineer()) ||
+            (resource.data.createdByUid == request.auth.uid)
           );
           allow delete: if request.auth != null && (
             isAdminOrManager() || 
@@ -204,18 +247,23 @@ service cloud.firestore {
     // Fallback for everything else missing explicitly
     match /{path=**}/system/poCounter {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.resource.data.count == resource.data.count + 1;
+      allow write: if request.auth != null;
     }
     match /{path=**}/system/grnCounter {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.resource.data.count == resource.data.count + 1;
+      allow write: if request.auth != null;
+    }
+    match /{path=**}/system/estimateCounter {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
     }
     match /{path=**}/goodsReceiptNotes/{grnId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
       allow update, delete: if request.auth != null && (
         isAdminOrManager() || 
-        (resource.data.createdByUid == request.auth.uid && isCreatedAtKolkataToday(resource.data.createdAt))
+        isSiteEngineer() ||
+        (resource.data.createdByUid == request.auth.uid)
       );
     }
     match /{path=**}/purchase_orders/{poId} {
@@ -224,8 +272,9 @@ service cloud.firestore {
         && request.resource.data.status == 'Draft'
         && request.resource.data.createdByUid == request.auth.uid;
       allow update: if request.auth != null && (
-         (isAdminOrManager()) || 
-         (resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft' && request.resource.data.status == 'Draft')
+         isAdminOrManager() || 
+         (isSiteEngineer()) ||
+         (resource.data.createdByUid == request.auth.uid)
       );
       allow delete: if request.auth != null && (
          isAdminOrManager() || 
@@ -252,12 +301,27 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if request.auth != null && isAdminOrManager();
     }
+    match /{path=**}/client_payments/{paymentId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && isAdminOrManager();
+    }
+    match /{path=**}/documents/{docId} {
+      allow read, create: if request.auth != null;
+      allow update, delete: if request.auth != null && isAdminOrManager();
+    }
+    match /{path=**}/estimates/{estimateId} {
+      allow read, create: if request.auth != null;
+      allow update: if request.auth != null && (
+        (request.resource.data.status == resource.data.status) || isAdminOrManager()
+      );
+      allow delete: if request.auth != null && isAdminOrManager();
+    }
     match /{path=**}/ledger/{ledgerId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && (
         request.resource.data.referenceType != 'PAYMENT' || isAdminOrManager()
       );
-      allow update, delete: if false;
+      allow update, delete: if request.auth != null && isAdminOrManager();
     }
     
     // We intentionally removed the global wildcard to enforce the dailyLogs permissions securely.

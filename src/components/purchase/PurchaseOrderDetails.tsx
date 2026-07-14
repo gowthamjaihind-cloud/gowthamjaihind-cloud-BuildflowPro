@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, CheckCircle, Download, FileText, Trash2, Loader2, PackagePlus } from "lucide-react";
@@ -16,12 +17,13 @@ interface PurchaseOrderDetailsProps {
 
 export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, projectId, onClose }) => {
   const user = useAuthStore(state => state.user);
+  const queryClient = useQueryClient();
   const [isApproving, setIsApproving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showGRNForm, setShowGRNForm] = useState(false);
 
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
-  const canEditOrDelete = po.status === "Draft" && (isAdminOrOwner || po.createdByUid === user?.uid);
+  const canEditOrDelete = isAdminOrOwner || (po.status === "Draft" && po.createdByUid === user?.uid);
 
   const tenantPathLogs = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
   const poRef = doc(db, `${tenantPathLogs}/purchase_orders`, po.id);
@@ -36,6 +38,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
         approvedByName: user.displayName || user.email || "Unknown",
         approvedAt: new Date().toISOString()
       });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'purchase_orders'] });
       onClose();
     } catch (e) {
       console.error(e);
@@ -47,10 +50,11 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
 
   const handleDelete = async () => {
     if (!canEditOrDelete) return;
-    if (!confirm("Delete this draft Purchase Order?")) return;
+    if (!confirm("Delete this Purchase Order?")) return;
     setIsDeleting(true);
     try {
       await deleteDoc(poRef);
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'purchase_orders'] });
       onClose();
     } catch (e) {
       console.error(e);
@@ -108,7 +112,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
            </div>
            <div className="flex items-center gap-2">
              <button onClick={handleExport} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer group" title="Export CSV">
-               <Download className="w-5 h-5 group-hover:text-indigo-600 transition-colors" />
+               <Download className="w-5 h-5 group-hover:text-[#A3711C] transition-colors" />
              </button>
              <button type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
                <X className="w-5 h-5" />
@@ -125,7 +129,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                {po.expectedDeliveryDate && (
                   <div>
                     <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">Expected</p>
-                    <p className="text-sm font-semibold text-violet-600 font-mono">{po.expectedDeliveryDate}</p>
+                    <p className="text-sm font-semibold text-primary font-mono">{po.expectedDeliveryDate}</p>
                   </div>
                )}
                <div>
@@ -134,9 +138,9 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                </div>
                <div>
                   <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">Status</p>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest ${
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                      po.status === 'Draft' ? 'bg-gray-100 text-gray-600' :
-                     po.status === 'Approved' ? 'bg-blue-50 text-blue-600' :
+                     po.status === 'Approved' ? 'bg-[#E3E8F0] text-[#4A6FA5]' :
                      po.status === 'Partially Received' ? 'bg-yellow-50 text-yellow-600' :
                      'bg-green-50 text-green-600'
                   }`}>
@@ -169,10 +173,10 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                            </tr>
                         ))}
                      </tbody>
-                     <tfoot className="bg-indigo-50 border-t border-indigo-100">
+                     <tfoot className="bg-[#F3E8D2] border-t border-[#F3E8D2]">
                         <tr>
-                           <td colSpan={4} className="p-4 text-right text-[11px] font-black text-indigo-400 uppercase tracking-widest">Total Amount</td>
-                           <td className="p-4 text-right text-lg font-black font-mono text-indigo-600 tracking-tight">₹{po.totalAmount.toLocaleString("en-IN")}</td>
+                           <td colSpan={4} className="p-4 text-right text-[11px] font-black text-[#A3711C] uppercase tracking-widest">Total Amount</td>
+                           <td className="p-4 text-right text-lg font-black font-mono text-[#A3711C] tracking-tight">₹{po.totalAmount.toLocaleString("en-IN")}</td>
                         </tr>
                      </tfoot>
                   </table>
@@ -194,12 +198,12 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                </button>
             )}
             {canEditOrDelete && (
-               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer">
-                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} Delete Draft
+               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
+                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} {po.status === "Draft" ? "Delete Draft" : "Delete PO"}
                </button>
             )}
             {po.status === "Draft" && isAdminOrOwner && (
-               <button onClick={handleApprove} disabled={isApproving} className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)]">
+               <button onClick={handleApprove} disabled={isApproving} className="px-6 py-3 bg-[#A3711C] hover:bg-[#8a5d16] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)]">
                  {isApproving ? <Loader2 className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4" />} Approve Order
                </button>
             )}

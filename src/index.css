@@ -2,14 +2,14 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #4f46e5;
-  --page: #f8fafc;
-  --panel: #ffffff;
-  --surface-dark: #1e293b;
-  --surface: #ffffff;
-  --ink: #0f172a;
-  --ink-muted: #64748b;
-  --divider: #e2e8f0;
+  --primary: #A3711C;
+  --page: #E7E5E1;
+  --panel: #FFFFFF;
+  --surface-dark: #1C1B19;
+  --surface: #FFFFFF;
+  --ink: #1C1B19;
+  --ink-muted: #6B6862;
+  --divider: #CFCCC6;
 }
 
 .dark {
@@ -24,45 +24,45 @@
 }
 
 .schedule-theme {
-  --bg: #0e1014;
-  --glass: rgba(255, 255, 255, 0.055);
-  --edge: rgba(255, 255, 255, 0.10);
-  --ink: #eef0f8;
-  --muted: #9aa0b5;
-  --faint: #5d6378;
-  --acc: #8a97b5;
-  --acc2: #aebfd6;
-  --ok: #34d399;
-  --warn: #fbbf24;
-  --risk: #fb7185;
+  --bg: #FFFFFF;
+  --glass: #F3E8D2;
+  --edge: #CFCCC6;
+  --ink: #1C1B19;
+  --muted: #6B6862;
+  --faint: #A39D8F;
+  --acc: #A3711C;
+  --acc2: #C8924A;
+  --ok: #3F6B3A;
+  --warn: #A3711C;
+  --risk: #9C3B2E;
 }
 
-[data-theme="mint"] {
-  --primary: #059669;
+[data-theme="green"] {
+  --primary: #14452F;
 }
-.dark[data-theme="mint"] {
-  --primary: #34d399;
-}
-
-[data-theme="sunset"] {
-  --primary: #ea580c;
-}
-.dark[data-theme="sunset"] {
-  --primary: #fb923c;
+.dark[data-theme="green"] {
+  --primary: #668677;
 }
 
-[data-theme="lavender"] {
-  --primary: #7c3aed;
+[data-theme="claret"] {
+  --primary: #7B2D3A;
 }
-.dark[data-theme="lavender"] {
-  --primary: #a78bfa;
+.dark[data-theme="claret"] {
+  --primary: #A9767E;
 }
 
-[data-theme="rose"] {
-  --primary: #e11d48;
+[data-theme="oxford"] {
+  --primary: #1F3A5F;
 }
-.dark[data-theme="rose"] {
-  --primary: #fb7185;
+.dark[data-theme="oxford"] {
+  --primary: #6D7E97;
+}
+
+[data-theme="ochre"] {
+  --primary: #8B6508;
+}
+.dark[data-theme="ochre"] {
+  --primary: #B39A5E;
 }
 
 @theme {

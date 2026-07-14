@@ -9,3 +9,4 @@ export * from "./audit";
 export * from "./ai";
 export * from "./dailyLogs";
 export * from "./goodsReceipt";
+export * from "./telegram";

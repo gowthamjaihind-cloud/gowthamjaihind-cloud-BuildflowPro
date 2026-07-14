@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Save, Trash2, Plus, AlertCircle, CheckCircle2, ChevronDown, Package } from "lucide-react";
-import { doc, getDoc, runTransaction } from "firebase/firestore";
+import { doc, getDoc, runTransaction, collection } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../../firebase";
 import {
   Vendor,
@@ -12,6 +12,7 @@ import {
   InventoryItem
 } from "../../types";
 import { useAuthStore } from "../../store";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface MaterialReceiptFormProps {
   projectId: string;
@@ -33,6 +34,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
   onClose,
 }) => {
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,10 +72,10 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               existing.quantity += line.acceptedQty;
               existing.totalPrice = existing.quantity * existing.unitRate;
             } else {
-              const poLine = selectedPO?.lineItems.find(pl => pl.materialId === line.materialId);
+              const poLine = selectedPO?.lineItems.find(pl => pl.itemId === line.poLineRef);
               const rate = poLine?.rate || 0;
               mergedItems.set(key, {
-                itemId: line.materialId,
+                itemId: line.poLineRef,
                 materialId: line.materialId,
                 name: line.name,
                 poLineRef: key,
@@ -92,14 +94,14 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
   const matchData = useMemo(() => {
     return items.map(item => {
       // Find PO details
-      const poLine = selectedPO?.lineItems.find(p => p.materialId === item.materialId);
+      const poLine = selectedPO?.lineItems.find(p => p.itemId === item.poLineRef);
       const orderedQty = poLine?.orderedQty || 0;
       const poRate = poLine?.rate || 0;
 
       // Find GRN totals
       let grnAcceptedQty = 0;
       selectedGRNs.forEach(grn => {
-        const gl = grn.lineItems.find(g => g.materialId === item.materialId);
+        const gl = grn.lineItems.find(g => g.poLineRef === item.poLineRef);
         if (gl) grnAcceptedQty += gl.acceptedQty;
       });
 
@@ -139,6 +141,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
   const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
 
   const handleSave = async (e: React.FormEvent) => {
+    const tenantPath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
     e.preventDefault();
     if (!supplierId || items.length === 0) return;
 
@@ -152,29 +155,29 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
       await runTransaction(db, async (transaction) => {
         let oldData: MaterialReceipt | null = null;
         if (existingReceipt) {
-           const oldRef = doc(db, `projects/${projectId}/receipts/${existingReceipt.id}`);
+           const oldRef = doc(db, `${tenantPath}/receipts/${existingReceipt.id}`);
            const oldDoc = await transaction.get(oldRef);
            if (oldDoc.exists()) oldData = oldDoc.data() as MaterialReceipt;
         }
 
-        const vendorRef = doc(db, `projects/${projectId}/suppliers/${supplierId}`);
+        const vendorRef = doc(db, `${tenantPath}/suppliers/${supplierId}`);
         const vendorDoc = await transaction.get(vendorRef);
         if (!vendorDoc.exists()) throw new Error("Vendor not found");
 
         let oldVendorDoc = null;
         if (oldData && oldData.supplierId !== supplierId) {
-           const oldVendorRef = doc(db, `projects/${projectId}/suppliers/${oldData.supplierId}`);
+           const oldVendorRef = doc(db, `${tenantPath}/suppliers/${oldData.supplierId}`);
            oldVendorDoc = await transaction.get(oldVendorRef);
         }
 
-        const receiptId = existingReceipt?.id || doc(db, `projects/${projectId}/receipts`).id;
+        const receiptId = existingReceipt?.id || doc(db, `${tenantPath}/receipts`).id;
 
         let diff = totalAmount;
         if (oldData) {
            diff = totalAmount - oldData.totalAmount;
            if (oldVendorDoc && oldData.supplierId !== supplierId) {
               const ovData = oldVendorDoc.data() as Vendor;
-              transaction.update(doc(db, `projects/${projectId}/suppliers/${oldData.supplierId}`), {
+              transaction.update(doc(db, `${tenantPath}/suppliers/${oldData.supplierId}`), {
                  outstandingBalance: (ovData.outstandingBalance || 0) - oldData.totalAmount
               });
               diff = totalAmount; // apply full as new to new vendor
@@ -184,6 +187,36 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
         const vData = vendorDoc.data() as Vendor;
         transaction.update(vendorRef, {
            outstandingBalance: (vData.outstandingBalance || 0) + diff
+        });
+
+        const costRef = existingReceipt?.costEntryId
+            ? doc(db, `${tenantPath}/costs/${existingReceipt.costEntryId}`)
+            : doc(collection(db, `${tenantPath}/costs`));
+        const ledgerRef = existingReceipt?.ledgerId
+            ? doc(db, `${tenantPath}/ledger/${existingReceipt.ledgerId}`)
+            : doc(collection(db, `${tenantPath}/ledger`));
+
+        transaction.set(ledgerRef, {
+            id: ledgerRef.id,
+            projectId,
+            vendorId: supplierId,
+            date: new Date(receiptDate || "").toISOString(),
+            type: "CREDIT",
+            amount: totalAmount,
+            referenceType: "GRN",
+            referenceId: receiptId,
+            description: `Material Inward - Invoice: ${invoiceNumber}`
+        });
+        transaction.set(costRef, {
+            id: costRef.id,
+            projectId,
+            date: new Date(receiptDate || "").toISOString(),
+            category: "Material",
+            type: "Actual",
+            amount: totalAmount,
+            description: `Material Inward - Invoice: ${invoiceNumber} (${vendor.name})`,
+            taskId: "",
+            isAccrual: true
         });
 
         const newReceipt: MaterialReceipt = {
@@ -201,11 +234,15 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
            grnIds: grnIds.length > 0 ? grnIds : undefined,
            grnNumbers: selectedGRNs.map(g => g.grnNumber),
            matchStatus: overallMatchStatus,
-           ledgerId: existingReceipt?.ledgerId || undefined
+           ledgerId: ledgerRef.id,
+           costEntryId: costRef.id
         };
 
-        transaction.set(doc(db, `projects/${projectId}/receipts/${receiptId}`), newReceipt);
+        transaction.set(doc(db, `${tenantPath}/receipts/${receiptId}`), newReceipt);
       });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'receipts'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'ledger'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'suppliers'] });
       onClose();
     } catch (err: any) {
       console.error(err);
@@ -254,7 +291,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Vendor</label>
               <select
                 required
-                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-indigo-500 outline-none"
+                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#A3711C] outline-none"
                 value={supplierId}
                 onChange={(e) => {
                    setSupplierId(e.target.value);
@@ -273,7 +310,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
             <div className="space-y-1.5 md:space-y-2">
               <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Purchase Order (Optional)</label>
               <select
-                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-indigo-500 outline-none disabled:opacity-50"
+                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#A3711C] outline-none disabled:opacity-50"
                 value={poId}
                 onChange={(e) => {
                    setPoId(e.target.value);
@@ -293,7 +330,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <div className="relative">
                  <select
                    multiple
-                   className="w-full bg-panel p-2 rounded-xl text-xs font-bold border-2 border-transparent focus:border-indigo-500 outline-none min-h-[58px]"
+                   className="w-full bg-panel p-2 rounded-xl text-xs font-bold border-2 border-transparent focus:border-[#A3711C] outline-none min-h-[58px]"
                    value={grnIds}
                    onChange={(e) => setGrnIds(Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))}
                    disabled={!poId}
@@ -314,7 +351,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <input
                 required
                 placeholder="INV-001"
-                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-indigo-500 outline-none"
+                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#A3711C] outline-none"
                 value={invoiceNumber}
                 onChange={(e) => setInvoiceNumber(e.target.value)}
               />
@@ -324,7 +361,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <input
                 type="date"
                 required
-                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-indigo-500 outline-none"
+                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#A3711C] outline-none"
                 value={receiptDate}
                 onChange={(e) => setReceiptDate(e.target.value)}
               />
@@ -332,12 +369,12 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
           </div>
 
           <div className="space-y-4">
-            <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-xl border border-indigo-100/50">
-              <h4 className="text-xs font-black uppercase tracking-widest text-indigo-900">Invoice Items</h4>
+            <div className="flex justify-between items-center bg-[#F3E8D2] p-4 rounded-xl border border-[#F3E8D2]/50">
+              <h4 className="text-xs font-black uppercase tracking-widest text-[#8a5d16]">Invoice Items</h4>
               <button
                 type="button"
                 onClick={() => setItems([...items, { itemId: "", materialId: "", name: "", quantity: 0, unitRate: 0, totalPrice: 0 }])}
-                className="text-indigo-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-100 px-4 py-2 rounded-xl transition-all"
+                className="text-[#A3711C] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-[#F3E8D2] px-4 py-2 rounded-xl transition-all"
               >
                 <Plus className="w-3 h-3" /> Add Item
               </button>
@@ -353,9 +390,9 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                           <th className="p-3 text-right">PO Rate</th>
                           <th className="p-3 text-right border-l border-divider/50">Ord Qty</th>
                           <th className="p-3 text-right">Rec Qty (GRN)</th>
-                          <th className="p-3 text-right border-l border-divider/50 bg-indigo-50/50">Inv Qty</th>
-                          <th className="p-3 text-right bg-indigo-50/50">Inv Rate</th>
-                          <th className="p-3 bg-indigo-50/50">Status</th>
+                          <th className="p-3 text-right border-l border-divider/50 bg-[#F3E8D2]/50">Inv Qty</th>
+                          <th className="p-3 text-right bg-[#F3E8D2]/50">Inv Rate</th>
+                          <th className="p-3 bg-[#F3E8D2]/50">Status</th>
                           <th className="p-3"></th>
                        </tr>
                     </thead>
@@ -377,7 +414,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                              <td className="p-3 text-right font-mono text-xs text-ink-muted border-l border-divider/50">{data.orderedQty > 0 ? data.orderedQty : '-'}</td>
                              <td className="p-3 text-right font-mono text-xs text-ink-muted">{data.grnAcceptedQty > 0 ? data.grnAcceptedQty : '-'}</td>
                              
-                             <td className="p-2 border-l border-divider/50 bg-indigo-50/20">
+                             <td className="p-2 border-l border-divider/50 bg-[#F3E8D2]/20">
                                 <input type="number" className="w-20 text-right bg-panel border-divider border rounded p-1 ml-auto block" value={data.item.quantity || ''} onChange={e => {
                                    const qty = parseFloat(e.target.value) || 0;
                                    const newItems = [...items];
@@ -385,7 +422,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                                    setItems(newItems);
                                 }}/>
                              </td>
-                             <td className="p-2 bg-indigo-50/20">
+                             <td className="p-2 bg-[#F3E8D2]/20">
                                 <input type="number" className="w-24 text-right bg-panel border-divider border rounded p-1 ml-auto block" value={data.item.unitRate || ''} onChange={e => {
                                    const rate = parseFloat(e.target.value) || 0;
                                    const newItems = [...items];
@@ -393,11 +430,11 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                                    setItems(newItems);
                                 }}/>
                              </td>
-                             <td className="p-3 text-xs bg-indigo-50/20">
-                                {data.status === "Matched" && <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded font-bold">Matched</span>}
-                                {data.status === "Rate mismatch" && <span className="text-amber-600 bg-amber-50 px-2 py-1 rounded font-bold" title="Rate != PO">Rate mismatch</span>}
-                                {data.status === "Quantity mismatch" && <span className="text-amber-600 bg-amber-50 px-2 py-1 rounded font-bold" title="Qty != GRN">Qty mismatch</span>}
-                                {data.status === "Unmatched" && <span className="text-red-600 bg-red-50 px-2 py-1 rounded font-bold">Unmatched</span>}
+                             <td className="p-3 text-xs bg-[#F3E8D2]/20">
+                                {data.status === "Matched" && <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full font-bold">Matched</span>}
+                                {data.status === "Rate mismatch" && <span className="text-amber-600 bg-amber-50 px-2 py-1 rounded-full font-bold" title="Rate != PO">Rate mismatch</span>}
+                                {data.status === "Quantity mismatch" && <span className="text-amber-600 bg-amber-50 px-2 py-1 rounded-full font-bold" title="Qty != GRN">Qty mismatch</span>}
+                                {data.status === "Unmatched" && <span className="text-red-600 bg-red-50 px-2 py-1 rounded-full font-bold">Unmatched</span>}
                              </td>
                              <td className="p-2 text-right">
                                 <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">

@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { X, Save, Camera, Trash2, Image as ImageIcon } from "lucide-react";
-import { doc, setDoc, runTransaction, updateDoc } from "firebase/firestore";
+import { doc, setDoc, runTransaction, updateDoc, collection } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../../firebase";
 import { PurchaseOrder, GoodsReceiptNote, GRNLineItem } from "../../types";
 import { useAuthStore } from "../../store";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { compressImage } from "../../utils/imageCompressor";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface GoodsReceiptFormProps {
   po: PurchaseOrder;
@@ -16,6 +17,7 @@ interface GoodsReceiptFormProps {
 
 export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectId, onClose }) => {
   const user = useAuthStore(state => state.user);
+  const queryClient = useQueryClient();
   
   const [receiptDate, setReceiptDate] = useState(new Date().toISOString().split("T")[0]);
   const [challanNumber, setChallanNumber] = useState("");
@@ -73,15 +75,28 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
 
     try {
       const tenantPath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
-      const newGRNRef = doc(db, `${tenantPath}/goodsReceiptNotes`, "new"); 
+      const newGRNRef = doc(collection(db, `${tenantPath}/goodsReceiptNotes`)); 
       const actualId = newGRNRef.id;
 
       let generatedNumber = "";
 
       await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, `${tenantPath}/system`, "grnCounter");
-        const counterDoc = await transaction.get(counterRef);
+        const poRef = doc(db, `${tenantPath}/purchase_orders`, po.id);
         
+        // ALL READS FIRST
+        const counterDoc = await transaction.get(counterRef);
+        const poDoc = await transaction.get(poRef);
+        
+        let poData: any = null;
+        if (poDoc.exists()) poData = poDoc.data();
+        
+        let vendorDoc: any = null;
+        if (poData && poData.vendorId) {
+           const vendorRef = doc(db, `${tenantPath}/suppliers`, poData.vendorId);
+           vendorDoc = await transaction.get(vendorRef);
+        }
+
         let newCount = 1;
         if (counterDoc.exists()) {
           newCount = (counterDoc.data()?.count || 0) + 1;
@@ -90,11 +105,29 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
         const dateCode = new Date().getFullYear().toString();
         generatedNumber = `GRN-${dateCode}-${newCount.toString().padStart(4, "0")}`;
 
-        transaction.set(counterRef, { count: newCount }, { merge: true });
-
         const grnRef = doc(db, `${tenantPath}/goodsReceiptNotes`, actualId);
         const validLineItems = lineItems.filter(i => i.receivedQty > 0 || i.acceptedQty > 0);
         const materialIds = Array.from(new Set(validLineItems.map(i => i.poLineRef).filter(Boolean))) as string[];
+        
+        const inventoryItemDocs: { [id: string]: any } = {};
+        for (const matId of materialIds) {
+          const itemRef = doc(db, `${tenantPath}/inventory`, matId);
+          inventoryItemDocs[matId] = await transaction.get(itemRef);
+        }
+        
+        // Calculate Total Cost of this GRN
+        let totalAmount = 0;
+        if (poData) {
+            validLineItems.forEach(grnItem => {
+                const poItem = poData.lineItems?.find((i: any) => i.itemId === grnItem.poLineRef);
+                if (poItem) {
+                    totalAmount += grnItem.acceptedQty * poItem.rate;
+                }
+            });
+        }
+
+        const ledgerRef = doc(collection(db, `${tenantPath}/ledger`));
+        const costRef = doc(collection(db, `${tenantPath}/costs`));
 
         const newGRN: GoodsReceiptNote = {
           id: actualId,
@@ -111,9 +144,94 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
           notes: notes || undefined,
           createdByUid: user.uid,
           createdByName: user.displayName || user.email || "Unknown",
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          ledgerId: ledgerRef.id,
+          costEntryId: costRef.id
         };
 
+        // WRITES
+        if (poData) {
+           const updatedLineItems = poData.lineItems.map((item: any) => {
+              const grnItem = validLineItems.find(i => i.poLineRef === item.itemId);
+              if (grnItem) {
+                 return { ...item, receivedQty: (item.receivedQty || 0) + grnItem.acceptedQty };
+              }
+              return item;
+           });
+           
+           const isFullyReceived = updatedLineItems.every((i: any) => (i.receivedQty || 0) >= i.orderedQty);
+           
+           transaction.update(poRef, { 
+             lineItems: updatedLineItems,
+             status: isFullyReceived ? "Completed" : poData.status 
+           });
+           
+           // Update vendor balance
+           if (vendorDoc && vendorDoc.exists()) {
+               transaction.update(vendorDoc.ref, {
+                   outstandingBalance: (vendorDoc.data().outstandingBalance || 0) + totalAmount
+               });
+           }
+           
+           // Create Vendor Ledger Entry
+           transaction.set(ledgerRef, {
+               projectId,
+               vendorId: poData.vendorId,
+               date: receiptDate,
+               type: "CREDIT",
+               amount: totalAmount,
+               referenceType: "GRN",
+               referenceId: actualId,
+               description: `Goods Receipt - ${generatedNumber} (PO: ${poData.poNumber})`
+           });
+           
+           // Create Cost Entry
+           transaction.set(costRef, {
+               id: costRef.id,
+               projectId,
+               date: receiptDate,
+               category: "Material",
+               type: "Actual",
+               amount: totalAmount,
+               description: `Goods Receipt - ${generatedNumber} (${poData.vendorName})`,
+               taskId: "",
+               isAccrual: true
+           });
+        }
+        
+        for (const matId of materialIds) {
+          const snap = inventoryItemDocs[matId];
+          if (snap && snap.exists()) {
+             const data = snap.data();
+             const totalAcceptedForThisMaterial = validLineItems.filter(i => i.poLineRef === matId).reduce((acc, curr) => acc + curr.acceptedQty, 0);
+             
+             const qExisting = data.quantity || 0;
+             const cExisting = data.avgUnitCost || data.unitCost || 0;
+             const qNew = totalAcceptedForThisMaterial;
+             
+             const poItem = poData?.lineItems?.find((i: any) => i.itemId === matId);
+             const cNew = poItem ? (poItem.rate || 0) : 0;
+             
+             const totalQty = qExisting + qNew;
+             let newAvgUnitCost = cExisting;
+             if (totalQty > 0) {
+               newAvgUnitCost = ((qExisting * cExisting) + (qNew * cNew)) / totalQty;
+             }
+             
+             const updateFields: any = {
+               quantity: totalQty,
+               avgUnitCost: newAvgUnitCost
+             };
+             
+             if (!data.unitCost || data.unitCost === 0) {
+               updateFields.unitCost = newAvgUnitCost;
+             }
+             
+             transaction.update(snap.ref, updateFields);
+          }
+        }
+
+        transaction.set(counterRef, { count: newCount }, { merge: true });
         transaction.set(grnRef, newGRN);
       });
 
@@ -144,6 +262,12 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
         }
       }
 
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'goodsReceiptNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'purchase_orders'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'ledger'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'costs'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'suppliers'] });
       onClose();
     } catch (e: any) {
       console.error(e);
@@ -188,7 +312,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                    required
                    value={receiptDate}
                    onChange={e => setReceiptDate(e.target.value)}
-                   className="w-full px-4 py-3 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                   className="w-full px-4 py-3 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#A3711C] focus:ring-1 focus:ring-[#A3711C] transition-colors"
                  />
               </div>
               <div>
@@ -197,7 +321,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                    type="text"
                    value={challanNumber}
                    onChange={e => setChallanNumber(e.target.value)}
-                   className="w-full px-4 py-3 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                   className="w-full px-4 py-3 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#A3711C] focus:ring-1 focus:ring-[#A3711C] transition-colors"
                    placeholder="e.g. DC-10294"
                  />
               </div>
@@ -237,7 +361,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                                       step="0.01"
                                       value={item.receivedQty || ""}
                                       onChange={(e) => handleReceivedChange(i, e.target.value)}
-                                      className="w-full p-2 text-right bg-surface border border-divider rounded-lg font-mono text-sm focus:border-indigo-500"
+                                      className="w-full p-2 text-right bg-surface border border-divider rounded-lg font-mono text-sm focus:border-[#A3711C]"
                                       placeholder="0"
                                    />
                                 </td>
@@ -269,7 +393,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 rows={3}
-                className="w-full p-4 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors resize-none"
+                className="w-full p-4 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#A3711C] focus:ring-1 focus:ring-[#A3711C] transition-colors resize-none"
                 placeholder="Any comments about the delivery condition..."
               />
            </div>
@@ -295,9 +419,9 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                     </div>
                  ))}
                  
-                 <label className="w-24 h-24 flex flex-col items-center justify-center gap-2 bg-panel hover:bg-divider border-2 border-dashed border-divider hover:border-indigo-300 rounded-xl transition cursor-pointer group flex-shrink-0">
-                    <Camera className="w-6 h-6 text-ink-muted group-hover:text-indigo-500 transition-colors" />
-                    <span className="text-[9px] font-black uppercase text-ink-muted group-hover:text-indigo-500 tracking-widest">Add Photo</span>
+                 <label className="w-24 h-24 flex flex-col items-center justify-center gap-2 bg-panel hover:bg-divider border-2 border-dashed border-divider hover:border-[#A3711C] rounded-xl transition cursor-pointer group flex-shrink-0">
+                    <Camera className="w-6 h-6 text-ink-muted group-hover:text-[#A3711C] transition-colors" />
+                    <span className="text-[9px] font-black uppercase text-ink-muted group-hover:text-[#A3711C] tracking-widest">Add Photo</span>
                     <input 
                        type="file" 
                        accept="image/*" 
@@ -319,7 +443,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
            <button 
              onClick={handleSubmit} 
              disabled={isSubmitting} 
-             className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] disabled:opacity-50"
+             className="px-8 py-4 bg-[#A3711C] hover:bg-[#8a5d16] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] disabled:opacity-50"
            >
              {isSubmitting ? <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span> : <Save className="w-4 h-4" />} Save Receipt
            </button>

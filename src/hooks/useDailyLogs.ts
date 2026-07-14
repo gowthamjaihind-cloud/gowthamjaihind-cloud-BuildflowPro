@@ -4,12 +4,12 @@ import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import { DailyLogEntry, Task, AuditLog } from "../types";
 import { queryKeys } from "../lib/react-query";
+import { runTransaction } from "firebase/firestore";
+import { getProjectSubCollectionPath } from "../utils/projectPath";
 
 export const getTenantPath = (user: any, projectId: string, subPath: string) => {
   if (!user || !projectId) return null;
-  return user.currentOrgId 
-    ? `organizations/${user.currentOrgId}/projects/${projectId}/${subPath}` 
-    : `projects/${projectId}/${subPath}`;
+  return getProjectSubCollectionPath(projectId, subPath);
 };
 
 export const canEditOrDeleteLog = (user: any, log: DailyLogEntry) => {
@@ -109,18 +109,17 @@ export function useDateRangeLogsQuery(projectId: string, startDate?: string, end
 export function useSaveDailyLog(projectId: string) {
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (newEntry: Omit<DailyLogEntry, "id" | "createdAt" | "createdByUid" | "createdByName">) => {
       if (!user) throw new Error("Unauthenticated");
       
       const logsPath = getTenantPath(user, projectId, "dailyLogs");
-      if (!logsPath) throw new Error("Invalid path");
-
-      const { setDoc } = await import("firebase/firestore");
-
-      const newLogRef = doc(collection(db, logsPath));
+      const inventoryPath = getTenantPath(user, projectId, "inventory");
+      const issuesPath = getTenantPath(user, projectId, "material_issues");
+      if (!logsPath || !inventoryPath || !issuesPath) throw new Error("Invalid path");
+      
       const now = new Date().toISOString();
+      const newLogRef = doc(collection(db, logsPath));
       
       const latestEntry: DailyLogEntry = {
         ...newEntry,
@@ -130,14 +129,83 @@ export function useSaveDailyLog(projectId: string) {
         createdByName: user.displayName || user.email || "Unknown",
       };
 
-      await setDoc(newLogRef, latestEntry);
+      await runTransaction(db, async (transaction) => {
+        // All reads first
+        const validMaterials = (newEntry.materials || []).filter(m => m.quantity > 0);
+        const invDocs: Record<string, any> = {};
+        for (const mat of validMaterials) {
+            const invRef = doc(db, inventoryPath, mat.materialId);
+            invDocs[mat.materialId] = await transaction.get(invRef);
+        }
+
+        // Now perform writes
+        for (const mat of validMaterials) {
+            const invDoc = invDocs[mat.materialId];
+            if (invDoc && invDoc.exists()) {
+                const invData = invDoc.data();
+                const currentQty = invData.quantity || 0;
+                const invRef = doc(db, inventoryPath, mat.materialId);
+                transaction.update(invRef, {
+                  quantity: Math.max(0, currentQty - mat.quantity)
+                });
+                
+                const unitCost = invData.avgUnitCost || invData.unitCost || 0;
+                const totalPrice = mat.quantity * unitCost;
+                const issueRef = doc(collection(db, issuesPath));
+
+                transaction.set(issueRef, {
+                  id: issueRef.id,
+                  projectId,
+                  taskId: newEntry.taskId,
+                  taskName: "",
+                  issueDate: newEntry.workDate,
+                  totalCost: totalPrice,
+                  remarks: `Daily Progress: ${newEntry.taskId}`,
+                  createdAt: now,
+                  items: [
+                    {
+                      itemId: mat.materialId,
+                      materialId: mat.materialId,
+                      name: invData.name || mat.name || "Unknown Material",
+                      quantity: mat.quantity,
+                      unitCost: unitCost,
+                      totalPrice: totalPrice,
+                    }
+                  ]
+                });
+            }
+        }
+        transaction.set(newLogRef, latestEntry);
+      });
+
+      // Update Task Progress
+      if (newEntry.taskId) {
+        const taskPath = getTenantPath(user, projectId, `tasks/${newEntry.taskId}`);
+        if (taskPath) {
+          const taskRef = doc(db, taskPath);
+          const updates: any = {
+            progress: newEntry.progressPercent,
+          };
+          if (newEntry.markComplete || newEntry.progressPercent === 100) {
+            updates.status = "Completed";
+            updates.actualEndDate = newEntry.workDate;
+          } else if (newEntry.progressPercent > 0) {
+            updates.status = "In Progress";
+            updates.actualStartDate = newEntry.workDate;
+          }
+          await updateDoc(taskRef, updates);
+        }
+      }
       
       return latestEntry;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.byTask(projectId, variables.taskId) });
+      queryClient.invalidateQueries({ queryKey: dailyLogKeys.all(projectId) });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'dailyLogs'] });
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.byDate(projectId, variables.workDate) });
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks(projectId) });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'tasks'] });
     },
   });
 }
@@ -156,9 +224,31 @@ export function useUpdateDailyLog(projectId: string) {
       if (!logsPath || !auditPath) throw new Error("Invalid path");
 
       const logRef = doc(db, logsPath, id);
-      const { updateDoc, setDoc } = await import("firebase/firestore");
-      
+            
       await updateDoc(logRef, updates);
+
+      // Update Task Progress if changed
+      if (updates.taskId || oldLog.taskId) {
+        const targetTaskId = updates.taskId || oldLog.taskId;
+        const taskPath = getTenantPath(user, projectId, `tasks/${targetTaskId}`);
+        if (taskPath) {
+          const taskRef = doc(db, taskPath);
+          const taskUpdates: any = {};
+          if (updates.progressPercent !== undefined) {
+            taskUpdates.progress = updates.progressPercent;
+            if (updates.markComplete || updates.progressPercent === 100) {
+              taskUpdates.status = "Completed";
+              taskUpdates.actualEndDate = updates.workDate || oldLog.workDate;
+            } else if (updates.progressPercent > 0) {
+              taskUpdates.status = "In Progress";
+              // Don't overwrite actualStartDate for updates unless needed, but let's just set it
+            }
+          }
+          if (Object.keys(taskUpdates).length > 0) {
+            await updateDoc(taskRef, taskUpdates);
+          }
+        }
+      }
 
       // Write audit log
       const changes = Object.keys(updates).map((key) => ({
@@ -183,11 +273,14 @@ export function useUpdateDailyLog(projectId: string) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.byTask(projectId, data.taskId) });
+      queryClient.invalidateQueries({ queryKey: dailyLogKeys.all(projectId) });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'dailyLogs'] });
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.byDate(projectId, data.workDate) });
       // Invalidate the old date if it changed
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.all(projectId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks(projectId) });
-    },
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'tasks'] });
+      },
   });
 }
 
@@ -205,8 +298,7 @@ export function useDeleteDailyLog(projectId: string) {
       if (!logsPath || !auditPath) throw new Error("Invalid path");
 
       const logRef = doc(db, logsPath, id);
-      const { deleteDoc, setDoc } = await import("firebase/firestore");
-      
+            
       await deleteDoc(logRef);
 
       // Write audit log
@@ -232,9 +324,11 @@ export function useDeleteDailyLog(projectId: string) {
     },
     onSuccess: (deletedLog) => {
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.byTask(projectId, deletedLog.taskId) });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'dailyLogs'] });
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.byDate(projectId, deletedLog.workDate) });
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.all(projectId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks(projectId) });
-    },
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'tasks'] });
+      },
   });
 }

@@ -1,15 +1,17 @@
 import React from "react";
 import { motion } from "motion/react";
-import { Construction, ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { Construction, ArrowRight, Loader2, ShieldCheck, AlertCircle } from "lucide-react";
 
 interface LoginPageProps {
   isLoggingIn: boolean;
   onLogin: () => void;
+  loginError?: string | null;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({
   isLoggingIn,
   onLogin,
+  loginError,
 }) => {
   return (
     <div className="h-screen flex items-center justify-center p-6 overflow-hidden relative">
@@ -18,7 +20,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full apple-glass rounded-[48px] p-20 shadow-2xl relative z-10 text-center border-white/50"
       >
-        <div className="bg-surface-dark w-24 h-24 rounded-[32px] flex items-center justify-center mx-auto mb-10 shadow-2xl shadow-indigo-100 rotate-3">
+        <div className="bg-surface-dark w-24 h-24 rounded-[32px] flex items-center justify-center mx-auto mb-10 shadow-2xl shadow-primary/20 rotate-3">
           <Construction className="w-12 h-12 text-white" />
         </div>
         <h1 className="text-[48px] font-bold text-ink mb-6 tracking-tight leading-none">
@@ -50,6 +52,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             </>
           )}
         </button>
+
+        {loginError && (
+          <div className="mt-6 flex items-start gap-3 text-[13px] font-medium text-[#FF3B30] bg-[#FF3B30]/10 p-4 rounded-2xl text-left border border-[#FF3B30]/20">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <p>{loginError}</p>
+          </div>
+        )}
 
         <div className="mt-12 flex items-center justify-center gap-3 text-[13px] font-semibold text-ink-muted">
           <ShieldCheck className="w-4 h-4 text-[#34C759]" />

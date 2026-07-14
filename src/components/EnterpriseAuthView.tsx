@@ -5,6 +5,7 @@ import {
   collection,
   getDocs,
   doc,
+  setDoc,
   updateDoc,
   query,
   onSnapshot,
@@ -39,17 +40,13 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
 }) => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [botSessions, setBotSessions] = useState<
-    { id: string; email?: string; activeProjectId?: string }[]
-  >([]);
-  const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingRole, setEditingRole] = useState<UserRole>("Viewer");
   const [editingProjectAccess, setEditingProjectAccess] = useState<
     Record<string, "read" | "write" | "none">
   >({});
-  const [editingBotPin, setEditingBotPin] = useState<string>("");
-
+  
   const roles: UserRole[] = [
     "Admin",
     "Project Manager",
@@ -91,25 +88,11 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       },
     );
 
-    const unsubBotSessions = onSnapshot(
-      collection(db, "bot_sessions"),
-      (snap) => {
-        setBotSessions(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        console.log(
-          "Bot sessions updated",
-          snap.docs.map((d) => ({ id: d.id, ...d.data() })),
-        );
-      },
-      (error) => {
-        handleFirestoreError(error, OperationType.LIST, "bot_sessions");
-      },
-    );
-
+    
     fetchUsers();
     return () => {
       unsubscribe();
-      unsubBotSessions();
-    };
+          };
   }, []);
 
   const handleUpdateRole = async (userId: string) => {
@@ -121,8 +104,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       await updateDoc(doc(db, "users", userId), {
         role: editingRole,
         projectAccess: editingProjectAccess,
-        botPin: editingBotPin || "",
-      });
+              });
       setUsers(
         users.map((u) =>
           u.uid === userId
@@ -130,8 +112,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                 ...u,
                 role: editingRole,
                 projectAccess: editingProjectAccess,
-                botPin: editingBotPin || "",
-              }
+                              }
             : u,
         ),
       );
@@ -141,43 +122,32 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
     }
   };
 
-  const handleDisconnectBot = async (chatId: string) => {
-    if (currentUser.role !== "Admin") {
-      return;
-    }
-
+  const handleGenerateLinkCode = async (u: UserProfile) => {
+    if (currentUser.role !== "Admin") return;
+    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
     try {
-      await deleteDoc(doc(db, "bot_sessions", chatId));
+      await setDoc(doc(db, "bot_link_codes", code), {
+        email: u.email,
+        userId: u.uid,
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+        used: false
+      });
+      window.alert(`Generated one-time link code for ${u.displayName || u.email}:\n\n${code}\n\nThey must send: /link ${code}`);
     } catch (err: any) {
-      handleFirestoreError(err, OperationType.DELETE, `bot_sessions/${chatId}`);
+      handleFirestoreError(err, OperationType.CREATE, "bot_link_codes");
     }
   };
 
-  const handleRevokeUnregistered = async () => {
+  const handleUnlinkTelegram = async (u: UserProfile) => {
     if (currentUser.role !== "Admin") return;
-
     try {
-      const batch = writeBatch(db);
-      let count = 0;
-      botSessions.forEach((session) => {
-        const hasValidEmail = !!session.email;
-        const isRegistered =
-          hasValidEmail &&
-          users.some(
-            (u) =>
-              !!u.email &&
-              u.email.toLowerCase() === session.email!.toLowerCase(),
-          );
-        if (!isRegistered) {
-          batch.delete(doc(db, "bot_sessions", session.id));
-          count++;
-        }
+      await updateDoc(doc(db, "users", u.uid), {
+        telegramChatId: null,
+        telegramLinkedAt: null,
       });
-      if (count > 0) {
-        await batch.commit();
-      }
+      setUsers(users.map(user => user.uid === u.uid ? { ...user, telegramChatId: undefined, telegramLinkedAt: undefined } : user));
     } catch (err: any) {
-      handleFirestoreError(err, OperationType.DELETE, "bot_sessions");
+      handleFirestoreError(err, OperationType.UPDATE, "users");
     }
   };
 
@@ -245,7 +215,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
               <tr className="border-b border-divider text-ink-muted text-[11px] uppercase tracking-widest font-black">
                 <th className="px-8 py-6">User Identity</th>
                 <th className="px-8 py-6">Platform Role</th>
-                <th className="px-8 py-6">Telegram Bot PIN</th>
+                <th className="px-8 py-6">Telegram Link</th>
                 <th className="px-8 py-6">Projects Access</th>
                 <th className="px-8 py-6 text-right">Actions</th>
               </tr>
@@ -277,56 +247,24 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    {editingUserId === u.uid ? (
-                      <select
-                        className="bg-surface border text-sm font-bold border-divider text-ink rounded-xl px-4 py-2 outline-none w-48"
-                        value={editingRole}
-                        onChange={(e) =>
-                          setEditingRole(e.target.value as UserRole)
-                        }
-                      >
-                        {roles.map((r) => (
-                          <option key={r} value={r}>
-                            {r}
-                          </option>
-                        ))}
-                      </select>
+                    {u.telegramChatId ? (
+                      <div className="flex flex-col gap-1">
+                        <span className="font-mono text-sm tracking-widest text-[#34C759] bg-[#34C759]/10 px-3 py-1.5 rounded-lg border border-[#34C759]/20 w-fit">
+                          Linked
+                        </span>
+                        {currentUser.role === "Admin" && (
+                          <button onClick={() => handleUnlinkTelegram(u)} className="text-xs text-rose-500 hover:underline w-fit">Unlink</button>
+                        )}
+                      </div>
                     ) : (
-                      <span
-                        className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider ${
-                          u.role === "Admin"
-                            ? "bg-[#34C759]/10 text-[#34C759]"
-                            : u.role === "Viewer"
-                              ? "bg-panel text-ink-muted"
-                              : "bg-primary/10 text-primary"
-                        }`}
-                      >
-                        {u.role}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-8 py-6">
-                    {editingUserId === u.uid ? (
-                      <input
-                        type="text"
-                        maxLength={4}
-                        placeholder="4-digit PIN"
-                        className="bg-surface border text-sm font-bold border-divider text-ink rounded-xl px-4 py-2 outline-none w-32"
-                        value={editingBotPin}
-                        onChange={(e) =>
-                          setEditingBotPin(
-                            e.target.value.replace(/\D/g, "").slice(0, 4),
-                          )
-                        }
-                      />
-                    ) : u.botPin ? (
-                      <span className="font-mono text-sm tracking-widest text-ink bg-panel px-3 py-1.5 rounded-lg border border-divider">
-                        {u.botPin}
-                      </span>
-                    ) : (
-                      <span className="text-ink-muted italic text-sm">
-                        Not defined
-                      </span>
+                      <div className="flex flex-col gap-2">
+                        <span className="text-ink-muted italic text-sm">
+                          Not linked
+                        </span>
+                        {currentUser.role === "Admin" && (
+                          <button onClick={() => handleGenerateLinkCode(u)} className="text-xs text-primary font-bold hover:underline w-fit">Generate Code</button>
+                        )}
+                      </div>
                     )}
                   </td>
                   <td className="px-8 py-6">
@@ -387,7 +325,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                                 >
                                   <span className="truncate">{p.name}</span>
                                   <span
-                                    className={`font-bold ${u.projectAccess![p.id] === "write" ? "text-indigo-600" : "text-ink-muted"}`}
+                                    className={`font-bold ${u.projectAccess![p.id] === "write" ? "text-[#A3711C]" : "text-ink-muted"}`}
                                   >
                                     {u.projectAccess![p.id] === "write"
                                       ? "R/W"
@@ -433,8 +371,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                             accessMap[p.id] = u.projectAccess?.[p.id] || "none";
                           });
                           setEditingProjectAccess(accessMap);
-                          setEditingBotPin(u.botPin || "");
-                        }}
+                                                  }}
                         disabled={currentUser.role !== "Admin"}
                         className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                         title="Edit Role"
@@ -450,123 +387,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
         </div>
       </div>
 
-      <div className="mt-8 bg-surface rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-divider overflow-hidden">
-        <div className="p-8 border-b border-divider flex items-center justify-between bg-panel/50">
-          <h2 className="text-xl font-bold flex items-center gap-3">
-            <MessageSquare className="w-6 h-6 text-primary" /> Connected
-            Telegram Sessions
-          </h2>
-          {currentUser.role === "Admin" && (
-            <button
-              onClick={handleRevokeUnregistered}
-              className="px-4 py-2 bg-rose-50 text-rose-600 rounded-xl font-bold text-sm hover:bg-rose-100 transition-colors flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" /> Revoke Unregistered
-            </button>
-          )}
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-divider text-ink-muted text-[11px] uppercase tracking-widest font-black">
-                <th className="px-8 py-6">Telegram Chat ID</th>
-                <th className="px-8 py-6">Linked Platform Email</th>
-                <th className="px-8 py-6">Active Project Context</th>
-                <th className="px-8 py-6 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {botSessions.map((session, i) => {
-                const linkedUser = users.find(
-                  (u) =>
-                    u.email?.toLowerCase() === session.email?.toLowerCase(),
-                );
-                const activeProject = projects.find(
-                  (p) => p.id === session.activeProjectId,
-                );
-
-                return (
-                  <tr
-                    key={session.id || i}
-                    className="hover:bg-panel/50 transition-colors"
-                  >
-                    <td className="px-8 py-6">
-                      <span className="font-mono text-sm font-medium text-ink bg-panel px-2.5 py-1 rounded-md">
-                        {session.id}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6">
-                      {session.email ? (
-                        <div className="flex items-center gap-3">
-                          {linkedUser?.photoURL ? (
-                            <img
-                              src={linkedUser.photoURL}
-                              alt=""
-                              className="w-6 h-6 rounded-full"
-                            />
-                          ) : linkedUser?.displayName ? (
-                            <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center">
-                              {linkedUser.displayName.charAt(0)}
-                            </div>
-                          ) : null}
-                          <span className="font-medium text-ink">
-                            {session.email}
-                          </span>
-                          {!linkedUser && (
-                            <span className="text-xs text-rose-500 font-bold bg-rose-50 px-2 py-0.5 rounded-full">
-                              Unregistered
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-ink-muted italic">
-                          Not Logged In
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-8 py-6">
-                      {activeProject ? (
-                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-bold text-sm">
-                          <Construction className="w-4 h-4" />{" "}
-                          {activeProject.name}
-                        </span>
-                      ) : session.activeProjectId ? (
-                        <span className="text-rose-500 font-medium">
-                          Invalid Project ({session.activeProjectId})
-                        </span>
-                      ) : (
-                        <span className="text-ink-muted italic">—</span>
-                      )}
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      {currentUser.role === "Admin" && (
-                        <button
-                          onClick={() => handleDisconnectBot(session.id)}
-                          className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
-                          title="Disconnect Session"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {botSessions.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={3}
-                    className="px-8 py-12 text-center text-ink-muted font-medium"
-                  >
-                    No active bot sessions found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      
     </div>
   );
 };

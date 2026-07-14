@@ -147,6 +147,7 @@ function AppContent() {
   const user = useAuthStore((state) => state.user);
   const loading = useAuthStore((state) => state.loading);
   const isLoggingIn = useAuthStore((state) => state.isLoggingIn);
+  const loginError = useAuthStore((state) => state.loginError);
   const login = useAuthStore((state) => state.login);
 
   const { data: projects = [] } = useProjectsQuery();
@@ -178,13 +179,13 @@ function AppContent() {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-900 text-white">
-        <Loader2 className="w-12 h-12 animate-spin text-indigo-500" />
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!user) {
-    return <LoginPage isLoggingIn={isLoggingIn} onLogin={login} />;
+    return <LoginPage isLoggingIn={isLoggingIn} onLogin={login} loginError={loginError} />;
   }
 
   if (!activeProject) {

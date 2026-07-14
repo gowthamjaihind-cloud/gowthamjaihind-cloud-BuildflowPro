@@ -140,7 +140,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       </div>
                     ) : (
                       <div className="flex items-center justify-between bg-surface border border-[#E5E5EA] px-4 py-3 rounded-xl">
-                        <span className="text-ink font-semibold">{companyName || "No Company Name Set"}</span>
+                        <span className="text-ink font-semibold">
+                          {companyName || "No Company Name Set"}
+                        </span>
                         <button
                           onClick={() => {
                             setDraftCompanyName(companyName);
@@ -174,13 +176,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </select>
                   </div>
                   <div className="pt-4 border-t border-surface-dark/5">
-                    <button 
+                    <button
                       onClick={(e) => {
                         const target = e.currentTarget;
                         const originalText = target.innerHTML;
                         target.innerHTML = "Saved!";
                         setTimeout(() => {
-                           target.innerHTML = originalText;
+                          target.innerHTML = originalText;
                         }, 2000);
                       }}
                       className="bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#0056B3] transition-colors apple-transition active:scale-95"
@@ -202,9 +204,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <h4 className="font-bold text-ink mb-4">UI Work Mode</h4>
                     <div className="flex gap-4">
                       <button
-                        onClick={() => useUIStore.getState().setUIMode('executive')}
+                        onClick={() =>
+                          useUIStore.getState().setUIMode("executive")
+                        }
                         className={`flex-1 p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
-                          useUIStore.getState().uiMode === 'executive'
+                          useUIStore.getState().uiMode === "executive"
                             ? "border-primary ring-2 ring-primary/20 bg-surface"
                             : "border-divider bg-panel hover:bg-surface"
                         }`}
@@ -218,9 +222,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </span>
                       </button>
                       <button
-                        onClick={() => useUIStore.getState().setUIMode('site')}
+                        onClick={() => useUIStore.getState().setUIMode("site")}
                         className={`flex-1 p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
-                          useUIStore.getState().uiMode === 'site'
+                          useUIStore.getState().uiMode === "site"
                             ? "border-primary ring-2 ring-primary/20 bg-surface"
                             : "border-divider bg-panel hover:bg-surface"
                         }`}
@@ -240,11 +244,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <h4 className="font-bold text-ink mb-4">Color Scheme</h4>
                     <div className="flex flex-wrap gap-4">
                       {[
-                        { id: "default", color: "#007AFF", label: "Default" },
-                        { id: "mint", color: "#34C759", label: "Mint" },
-                        { id: "sunset", color: "#FF9500", label: "Sunset" },
-                        { id: "lavender", color: "#AF52DE", label: "Lavender" },
-                        { id: "rose", color: "#FF2D55", label: "Rose" },
+                        { id: "default", color: "#A3711C", label: "Brass" },
+                        { id: "green", color: "#14452F", label: "Racing Green" },
+                        { id: "claret", color: "#7B2D3A", label: "Claret" },
+                        { id: "oxford", color: "#1F3A5F", label: "Oxford Blue" },
+                        { id: "ochre", color: "#8B6508", label: "Ochre" },
                       ].map((scheme) => (
                         <button
                           key={scheme.id}
@@ -300,8 +304,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       </button>
                     </div>
                   </div>
-
-
                 </div>
               </section>
             )}
@@ -309,7 +311,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             {activeTab === "security" && (
               <section className="apple-glass p-8 squircle-24">
                 <h3 className="text-xl font-bold text-ink mb-6 flex items-center gap-2">
-                  <Shield className="w-6 h-6 text-[#5856D6]" /> Security
+                  <Shield className="w-6 h-6 text-primary" /> Security
                   Protocols
                 </h3>
                 <div className="space-y-6">

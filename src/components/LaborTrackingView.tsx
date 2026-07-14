@@ -18,6 +18,8 @@ import {
 import {
   Vendor,
   LaborRateCard,
+  DailyLogEntry,
+  LaborLogLineItem,
   DailyLaborLog,
   Task,
   VendorLedgerEntry,
@@ -53,7 +55,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { useProjectData } from "../hooks/useProjectData";
 import { useTaskStore, useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
-import { useTasksQuery } from "../hooks/queries";
+import { useTasksQuery, useProjectDataQuery } from "../hooks/queries";
+import { useBreakpoint } from "../hooks/useBreakpoint";
 
 interface LaborTrackingViewProps {
   projectId: string;
@@ -65,10 +68,12 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
   projectId,
 }) => {
   const { user } = useAuthStore();
+  const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
 
   const [activeTab, setActiveTab] = useState<Tab>("rates");
   const queryClient = useQueryClient();
+  const breakpoint = useBreakpoint();
 
   const { data: tasks = [] } = useTasksQuery(projectId);
 
@@ -89,13 +94,57 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     "ledger",
   );
 
-
-  const { data: laborLogs } = useProjectData<DailyLaborLog>(
+  const { data: dailyLogs } = useProjectDataQuery<DailyLogEntry>(projectId, "dailyLogs");
+  const { data: legacyLaborLogs } = useProjectDataQuery<DailyLaborLog>(
     projectId,
     "labor_logs",
     "date",
     "desc"
   );
+
+  const laborLogs = useMemo(() => {
+    if (!dailyLogs || !rateCards || !tasks || !vendors) return [];
+    const logs: DailyLaborLog[] = legacyLaborLogs ? [...legacyLaborLogs] : [];
+    
+    dailyLogs.forEach((dailyLog) => {
+      const vendorItems: Record<string, LaborLogLineItem[]> = {};
+      
+      dailyLog.labour?.forEach((labourItem) => {
+        const rateCard = rateCards.find(r => r.id === labourItem.roleId);
+        if (rateCard) {
+          if (!vendorItems[rateCard.vendorId]) {
+            vendorItems[rateCard.vendorId] = [];
+          }
+          vendorItems[rateCard.vendorId].push({
+            taskId: dailyLog.taskId,
+            taskName: tasks.find(t => t.id === dailyLog.taskId)?.name || "Unknown Task",
+            role: rateCard.role,
+            headcount: labourItem.headcount,
+            shifts: 1, 
+            rate: rateCard.rate,
+            cost: labourItem.headcount * 1 * rateCard.rate,
+          });
+        }
+      });
+
+      Object.entries(vendorItems).forEach(([vendorId, items]) => {
+        const vendor = vendors.find(v => v.id === vendorId);
+        const totalCost = items.reduce((sum, i) => sum + i.cost, 0);
+        logs.push({
+          id: `${dailyLog.id}_${vendorId}`, 
+          projectId,
+          vendorId,
+          vendorName: vendor?.name || "Unknown",
+          date: dailyLog.workDate, 
+          totalCost,
+          status: "Approved", 
+          items,
+        });
+      });
+    });
+    
+    return logs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [dailyLogs, rateCards, tasks, vendors]);
 
   // Modals
   const [isAddingRate, setIsAddingRate] = useState(false);
@@ -111,12 +160,9 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     unit: "Shift",
   });
 
-
-
-  
   const handleAddRate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const path = `projects/${projectId}/labor_rate_cards`;
+    const path = `${basePath}/labor_rate_cards`;
     try {
       if (editingRateId) {
         await updateDoc(doc(db, path, editingRateId), { ...newRate });
@@ -126,7 +172,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
       setIsAddingRate(false);
       setEditingRateId(null);
       setNewRate({ vendorId: "", role: "", rate: 0, unit: "Shift" });
-      queryClient.invalidateQueries({ queryKey: ['projectData', projectId] });
+      queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, path);
     }
@@ -135,9 +181,29 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
   const handleDeleteRABill = async (billId: string) => {
     if (!billId || isProcessing) return;
     setIsProcessing(true);
+    
     try {
-      await deleteDoc(doc(db, `projects/${projectId}/ra_bills`, billId));
-      queryClient.invalidateQueries({ queryKey: ['projectData', projectId] });
+      const billToDel = raBills.find((b) => b.id === billId);
+      if (!billToDel) throw new Error("Bill not found");
+      
+      const ledgerEntry = ledger.find((e) => e.referenceId === billId && e.referenceType === "LABOR_DEPLOYMENT");
+      
+      await runTransaction(db, async (transaction) => {
+        const vendorRef = doc(db, `${basePath}/suppliers/${billToDel.vendorId}`);
+        const vendorDoc = await transaction.get(vendorRef);
+        if (vendorDoc.exists()) {
+          transaction.update(vendorRef, {
+            outstandingBalance: (vendorDoc.data().outstandingBalance || 0) - billToDel.netAmount,
+          });
+        }
+        
+        if (ledgerEntry) {
+          transaction.delete(doc(db, `${basePath}/ledger/${ledgerEntry.id}`));
+        }
+        transaction.delete(doc(db, `${basePath}/ra_bills/${billId}`));
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
     } catch (error) {
       console.error("Delete RA Bill Failed:", error);
     } finally {
@@ -148,20 +214,19 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
   const handleDeleteRate = async (rateId: string) => {
     if (!rateId || isProcessing) return;
     setIsProcessing(true);
-    const path = `projects/${projectId}/labor_rate_cards/${rateId}`;
+    const path = `${basePath}/labor_rate_cards/${rateId}`;
     try {
       await deleteDoc(
-        doc(db, `projects/${projectId}/labor_rate_cards`, rateId),
+        doc(db, `${basePath}/labor_rate_cards`, rateId),
       );
       setIsDeletingRate(null);
+      queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, path);
     } finally {
       setIsProcessing(false);
     }
   };
-
-
 
   const handleGenerateRABill = async (
     vendor: Vendor,
@@ -172,27 +237,55 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     if (!isAdminOrOwner) return;
     if (isProcessing) return;
     setIsProcessing(true);
-    const path = `projects/${projectId}/ra_bills`;
-
+    
     try {
       const billNumber = `RA-${vendor.name.substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}`;
-      const billData: Omit<RABill, "id"> = {
-        projectId,
-        vendorId: vendor.id,
-        vendorName: vendor.name,
-        billDate: new Date().toISOString().split("T")[0],
-        billNumber,
-        grossAmount: gross,
-        deductions: gross - net,
-        netAmount: net,
-        status: "Certified",
-        logIds: logIds,
-      };
-
-      await addDoc(collection(db, path), billData);
+      
+      await runTransaction(db, async (transaction) => {
+        const vendorRef = doc(db, `${basePath}/suppliers/${vendor.id}`);
+        console.log("Checking vendorRef:", vendorRef.path, vendor);
+        const vendorDoc = await transaction.get(vendorRef);
+        if (!vendorDoc.exists()) { console.error("Vendor not found at path:", vendorRef.path); return; }
+        
+        const billRef = doc(collection(db, `${basePath}/ra_bills`));
+        const ledgerRef = doc(collection(db, `${basePath}/ledger`));
+        
+        const billData = {
+          projectId,
+          vendorId: vendor.id,
+          vendorName: vendor.name,
+          billDate: new Date().toISOString().split("T")[0],
+          billNumber,
+          grossAmount: gross,
+          deductions: gross - net,
+          netAmount: net,
+          status: "Certified",
+          logIds: logIds,
+        };
+        
+        transaction.set(billRef, billData);
+        
+        transaction.set(ledgerRef, {
+          projectId,
+          vendorId: vendor.id,
+          date: new Date().toISOString(),
+          type: "CREDIT",
+          amount: net,
+          referenceType: "LABOR_DEPLOYMENT",
+          referenceId: billRef.id,
+          description: `RA Bill - ${billNumber}`,
+        });
+        
+        transaction.update(vendorRef, {
+          outstandingBalance: (vendorDoc.data().outstandingBalance || 0) + net,
+        });
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
+      console.log("RA Bill generated", billNumber);
       alert(`RA Bill ${billNumber} generated successfully!`);
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, path);
+      handleFirestoreError(error, OperationType.CREATE, `${basePath}/ra_bills`);
     } finally {
       setIsProcessing(false);
     }
@@ -254,9 +347,9 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     if (sortField !== field)
       return <ArrowUpDown className="w-3 h-3 opacity-20" />;
     return sortDirection === "asc" ? (
-      <ChevronUp className="w-3 h-3 text-indigo-500" />
+      <ChevronUp className="w-3 h-3 text-[#F3E8D2]0" />
     ) : (
-      <ChevronDown className="w-3 h-3 text-indigo-500" />
+      <ChevronDown className="w-3 h-3 text-[#F3E8D2]0" />
     );
   };
 
@@ -305,7 +398,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         {rates.length} Labor Classifications
                       </p>
                       <div className="w-1 h-1 rounded-full bg-divider" />
-                      <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
+                      <p className="text-[10px] font-bold text-[#F3E8D2]0 uppercase tracking-widest">
                         ID: {vendor.id.slice(0, 8)}
                       </p>
                     </div>
@@ -347,7 +440,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         });
                         setIsAddingRate(true);
                       }}
-                      className="mt-4 text-indigo-600 text-[10px] font-black uppercase tracking-widest hover:underline"
+                      className="mt-4 text-[#A3711C] text-[10px] font-black uppercase tracking-widest hover:underline"
                     >
                       Initialize Rate Sheet
                     </button>
@@ -367,7 +460,10 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                             Daily Yield
                           </p>
                           <p className="text-2xl font-black text-emerald-600 font-mono tracking-tighter">
-                            ₹{rate.rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                            ₹
+                            {rate.rate.toLocaleString("en-IN", {
+                              maximumFractionDigits: 0,
+                            })}
                           </p>
                           <p className="text-[10px] text-ink-muted font-black uppercase tracking-widest">
                             / {rate.unit}
@@ -416,23 +512,22 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
 
   const renderBilling = () => {
     // RA Bill Logic - Calculate summary per vendor
-    const raBillsSummary = vendors
-      .map((vendor) => {
-        const vendorLogs = laborLogs.filter((l) => l.vendorId === vendor.id);
-        const grossAmount = vendorLogs.reduce((sum, l) => sum + l.totalCost, 0);
-        const vendorLedger = ledger.filter((e) => e.vendorId === vendor.id);
-        const totalPaid = vendorLedger
-          .filter((e) => e.type === "DEBIT")
-          .reduce((sum, e) => sum + e.amount, 0);
-        const netPayable = grossAmount - totalPaid;
+    const billedLogIds = new Set(raBills.flatMap((b) => b.logIds || []));
 
+    console.log("LaborLogs", laborLogs); console.log("Vendors", vendors); const raBillsSummary = vendors
+      .map((vendor) => {
+        const unbilledLogs = laborLogs.filter(
+          (l) => l.vendorId === vendor.id && !billedLogIds.has(l.id)
+        );
+        const grossAmount = unbilledLogs.reduce((sum, l) => sum + l.totalCost, 0);
+        const netPayable = grossAmount;
         return {
           vendor,
           grossAmount,
-          totalPaid,
+          totalPaid: 0,
           netPayable,
-          logCount: vendorLogs.length,
-          logIds: vendorLogs.map((l) => l.id),
+          logCount: unbilledLogs.length,
+          logIds: unbilledLogs.map((l) => l.id),
         };
       })
       .filter((bill) => bill.grossAmount > 0);
@@ -456,7 +551,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
               >
                 <div className="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-panel/50 rounded-full -mr-24 md:-mr-32 -mt-24 md:-mt-32 group-hover:scale-110 apple-transition" />
                 <div className="flex items-center gap-4 md:gap-8 relative z-10">
-                  <div className="bg-slate-900 text-white p-4 md:p-6 rounded-[24px] md:rounded-[32px] shadow-2xl shadow-slate-200 group-hover:bg-indigo-600 apple-transition">
+                  <div className="bg-slate-900 text-white p-4 md:p-6 rounded-[24px] md:rounded-[32px] shadow-2xl shadow-slate-200 group-hover:bg-[#A3711C] apple-transition">
                     <Calculator className="w-6 h-6 md:w-10 md:h-10" />
                   </div>
                   <div>
@@ -475,7 +570,10 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                       Gross Amount
                     </p>
                     <p className="text-base md:text-2xl font-mono font-black text-ink tracking-tighter leading-none">
-                      ₹{bill.grossAmount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                      ₹
+                      {bill.grossAmount.toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })}
                     </p>
                   </div>
                   <div className="flex-1 min-w-[100px]">
@@ -483,7 +581,10 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                       Amount Paid
                     </p>
                     <p className="text-base md:text-2xl font-mono font-black text-emerald-600 tracking-tighter leading-none">
-                      ₹{bill.totalPaid.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                      ₹
+                      {bill.totalPaid.toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })}
                     </p>
                   </div>
                   <div className="flex-1 min-w-[140px] bg-red-50/50 p-4 md:p-6 rounded-2xl md:rounded-[32px] border border-red-100 shadow-inner">
@@ -491,7 +592,10 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                       Outstanding
                     </p>
                     <p className="text-xl md:text-2xl font-mono font-black text-red-500 tracking-tighter leading-none">
-                      ₹{bill.netPayable.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                      ₹
+                      {bill.netPayable.toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -532,112 +636,234 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
             </div>
           </div>
 
-          <div className="bg-surface rounded-[24px] md:rounded-[40px] shadow-[0_10px_40px_rgba(0,0,0,0.02)] md:shadow-[0_20px_80px_rgba(0,0,0,0.03)] border border-slate-50 overflow-hidden">
-            <div className="overflow-x-auto scrollbar-hide">
-              <table className="w-full text-left min-w-[900px] md:min-w-[1000px]">
-                <thead>
-                  <tr className="bg-slate-900 text-white/40 border-b border-white/5">
-                    <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/30 italic">
-                      Ref No.
-                    </th>
-                    <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/30 italic">
-                      Date
-                    </th>
-                    <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/80">
-                      Vendor
-                    </th>
-                    <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/80 text-right">
-                      Gross Amount
-                    </th>
-                    <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/80 text-right">
-                      Net Amount
-                    </th>
-                    <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/80 text-center">
-                      Status
-                    </th>
-                    {isAdminOrOwner && <th className="px-6 md:px-10 py-4 md:py-6 text-right"></th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {raBills.map((bill) => (
-                    <tr
-                      key={bill.id}
-                      className="group hover:bg-panel/50 apple-transition"
-                    >
-                      <td className="px-6 md:px-10 py-6 md:py-8 font-black text-indigo-600 tracking-tighter text-sm whitespace-nowrap">
-                        {bill.billNumber}
-                      </td>
-                      <td className="px-6 md:px-10 py-6 md:py-8 font-mono text-[9px] md:text-[10px] font-black text-ink-muted group-hover:text-ink-muted apple-transition">
-                        {bill.billDate}
-                      </td>
-                      <td className="px-6 md:px-10 py-6 md:py-8">
-                        <div className="font-black text-ink text-base md:text-lg tracking-tight leading-none truncate max-w-[150px] md:max-w-none">
-                          {bill.vendorName}
-                        </div>
-                      </td>
-                      <td className="px-6 md:px-10 py-6 md:py-8 text-right font-black text-ink-muted font-mono text-base md:text-lg tracking-tighter">
-                        ₹{bill.grossAmount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                      </td>
-                      <td className="px-6 md:px-10 py-6 md:py-8 text-right font-black text-ink font-mono text-xl md:text-2xl tracking-tighter">
-                        ₹{bill.netAmount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                      </td>
-                      <td className="px-6 md:px-10 py-6 md:py-8 text-center">
-                        <span className="bg-emerald-50 text-emerald-600 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] border border-emerald-100/50 shadow-sm">
-                          {bill.status}
+          {breakpoint !== "desktop" ? (
+            <div className="space-y-4">
+              {raBills.map((bill) => (
+                <div
+                  key={bill.id}
+                  className="bg-surface rounded-[24px] shadow-[0_10px_40px_rgba(0,0,0,0.02)] border border-slate-50 p-5 md:p-6 relative"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="pr-4">
+                      <h4 className="font-black text-ink text-base md:text-lg tracking-tight leading-none mb-2">
+                        {bill.vendorName}
+                      </h4>
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-[#A3711C] tracking-tighter text-xs md:text-sm">
+                          {bill.billNumber}
                         </span>
-                      </td>
+                        <span className="font-mono text-[9px] md:text-[10px] font-black text-ink-muted">
+                          {bill.billDate}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 shrink-0">
+                      <span className="bg-emerald-50 text-emerald-600 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] border border-emerald-100/50 shadow-sm shrink-0">
+                        {bill.status}
+                      </span>
                       {isAdminOrOwner && (
-                        <td className="px-6 md:px-10 py-6 md:py-8 text-right">
-                          <button
-                            onClick={() => handleDeleteRABill(bill.id)}
-                            className="opacity-0 group-hover:opacity-100 p-2 text-ink-muted hover:text-red-500 apple-transition"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
+                        <button
+                          onClick={() => handleDeleteRABill(bill.id)}
+                          className="p-1.5 text-ink-muted hover:text-red-500 bg-red-50/50 rounded-lg apple-transition shrink-0"
+                        >
+                          <Trash2 className="w-3.5 md:w-4 h-3.5 md:h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-end mt-4 pt-4 border-t border-divider/30">
+                    <div>
+                      <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-ink-muted mb-1">
+                        Gross
+                      </p>
+                      <p className="text-xs md:text-sm font-mono font-black text-ink-muted tracking-tighter">
+                        ₹
+                        {bill.grossAmount.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-ink-muted mb-1">
+                        Net Amount
+                      </p>
+                      <p className="text-xl md:text-2xl font-mono font-black text-ink tracking-tighter leading-none">
+                        ₹
+                        {bill.netAmount.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {raBills.length === 0 && (
+                <div className="bg-surface rounded-[24px] shadow-[0_10px_40px_rgba(0,0,0,0.02)] border border-slate-50 p-12 text-center">
+                  <Calculator className="w-12 h-12 text-ink-muted mx-auto mb-4" />
+                  <p className="text-[9px] md:text-[10px] font-black text-ink-muted uppercase tracking-[0.3em]">
+                    No certification logs found in the archive
+                  </p>
+                </div>
+              )}
+
+              {raBills.length > 0 && (
+                <div className="bg-slate-900 rounded-[24px] p-6 text-white mt-8">
+                  <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-4 text-center">
+                    Aggregated Fiscal Output
+                  </p>
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-1">
+                        Total Gross
+                      </p>
+                      <p className="text-base md:text-lg font-mono font-black text-white/40 tracking-tighter">
+                        ₹
+                        {raBills
+                          .reduce((sum, b) => sum + b.grossAmount, 0)
+                          .toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] text-white/50 mb-1">
+                        Total Net
+                      </p>
+                      <p className="text-2xl md:text-3xl font-mono font-black text-white tracking-tighter leading-none">
+                        ₹
+                        {raBills
+                          .reduce((sum, b) => sum + b.netAmount, 0)
+                          .toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-surface rounded-[24px] md:rounded-[40px] shadow-[0_10px_40px_rgba(0,0,0,0.02)] md:shadow-[0_20px_80px_rgba(0,0,0,0.03)] border border-slate-50 overflow-hidden">
+              <div className="overflow-x-auto scrollbar-hide">
+                <table className="w-full text-left min-w-[900px] md:min-w-[1000px]">
+                  <thead>
+                    <tr className="bg-slate-900 text-white/40 border-b border-white/5">
+                      <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/30 italic">
+                        Ref No.
+                      </th>
+                      <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/30 italic">
+                        Date
+                      </th>
+                      <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/80">
+                        Vendor
+                      </th>
+                      <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/80 text-right">
+                        Gross Amount
+                      </th>
+                      <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/80 text-right">
+                        Net Amount
+                      </th>
+                      <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/80 text-center">
+                        Status
+                      </th>
+                      {isAdminOrOwner && (
+                        <th className="px-6 md:px-10 py-4 md:py-6 text-right"></th>
                       )}
                     </tr>
-                  ))}
-                  {raBills.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={!isAdminOrOwner ? 6 : 7}
-                        className="px-6 md:px-10 py-20 md:py-32 text-center"
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {raBills.map((bill) => (
+                      <tr
+                        key={bill.id}
+                        className="group hover:bg-panel/50 apple-transition"
                       >
-                        <Calculator className="w-12 h-12 md:w-16 md:h-16 text-ink-muted mx-auto mb-4" />
-                        <p className="text-[9px] md:text-[10px] font-black text-ink-muted uppercase tracking-[0.3em]">
-                          No certification logs found in the archive
-                        </p>
+                        <td className="px-6 md:px-10 py-6 md:py-8 font-black text-[#A3711C] tracking-tighter text-sm whitespace-nowrap">
+                          {bill.billNumber}
+                        </td>
+                        <td className="px-6 md:px-10 py-6 md:py-8 font-mono text-[9px] md:text-[10px] font-black text-ink-muted group-hover:text-ink-muted apple-transition">
+                          {bill.billDate}
+                        </td>
+                        <td className="px-6 md:px-10 py-6 md:py-8">
+                          <div className="font-black text-ink text-base md:text-lg tracking-tight leading-none truncate max-w-[150px] md:max-w-none">
+                            {bill.vendorName}
+                          </div>
+                        </td>
+                        <td className="px-6 md:px-10 py-6 md:py-8 text-right font-black text-ink-muted font-mono text-base md:text-lg tracking-tighter">
+                          ₹
+                          {bill.grossAmount.toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
+                        </td>
+                        <td className="px-6 md:px-10 py-6 md:py-8 text-right font-black text-ink font-mono text-xl md:text-2xl tracking-tighter">
+                          ₹
+                          {bill.netAmount.toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
+                        </td>
+                        <td className="px-6 md:px-10 py-6 md:py-8 text-center">
+                          <span className="bg-emerald-50 text-emerald-600 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] border border-emerald-100/50 shadow-sm">
+                            {bill.status}
+                          </span>
+                        </td>
+                        {isAdminOrOwner && (
+                          <td className="px-6 md:px-10 py-6 md:py-8 text-right">
+                            <button
+                              onClick={() => handleDeleteRABill(bill.id)}
+                              className="opacity-0 group-hover:opacity-100 p-2 text-ink-muted hover:text-red-500 apple-transition"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                    {raBills.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={!isAdminOrOwner ? 6 : 7}
+                          className="px-6 md:px-10 py-20 md:py-32 text-center"
+                        >
+                          <Calculator className="w-12 h-12 md:w-16 md:h-16 text-ink-muted mx-auto mb-4" />
+                          <p className="text-[9px] md:text-[10px] font-black text-ink-muted uppercase tracking-[0.3em]">
+                            No certification logs found in the archive
+                          </p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot className="bg-slate-900 border-t border-white/5">
+                    <tr className="font-black text-sm">
+                      <td
+                        colSpan={3}
+                        className="px-6 md:px-10 py-8 md:py-12 text-right uppercase tracking-[0.3em] md:tracking-[0.4em] text-white/20 text-[10px] md:text-[11px]"
+                      >
+                        Aggregated Fiscal Output
                       </td>
+                      <td className="px-6 md:px-10 py-8 md:py-12 text-right font-black text-white/40 font-mono text-xl md:text-2xl tracking-tighter">
+                        ₹
+                        {raBills
+                          .reduce((sum, b) => sum + b.grossAmount, 0)
+                          .toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
+                      </td>
+                      <td className="px-6 md:px-10 py-8 md:py-12 text-right font-black text-white font-mono text-2xl md:text-4xl tracking-tighter">
+                        ₹
+                        {raBills
+                          .reduce((sum, b) => sum + b.netAmount, 0)
+                          .toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
+                      </td>
+                      {isAdminOrOwner && <td colSpan={2}></td>}
                     </tr>
-                  )}
-                </tbody>
-                <tfoot className="bg-slate-900 border-t border-white/5">
-                  <tr className="font-black text-sm">
-                    <td
-                      colSpan={3}
-                      className="px-6 md:px-10 py-8 md:py-12 text-right uppercase tracking-[0.3em] md:tracking-[0.4em] text-white/20 text-[10px] md:text-[11px]"
-                    >
-                      Aggregated Fiscal Output
-                    </td>
-                    <td className="px-6 md:px-10 py-8 md:py-12 text-right font-black text-white/40 font-mono text-xl md:text-2xl tracking-tighter">
-                      ₹
-                      {raBills
-                        .reduce((sum, b) => sum + b.grossAmount, 0)
-                        .toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                    </td>
-                    <td className="px-6 md:px-10 py-8 md:py-12 text-right font-black text-white font-mono text-2xl md:text-4xl tracking-tighter">
-                      ₹
-                      {raBills
-                        .reduce((sum, b) => sum + b.netAmount, 0)
-                        .toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                    </td>
-                    {isAdminOrOwner && <td colSpan={2}></td>}
-                  </tr>
-                </tfoot>
-              </table>
+                  </tfoot>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     );
@@ -648,20 +874,16 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     let rows: any[][] = [];
 
     if (activeTab === "rates") {
-      headers = [
-        "Supplier",
-        "Role/Trade",
-        "Daily Rate",
-        "UOM",
-        "Last Updated"
-      ];
-      rows = rateCards.map(rate => [
-        `"${rate.vendorName || ""}"`,
-        `"${rate.role || ""}"`,
-        rate.dailyRate,
-        `"${rate.uom || ""}"`,
-        rate.updatedAt ? (rate.updatedAt as any).seconds ? new Date((rate.updatedAt as any).seconds * 1000).toLocaleDateString() : new Date(rate.updatedAt as any).toLocaleDateString() : ""
-      ]);
+      headers = ["Supplier", "Role/Trade", "Rate", "Unit"];
+      rows = rateCards.map((rate) => {
+        const matchingVendor = vendors.find((v) => v.id === rate.vendorId);
+        return [
+          `"${matchingVendor?.name || ""}"`,
+          `"${rate.role || ""}"`,
+          rate.rate,
+          `"${rate.unit || ""}"`,
+        ];
+      });
     } else {
       headers = [
         "RA Bill No",
@@ -670,16 +892,16 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         "Gross Amount",
         "Deductions",
         "Net Payable",
-        "Status"
+        "Status",
       ];
-      rows = raBills.map(bill => [
+      rows = raBills.map((bill) => [
         `"${bill.billNumber || ""}"`,
         `"${bill.vendorName || ""}"`,
         `"${bill.billDate || ""}"`,
         bill.grossAmount,
         bill.deductions,
         bill.netAmount,
-        `"${bill.status || ""}"`
+        `"${bill.status || ""}"`,
       ]);
     }
 
@@ -689,10 +911,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute(
-      "download",
-      `${projectId}_${activeTab}_export.csv`,
-    );
+    link.setAttribute("download", `${projectId}_${activeTab}_export.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -706,7 +925,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 md:flex-none px-4 md:px-8 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] apple-transition whitespace-nowrap ${activeTab === tab ? "bg-surface text-indigo-600 shadow-sm ring-1 ring-slate-200" : "text-ink-muted hover:text-ink/80"}`}
+              className={`flex-1 md:flex-none px-4 md:px-8 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] apple-transition whitespace-nowrap ${activeTab === tab ? "bg-surface text-[#A3711C] shadow-sm ring-1 ring-slate-200" : "text-ink-muted hover:text-ink/80"}`}
             >
               {tab === "rates" ? "Pricing" : "RA Billing"}
             </button>
@@ -714,9 +933,9 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="hidden sm:flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 bg-indigo-50 rounded-lg md:rounded-2xl border border-indigo-100/50">
-            <Users className="w-4 h-4 text-indigo-600" />
-            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest leading-none">
+          <div className="hidden sm:flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 bg-[#F3E8D2] rounded-lg md:rounded-2xl border border-[#F3E8D2]/50">
+            <Users className="w-4 h-4 text-[#A3711C]" />
+            <span className="text-[10px] font-bold text-[#A3711C] uppercase tracking-widest leading-none">
               Active Workload
             </span>
           </div>
@@ -782,7 +1001,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                   </label>
                   <select
                     required
-                    className="w-full bg-panel border-2 border-transparent focus:border-indigo-500 rounded-xl md:rounded-2xl p-3 md:p-4 outline-none text-xs md:text-sm font-bold appearance-none"
+                    className="w-full bg-panel border-2 border-transparent focus:border-[#F3E8D2]0 rounded-xl md:rounded-2xl p-3 md:p-4 outline-none text-xs md:text-sm font-bold appearance-none"
                     value={newRate.vendorId}
                     onChange={(e) =>
                       setNewRate({ ...newRate, vendorId: e.target.value })
@@ -804,7 +1023,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                     <input
                       required
                       placeholder="e.g. Mason"
-                      className="w-full bg-panel border-2 border-transparent focus:border-indigo-500 rounded-xl md:rounded-2xl p-3 md:p-4 outline-none text-xs md:text-sm font-bold"
+                      className="w-full bg-panel border-2 border-transparent focus:border-[#F3E8D2]0 rounded-xl md:rounded-2xl p-3 md:p-4 outline-none text-xs md:text-sm font-bold"
                       value={newRate.role}
                       onChange={(e) =>
                         setNewRate({ ...newRate, role: e.target.value })
@@ -818,7 +1037,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                     <input
                       type="number"
                       required
-                      className="w-full bg-panel border-2 border-transparent focus:border-indigo-500 rounded-xl md:rounded-2xl p-3 md:p-4 outline-none text-xs md:text-sm font-bold"
+                      className="w-full bg-panel border-2 border-transparent focus:border-[#F3E8D2]0 rounded-xl md:rounded-2xl p-3 md:p-4 outline-none text-xs md:text-sm font-bold"
                       value={newRate.rate}
                       onChange={(e) =>
                         setNewRate({

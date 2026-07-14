@@ -6,20 +6,7 @@ import { GanttChart } from '../GanttChart';
 import { useAuthStore } from '../../store';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState<boolean>(false);
-
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    if (media.matches !== matches) setMatches(media.matches);
-    const listener = () => setMatches(media.matches);
-    media.addEventListener('change', listener);
-    return () => media.removeEventListener('change', listener);
-  }, [matches, query]);
-
-  return matches;
-}
+import { useIsDesktop } from '../../hooks/useBreakpoint';
 
 import { DependencyType } from '../../types';
 
@@ -30,7 +17,7 @@ export const ScheduleView: React.FC<{
   onAddDependency?: (fromId: string, toId: string, type: DependencyType) => Promise<void>;
   onTaskUpdate?: (task: any) => Promise<void>;
 }> = ({ projectId, tasks, loading, onAddDependency, onTaskUpdate }) => {
-  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const isDesktop = useIsDesktop();
   const user = useAuthStore(state => state.user);
 
   const defaultPref = user?.preferences?.mobileScheduleView || 'timeline';

@@ -8,6 +8,7 @@ export interface Project {
   ownerId: string;
   imageUrl?: string;
   strictDataEntry?: boolean;
+  orgId?: string;
 }
 
 export type UserRole =
@@ -24,6 +25,8 @@ export interface UserProfile {
   displayName: string;
   role: UserRole;
   botPin?: string;
+  telegramChatId?: number;
+  telegramLinkedAt?: number;
   photoURL?: string;
   projectAccess?: Record<string, "read" | "write" | "none">;
   currentOrgId?: string; // Appended for multi-tenant SaaS architecture
@@ -202,6 +205,8 @@ export interface GoodsReceiptNote {
   receiptDate: string;
   challanNumber?: string;
   lineItems: GRNLineItem[];
+  ledgerId?: string;
+  costEntryId?: string;
   materialIds?: string[];
   photoUrls?: string[];
   notes?: string;
@@ -242,6 +247,7 @@ export interface MaterialReceipt {
   notes?: string;
   items: ReceiptLineItem[];
   ledgerId?: string;
+  costEntryId?: string;
   poId?: string;
   poNumber?: string;
   grnIds?: string[];
@@ -265,10 +271,12 @@ export interface DailyLaborLog {
   vendorId: string;
   vendorName?: string;
   date: string;
+  isAccrual?: boolean;
   totalCost: number;
   status: "Draft" | "Submitted" | "Approved";
   items: LaborLogLineItem[];
   ledgerId?: string;
+  costEntryId?: string;
 }
 
 export interface VendorLedgerEntry {
@@ -338,6 +346,7 @@ export interface CostEntry {
   type: "Budget" | "Actual";
   category: string;
   date: string;
+  isAccrual?: boolean;
 }
 
 export interface ProjectDocument {
@@ -347,11 +356,13 @@ export interface ProjectDocument {
   name: string;
   type: string;
   url: string;
+  storagePath?: string;
   uploadedBy: string;
   uploadedAt: string;
   accessLevel: "Public" | "Internal" | "Confidential";
   category?: string;
   tags?: string[];
+  deleted?: boolean;
 }
 
 export interface EstimateLineItem {
@@ -376,6 +387,9 @@ export interface ClientEstimate {
   subTotal: number;
   taxAmount: number;
   totalAmount: number;
+  taxRatePercent?: number;
+  snapshotBudgeted?: number;
+  snapshotDate?: string;
   clientNotes?: string;
   internalNotes?: string;
 }

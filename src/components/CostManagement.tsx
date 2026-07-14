@@ -57,6 +57,8 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { ClientPaymentsView } from "./ClientPaymentsView";
 import { useProjectDataQuery } from "../hooks/queries";
+import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
+import { useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface CostManagementProps {
@@ -66,16 +68,50 @@ interface CostManagementProps {
 export const CostManagement: React.FC<CostManagementProps> = ({
   projectId,
 }) => {
+  const { user } = useAuthStore();
+  const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
+
   const queryClient = useQueryClient();
-  const { data: entries = [] } = useProjectDataQuery<CostEntry>(projectId, "costs");
+  const { data: entries = [] } = useProjectDataQuery<CostEntry>(
+    projectId,
+    "costs",
+  );
   const { data: tasks = [] } = useProjectDataQuery<Task>(projectId, "tasks");
-  const { data: inventory = [] } = useProjectDataQuery<InventoryItem>(projectId, "inventory");
-  const { data: rateCards = [] } = useProjectDataQuery<LaborRateCard>(projectId, "labor_rate_cards");
-  const { data: vendors = [] } = useProjectDataQuery<Vendor>(projectId, "suppliers");
-  const { data: vendorLedger = [] } = useProjectDataQuery<any>(projectId, "ledger");
-  const { data: laborLogs = [] } = useProjectDataQuery<DailyLaborLog>(projectId, "labor_logs");
-  const { data: dailyLogs = [] } = useProjectDataQuery<any>(projectId, "dailyLogs");
-  const { data: clientPayments = [] } = useProjectDataQuery<any>(projectId, "client_payments");
+  const { data: inventory = [] } = useProjectDataQuery<InventoryItem>(
+    projectId,
+    "inventory",
+  );
+  const { data: rateCards = [] } = useProjectDataQuery<LaborRateCard>(
+    projectId,
+    "labor_rate_cards",
+  );
+  const { data: vendors = [] } = useProjectDataQuery<Vendor>(
+    projectId,
+    "suppliers",
+  );
+  const { data: vendorLedger = [] } = useProjectDataQuery<any>(
+    projectId,
+    "ledger",
+  );
+  const { data: laborLogs = [] } = useProjectDataQuery<DailyLaborLog>(
+    projectId,
+    "labor_logs",
+  );
+  const { data: dailyLogs = [] } = useProjectDataQuery<any>(
+    projectId,
+    "dailyLogs",
+  );
+  const { data: materialIssues = [] } = useProjectDataQuery<any>(
+    projectId,
+    "material_issues",
+  );
+  const { data: clientPayments = [] } = useProjectDataQuery<any>(
+    projectId,
+    "client_payments",
+  );
+
+  const { stats, taskTotalsMap, getTaskTotals } =
+    useProjectCostTotals(projectId);
 
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200,
@@ -92,27 +128,35 @@ export const CostManagement: React.FC<CostManagementProps> = ({
     const hasUnlinked = entries.some((e) => !e.taskId);
     if (hasUnlinked) {
       const overheadTask = tasks.find(
-        (t) => t.name === "Project Overhead" && t.isSystemGenerated
+        (t) => t.name === "Project Overhead" && t.isSystemGenerated,
       );
       if (!overheadTask) {
         const createOverhead = async () => {
           try {
-             const { addDoc, collection } = await import("firebase/firestore");
-             const { db } = await import("../firebase");
-             await addDoc(collection(db, `projects/${projectId}/tasks`), {
-                 projectId,
-                 name: "Project Overhead",
-                 type: "Summary",
-                 isSystemGenerated: true,
-                 phase: "Project Overheads",
-                 location: "Global",
-                 startDate: new Date().toISOString().split("T")[0],
-                 endDate: new Date().toISOString().split("T")[0],
-                 duration: 1,
-                 progress: 0,
-             });
+            const { doc, getDoc, setDoc } = await import("firebase/firestore");
+            const { db } = await import("../firebase");
+            const overheadRef = doc(
+              db,
+              `${basePath}/tasks`,
+              "system-project-overhead",
+            );
+            const overheadDoc = await getDoc(overheadRef);
+            if (!overheadDoc.exists()) {
+              await setDoc(overheadRef, {
+                projectId,
+                name: "Project Overhead",
+                type: "Summary",
+                isSystemGenerated: true,
+                phase: "Project Overheads",
+                location: "Global",
+                startDate: new Date().toISOString().split("T")[0],
+                endDate: new Date().toISOString().split("T")[0],
+                duration: 1,
+                progress: 0,
+              });
+            }
           } catch (e) {
-             console.error("Failed to create Project Overhead task", e);
+            console.error("Failed to create Project Overhead task", e);
           }
         };
         createOverhead();
@@ -210,138 +254,18 @@ export const CostManagement: React.FC<CostManagementProps> = ({
     taskId: "",
   });
 
-  const taskTotalsMap = useMemo(() => {
-    const totals: Record<string, { plannedMaterial: number, actualMaterial: number, plannedLabor: number, actualLabor: number, plannedOther: number, actualOther: number, totalPlanned: number, totalActual: number }> = {};
-    
-    // Bottom-up calculation: first leaf nodes, then parents
-    const getTotals = (taskId: string) => {
-      if (totals[taskId]) return totals[taskId];
-
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return { plannedMaterial: 0, actualMaterial: 0, plannedLabor: 0, actualLabor: 0, plannedOther: 0, actualOther: 0, totalPlanned: 0, totalActual: 0 };
-
-      const children = tasks.filter((t) => t.parentId === taskId);
-
-      let plannedMaterial = 0;
-      let actualMaterial = 0;
-      let plannedLabor = 0;
-      let actualLabor = 0;
-      let plannedOther = 0;
-      let actualOther = 0;
-
-      if (children.length > 0) {
-        children.forEach((child) => {
-          const childTotals = getTotals(child.id);
-          plannedMaterial += childTotals.plannedMaterial;
-          actualMaterial += childTotals.actualMaterial;
-          plannedLabor += childTotals.plannedLabor;
-          actualLabor += childTotals.actualLabor;
-          plannedOther += childTotals.plannedOther;
-          actualOther += childTotals.actualOther;
-        });
-      } else {
-        const isOverhead = task.name === "Project Overhead" && task.isSystemGenerated;
-        const budgetEntries = entries.filter(e => (e.taskId === taskId || (isOverhead && !e.taskId)) && e.type === "Budget");
-        const actualEntries = entries.filter(e => (e.taskId === taskId || (isOverhead && !e.taskId)) && e.type === "Actual");
-
-        const budgetMat = budgetEntries.filter(e => e.category === "Material").reduce((sum, e) => sum + e.amount, 0);
-        const budgetLab = budgetEntries.filter(e => e.category === "Labor").reduce((sum, e) => sum + e.amount, 0);
-        const budgetOther = budgetEntries.filter(e => e.category !== "Material" && e.category !== "Labor").reduce((sum, e) => sum + e.amount, 0);
-
-        plannedMaterial = (task.plannedMaterialCost || 0) + budgetMat;
-        plannedLabor = (task.plannedLaborCost || 0) + budgetLab;
-        plannedOther = (task.plannedOtherCost || 0) + budgetOther;
-
-        const entryMat = actualEntries.filter((e) => e.category === "Material").reduce((sum, e) => sum + e.amount, 0);
-        const logMat = dailyLogs.filter((log: any) => log.taskId === taskId).reduce((sum: number, log: any) => {
-          return sum + (log.materials || []).reduce((s: number, m: any) => {
-            const invItem = inventory.find(i => i.id === m.materialId);
-            const unitCost = invItem ? (invItem.avgUnitCost ?? invItem.unitCost) : 0;
-            return s + (m.quantity * unitCost);
-          }, 0);
-        }, 0);
-        actualMaterial = entryMat + logMat;
-
-        const entryLab = actualEntries.filter((e) => e.category === "Labor").reduce((sum, e) => sum + e.amount, 0);
-        const logLab = laborLogs.filter((log) => log.items.some((item) => item.taskId === taskId)).reduce((sum, log) => sum + log.items.filter((item) => item.taskId === taskId).reduce((s, i) => s + i.cost, 0), 0);
-        actualLabor = entryLab + logLab;
-
-        actualOther = actualEntries.filter((e) => e.category !== "Material" && e.category !== "Labor").reduce((sum, e) => sum + e.amount, 0);
-      }
-
-      const totalPlanned = plannedMaterial + plannedLabor + plannedOther;
-      const totalActual = actualMaterial + actualLabor + actualOther;
-
-      totals[taskId] = { plannedMaterial, actualMaterial, plannedLabor, actualLabor, plannedOther, actualOther, totalPlanned, totalActual };
-      return totals[taskId];
-    };
-
-    tasks.forEach(t => getTotals(t.id));
-    return totals;
-  }, [tasks, entries, dailyLogs, laborLogs, inventory]);
-
-  // Helper wrapper
-  const getTaskTotals = (task: Task, allTasks?: Task[], allEntries?: CostEntry[]) => {
-    return taskTotalsMap[task.id] || { plannedMaterial: 0, actualMaterial: 0, plannedLabor: 0, actualLabor: 0, plannedOther: 0, actualOther: 0, totalPlanned: 0, totalActual: 0 };
-  };
-
-  const stats = useMemo(() => {
-    // Task-based costs
-    const rootTasks = tasks.filter((t) => !t.parentId);
-
-    let budgetedTasks = 0;
-    let actualTasks = 0;
-    
-    // Category breakdown
-    let materialPlanned = 0;
-    let materialActual = 0;
-    let laborPlanned = 0;
-    let laborActual = 0;
-    let otherPlanned = 0;
-    let otherActual = 0;
-
-    rootTasks.forEach((t) => {
-      const totals = getTaskTotals(t, tasks, entries);
-      budgetedTasks += totals.totalPlanned;
-      actualTasks += totals.totalActual;
-      materialPlanned += totals.plannedMaterial;
-      materialActual += totals.actualMaterial;
-      laborPlanned += totals.plannedLabor;
-      laborActual += totals.actualLabor;
-      otherPlanned += totals.plannedOther;
-      otherActual += totals.actualOther;
-    });
-
-    const totalBudgeted = budgetedTasks;
-    const totalActual = actualTasks;
-
-    const chartData = [
-      { name: "Material", Budget: materialPlanned, Actual: materialActual },
-      { name: "Labor", Budget: laborPlanned, Actual: laborActual },
-      { name: "Direct Cost", Budget: otherPlanned, Actual: otherActual },
-    ];
-
-    return {
-      totalBudgeted,
-      totalActual,
-      chartData,
-      budgetedTasks,
-      actualTasks,
-      materialPlanned,
-      materialActual,
-      laborPlanned,
-      laborActual,
-      otherPlanned,
-      otherActual,
-    };
-  }, [entries, tasks, taskTotalsMap]);
-
   const flattenedTasks = useMemo(() => {
     const result: { id: string; name: string; level: number }[] = [];
-    const buildFlatList = (parentId: string | null | undefined, level: number) => {
+    const buildFlatList = (
+      parentId: string | null | undefined,
+      level: number,
+    ) => {
       tasks
-        .filter((t) => (t.parentId || null) === (parentId || null) && !t.isSystemGenerated)
-        .sort((a,b) => (a.startDate || "").localeCompare(b.startDate || ""))
+        .filter(
+          (t) =>
+            (t.parentId || null) === (parentId || null) && !t.isSystemGenerated,
+        )
+        .sort((a, b) => (a.startDate || "").localeCompare(b.startDate || ""))
         .forEach((task) => {
           result.push({ id: task.id, name: task.name, level });
           buildFlatList(task.id, level + 1);
@@ -354,10 +278,12 @@ export const CostManagement: React.FC<CostManagementProps> = ({
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newEntry.category?.toLowerCase() === "material") {
-      alert("Material costs are tracked automatically from daily logs — log consumption via the Daily Log screen instead");
+      alert(
+        "Material costs are tracked automatically from daily logs — log consumption via the Daily Log screen instead",
+      );
       return;
     }
-    const path = `projects/${projectId}/costs`;
+    const path = `${basePath}/costs`;
     try {
       if (newEntry.id) {
         // First rollback the old entry's impact if we have one
@@ -367,61 +293,88 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           if (task) {
             const rollbackData: any = {};
             const isActual = oldEntry.type === "Actual";
-            
+
             if (oldEntry.category === "Material") {
-              const field = isActual ? "actualMaterialCost" : "plannedMaterialCost";
-              rollbackData[field] = Math.max(0, (task[field] || 0) - (oldEntry.amount || 0));
+              const field = isActual
+                ? "actualMaterialCost"
+                : "plannedMaterialCost";
+              rollbackData[field] = Math.max(
+                0,
+                (task[field] || 0) - (oldEntry.amount || 0),
+              );
             } else if (oldEntry.category === "Labor") {
               const field = isActual ? "actualLaborCost" : "plannedLaborCost";
-              rollbackData[field] = Math.max(0, (task[field] || 0) - (oldEntry.amount || 0));
+              rollbackData[field] = Math.max(
+                0,
+                (task[field] || 0) - (oldEntry.amount || 0),
+              );
             } else {
               const field = isActual ? "actualOtherCost" : "plannedOtherCost";
-              rollbackData[field] = Math.max(0, (task[field] || 0) - (oldEntry.amount || 0));
+              rollbackData[field] = Math.max(
+                0,
+                (task[field] || 0) - (oldEntry.amount || 0),
+              );
             }
-            
-            const currentActual = isActual ? (task.actualCost || 0) - (oldEntry.amount || 0) : task.actualCost || 0;
-            const currentBudget = !isActual ? (task.budgetedCost || 0) - (oldEntry.amount || 0) : task.budgetedCost || 0;
-            
+
+            const currentActual = isActual
+              ? (task.actualCost || 0) - (oldEntry.amount || 0)
+              : task.actualCost || 0;
+            const currentBudget = !isActual
+              ? (task.budgetedCost || 0) - (oldEntry.amount || 0)
+              : task.budgetedCost || 0;
+
             rollbackData.actualCost = Math.max(0, currentActual);
             rollbackData.budgetedCost = Math.max(0, currentBudget);
-            
-            await updateDoc(doc(db, `projects/${projectId}/tasks`, oldEntry.taskId), rollbackData);
+
+            await updateDoc(
+              doc(db, `${basePath}/tasks`, oldEntry.taskId),
+              rollbackData,
+            );
           }
         }
-        
+
         // Update the actual entry doc
         const entryData = { ...newEntry, projectId };
         await updateDoc(doc(db, path, newEntry.id), entryData);
-        
+
         // Re-apply the new impact if there's a new task
         if (newEntry.taskId) {
-           // We need fresh task data since we just updated the task
-           // But since local state won't instantly reflect the DB we just compute delta from what we know or let the onSnapshot handle the final consistent view
-           // It's safer to re-fetch or use logic. Let's just refetch or rely on existing task state with our delta.
-           const taskRef = doc(db, `projects/${projectId}/tasks`, newEntry.taskId);
-           const taskDoc = await getDoc(taskRef);
-           if (taskDoc.exists()) {
-             const t = taskDoc.data();
-             const applyData: any = {};
-             const isActual = newEntry.type === "Actual";
-             if (newEntry.category === "Material") {
-               const field = isActual ? "actualMaterialCost" : "plannedMaterialCost";
-               applyData[field] = (t[field] || 0) + (newEntry.amount || 0);
-             } else if (newEntry.category === "Labor") {
-               const field = isActual ? "actualLaborCost" : "plannedLaborCost";
-               applyData[field] = (t[field] || 0) + (newEntry.amount || 0);
-             } else {
-               const field = isActual ? "actualOtherCost" : "plannedOtherCost";
-               applyData[field] = (t[field] || 0) + (newEntry.amount || 0);
-             }
-             
-             applyData.actualCost = isActual ? (t.actualCost || 0) + (newEntry.amount || 0) : t.actualCost || 0;
-             applyData.budgetedCost = !isActual ? (t.budgetedCost || 0) + (newEntry.amount || 0) : t.budgetedCost || 0;
-             
-             await updateDoc(taskRef, applyData);
-           }
-        }
+          // We need fresh task data since we just updated the task
+          // But since local state won't instantly reflect the DB we just compute delta from what we know or let the onSnapshot handle the final consistent view
+          // It's safer to re-fetch or use logic. Let's just refetch or rely on existing task state with our delta.
+          const taskRef = doc(
+            db,
+            `${basePath}/tasks`,
+            newEntry.taskId,
+          );
+          const taskDoc = await getDoc(taskRef);
+          if (taskDoc.exists()) {
+            const t = taskDoc.data();
+            const applyData: any = {};
+            const isActual = newEntry.type === "Actual";
+            if (newEntry.category === "Material") {
+              const field = isActual
+                ? "actualMaterialCost"
+                : "plannedMaterialCost";
+              applyData[field] = (t[field] || 0) + (newEntry.amount || 0);
+            } else if (newEntry.category === "Labor") {
+              const field = isActual ? "actualLaborCost" : "plannedLaborCost";
+              applyData[field] = (t[field] || 0) + (newEntry.amount || 0);
+            } else {
+              const field = isActual ? "actualOtherCost" : "plannedOtherCost";
+              applyData[field] = (t[field] || 0) + (newEntry.amount || 0);
+            }
 
+            applyData.actualCost = isActual
+              ? (t.actualCost || 0) + (newEntry.amount || 0)
+              : t.actualCost || 0;
+            applyData.budgetedCost = !isActual
+              ? (t.budgetedCost || 0) + (newEntry.amount || 0)
+              : t.budgetedCost || 0;
+
+            await updateDoc(taskRef, applyData);
+          }
+        }
       } else {
         // Adding new entry
         const entryData = {
@@ -462,7 +415,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             updateData.budgetedCost = currentBudget;
 
             await updateDoc(
-              doc(db, `projects/${projectId}/tasks`, newEntry.taskId),
+              doc(db, `${basePath}/tasks`, newEntry.taskId),
               updateData,
             );
           }
@@ -478,15 +431,15 @@ export const CostManagement: React.FC<CostManagementProps> = ({
         date: new Date().toISOString().split("T")[0],
         taskId: "",
       });
-      // Invalidate queries to refetch 
-      queryClient.invalidateQueries({ queryKey: ['projectData', projectId] });
+      // Invalidate queries to refetch
+      queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, path);
     }
   };
 
   const handleDeleteEntry = async (entry: CostEntry) => {
-    const path = `projects/${projectId}/costs/${entry.id}`;
+    const path = `${basePath}/costs/${entry.id}`;
     try {
       // If linked to a task, update the task's actual/planned costs
       if (entry.taskId) {
@@ -529,22 +482,22 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           updateData.budgetedCost = currentBudget;
 
           await updateDoc(
-            doc(db, `projects/${projectId}/tasks`, entry.taskId),
+            doc(db, `${basePath}/tasks`, entry.taskId),
             updateData,
           );
         }
       }
 
-      await deleteDoc(doc(db, `projects/${projectId}/costs`, entry.id));
+      await deleteDoc(doc(db, `${basePath}/costs`, entry.id));
       setDeletingId(null);
-      queryClient.invalidateQueries({ queryKey: ['projectData', projectId] });
+      queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, path);
     }
   };
 
   const handleSaveTaskCosts = async (taskId: string) => {
-    const path = `projects/${projectId}/tasks/${taskId}`;
+    const path = `${basePath}/tasks/${taskId}`;
     try {
       // Calculate aggregate budgeted cost for consistency
       const budgetedCost =
@@ -552,13 +505,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
         (editValues.plannedLaborCost || 0) +
         (editValues.plannedOtherCost || 0);
 
-      await updateDoc(doc(db, `projects/${projectId}/tasks`, taskId), {
+      await updateDoc(doc(db, `${basePath}/tasks`, taskId), {
         ...editValues,
         budgetedCost,
       });
       setEditingTaskId(null);
       setEditValues({});
-      queryClient.invalidateQueries({ queryKey: ['projectData', projectId] });
+      queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, path);
     }
@@ -579,7 +532,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
     ];
 
     const rows = tasks.map((task) => {
-      const totals = getTaskTotals(task, tasks, entries);
+      const totals = getTaskTotals(task);
       return [
         task.name,
         totals.plannedMaterial,
@@ -622,40 +575,83 @@ export const CostManagement: React.FC<CostManagementProps> = ({
     const children = tasks
       .filter((t) => t.parentId === task.id)
       .sort((a, b) => (a.startDate || "").localeCompare(b.startDate || ""));
-    const totals = getTaskTotals(task, tasks, entries);
+    const totals = getTaskTotals(task);
     const variance = totals.totalPlanned - totals.totalActual;
     return (
       <React.Fragment key={`report-${task.id}`}>
         <tr className={task.type === "Summary" ? "font-bold bg-panel/30" : ""}>
           <td className="py-4">
-            <div style={{ paddingLeft: `${level * 24}px` }} className="flex items-center gap-2">
+            <div
+              style={{ paddingLeft: `${level * 24}px` }}
+              className="flex items-center gap-2"
+            >
               {level > 0 && <span className="w-3 h-px bg-slate-300" />}
               {task.name}
             </div>
           </td>
           <td className="py-4 text-right">
-            <div className="text-xs">₹{totals.plannedMaterial.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
-            <div className="text-[10px] text-ink-muted">₹{totals.actualMaterial.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+            <div className="text-xs">
+              ₹
+              {totals.plannedMaterial.toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}
+            </div>
+            <div className="text-[10px] text-ink-muted">
+              ₹
+              {totals.actualMaterial.toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}
+            </div>
           </td>
           <td className="py-4 text-right">
-            <div className="text-xs">₹{totals.plannedLabor.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
-            <div className="text-[10px] text-ink-muted">₹{totals.actualLabor.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+            <div className="text-xs">
+              ₹
+              {totals.plannedLabor.toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}
+            </div>
+            <div className="text-[10px] text-ink-muted">
+              ₹
+              {totals.actualLabor.toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}
+            </div>
           </td>
           <td className="py-4 text-right">
-            <div className="text-xs">₹{totals.plannedOther.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
-            <div className="text-[10px] text-ink-muted">₹{totals.actualOther.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+            <div className="text-xs">
+              ₹
+              {totals.plannedOther.toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}
+            </div>
+            <div className="text-[10px] text-ink-muted">
+              ₹
+              {totals.actualOther.toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}
+            </div>
           </td>
           <td className="py-4 text-right font-bold">
-            ₹{totals.totalPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            ₹
+            {totals.totalPlanned.toLocaleString("en-IN", {
+              maximumFractionDigits: 0,
+            })}
           </td>
           <td className="py-4 text-right font-bold">
-            ₹{totals.totalActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            ₹
+            {totals.totalActual.toLocaleString("en-IN", {
+              maximumFractionDigits: 0,
+            })}
           </td>
-          <td className={`py-4 text-right font-bold ${variance < 0 ? "text-red-500" : "text-emerald-500"}`}>
+          <td
+            className={`py-4 text-right font-bold ${variance < 0 ? "text-red-500" : "text-emerald-500"}`}
+          >
             ₹{variance.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
           </td>
           <td className="py-4 text-right">
-            <span className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${variance < 0 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>
+            <span
+              className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${variance < 0 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}
+            >
               {variance < 0 ? "Over Budget" : "On Track"}
             </span>
           </td>
@@ -670,7 +666,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       .filter((t) => t.parentId === task.id)
       .sort((a, b) => (a.startDate || "").localeCompare(b.startDate || ""));
     const isExpanded = expanded[task.id];
-    const totals = getTaskTotals(task, tasks, entries);
+    const totals = getTaskTotals(task);
     const isEditing = editingTaskId === task.id;
 
     return (
@@ -685,7 +681,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             <div className="flex items-center gap-1.5 md:gap-2 min-w-0">
               <div
                 className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full shrink-0 ${
-                  task.type === "Summary" ? "bg-slate-900" : "bg-indigo-500"
+                  task.type === "Summary" ? "bg-slate-900" : "bg-[#F3E8D2]0"
                 }`}
               />
               {children.length > 0 && (
@@ -729,14 +725,20 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               />
             ) : (
               <div className="text-[10px] font-medium text-ink-muted">
-                ₹{totals.plannedMaterial.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                ₹
+                {totals.plannedMaterial.toLocaleString("en-IN", {
+                  maximumFractionDigits: 0,
+                })}
               </div>
             )}
           </td>
           <td className="p-3 text-right hidden sm:table-cell bg-panel/30">
             <div className="flex flex-col items-end">
-              <div className="text-[11px] font-black text-indigo-600">
-                ₹{totals.actualMaterial.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              <div className="text-[11px] font-black text-[#A3711C]">
+                ₹
+                {totals.actualMaterial.toLocaleString("en-IN", {
+                  maximumFractionDigits: 0,
+                })}
               </div>
               {totals.actualMaterial > 0 && task.type !== "Summary" && (
                 <button
@@ -769,14 +771,20 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               />
             ) : (
               <div className="text-[10px] font-medium text-ink-muted">
-                ₹{totals.plannedLabor.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                ₹
+                {totals.plannedLabor.toLocaleString("en-IN", {
+                  maximumFractionDigits: 0,
+                })}
               </div>
             )}
           </td>
           <td className="p-3 text-right hidden md:table-cell bg-panel/30">
             <div className="flex flex-col items-end">
-              <div className="text-[11px] font-black text-indigo-600">
-                ₹{totals.actualLabor.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              <div className="text-[11px] font-black text-[#A3711C]">
+                ₹
+                {totals.actualLabor.toLocaleString("en-IN", {
+                  maximumFractionDigits: 0,
+                })}
               </div>
               {totals.actualLabor > 0 && task.type !== "Summary" && (
                 <button
@@ -785,7 +793,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       showLaborBreakdown === task.id ? null : task.id,
                     )
                   }
-                  className={`flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest mt-1 p-1 rounded hover:bg-indigo-100 apple-transition ${showLaborBreakdown === task.id ? "text-indigo-600 bg-indigo-50" : "text-ink-muted"}`}
+                  className={`flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest mt-1 p-1 rounded hover:bg-[#F3E8D2] apple-transition ${showLaborBreakdown === task.id ? "text-[#A3711C] bg-[#F3E8D2]" : "text-ink-muted"}`}
                 >
                   <Info className="w-2.5 h-2.5" /> Details
                 </button>
@@ -809,22 +817,34 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               />
             ) : (
               <div className="text-[10px] font-medium text-ink-muted">
-                ₹{totals.plannedOther.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                ₹
+                {totals.plannedOther.toLocaleString("en-IN", {
+                  maximumFractionDigits: 0,
+                })}
               </div>
             )}
           </td>
           <td className="p-3 text-right hidden xl:table-cell bg-panel/30">
-            <div className="text-[11px] font-black text-indigo-600">
-              ₹{totals.actualOther.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            <div className="text-[11px] font-black text-[#A3711C]">
+              ₹
+              {totals.actualOther.toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}
             </div>
           </td>
 
           {/* Totals */}
           <td className="p-3 text-right font-medium text-ink-muted border-l">
-            ₹{totals.totalPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            ₹
+            {totals.totalPlanned.toLocaleString("en-IN", {
+              maximumFractionDigits: 0,
+            })}
           </td>
-          <td className="p-3 text-right font-black text-primary bg-indigo-50/30">
-            ₹{totals.totalActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+          <td className="p-3 text-right font-black text-primary bg-[#F3E8D2]/30">
+            ₹
+            {totals.totalActual.toLocaleString("en-IN", {
+              maximumFractionDigits: 0,
+            })}
           </td>
 
           <td className="p-3 text-center">
@@ -858,7 +878,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             ) : task.isSystemGenerated ? null : (
               <button
                 onClick={() => startEditing(task)}
-                className="p-1 text-ink-muted hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all"
+                className="p-1 text-ink-muted hover:text-[#A3711C] hover:bg-[#F3E8D2] rounded transition-all"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
@@ -871,13 +891,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           children.map((child) => renderCostRow(child, level + 1))}
 
         {showLaborBreakdown === task.id && (
-          <tr className="bg-indigo-50/30">
-            <td colSpan={11} className="p-2 md:p-6 border-b border-indigo-100">
-              <div className="bg-surface rounded-2xl border border-indigo-100 shadow-sm overflow-hidden">
-                <div className="bg-indigo-600 px-4 py-2 flex justify-between items-center">
+          <tr className="bg-[#F3E8D2]/30">
+            <td colSpan={11} className="p-2 md:p-6 border-b border-[#F3E8D2]">
+              <div className="bg-surface rounded-2xl border border-[#F3E8D2] shadow-sm overflow-hidden">
+                <div className="bg-[#A3711C] px-4 py-2 flex justify-between items-center">
                   <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
                     Labor Deployment Breakdown
-                    <span className="bg-[#FF9500]/20 text-[#FF9500] border border-[#FF9500]/50 px-1 py-0.5 rounded text-[7px]" title="Legacy source — pending labour-cost trigger">(legacy source)</span>
+
                   </span>
                   <button onClick={() => setShowLaborBreakdown(null)}>
                     <X className="w-3 h-3 text-white" />
@@ -886,7 +906,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 <div className="overflow-x-auto scroller-hide">
                   <table className="w-full text-[9px] md:text-[10px] min-w-[600px]">
                     <thead>
-                      <tr className="bg-indigo-50 text-indigo-900 font-bold uppercase tracking-wider">
+                      <tr className="bg-[#F3E8D2] text-[#8a5d16] font-bold uppercase tracking-wider">
                         <th className="p-2 text-left">Date</th>
                         <th className="p-2 text-left">Contractor</th>
                         <th className="p-2 text-left">Role</th>
@@ -897,37 +917,71 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       </tr>
                     </thead>
                     <tbody>
+                      {/* 1. Cost Entries (Labor) */}
+                      {entries
+                        .filter((e) => (e.taskId === task.id || (!e.taskId && task.isSystemGenerated && task.name === "Project Overhead")) && e.category === "Labor" && e.type === "Actual" && !e.isAccrual)
+                        .map((entry, idx) => (
+                          <tr key={`ce-${entry.id}`} className="border-t border-[#F3E8D2] hover:bg-[#F3E8D2]/50">
+                            <td className="p-2 font-medium">{new Date(entry.date).toLocaleDateString()}</td>
+                            <td className="p-2 text-ink-muted font-bold">Direct Entry</td>
+                            <td className="p-2 italic">{entry.description || "-"}</td>
+                            <td className="p-2 text-right">-</td>
+                            <td className="p-2 text-right">-</td>
+                            <td className="p-2 text-right">-</td>
+                            <td className="p-2 text-right font-black text-[#A3711C]">
+                              ₹{entry.amount?.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                            </td>
+                          </tr>
+                        ))}
+                        
+                      {/* 2. RA Bills (Labor Logs) */}
                       {laborLogs
-                        .filter((log) =>
-                          log.items.some((item) => item.taskId === task.id),
-                        )
+                        .filter((log) => log.items.some((item) => item.taskId === task.id))
                         .flatMap((log) =>
                           log.items
                             .filter((item) => item.taskId === task.id)
                             .map((item, idx) => (
-                              <tr
-                                key={`${log.id}-${idx}`}
-                                className="border-t border-indigo-50 hover:bg-indigo-50/50"
-                              >
+                              <tr key={`ll-${log.id}-${idx}`} className="border-t border-[#F3E8D2] hover:bg-[#F3E8D2]/50">
                                 <td className="p-2 font-medium">{log.date}</td>
-                                <td className="p-2 text-ink-muted font-bold">
-                                  {log.vendorName || "General"}
-                                </td>
+                                <td className="p-2 text-ink-muted font-bold">{log.vendorName || "General"} (RA Bill)</td>
                                 <td className="p-2 italic">{item.role}</td>
-                                <td className="p-2 text-right">
-                                  {item.headcount}
-                                </td>
-                                <td className="p-2 text-right">
-                                  {item.shifts}
-                                </td>
-                                <td className="p-2 text-right">
-                                  ₹{item.rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                                </td>
-                                <td className="p-2 text-right font-black text-indigo-600">
+                                <td className="p-2 text-right">{item.headcount}</td>
+                                <td className="p-2 text-right">{item.shifts}</td>
+                                <td className="p-2 text-right">₹{item.rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                                <td className="p-2 text-right font-black text-[#A3711C]">
                                   ₹{item.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                                 </td>
                               </tr>
                             )),
+                        )}
+                        
+                      {/* 3. Daily Logs (Labour) */}
+                      {dailyLogs
+                        .filter((log: any) => log.taskId === task.id && log.labour && log.labour.length > 0)
+                        .flatMap((log: any) =>
+                          log.labour.map((l: any, idx: number) => {
+                            const rateCard = rateCards.find((r: any) => r.id === l.roleId);
+                            const rate = rateCard ? rateCard.rate : 0;
+                            const subtotal = (l.headcount || 0) * rate;
+                            let displayDate = "";
+                            if (log.workDate) {
+                              if (typeof log.workDate === "string") displayDate = log.workDate;
+                              else if (log.workDate.seconds) displayDate = new Date(log.workDate.seconds * 1000).toISOString().split("T")[0];
+                            }
+                            return (
+                              <tr key={`dl-${log.id}-${idx}`} className="border-t border-[#F3E8D2] hover:bg-[#F3E8D2]/50">
+                                <td className="p-2 font-medium">{displayDate}</td>
+                                <td className="p-2 text-ink-muted font-bold">Daily Log</td>
+                                <td className="p-2 italic">{rateCard?.role || "-"}</td>
+                                <td className="p-2 text-right">{l.headcount}</td>
+                                <td className="p-2 text-right">-</td>
+                                <td className="p-2 text-right">₹{rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                                <td className="p-2 text-right font-black text-[#A3711C]">
+                                  ₹{subtotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                                </td>
+                              </tr>
+                            );
+                          })
                         )}
                     </tbody>
                   </table>
@@ -943,7 +997,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
                 <div className="bg-slate-800 px-4 py-2 flex justify-between items-center">
                   <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest">
-                    Material Consumption (Daily Logs)
+                    Material Consumption Breakdown
                   </span>
                   <button onClick={() => setShowMaterialBreakdown(null)}>
                     <X className="w-3 h-3 text-white" />
@@ -961,40 +1015,121 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       </tr>
                     </thead>
                     <tbody>
+                      {/* 1. Direct Cost Entries */}
+                      {entries
+                        .filter((e) => (e.taskId === task.id || (!e.taskId && task.isSystemGenerated && task.name === "Project Overhead")) && e.category === "Material" && e.type === "Actual" && !e.isAccrual)
+                        .map((entry, idx) => (
+                          <tr key={`ce-${entry.id}`} className="border-t border-divider hover:bg-panel">
+                            <td className="p-2 font-medium">{new Date(entry.date).toLocaleDateString()}</td>
+                            <td className="p-2 font-bold text-ink/80">Direct Cost: {entry.description}</td>
+                            <td className="p-2 text-right">-</td>
+                            <td className="p-2 text-right">-</td>
+                            <td className="p-2 text-right font-black text-ink">
+                              ₹{entry.amount?.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                            </td>
+                          </tr>
+                        ))}
+
+                      {/* 2. Material Issues */}
+                      {materialIssues
+                        .filter((iss: any) => iss.taskId === task.id && !iss.remarks?.startsWith("Daily Progress") && !iss.notes?.startsWith("Daily Progress"))
+                        .flatMap((iss: any) => {
+                          if (iss.items && Array.isArray(iss.items)) {
+                            return iss.items.map((m: any, idx: number) => {
+                              let displayDate = iss.issueDate || iss.date;
+                              if (iss.createdAt && !displayDate) {
+                                displayDate = new Date(iss.createdAt).toISOString().split('T')[0];
+                              }
+                              return (
+                                <tr key={`mi-${iss.id}-${idx}`} className="border-t border-divider hover:bg-panel">
+                                  <td className="p-2 font-medium">{displayDate}</td>
+                                  <td className="p-2 font-bold text-ink/80">Issue: {m.name || m.materialName}</td>
+                                  <td className="p-2 text-right">{m.quantity}</td>
+                                  <td className="p-2 text-right">₹{(m.unitPrice || m.unitCost || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                                  <td className="p-2 text-right font-black text-ink">
+                                    ₹{(m.totalPrice || (m.quantity * (m.unitPrice || m.unitCost || 0))).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          } else if (iss.materialId) {
+                            // Support legacy flat issues
+                            const invItem = inventory.find((i) => i.id === iss.materialId);
+                            const unitCost = invItem ? (invItem.avgUnitCost || invItem.unitCost || 0) : 0;
+                            const totalPrice = (iss.quantity || 0) * unitCost;
+                            let displayDate = iss.date || "";
+                            if (iss.createdAt && !displayDate) {
+                              displayDate = new Date(iss.createdAt).toISOString().split('T')[0];
+                            }
+                            return [
+                              <tr key={`mi-${iss.id}`} className="border-t border-divider hover:bg-panel">
+                                <td className="p-2 font-medium">{displayDate}</td>
+                                <td className="p-2 font-bold text-ink/80">Issue: {invItem?.name || "Material"}</td>
+                                <td className="p-2 text-right">{iss.quantity}</td>
+                                <td className="p-2 text-right">₹{unitCost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                                <td className="p-2 text-right font-black text-ink">
+                                  ₹{totalPrice.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                                </td>
+                              </tr>
+                            ];
+                          }
+                          return [];
+                        })}
+
+                      {/* 3. Daily Logs (Materials) */}
                       {dailyLogs
-                        .filter((log: any) => log.taskId === task.id && log.materials && log.materials.length > 0)
+                        .filter(
+                          (log: any) =>
+                            log.taskId === task.id &&
+                            log.materials &&
+                            log.materials.length > 0,
+                        )
                         .flatMap((log: any) =>
                           log.materials.map((m: any, idx: number) => {
-                             const invItem = inventory.find(i => i.id === m.materialId);
-                             const unitCost = invItem ? (invItem.avgUnitCost ?? invItem.unitCost) : 0;
-                             const subtotal = m.quantity * unitCost;
-                             // Safely handle timestamp or string
-                             let displayDate = "";
-                             if (log.workDate) {
-                               if (typeof log.workDate === "string") displayDate = log.workDate;
-                               else if (log.workDate.seconds) displayDate = new Date(log.workDate.seconds * 1000).toISOString().split("T")[0];
-                             }
-                             return (
-                            <tr
-                              key={`${log.id}-${idx}`}
-                              className="border-t border-divider hover:bg-panel"
-                            >
-                              <td className="p-2 font-medium">
-                                {displayDate}
-                              </td>
-                              <td className="p-2 font-bold text-ink/80">
-                                {m.name}
-                              </td>
-                              <td className="p-2 text-right">
-                                {m.quantity}
-                              </td>
-                              <td className="p-2 text-right">
-                                ₹{unitCost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                              </td>
-                              <td className="p-2 text-right font-black text-ink">
-                                ₹{subtotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                              </td>
-                            </tr>
+                            const invItem = inventory.find(
+                              (i) => i.id === m.materialId,
+                            );
+                            const unitCost = invItem
+                              ? (invItem.avgUnitCost || invItem.unitCost || 0)
+                              : 0;
+                            const subtotal = m.quantity * unitCost;
+                            // Safely handle timestamp or string
+                            let displayDate = "";
+                            if (log.workDate) {
+                              if (typeof log.workDate === "string")
+                                displayDate = log.workDate;
+                              else if (log.workDate.seconds)
+                                displayDate = new Date(
+                                  log.workDate.seconds * 1000,
+                                )
+                                  .toISOString()
+                                  .split("T")[0];
+                            }
+                            return (
+                              <tr
+                                key={`${log.id}-${idx}`}
+                                className="border-t border-divider hover:bg-panel"
+                              >
+                                <td className="p-2 font-medium">
+                                  {displayDate}
+                                </td>
+                                <td className="p-2 font-bold text-ink/80">
+                                  Daily Log: {m.name}
+                                </td>
+                                <td className="p-2 text-right">{m.quantity}</td>
+                                <td className="p-2 text-right">
+                                  ₹
+                                  {unitCost.toLocaleString("en-IN", {
+                                    maximumFractionDigits: 0,
+                                  })}
+                                </td>
+                                <td className="p-2 text-right font-black text-ink">
+                                  ₹
+                                  {subtotal.toLocaleString("en-IN", {
+                                    maximumFractionDigits: 0,
+                                  })}
+                                </td>
+                              </tr>
                             );
                           }),
                         )}
@@ -1011,9 +1146,11 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
   return (
     <div className="space-y-10 pb-32">
-      <div className="apple-glass p-6 rounded-[32px] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
+      <div className="apple-glass p-5 md:p-6 rounded-2xl flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
         <div className="flex gap-2 bg-surface/30 p-1 rounded-xl w-full md:w-fit max-w-full overflow-x-auto scrollbar-hide ring-1 ring-white/20 shadow-inner">
-          {(["dashboard", "wbs", "direct_costs", "report", "payments"] as const).map((mode) => (
+          {(
+            ["dashboard", "wbs", "direct_costs", "report", "payments"] as const
+          ).map((mode) => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
@@ -1051,7 +1188,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               });
               setIsAdding(true);
             }}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-white px-8 py-3.5 md:py-2.5 rounded-xl text-[10px] sm:text-xs md:text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/80 apple-transition shadow-xl shadow-[#007AFF]/20"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-white px-8 py-3.5 md:py-2.5 rounded-xl text-[10px] sm:text-xs md:text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/80 apple-transition shadow-xl shadow-primary/20"
           >
             <Plus className="w-4 h-4" /> <span>Add Transaction</span>
           </button>
@@ -1083,7 +1220,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             ].map((stat, idx) => {
               const variance = stat.planned - stat.actual;
               const isOver = variance < 0;
-              const percentage = stat.planned > 0 ? (stat.actual / stat.planned) * 100 : 0;
+              const percentage =
+                stat.planned > 0 ? (stat.actual / stat.planned) * 100 : 0;
 
               return (
                 <div
@@ -1094,7 +1232,14 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     <h4 className="text-[15px] font-bold text-ink flex items-center gap-2">
                       <stat.icon className="w-5 h-5 text-ink-muted" />
                       {stat.title}
-                      {stat.title === "Labor Cost" && <span className="text-[8px] md:text-[9px] text-[#FF9500] bg-[#FF9500]/10 border border-[#FF9500]/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-widest whitespace-nowrap" title="Legacy source — pending labour-cost trigger">(legacy source)</span>}
+                      {stat.title === "Labor Cost" && (
+                        <span
+                          className="text-[8px] md:text-[9px] text-[#FF9500] bg-[#FF9500]/10 border border-[#FF9500]/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-widest whitespace-nowrap"
+                          title="Legacy source — pending labour-cost trigger"
+                        >
+                          (legacy source)
+                        </span>
+                      )}
                     </h4>
                     <span
                       className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
@@ -1114,7 +1259,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           Planned
                         </div>
                         <div className="text-xl font-bold text-ink tracking-tight">
-                          ₹{stat.planned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                          ₹
+                          {stat.planned.toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
                         </div>
                       </div>
                       <div className="text-right">
@@ -1122,7 +1270,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           Actual
                         </div>
                         <div className="text-xl font-bold text-primary tracking-tight">
-                          ₹{stat.actual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                          ₹
+                          {stat.actual.toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
                         </div>
                       </div>
                     </div>
@@ -1131,20 +1282,31 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     <div className="h-2 w-full bg-panel rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-1000 ${
-                          isOver ? "bg-red-500" : percentage > 80 ? "bg-amber-400" : "bg-emerald-500"
+                          isOver
+                            ? "bg-red-500"
+                            : percentage > 80
+                              ? "bg-amber-400"
+                              : "bg-emerald-500"
                         }`}
-                        style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+                        style={{
+                          width: `${Math.min(100, Math.max(0, percentage))}%`,
+                        }}
                       />
                     </div>
 
                     <div className="flex justify-between items-center pt-2 border-t border-white/10">
-                      <div className="text-xs font-medium text-ink-muted">Variance</div>
+                      <div className="text-xs font-medium text-ink-muted">
+                        Variance
+                      </div>
                       <div
                         className={`text-sm font-bold ${
                           isOver ? "text-red-500" : "text-emerald-500"
                         }`}
                       >
-                        {isOver ? "-" : "+"}₹{Math.abs(variance).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                        {isOver ? "-" : "+"}₹
+                        {Math.abs(variance).toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}
                       </div>
                     </div>
                   </div>
@@ -1154,7 +1316,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-12 xl:col-span-8 apple-glass p-6 md:p-10 squircle-24">
+            <div className="lg:col-span-12 xl:col-span-8 apple-glass p-5 md:p-6 squircle-24">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 md:mb-10">
                 <div>
                   <h3 className="text-xl md:text-[24px] font-semibold text-ink tracking-tight mb-1">
@@ -1231,7 +1393,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     />
                     <Bar
                       dataKey="Actual"
-                      fill="#007AFF"
+                      fill="#A3711C"
                       radius={[8, 8, 0, 0]}
                       barSize={40}
                     />
@@ -1240,8 +1402,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </div>
             </div>
 
-            <div className="lg:col-span-12 xl:col-span-4 bg-surface-dark p-8 squircle-24 shadow-2xl relative overflow-hidden flex flex-col">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-primary blur-[80px] opacity-20" />
+            <div className="lg:col-span-12 xl:col-span-4 bg-surface-dark p-5 md:p-6 squircle-24 shadow-2xl relative overflow-hidden flex flex-col">
               <h3 className="text-[17px] font-bold text-white tracking-tight mb-8 flex items-center gap-3 relative z-10">
                 <div className="bg-surface/10 p-2 rounded-xl">
                   <Calendar className="w-5 h-5 text-primary" />
@@ -1273,7 +1434,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         <div
                           className={`text-[15px] font-bold font-mono tracking-tighter ${entry.type === "Actual" ? "text-primary" : "text-[#34C759]"}`}
                         >
-                          ₹{entry.amount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                          ₹
+                          {entry.amount.toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
                         </div>
                         <div className="text-[11px] font-medium text-white/20 uppercase tracking-widest mt-1">
                           {entry.type}
@@ -1315,7 +1479,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 placeholder="Search WBS tasks..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-panel border rounded-lg text-xs md:text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full pl-10 pr-4 py-2 bg-panel border rounded-lg text-xs md:text-sm outline-none focus:ring-2 focus:ring-[#A3711C]"
               />
             </div>
             <div className="flex items-center gap-2 bg-panel px-3 py-2 rounded-lg border">
@@ -1344,8 +1508,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm bg-indigo-600" />
-              <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">
+              <div className="w-3 h-3 rounded-sm bg-[#A3711C]" />
+              <span className="text-[10px] font-bold text-[#A3711C] uppercase tracking-wider">
                 Actual (Spent)
               </span>
             </div>
@@ -1373,7 +1537,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       className="p-3 text-center border-l border-white/10 hidden md:table-cell"
                       colSpan={2}
                     >
-                      Labor Costs <span className="text-[7px] text-[#FF9500] uppercase tracking-tighter" title="Legacy source — pending labour-cost trigger">(legacy source)</span>
+                      Labor Costs{" "}
+                      <span
+                        className="text-[7px] text-[#FF9500] uppercase tracking-tighter"
+                        title="Legacy source — pending labour-cost trigger"
+                      >
+                        (legacy source)
+                      </span>
                     </th>
                     <th
                       className="p-3 text-center border-l border-white/10 hidden xl:table-cell"
@@ -1427,11 +1597,11 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           className="p-4 px-6 border-y border-divider"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-sm">
+                            <div className="p-2 bg-[#A3711C] text-white rounded-lg shadow-sm">
                               <Layers className="w-4 h-4" />
                             </div>
                             <div>
-                              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-600 block leading-none mb-1">
+                              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#A3711C] block leading-none mb-1">
                                 Project Phase
                               </span>
                               <span className="text-sm font-black text-ink leading-none">
@@ -1510,54 +1680,71 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
-                {entries.length === 0 ? (
+                {(() => { const directCosts = entries.filter(e => !e.taskId && !e.isAccrual); return directCosts.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-ink-muted italic">
+                    <td
+                      colSpan={6}
+                      className="p-5 text-center text-ink-muted italic"
+                    >
                       No direct costs recorded yet.
                     </td>
                   </tr>
                 ) : (
-                  entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((entry) => (
-                    <tr key={entry.id} className="border-b last:border-0 hover:bg-panel/50 transition-colors">
-                      <td className="p-4 font-medium">{new Date(entry.date).toLocaleDateString()}</td>
-                      <td className="p-4">{entry.description || "-"}</td>
-                      <td className="p-4">
-                        <span className="bg-surface border px-2 py-1 rounded text-xs font-medium">
-                          {entry.category}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <span className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"}`}>
-                          {entry.type}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right font-bold text-ink">
-                        {entry.amount?.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex gap-2 justify-end">
-                          <button
-                            onClick={() => {
-                              setNewEntry(entry);
-                              setIsAdding(true);
-                            }}
-                            className="p-1 text-ink-muted hover:text-primary hover:bg-primary/10 rounded transition-colors"
-                            title="Edit record"
+                  directCosts
+                    .sort(
+                      (a, b) =>
+                        new Date(b.date).getTime() - new Date(a.date).getTime(),
+                    )
+                    .map((entry) => (
+                      <tr
+                        key={entry.id}
+                        className="border-b last:border-0 hover:bg-panel/50 transition-colors"
+                      >
+                        <td className="p-4 font-medium">
+                          {new Date(entry.date).toLocaleDateString()}
+                        </td>
+                        <td className="p-4">{entry.description || "-"}</td>
+                        <td className="p-4">
+                          <span className="bg-surface border px-2 py-1 rounded text-xs font-medium">
+                            {entry.category}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-emerald-100 text-emerald-700" : "bg-[#E3E8F0] text-[#4A6FA5]"}`}
                           >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setDeletingId(entry.id)}
-                            className="p-1 text-ink-muted hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                            title="Delete record"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                            {entry.type}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right font-bold text-ink">
+                          {entry.amount?.toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={() => {
+                                setNewEntry(entry);
+                                setIsAdding(true);
+                              }}
+                              className="p-1 text-ink-muted hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                              title="Edit record"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setDeletingId(entry.id)}
+                              className="p-1 text-ink-muted hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                              title="Delete record"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                ); })()}
               </tbody>
             </table>
           </div>
@@ -1577,7 +1764,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </p>
             </div>
             <div className="text-right">
-              <div className="text-sm font-bold text-indigo-600 uppercase tracking-widest">
+              <div className="text-sm font-bold text-[#A3711C] uppercase tracking-widest">
                 BuildFlow Pro
               </div>
               <div className="text-[10px] opacity-50">
@@ -1594,13 +1781,19 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               <div className="flex justify-between items-end">
                 <div>
                   <div className="text-xl md:text-2xl font-bold">
-                    ₹{stats.materialActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                    ₹
+                    {stats.materialActual.toLocaleString("en-IN", {
+                      maximumFractionDigits: 0,
+                    })}
                   </div>
                   <div className="text-[9px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-emerald-600">
-                    ₹{stats.materialPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                    ₹
+                    {stats.materialPlanned.toLocaleString("en-IN", {
+                      maximumFractionDigits: 0,
+                    })}
                   </div>
                   <div className="text-[9px] opacity-50">Planned</div>
                 </div>
@@ -1608,18 +1801,30 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </div>
             <div className="bg-panel p-4 md:p-6 rounded-2xl border">
               <div className="text-[10px] font-bold uppercase opacity-50 mb-2 flex justify-between items-center">
-                Labor <span className="text-[7px] text-[#FF9500] normal-case bg-[#FF9500]/10 border border-[#FF9500]/20 px-1 py-0.5 rounded ml-2" title="Legacy source — pending labour-cost trigger">(legacy source)</span>
+                Labor{" "}
+                <span
+                  className="text-[7px] text-[#FF9500] normal-case bg-[#FF9500]/10 border border-[#FF9500]/20 px-1 py-0.5 rounded ml-2"
+                  title="Legacy source — pending labour-cost trigger"
+                >
+                  (legacy source)
+                </span>
               </div>
               <div className="flex justify-between items-end">
                 <div>
                   <div className="text-xl md:text-2xl font-bold">
-                    ₹{stats.laborActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                    ₹
+                    {stats.laborActual.toLocaleString("en-IN", {
+                      maximumFractionDigits: 0,
+                    })}
                   </div>
                   <div className="text-[9px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-emerald-600">
-                    ₹{stats.laborPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                    ₹
+                    {stats.laborPlanned.toLocaleString("en-IN", {
+                      maximumFractionDigits: 0,
+                    })}
                   </div>
                   <div className="text-[9px] opacity-50">Planned</div>
                 </div>
@@ -1632,13 +1837,19 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               <div className="flex justify-between items-end">
                 <div>
                   <div className="text-xl md:text-2xl font-bold">
-                    ₹{stats.otherActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                    ₹
+                    {stats.otherActual.toLocaleString("en-IN", {
+                      maximumFractionDigits: 0,
+                    })}
                   </div>
                   <div className="text-[9px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-emerald-600">
-                    ₹{stats.otherPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                    ₹
+                    {stats.otherPlanned.toLocaleString("en-IN", {
+                      maximumFractionDigits: 0,
+                    })}
                   </div>
                   <div className="text-[9px] opacity-50">Planned</div>
                 </div>
@@ -1657,7 +1868,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     Material (P/A)
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
-                    Labor (P/A) <span className="text-[7px] text-[#FF9500] block normal-case" title="Legacy source — pending labour-cost trigger">(legacy source)</span>
+                    Labor (P/A){" "}
+                    <span
+                      className="text-[7px] text-[#FF9500] block normal-case"
+                      title="Legacy source — pending labour-cost trigger"
+                    >
+                      (legacy source)
+                    </span>
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
                     Direct Cost (P/A)
@@ -1680,13 +1897,16 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 {Object.entries(groupedTasks).map(([phase, locations]) => (
                   <React.Fragment key={phase}>
                     <tr className="bg-panel/30">
-                      <td colSpan={8} className="p-4 px-6 border-y border-divider">
+                      <td
+                        colSpan={8}
+                        className="p-4 px-6 border-y border-divider"
+                      >
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-sm">
+                          <div className="p-2 bg-[#A3711C] text-white rounded-lg shadow-sm">
                             <Layers className="w-4 h-4" />
                           </div>
                           <div>
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-600 block leading-none mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#A3711C] block leading-none mb-1">
                               Project Phase
                             </span>
                             <span className="text-sm font-black text-ink leading-none">
@@ -1699,13 +1919,17 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     {Object.entries(locations).map(([location, locTasks]) => (
                       <React.Fragment key={`${phase}-${location}`}>
                         <tr className="bg-panel/50">
-                          <td colSpan={8} className="p-2 px-10 border-b border-divider">
+                          <td
+                            colSpan={8}
+                            className="p-2 px-10 border-b border-divider"
+                          >
                             <div className="flex items-center gap-2">
                               <div className="p-1 bg-emerald-100 text-emerald-600 rounded">
                                 <MapPin className="w-3 h-3" />
                               </div>
                               <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                                Location: <span className="text-ink">{location}</span>
+                                Location:{" "}
+                                <span className="text-ink">{location}</span>
                               </span>
                             </div>
                           </td>
@@ -1722,26 +1946,65 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     Project Totals
                   </td>
                   <td className="p-4 text-right">
-                    <div className="text-xs">₹{stats.materialPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
-                    <div className="text-[10px] text-white/70">₹{stats.materialActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+                    <div className="text-xs">
+                      ₹
+                      {stats.materialPlanned.toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })}
+                    </div>
+                    <div className="text-[10px] text-white/70">
+                      ₹
+                      {stats.materialActual.toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })}
+                    </div>
                   </td>
                   <td className="p-4 text-right">
-                    <div className="text-xs">₹{stats.laborPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
-                    <div className="text-[10px] text-white/70">₹{stats.laborActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+                    <div className="text-xs">
+                      ₹
+                      {stats.laborPlanned.toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })}
+                    </div>
+                    <div className="text-[10px] text-white/70">
+                      ₹
+                      {stats.laborActual.toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })}
+                    </div>
                   </td>
                   <td className="p-4 text-right">
-                    <div className="text-xs">₹{stats.otherPlanned.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
-                    <div className="text-[10px] text-white/70">₹{stats.otherActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
-                  </td>
-                  <td className="p-4 text-right font-black">
-                    ₹{stats.totalBudgeted.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                  </td>
-                  <td className="p-4 text-right font-black">
-                    ₹{stats.totalActual.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                    <div className="text-xs">
+                      ₹
+                      {stats.otherPlanned.toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })}
+                    </div>
+                    <div className="text-[10px] text-white/70">
+                      ₹
+                      {stats.otherActual.toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })}
+                    </div>
                   </td>
                   <td className="p-4 text-right font-black">
                     ₹
-                    {(stats.totalBudgeted - stats.totalActual).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                    {stats.totalBudgeted.toLocaleString("en-IN", {
+                      maximumFractionDigits: 0,
+                    })}
+                  </td>
+                  <td className="p-4 text-right font-black">
+                    ₹
+                    {stats.totalActual.toLocaleString("en-IN", {
+                      maximumFractionDigits: 0,
+                    })}
+                  </td>
+                  <td className="p-4 text-right font-black">
+                    ₹
+                    {(stats.totalBudgeted - stats.totalActual).toLocaleString(
+                      "en-IN",
+                      { maximumFractionDigits: 0 },
+                    )}
                   </td>
                   <td></td>
                 </tr>
@@ -1749,13 +2012,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </table>
           </div>
 
-          <div className="bg-indigo-50 p-8 rounded-3xl border border-indigo-100 flex items-start gap-4">
-            <AlertCircle className="w-6 h-6 text-indigo-600 shrink-0" />
+          <div className="bg-[#F3E8D2] p-5 rounded-2xl border border-[#F3E8D2] flex items-start gap-4">
+            <AlertCircle className="w-6 h-6 text-[#A3711C] shrink-0" />
             <div>
-              <h4 className="font-bold text-indigo-900 mb-1">
+              <h4 className="font-bold text-[#8a5d16] mb-1">
                 Executive Summary
               </h4>
-              <p className="text-sm text-indigo-700 leading-relaxed">
+              <p className="text-sm text-[#8a5d16] leading-relaxed">
                 The project is currently{" "}
                 {stats.totalBudgeted - stats.totalActual >= 0
                   ? "under"
@@ -1794,11 +2057,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-surface rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl"
+              className="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
             >
-              <div className="bg-primary p-8 text-white flex justify-between items-center">
+              <div className="bg-primary p-5 md:p-6 text-white flex justify-between items-center">
                 <div>
-                  <h3 className="text-xl font-bold">{newEntry.id ? "Edit Transaction" : "Add Transaction"}</h3>
+                  <h3 className="text-xl font-bold">
+                    {newEntry.id ? "Edit Transaction" : "Add Transaction"}
+                  </h3>
                   <p className="text-[#E5E5EA] text-xs font-medium uppercase tracking-widest mt-1">
                     Direct Cost Ledger
                   </p>
@@ -1821,33 +2086,9 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <form onSubmit={handleAddEntry} className="p-8 space-y-6">
+              <form onSubmit={handleAddEntry} className="p-5 md:p-6 space-y-6">
                 <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
-                      Task Link (Optional)
-                    </label>
-                    <select
-                      className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-semibold outline-none appearance-none"
-                      value={newEntry.taskId}
-                      onChange={(e) =>
-                        setNewEntry({ ...newEntry, taskId: e.target.value })
-                      }
-                    >
-                      <option value="">Project Wide (General)</option>
-                      {flattenedTasks.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {"\u00A0".repeat(t.level * 2)}
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
-                    {!newEntry.taskId && (
-                      <p className="text-[9px] text-ink-muted ml-1 italic mt-1">
-                        Unlinked costs are tracked under Project Overhead.
-                      </p>
-                    )}
-                  </div>
+                  <input type="hidden" value="" />
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
@@ -1921,7 +2162,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           })
                         }
                       >
-                        <option value="" disabled>Select category (e.g. Fuel, Equipment rental, Transport...)</option>
+                        <option value="" disabled>
+                          Select category (e.g. Fuel, Equipment rental,
+                          Transport...)
+                        </option>
                         <option value="Labor">Labor</option>
                         <option value="Equipment">Equipment</option>
                         <option value="Subcontractor">Subcontractor</option>
@@ -1951,7 +2195,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-primary/80 transition-all shadow-xl shadow-[#007AFF]/20"
+                  className="w-full bg-primary text-white py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-primary/80 transition-all shadow-xl shadow-primary/20"
                 >
                   Save Transaction
                 </button>
@@ -1977,7 +2221,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 <div>
                   <h3 className="text-xl font-black text-ink">Delete Entry?</h3>
                   <p className="text-sm text-ink-muted mt-2">
-                    Are you sure you want to delete this cost entry? This action cannot be undone and will update task costs.
+                    Are you sure you want to delete this cost entry? This action
+                    cannot be undone and will update task costs.
                   </p>
                 </div>
                 <div className="flex gap-3 pt-4">

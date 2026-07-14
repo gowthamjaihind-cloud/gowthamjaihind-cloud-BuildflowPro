@@ -33,17 +33,66 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { RoleGuard } from "./RoleGuard";
 import { VirtualTable } from "./VirtualTable";
+import { useAuthStore } from "../store";
 import { useProjectData } from "../hooks/useProjectData";
 import { useTasksQuery } from "../hooks/queries";
 import { useQueryClient } from "@tanstack/react-query";
+import { useBreakpoint } from "../hooks/useBreakpoint";
 
 interface InventoryViewProps {
   projectId: string;
 }
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
+  const { user } = useAuthStore();
+  const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
+
+  const breakpoint = useBreakpoint();
   const queryClient = useQueryClient();
-  const { data: items } = useProjectData<InventoryItem>(projectId, "inventory");
+  const { data: rawItems = [] } = useProjectData<InventoryItem>(projectId, "inventory");
+  const { data: purchaseOrders = [] } = useProjectData<any>(projectId, "purchase_orders");
+  const { data: grns = [] } = useProjectData<any>(projectId, "goodsReceiptNotes");
+
+  const items = useMemo(() => {
+    return (rawItems || []).map((item) => {
+      let totalQty = 0;
+      let totalCost = 0;
+
+      (grns || []).forEach((grn: any) => {
+        const po = (purchaseOrders || []).find((p: any) => p.id === grn.poId);
+        if (!po) return;
+
+        (grn.lineItems || []).forEach((grnLine: any) => {
+          if (grnLine.poLineRef === item.id) {
+            const poLine = (po.lineItems || []).find((pLine: any) => pLine.itemId === item.id);
+            const rate = poLine?.rate || 0;
+            if (rate > 0 && grnLine.acceptedQty > 0) {
+              totalQty += grnLine.acceptedQty;
+              totalCost += grnLine.acceptedQty * rate;
+            }
+          }
+        });
+      });
+
+      const seedQty = Math.max(0, item.quantity - totalQty);
+      const seedUnitCost = item.unitCost || 0;
+
+      if (seedQty > 0 && seedUnitCost > 0) {
+        totalQty += seedQty;
+        totalCost += seedQty * seedUnitCost;
+      }
+
+      const computedAvg = totalQty > 0 ? totalCost / totalQty : (item.unitCost || 0);
+      const effectiveUnitCost = item.unitCost > 0 ? item.unitCost : computedAvg;
+
+      return {
+        ...item,
+        avgUnitCost: computedAvg,
+        unitCost: effectiveUnitCost,
+      };
+    });
+  }, [rawItems, grns, purchaseOrders]);
+
   const { data: tasks = [] } = useTasksQuery(projectId);
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -89,7 +138,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
   useEffect(() => {
     const configDoc = doc(
       db,
-      `projects/${projectId}/settings`,
+      `${basePath}/settings`,
       "inventoryConfig",
     );
     return onSnapshot(configDoc, (snapshot) => {
@@ -104,7 +153,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
   const updateConfig = async (newConfig: typeof config) => {
     try {
       await setDoc(
-        doc(db, `projects/${projectId}/settings`, "inventoryConfig"),
+        doc(db, `${basePath}/settings`, "inventoryConfig"),
         newConfig,
       );
     } catch (error) {
@@ -194,12 +243,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
   };
 
   const invalidateData = () => {
-    queryClient.invalidateQueries({ queryKey: ['projectData', projectId] });
+    queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
   };
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    const path = `projects/${projectId}/inventory`;
+    const path = `${basePath}/inventory`;
     const finalMaterialId =
       newItem.materialId ||
       `MAT-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
@@ -231,10 +280,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
   const handleUpdateItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingItem) return;
-    const path = `projects/${projectId}/inventory/${editingItem.id}`;
+    const path = `${basePath}/inventory/${editingItem.id}`;
     try {
-      const { id, ...data } = editingItem;
-      await updateDoc(doc(db, `projects/${projectId}/inventory`, id), data);
+      const { id, quantity: _ignoreQuantity, ...data } = editingItem;
+      await updateDoc(doc(db, `${basePath}/inventory`, id), data);
       await checkAndSaveConfig(data);
       setEditingItem(null);
       setCustomFields({ materialId: false, groupCode: false, unit: false });
@@ -247,9 +296,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
   const confirmDelete = async () => {
     if (!itemToDelete) return;
     const id = itemToDelete.id;
-    const path = `projects/${projectId}/inventory/${id}`;
+    const path = `${basePath}/inventory/${id}`;
     try {
-      await deleteDoc(doc(db, `projects/${projectId}/inventory`, id));
+      await deleteDoc(doc(db, `${basePath}/inventory`, id));
       setItemToDelete(null);
       invalidateData();
     } catch (error) {
@@ -293,14 +342,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
     const available = item.quantity - (item.consumed || 0);
     if (count === undefined || count === available) return;
 
-    const path = `projects/${projectId}/inventory/${item.id}`;
+    const path = `${basePath}/inventory/${item.id}`;
     try {
-      await updateDoc(doc(db, `projects/${projectId}/inventory`, item.id), {
+      await updateDoc(doc(db, `${basePath}/inventory`, item.id), {
         quantity: count + (item.consumed || 0),
       });
       const newCounts = { ...physicalCounts };
       delete newCounts[item.id];
       setPhysicalCounts(newCounts);
+      invalidateData();
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, path);
     }
@@ -308,11 +358,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
   const stats = useMemo(() => {
     const totalValue = items.reduce(
-      (acc, curr) => acc + (curr.quantity - (curr.consumed || 0)) * curr.unitCost,
+      (acc, curr) =>
+        acc + (curr.quantity - (curr.consumed || 0)) * curr.unitCost,
       0,
     );
     const lowStock = items.filter(
-      (item) => (item.quantity - (item.consumed || 0)) <= item.minThreshold,
+      (item) => item.quantity - (item.consumed || 0) <= item.minThreshold,
     ).length;
 
     const rootTasks = tasks.filter((t) => !t.parentId);
@@ -336,7 +387,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             <div className="bg-slate-900 p-1.5 md:p-2 rounded-xl shadow-lg">
               <Package className="w-3 h-3 md:w-4 md:h-4 text-white" />
             </div>
-            <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-600">
+            <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-[#A3711C]">
               Inventory Management
             </span>
           </div>
@@ -351,8 +402,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6">
-        <div className="bg-slate-900 p-4 md:p-8 rounded-2xl md:rounded-3xl text-white relative overflow-hidden group shadow-xl">
-          <div className="absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 bg-surface/5 rounded-full -mr-12 md:-mr-16 -mt-12 md:-mt-16 apple-transition group-hover:scale-110" />
+        <div className="bg-slate-900 p-4 md:p-5 rounded-2xl text-white relative overflow-hidden group shadow-xl">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-2 md:mb-6">
               <div className="bg-surface/10 p-2 md:p-3 rounded-xl border border-white/5 backdrop-blur-md">
@@ -366,13 +416,16 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               Total Valuation
             </p>
             <h3 className="text-lg md:text-3xl font-bold tracking-tight">
-              ₹{stats.totalValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              ₹
+              {stats.totalValue.toLocaleString("en-IN", {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              })}
             </h3>
           </div>
         </div>
 
-        <div className="bg-surface p-4 md:p-8 rounded-2xl md:rounded-3xl border border-divider shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 bg-emerald-50 rounded-full -mr-12 md:-mr-16 -mt-12 md:-mt-16 apple-transition group-hover:scale-110" />
+        <div className="bg-surface p-4 md:p-5 rounded-2xl border border-divider shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-2 md:mb-6">
               <div className="bg-emerald-50 p-2 md:p-3 rounded-xl shadow-sm text-emerald-600">
@@ -386,13 +439,16 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               Allocated
             </p>
             <h3 className="text-lg md:text-3xl font-bold text-ink tracking-tight">
-              ₹{stats.allocatedCost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              ₹
+              {stats.allocatedCost.toLocaleString("en-IN", {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              })}
             </h3>
           </div>
         </div>
 
-        <div className="bg-surface p-4 md:p-8 rounded-2xl md:rounded-3xl border border-divider shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 bg-red-50 rounded-full -mr-12 md:-mr-16 -mt-12 md:-mt-16 apple-transition group-hover:scale-110" />
+        <div className="bg-surface p-4 md:p-5 rounded-2xl border border-divider shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-2 md:mb-6">
               <div className="bg-red-50 p-2 md:p-3 rounded-xl shadow-sm text-red-600">
@@ -421,19 +477,19 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
           <div className="flex bg-panel p-1 rounded-xl w-full md:w-auto border border-divider overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setViewMode("inventory")}
-              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "inventory" ? "bg-surface shadow-sm text-indigo-600" : "text-ink-muted hover:text-ink"}`}
+              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "inventory" ? "bg-surface shadow-sm text-[#A3711C]" : "text-ink-muted hover:text-ink"}`}
             >
               Stock Ledger
             </button>
             <button
               onClick={() => setViewMode("reconciliation")}
-              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "reconciliation" ? "bg-surface shadow-sm text-indigo-600" : "text-ink-muted hover:text-ink"}`}
+              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "reconciliation" ? "bg-surface shadow-sm text-[#A3711C]" : "text-ink-muted hover:text-ink"}`}
             >
               Reconciliation
             </button>
             <button
               onClick={() => setViewMode("config")}
-              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "config" ? "bg-surface shadow-sm text-indigo-600" : "text-ink-muted hover:text-ink"}`}
+              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "config" ? "bg-surface shadow-sm text-[#A3711C]" : "text-ink-muted hover:text-ink"}`}
             >
               Configuration
             </button>
@@ -442,7 +498,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
             <input
               placeholder="Search items..."
-              className="w-full pl-9 pr-4 py-2 bg-panel border border-transparent focus:border-indigo-500 focus:bg-surface rounded-xl outline-none apple-transition text-[10px] md:text-xs font-bold"
+              className="w-full pl-9 pr-4 py-2 bg-panel border border-transparent focus:border-[#A3711C] focus:bg-surface rounded-xl outline-none apple-transition text-[10px] md:text-xs font-bold"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -479,7 +535,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
           >
             <button
               onClick={() => setIsAdding(true)}
-              className="bg-indigo-600 text-white w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-700 apple-transition shadow-lg shadow-indigo-600/20"
+              className="bg-[#A3711C] text-white w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#8a5d16] apple-transition shadow-lg shadow-[#A3711C]/20"
             >
               <Plus className="w-3 h-3" /> <span>Add Item</span>
             </button>
@@ -504,233 +560,353 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             </div>
           ) : viewMode === "inventory" ? (
             <div className="bg-surface">
-              <VirtualTable<InventoryItem>
-                data={filteredItems}
-                keyExtractor={(item) => item.id}
-                rowHeight={64}
-                className="h-[60vh] min-h-[400px]"
-                columns={[
-                  {
-                    key: "materialId",
-                    header: "Code",
-                    width: "120px",
-                    sortable: true,
-                    sortAccessor: (item) => item.materialId || "",
-                    render: (item) => (
-                      <span className="font-mono text-[9px] md:text-[10px] font-bold text-ink-muted bg-panel px-2 py-0.5 rounded border border-divider">
-                        {item.materialId || "N/A"}
-                      </span>
-                    ),
-                  },
-                  {
-                    key: "name",
-                    header: "Item Name",
-                    width: "minmax(200px, 1fr)",
-                    sortable: true,
-                    sortAccessor: (item) => item.name,
-                    render: (item) => (
-                      <div>
-                        <div className="font-bold text-ink text-[11px] md:text-sm tracking-tight mb-0.5 truncate">
-                          {item.name}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">
-                            {item.unit}
-                          </span>
-                          { (item.quantity - (item.consumed || 0)) <= item.minThreshold && (
-                            <span className="text-[9px] font-bold text-red-600 uppercase tracking-widest bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
-                              Low Stock
+              {breakpoint === "desktop" ? (
+                <VirtualTable<InventoryItem>
+                  data={filteredItems}
+                  keyExtractor={(item) => item.id}
+                  rowHeight={64}
+                  className="h-[60vh] min-h-[400px]"
+                  columns={[
+                    {
+                      key: "materialId",
+                      header: "Code",
+                      width: "120px",
+                      sortable: true,
+                      sortAccessor: (item) => item.materialId || "",
+                      render: (item) => (
+                        <span className="font-mono text-[9px] md:text-[10px] font-bold text-ink-muted bg-panel px-2 py-0.5 rounded border border-divider">
+                          {item.materialId || "N/A"}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: "name",
+                      header: "Item Name",
+                      width: "minmax(200px, 1fr)",
+                      sortable: true,
+                      sortAccessor: (item) => item.name,
+                      render: (item) => (
+                        <div>
+                          <div className="font-bold text-ink text-[11px] md:text-sm tracking-tight mb-0.5 truncate">
+                            {item.name}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">
+                              {item.unit}
                             </span>
+                            {item.quantity - (item.consumed || 0) <=
+                              item.minThreshold && (
+                              <span className="text-[9px] font-bold text-red-600 uppercase tracking-widest bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
+                                Low Stock
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "groupCode",
+                      header: "Group",
+                      width: "120px",
+                      sortable: true,
+                      sortAccessor: (item) => item.groupCode || item.category,
+                      render: (item) => (
+                        <span className="text-[10px] md:text-xs font-bold text-ink-muted uppercase tracking-[0.1em]">
+                          {item.groupCode || item.category || "Other"}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: "quantity",
+                      header: "Available Stock",
+                      width: "100px",
+                      sortable: true,
+                      sortAccessor: (item) =>
+                        item.quantity - (item.consumed || 0),
+                      render: (item) => (
+                        <div
+                          className={`text-xs md:text-base font-bold ${item.quantity - (item.consumed || 0) <= item.minThreshold ? "text-red-500" : "text-ink"}`}
+                        >
+                          {(item.quantity - (item.consumed || 0)).toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 1,
+                              maximumFractionDigits: 1,
+                            },
                           )}
                         </div>
+                      ),
+                    },
+                    {
+                      key: "unitCost",
+                      header: "Unit Cost",
+                      width: "100px",
+                      sortable: true,
+                      sortAccessor: (item) => item.unitCost,
+                      render: (item) => (
+                        <span className="text-[10px] md:text-xs font-mono text-ink-muted">
+                          ₹
+                          {item.unitCost.toLocaleString("en-IN", {
+                            minimumFractionDigits: 1,
+                            maximumFractionDigits: 1,
+                          })}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: "totalValue",
+                      header: "Total Value",
+                      width: "120px",
+                      sortable: true,
+                      sortAccessor: (item) =>
+                        (item.quantity - (item.consumed || 0)) * item.unitCost,
+                      render: (item) => (
+                        <div className="font-bold text-ink text-xs md:text-base font-mono">
+                          ₹
+                          {(
+                            (item.quantity - (item.consumed || 0)) *
+                            item.unitCost
+                          ).toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "actions",
+                      header: "Actions",
+                      width: "100px",
+                      render: (item) => (
+                        <div className="flex gap-1 justify-end transition-opacity">
+                          <button
+                            onClick={() => setEditingItem(item)}
+                            className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-[#A3711C] border border-transparent hover:border-divider"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => setItemToDelete(item)}
+                            className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-red-600 border border-transparent hover:border-divider"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ),
+                    },
+                  ]}
+                />
+              ) : (
+                <div className="flex flex-col gap-2 p-4 h-[60vh] min-h-[400px] overflow-y-auto bg-panel/30">
+                  {filteredItems.map(item => (
+                    <div className="bg-surface p-4 rounded-2xl border border-slate-50 shadow-sm" key={item.id}>
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-ink text-sm tracking-tight truncate">{item.name}</div>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <span className="font-mono text-[9px] font-bold text-ink-muted bg-panel px-1.5 py-0.5 rounded border border-divider">
+                              {item.materialId || "N/A"}
+                            </span>
+                            <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest">{item.groupCode || item.category}</span>
+                            {(item.quantity - (item.consumed || 0)) <= item.minThreshold && (
+                              <span className="text-[9px] font-bold text-red-600 uppercase tracking-widest bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
+                                Low Stock
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-1 shrink-0 ml-2">
+                          <button onClick={() => setEditingItem(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-[#A3711C] transition-colors">
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => setItemToDelete(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-red-600 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    ),
-                  },
-                  {
-                    key: "groupCode",
-                    header: "Group",
-                    width: "120px",
-                    sortable: true,
-                    sortAccessor: (item) => item.groupCode || item.category,
-                    render: (item) => (
-                      <span className="text-[10px] md:text-xs font-bold text-ink-muted uppercase tracking-[0.1em]">
-                        {item.groupCode || item.category || "Other"}
-                      </span>
-                    )
-                  },
-                  {
-                    key: "quantity",
-                    header: "Available Stock",
-                    width: "100px",
-                    sortable: true,
-                    sortAccessor: (item) => item.quantity - (item.consumed || 0),
-                    render: (item) => (
-                      <div className={`text-xs md:text-base font-bold ${(item.quantity - (item.consumed || 0)) <= item.minThreshold ? "text-red-500" : "text-ink"}`}>
-                        {(item.quantity - (item.consumed || 0)).toLocaleString(undefined, {
-                          minimumFractionDigits: 1,
-                          maximumFractionDigits: 1,
-                        })}
+                      <div className="flex gap-3 pt-3 border-t border-divider/60">
+                        <div className="flex-1">
+                          <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-0.5">Stock</p>
+                          <p className="text-[13px] font-mono font-black text-ink">{(item.quantity - (item.consumed || 0)).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} {item.unit}</p>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-0.5">Unit Cost</p>
+                          <p className="text-[13px] font-mono font-black text-ink">₹{item.unitCost.toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</p>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-0.5">Value</p>
+                          <p className="text-[13px] font-mono font-black text-ink">₹{((item.quantity - (item.consumed || 0)) * item.unitCost).toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</p>
+                        </div>
                       </div>
-                    ),
-                  },
-                  {
-                    key: "unitCost",
-                    header: "Unit Cost",
-                    width: "100px",
-                    sortable: true,
-                    sortAccessor: (item) => item.unitCost,
-                    render: (item) => (
-                      <span className="text-[10px] md:text-xs font-mono text-ink-muted">
-                        ₹{item.unitCost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                      </span>
-                    ),
-                  },
-                  {
-                    key: "totalValue",
-                    header: "Total Value",
-                    width: "120px",
-                    sortable: true,
-                    sortAccessor: (item) => (item.quantity - (item.consumed || 0)) * item.unitCost,
-                    render: (item) => (
-                      <div className="font-bold text-ink text-xs md:text-base font-mono">
-                        ₹{((item.quantity - (item.consumed || 0)) * item.unitCost).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                      </div>
-                    ),
-                  },
-                  {
-                    key: "actions",
-                    header: "Actions",
-                    width: "100px",
-                    render: (item) => (
-                      <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => setEditingItem(item)}
-                          className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-indigo-600 border border-transparent hover:border-divider"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => setItemToDelete(item)}
-                          className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-red-600 border border-transparent hover:border-divider"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ),
-                  },
-                ]}
-              />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : viewMode === "reconciliation" ? (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-900 text-white/50">
-                  <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/80">
-                    Item Name
-                  </th>
-                  <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/30 text-center">
-                    System Qty
-                  </th>
-                  <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/80 text-center">
-                    Physical Count
-                  </th>
-                  <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/80 text-center">
-                    Variance
-                  </th>
-                  <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/30 text-right">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {(
-                  Object.entries(groupedItems) as [string, InventoryItem[]][]
-                ).map(([group, items]) => (
-                  <React.Fragment key={group}>
-                    <tr className="bg-panel/50">
-                      <td
-                        colSpan={5}
-                        className="px-6 py-1.5 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-ink-muted border-y border-divider"
-                      >
-                        {group}
-                      </td>
+            <div>
+              <div className="mx-3 md:mx-6 mt-4 mb-2 p-3 bg-[#F3E8D2] border border-[#F3E8D2] rounded-lg text-xs text-[#8a5d16]">
+                <span className="font-bold">Note:</span> Reconciliation
+                adjustments may be superseded by the next recorded Goods
+                Receipt, since GRN-derived totals recompute from receipt
+                history.
+              </div>
+              {breakpoint === "desktop" ? (
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-900 text-white/50">
+                      <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/80">
+                        Item Name
+                      </th>
+                      <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/30 text-center">
+                        System Qty
+                      </th>
+                      <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/80 text-center">
+                        Physical Count
+                      </th>
+                      <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/80 text-center">
+                        Variance
+                      </th>
+                      <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/30 text-right">
+                        Action
+                      </th>
                     </tr>
-                    {items.map((item) => {
-                      const available = item.quantity - (item.consumed || 0);
-                      const variance =
-                        (physicalCounts[item.id] !== undefined ? physicalCounts[item.id] : available) -
-                        available;
-                      return (
-                        <tr
-                          key={item.id}
-                          className="hover:bg-panel/50 apple-transition group"
-                        >
-                          <td className="px-6 py-3">
-                            <div className="font-bold text-ink text-[11px] md:text-sm tracking-tight">
-                              {item.name}
-                            </div>
-                            <div className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">
-                              {item.materialId}
-                            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {(
+                      Object.entries(groupedItems) as [string, InventoryItem[]][]
+                    ).map(([group, items]) => (
+                      <React.Fragment key={group}>
+                        <tr className="bg-panel/50">
+                          <td
+                            colSpan={5}
+                            className="px-6 py-1.5 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-ink-muted border-y border-divider"
+                          >
+                            {group}
                           </td>
-                          <td className="px-6 py-3 text-center">
-                            <div className="text-[11px] md:text-sm font-bold text-ink-muted">
-                              {available.toFixed(1)}
-                            </div>
-                          </td>
-                          <td className="px-6 py-3 text-center">
-                            <div className="flex justify-center">
-                              <input
-                                type="number"
-                                className="w-16 md:w-20 bg-surface border border-divider rounded-lg px-2 py-1 text-[11px] md:text-sm font-bold outline-none focus:border-indigo-500 text-center"
-                                value={physicalCounts[item.id] ?? available}
-                                onChange={(e) =>
-                                  setPhysicalCounts({
-                                    ...physicalCounts,
-                                    [item.id]: parseFloat(e.target.value) || 0,
-                                  })
-                                }
-                              />
-                            </div>
-                          </td>
-                          <td className="px-6 py-3 text-center">
-                            <div
-                              className={`text-[10px] md:text-xs font-bold font-mono px-2 py-1 rounded-lg ${Math.abs(variance) < 0.05 ? "text-ink-muted" : variance > 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}
+                        </tr>
+                        {items.map((item) => {
+                          const available = item.quantity - (item.consumed || 0);
+                          const variance =
+                            (physicalCounts[item.id] !== undefined
+                              ? physicalCounts[item.id]
+                              : available) - available;
+                          return (
+                            <tr
+                              key={item.id}
+                              className="hover:bg-panel/50 apple-transition group"
                             >
-                              {variance > 0 ? "+" : ""}
-                              {variance.toFixed(1)} {item.unit}
+                              <td className="px-6 py-3">
+                                <div className="font-bold text-ink text-[11px] md:text-sm tracking-tight">
+                                  {item.name}
+                                </div>
+                                <div className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">
+                                  {item.materialId}
+                                </div>
+                              </td>
+                              <td className="px-6 py-3 text-center">
+                                <div className="text-[11px] md:text-sm font-bold text-ink-muted">
+                                  {available.toFixed(1)}
+                                </div>
+                              </td>
+                              <td className="px-6 py-3 text-center">
+                                <div className="flex justify-center">
+                                  <input
+                                    type="number"
+                                    className="w-16 md:w-20 bg-surface border border-divider rounded-lg px-2 py-1 text-[11px] md:text-sm font-bold outline-none focus:border-[#A3711C] text-center"
+                                    value={physicalCounts[item.id] ?? available}
+                                    onChange={(e) =>
+                                      setPhysicalCounts({
+                                        ...physicalCounts,
+                                        [item.id]:
+                                          parseFloat(e.target.value) || 0,
+                                      })
+                                    }
+                                  />
+                                </div>
+                              </td>
+                              <td className="px-6 py-3 text-center">
+                                <div
+                                  className={`text-[10px] md:text-xs font-bold font-mono px-2 py-1 rounded-lg ${Math.abs(variance) < 0.05 ? "text-ink-muted" : variance > 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}
+                                >
+                                  {variance > 0 ? "+" : ""}
+                                  {variance.toFixed(1)} {item.unit}
+                                </div>
+                              </td>
+                              <td className="px-6 py-3 text-right">
+                                <button
+                                  disabled={
+                                    physicalCounts[item.id] === undefined ||
+                                    physicalCounts[item.id] === available
+                                  }
+                                  onClick={() => handleReconcile(item)}
+                                  className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-widest apple-transition ${
+                                    physicalCounts[item.id] === undefined ||
+                                    physicalCounts[item.id] === available
+                                      ? "bg-panel text-ink-muted pointer-events-none"
+                                      : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+                                  }`}
+                                >
+                                  Sync
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="flex flex-col gap-2 p-4">
+                  {(Object.entries(groupedItems) as [string, InventoryItem[]][]).map(([group, items]) => (
+                    <React.Fragment key={group}>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted px-1 mt-2">{group}</p>
+                      {items.map((item) => {
+                        const available = item.quantity - (item.consumed || 0);
+                        const variance = (physicalCounts[item.id] !== undefined ? physicalCounts[item.id] : available) - available;
+                        const hasChange = physicalCounts[item.id] !== undefined && physicalCounts[item.id] !== available;
+                        return (
+                          <div key={item.id} className="bg-surface p-4 rounded-2xl border border-slate-50 shadow-sm">
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="font-bold text-ink text-sm tracking-tight">{item.name}</div>
+                              <div className={`text-[10px] font-bold font-mono px-2 py-1 rounded-lg ${Math.abs(variance) < 0.05 ? "text-ink-muted bg-panel" : variance > 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>
+                                {variance > 0 ? "+" : ""}{variance.toFixed(1)} {item.unit}
+                              </div>
                             </div>
-                          </td>
-                          <td className="px-6 py-3 text-right">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1">
+                                <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-1">System Qty</p>
+                                <p className="text-sm font-bold text-ink-muted">{available.toFixed(1)}</p>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-1">Physical Count</p>
+                                <input
+                                  type="number"
+                                  className="w-full bg-panel border border-divider rounded-lg px-3 py-2.5 text-sm font-bold outline-none focus:border-[#A3711C] text-center"
+                                  value={physicalCounts[item.id] ?? available}
+                                  onChange={(e) => setPhysicalCounts({ ...physicalCounts, [item.id]: parseFloat(e.target.value) || 0 })}
+                                />
+                              </div>
+                            </div>
                             <button
-                              disabled={
-                                physicalCounts[item.id] === undefined ||
-                                physicalCounts[item.id] === available
-                              }
+                              disabled={!hasChange}
                               onClick={() => handleReconcile(item)}
-                              className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-widest apple-transition ${
-                                physicalCounts[item.id] === undefined ||
-                                physicalCounts[item.id] === available
-                                  ? "bg-panel text-ink-muted pointer-events-none"
-                                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
-                              }`}
+                              className={`w-full mt-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest apple-transition ${hasChange ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm" : "bg-panel text-ink-muted pointer-events-none"}`}
                             >
                               Sync
                             </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
+                          </div>
+                        );
+                      })}
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="p-8">
+            <div className="p-5">
               <div className="max-w-4xl mx-auto space-y-12">
                 <div>
                   <h3 className="text-sm font-black text-ink uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                    <Package className="w-4 h-4 text-indigo-500" />
+                    <Package className="w-4 h-4 text-[#A3711C]" />
                     List Management
                   </h3>
 
@@ -751,7 +927,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               editingConfig.index === idx ? (
                                 <input
                                   autoFocus
-                                  className="flex-1 bg-surface border border-indigo-400 rounded px-2 py-0.5 text-[10px] md:text-xs font-bold outline-none"
+                                  className="flex-1 bg-surface border border-[#A3711C] rounded px-2 py-0.5 text-[10px] md:text-xs font-bold outline-none"
                                   value={editingConfig.value}
                                   onChange={(e) =>
                                     setEditingConfig({
@@ -770,7 +946,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                   {code}
                                 </span>
                               )}
-                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex gap-1 transition-opacity">
                                 <button
                                   onClick={() =>
                                     setEditingConfig({
@@ -779,7 +955,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                       value: code,
                                     })
                                   }
-                                  className="text-ink-muted hover:text-indigo-600 transition-colors"
+                                  className="text-ink-muted hover:text-[#A3711C] transition-colors"
                                 >
                                   <Edit2 className="w-3 h-3" />
                                 </button>
@@ -797,7 +973,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         </div>
                         <div className="mt-4 flex gap-2">
                           <input
-                            className="flex-1 bg-surface border border-divider rounded-lg px-2.5 py-1.5 text-[10px] md:text-xs font-bold outline-none focus:border-indigo-500"
+                            className="flex-1 bg-surface border border-divider rounded-lg px-2.5 py-1.5 text-[10px] md:text-xs font-bold outline-none focus:border-[#A3711C]"
                             placeholder="Add Code..."
                             value={
                               newConfigValue.type === "materialCodes"
@@ -822,7 +998,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               });
                               handleAddConfig();
                             }}
-                            className="p-1 bg-indigo-600 text-white rounded-lg"
+                            className="p-1 bg-[#A3711C] text-white rounded-lg"
                           >
                             <Plus className="w-3.5 h-3.5" />
                           </button>
@@ -846,7 +1022,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               editingConfig.index === idx ? (
                                 <input
                                   autoFocus
-                                  className="flex-1 bg-surface border border-indigo-400 rounded px-2 py-0.5 text-[10px] md:text-xs font-bold outline-none"
+                                  className="flex-1 bg-surface border border-[#A3711C] rounded px-2 py-0.5 text-[10px] md:text-xs font-bold outline-none"
                                   value={editingConfig.value}
                                   onChange={(e) =>
                                     setEditingConfig({
@@ -865,7 +1041,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                   {group}
                                 </span>
                               )}
-                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex gap-1 transition-opacity">
                                 <button
                                   onClick={() =>
                                     setEditingConfig({
@@ -874,7 +1050,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                       value: group,
                                     })
                                   }
-                                  className="text-ink-muted hover:text-indigo-600 transition-colors"
+                                  className="text-ink-muted hover:text-[#A3711C] transition-colors"
                                 >
                                   <Edit2 className="w-3 h-3" />
                                 </button>
@@ -892,7 +1068,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         </div>
                         <div className="mt-4 flex gap-2">
                           <input
-                            className="flex-1 bg-surface border border-divider rounded-lg px-2.5 py-1.5 text-[10px] md:text-xs font-bold outline-none focus:border-indigo-500"
+                            className="flex-1 bg-surface border border-divider rounded-lg px-2.5 py-1.5 text-[10px] md:text-xs font-bold outline-none focus:border-[#A3711C]"
                             placeholder="Add Group..."
                             value={
                               newConfigValue.type === "groupCodes"
@@ -917,7 +1093,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               });
                               handleAddConfig();
                             }}
-                            className="p-1 bg-indigo-600 text-white rounded-lg"
+                            className="p-1 bg-[#A3711C] text-white rounded-lg"
                           >
                             <Plus className="w-3.5 h-3.5" />
                           </button>
@@ -941,7 +1117,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               editingConfig.index === idx ? (
                                 <input
                                   autoFocus
-                                  className="flex-1 bg-surface border border-indigo-400 rounded px-2 py-0.5 text-[10px] md:text-xs font-bold outline-none"
+                                  className="flex-1 bg-surface border border-[#A3711C] rounded px-2 py-0.5 text-[10px] md:text-xs font-bold outline-none"
                                   value={editingConfig.value}
                                   onChange={(e) =>
                                     setEditingConfig({
@@ -960,7 +1136,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                   {unit}
                                 </span>
                               )}
-                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex gap-1 transition-opacity">
                                 <button
                                   onClick={() =>
                                     setEditingConfig({
@@ -969,7 +1145,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                       value: unit,
                                     })
                                   }
-                                  className="text-ink-muted hover:text-indigo-600 transition-colors"
+                                  className="text-ink-muted hover:text-[#A3711C] transition-colors"
                                 >
                                   <Edit2 className="w-3 h-3" />
                                 </button>
@@ -987,7 +1163,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         </div>
                         <div className="mt-4 flex gap-2">
                           <input
-                            className="flex-1 bg-surface border border-divider rounded-lg px-2.5 py-1.5 text-[10px] md:text-xs font-bold outline-none focus:border-indigo-500"
+                            className="flex-1 bg-surface border border-divider rounded-lg px-2.5 py-1.5 text-[10px] md:text-xs font-bold outline-none focus:border-[#A3711C]"
                             placeholder="Add Unit..."
                             value={
                               newConfigValue.type === "units"
@@ -1012,7 +1188,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               });
                               handleAddConfig();
                             }}
-                            className="p-1 bg-indigo-600 text-white rounded-lg"
+                            className="p-1 bg-[#A3711C] text-white rounded-lg"
                           >
                             <Plus className="w-3.5 h-3.5" />
                           </button>
@@ -1035,7 +1211,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-surface rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden p-8 text-center"
+              className="bg-surface rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-5 text-center"
             >
               <div className="bg-red-50 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 border border-red-100">
                 <Trash2 className="w-5 h-5 text-red-500" />
@@ -1071,12 +1247,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="bg-surface rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden my-auto"
+              className="bg-surface rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden my-auto"
             >
-              <div className="bg-slate-900 p-6 md:p-8 text-white relative">
+              <div className="bg-slate-900 p-5 md:p-6 text-white relative">
                 <div className="relative z-10 flex items-center justify-between">
                   <h3 className="text-lg md:text-xl font-bold flex items-center gap-3">
-                    <Package className="w-4 h-4 md:w-5 md:h-5 text-indigo-400" />
+                    <Package className="w-4 h-4 md:w-5 md:h-5 text-[#A3711C]" />
                     {editingItem ? "Edit Item" : "New Item"}
                   </h3>
                   <button
@@ -1094,7 +1270,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
               <form
                 onSubmit={editingItem ? handleUpdateItem : handleAddItem}
-                className="p-6 md:p-8 space-y-4 md:space-y-6"
+                className="p-5 md:p-6 space-y-4 md:space-y-6"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                   <div className="space-y-1">
@@ -1111,7 +1287,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               materialId: false,
                             }))
                           }
-                          className="text-[9px] md:text-[10px] font-bold text-indigo-600 hover:text-indigo-700"
+                          className="text-[9px] md:text-[10px] font-bold text-[#A3711C] hover:text-[#8a5d16]"
                         >
                           Back to List
                         </button>
@@ -1120,7 +1296,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     {customFields.materialId ? (
                       <input
                         placeholder="Enter custom code"
-                        className="w-full bg-panel border border-divider focus:border-indigo-500 focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
+                        className="w-full bg-panel border border-divider focus:border-[#A3711C] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
                         value={
                           editingItem
                             ? editingItem.materialId || ""
@@ -1141,7 +1317,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       />
                     ) : (
                       <select
-                        className="w-full bg-panel border border-divider focus:border-indigo-500 focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
+                        className="w-full bg-panel border border-divider focus:border-[#A3711C] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
                         value={
                           editingItem
                             ? editingItem.materialId
@@ -1168,7 +1344,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     <input
                       required
                       placeholder="Item name"
-                      className="w-full bg-panel border border-divider focus:border-indigo-500 focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
+                      className="w-full bg-panel border border-divider focus:border-[#A3711C] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
                       value={editingItem ? editingItem.name : newItem.name}
                       onChange={(e) =>
                         editingItem
@@ -1195,7 +1371,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               groupCode: false,
                             }))
                           }
-                          className="text-[9px] md:text-[10px] font-bold text-indigo-600 hover:text-indigo-700"
+                          className="text-[9px] md:text-[10px] font-bold text-[#A3711C] hover:text-[#8a5d16]"
                         >
                           Back to List
                         </button>
@@ -1204,7 +1380,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     {customFields.groupCode ? (
                       <input
                         placeholder="Enter custom group"
-                        className="w-full bg-panel border border-divider focus:border-indigo-500 focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
+                        className="w-full bg-panel border border-divider focus:border-[#A3711C] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
                         value={
                           editingItem
                             ? editingItem.groupCode || ""
@@ -1225,7 +1401,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       />
                     ) : (
                       <select
-                        className="w-full bg-panel border border-divider focus:border-indigo-500 focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
+                        className="w-full bg-panel border border-divider focus:border-[#A3711C] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
                         value={
                           editingItem
                             ? editingItem.groupCode || ""
@@ -1250,7 +1426,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       Category
                     </label>
                     <select
-                      className="w-full bg-panel border border-divider focus:border-indigo-500 focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
+                      className="w-full bg-panel border border-divider focus:border-[#A3711C] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
                       value={
                         editingItem ? editingItem.category : newItem.category
                       }
@@ -1282,7 +1458,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               unit: false,
                             }))
                           }
-                          className="text-[9px] md:text-[10px] font-bold text-indigo-600 hover:text-indigo-700"
+                          className="text-[9px] md:text-[10px] font-bold text-[#A3711C] hover:text-[#8a5d16]"
                         >
                           Back to List
                         </button>
@@ -1291,7 +1467,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     {customFields.unit ? (
                       <input
                         placeholder="Enter custom unit"
-                        className="w-full bg-panel border border-divider focus:border-indigo-500 focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
+                        className="w-full bg-panel border border-divider focus:border-[#A3711C] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
                         value={
                           editingItem
                             ? editingItem.unit || ""
@@ -1309,7 +1485,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       />
                     ) : (
                       <select
-                        className="w-full bg-panel border border-divider focus:border-indigo-500 focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
+                        className="w-full bg-panel border border-divider focus:border-[#A3711C] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
                         value={editingItem ? editingItem.unit : newItem.unit}
                         onChange={(e) =>
                           handleSelectCustom("unit", e.target.value)
@@ -1328,27 +1504,40 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
                   <div className="space-y-1">
                     <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-ink-muted ml-1">
-                      Quantity
+                      {editingItem
+                        ? "Quantity (from Goods Receipts)"
+                        : "Initial Quantity"}
                     </label>
-                    <input
-                      type="number"
-                      required
-                      className="w-full bg-panel border border-divider focus:border-indigo-500 focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
-                      value={
-                        editingItem ? editingItem.quantity : newItem.quantity
-                      }
-                      onChange={(e) =>
-                        editingItem
-                          ? setEditingItem({
-                              ...editingItem,
-                              quantity: parseFloat(e.target.value) || 0,
-                            })
-                          : setNewItem({
+                    {editingItem ? (
+                      <div>
+                        <div className="w-full bg-surface border border-divider text-ink-muted rounded-xl p-2.5 md:p-3 text-[10px] md:text-xs font-bold cursor-not-allowed">
+                          {editingItem.quantity}
+                        </div>
+                        <p className="text-[9px] text-ink-muted ml-1 mt-1">
+                          To change stock quantity, record a Goods Receipt Note
+                          against a Purchase Order.
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <input
+                          type="number"
+                          required
+                          className="w-full bg-panel border border-divider focus:border-[#A3711C] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
+                          value={newItem.quantity}
+                          onChange={(e) =>
+                            setNewItem({
                               ...newItem,
                               quantity: parseFloat(e.target.value) || 0,
                             })
-                      }
-                    />
+                          }
+                        />
+                        <p className="text-[9px] text-ink-muted ml-1 mt-1">
+                          Initial seed value. Will be superseded by Goods
+                          Receipt Notes once recorded.
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-ink-muted ml-1">
@@ -1357,7 +1546,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     <input
                       type="number"
                       required
-                      className="w-full bg-panel border border-divider focus:border-indigo-500 focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold text-indigo-600"
+                      className="w-full bg-panel border border-divider focus:border-[#A3711C] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold text-[#A3711C]"
                       value={
                         editingItem ? editingItem.unitCost : newItem.unitCost
                       }
@@ -1381,7 +1570,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     <input
                       type="number"
                       required
-                      className="w-full bg-panel border border-divider focus:border-indigo-500 focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
+                      className="w-full bg-panel border border-divider focus:border-[#A3711C] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
                       value={
                         editingItem
                           ? editingItem.minThreshold
@@ -1405,7 +1594,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                 <div className="flex gap-4 pt-2">
                   <button
                     type="submit"
-                    className="flex-1 bg-indigo-600 text-white py-3 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-sm"
+                    className="flex-1 bg-[#A3711C] text-white py-3 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-[#8a5d16] transition-all shadow-sm"
                   >
                     {editingItem ? "Save Changes" : "Add Item"}
                   </button>

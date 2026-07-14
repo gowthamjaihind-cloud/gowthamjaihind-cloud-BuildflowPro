@@ -1,10 +1,20 @@
 import React, { useState, useMemo } from "react";
-import { Plus, X, IndianRupee, HandCoins, Building2, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import {
+  Plus,
+  X,
+  IndianRupee,
+  HandCoins,
+  Building2,
+  ArrowDownRight,
+  ArrowUpRight,
+} from "lucide-react";
 import { format } from "date-fns";
 import { ClientPayment, VendorLedgerEntry, Vendor, CostEntry } from "../types";
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { collection, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "motion/react";
+import { useAuthStore } from "../store";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PaymentsViewProps {
   projectId: string;
@@ -22,6 +32,11 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
   costEntries,
 }) => {
 
+  const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
+  const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
+  const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
+
   const [isAdding, setIsAdding] = useState(false);
   const [newPayment, setNewPayment] = useState<Partial<ClientPayment>>({
     date: format(new Date(), "yyyy-MM-dd"),
@@ -33,7 +48,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
 
   const totalClientReceived = clientPayments.reduce(
     (sum, p) => sum + (p.amount || 0),
-    0
+    0,
   );
 
   // Vendor Payments: usually a DEBIT in vendor ledger (payment made to vendor)
@@ -41,12 +56,18 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
     .filter((l) => l.type === "DEBIT")
     .reduce((sum, l) => sum + (l.amount || 0), 0);
 
-  const netCashFlow = totalClientReceived - totalVendorPaid;
+  const totalDirectCosts = costEntries.filter((c) => c.type === "Actual" && !c.isAccrual)
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
+
+  const netCashFlow = totalClientReceived - totalVendorPaid - totalDirectCosts;
 
   const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdminOrOwner) return;
     try {
-      const docRef = doc(collection(db, `projects/${projectId}/client_payments`));
+      const docRef = doc(
+        collection(db, `${basePath}/client_payments`),
+      );
       await setDoc(docRef, {
         id: docRef.id,
         projectId,
@@ -61,25 +82,44 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
         description: "",
         paymentMethod: "Bank Transfer",
       });
+      queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, `projects/${projectId}/client_payments`);
+      handleFirestoreError(
+        error,
+        OperationType.CREATE,
+        `${basePath}/client_payments`,
+      );
     }
   };
 
-  const handleDelete = async (id: string, type: "CLIENT" | "VENDOR" | "DIRECT_COST") => {
+  const handleDelete = async (
+    id: string,
+    type: "CLIENT" | "VENDOR" | "DIRECT_COST",
+  ) => {
     if (type === "VENDOR") {
-      alert("Vendor payments must be deleted from the Procurement / Ledger section.");
+      alert(
+        "Vendor payments must be deleted from the Procurement / Ledger section.",
+      );
       return;
     }
     if (type === "DIRECT_COST") {
-      alert("Direct costs must be deleted from the Cost Management / Tasks section.");
+      alert(
+        "Direct costs must be deleted from the Cost Management / Tasks section.",
+      );
       return;
     }
-    if (!confirm("Are you sure you want to delete this payment record?")) return;
+    if (type === "CLIENT" && !isAdminOrOwner) return;
+
+    if (!confirm("Are you sure you want to delete this payment record?"))
+      return;
     try {
-      await deleteDoc(doc(db, `projects/${projectId}/client_payments`, id));
+      await deleteDoc(doc(db, `${basePath}/client_payments`, id));
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `projects/${projectId}/client_payments/${id}`);
+      handleFirestoreError(
+        error,
+        OperationType.DELETE,
+        `${basePath}/client_payments/${id}`,
+      );
     }
   };
 
@@ -96,7 +136,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
       method?: string;
     }[] = [];
 
-    clientPayments.forEach(p => {
+    clientPayments.forEach((p) => {
       list.push({
         id: p.id,
         date: p.date,
@@ -110,39 +150,46 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
       });
     });
 
-    vendorLedger.filter(l => l.type === "DEBIT").forEach(l => {
-      const vendorName = vendors.find(v => v.id === l.vendorId)?.name || "Vendor";
-      list.push({
-        id: l.id,
-        date: l.date,
-        description: `Payment to ${vendorName}`,
-        reference: l.referenceId || l.referenceType || "-",
-        inward: 0,
-        outward: l.amount || 0,
-        type: "VENDOR",
-        originalId: l.id
+    vendorLedger
+      .filter((l) => l.type === "DEBIT")
+      .forEach((l) => {
+        const vendorName =
+          vendors.find((v) => v.id === l.vendorId)?.name || "Vendor";
+        list.push({
+          id: l.id,
+          date: l.date,
+          description: `Payment to ${vendorName}`,
+          reference: l.referenceId || l.referenceType || "-",
+          inward: 0,
+          outward: l.amount || 0,
+          type: "VENDOR",
+          originalId: l.id,
+        });
       });
-    });
 
-    costEntries.filter(c => c.type === "Actual").forEach(c => {
-      list.push({
-        id: c.id,
-        date: c.date,
-        description: c.description || "Direct Cost",
-        reference: c.category || "-",
-        inward: 0,
-        outward: c.amount || 0,
-        type: "DIRECT_COST",
-        originalId: c.id
+    costEntries
+      .filter((c) => c.type === "Actual" && !c.isAccrual)
+      .forEach((c) => {
+        list.push({
+          id: c.id,
+          date: c.date,
+          description: c.description || "Direct Cost",
+          reference: c.category || "-",
+          inward: 0,
+          outward: c.amount || 0,
+          type: "DIRECT_COST",
+          originalId: c.id,
+        });
       });
-    });
 
     // sort asc by date
-    list.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    list.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
 
     let runningBalance = 0;
-    return list.map(item => {
-      runningBalance += (item.inward - item.outward);
+    return list.map((item) => {
+      runningBalance += item.inward - item.outward;
       return { ...item, balance: runningBalance };
     });
   }, [clientPayments, vendorLedger, vendors, costEntries]);
@@ -153,20 +200,34 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
         <div className="bg-surface border p-6 rounded-2xl shadow-sm">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-sm font-semibold text-ink-muted">Total Client Received</p>
-              <h3 className="text-3xl font-black text-emerald-600 mt-1">₹{totalClientReceived.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</h3>
+              <p className="text-sm font-semibold text-ink-muted">
+                Total Client Received
+              </p>
+              <h3 className="text-3xl font-black text-emerald-600 mt-1">
+                ₹
+                {totalClientReceived.toLocaleString("en-IN", {
+                  maximumFractionDigits: 0,
+                })}
+              </h3>
             </div>
             <div className="bg-emerald-100 p-3 rounded-xl text-emerald-600">
               <Building2 className="w-6 h-6" />
             </div>
           </div>
         </div>
-        
+
         <div className="bg-surface border p-6 rounded-2xl shadow-sm">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-sm font-semibold text-ink-muted">Total Vendor Paid</p>
-              <h3 className="text-3xl font-black text-rose-600 mt-1">₹{totalVendorPaid.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</h3>
+              <p className="text-sm font-semibold text-ink-muted">
+                Total Vendor Paid
+              </p>
+              <h3 className="text-3xl font-black text-rose-600 mt-1">
+                ₹
+                {totalVendorPaid.toLocaleString("en-IN", {
+                  maximumFractionDigits: 0,
+                })}
+              </h3>
             </div>
             <div className="bg-rose-100 p-3 rounded-xl text-rose-600">
               <HandCoins className="w-6 h-6" />
@@ -177,12 +238,21 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
         <div className="bg-surface border p-6 rounded-2xl shadow-sm">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-sm font-semibold text-ink-muted">Cash on Hand</p>
-              <h3 className={`text-3xl font-black mt-1 ${netCashFlow >= 0 ? "text-indigo-600" : "text-amber-600"}`}>
-                ₹{netCashFlow.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              <p className="text-sm font-semibold text-ink-muted">
+                Cash on Hand
+              </p>
+              <h3
+                className={`text-3xl font-black mt-1 ${netCashFlow >= 0 ? "text-[#A3711C]" : "text-amber-600"}`}
+              >
+                ₹
+                {netCashFlow.toLocaleString("en-IN", {
+                  maximumFractionDigits: 0,
+                })}
               </h3>
             </div>
-            <div className={`p-3 rounded-xl ${netCashFlow >= 0 ? "bg-indigo-100 text-indigo-600" : "bg-amber-100 text-amber-600"}`}>
+            <div
+              className={`p-3 rounded-xl ${netCashFlow >= 0 ? "bg-[#F3E8D2] text-[#A3711C]" : "bg-amber-100 text-amber-600"}`}
+            >
               <IndianRupee className="w-6 h-6" />
             </div>
           </div>
@@ -191,15 +261,19 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
 
       <div className="bg-surface rounded-2xl border shadow-sm overflow-hidden">
         <div className="p-6 border-b bg-panel/30 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-ink">Integrated Ledger (Cash Book)</h3>
-          <button
-            onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" /> Add Payment
-          </button>
+          <h3 className="text-lg font-bold text-ink">
+            Integrated Ledger (Cash Book)
+          </h3>
+          {isAdminOrOwner && (
+            <button
+              onClick={() => setIsAdding(true)}
+              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Add Payment
+            </button>
+          )}
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -216,14 +290,22 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
             <tbody className="text-sm">
               {combinedLedger.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-ink-muted italic">
+                  <td
+                    colSpan={7}
+                    className="p-5 text-center text-ink-muted italic"
+                  >
                     No transactions recorded yet.
                   </td>
                 </tr>
               ) : (
                 [...combinedLedger].reverse().map((entry) => (
-                  <tr key={entry.id} className="border-b last:border-0 hover:bg-panel/50 transition-colors">
-                    <td className="p-4 font-medium">{format(new Date(entry.date), "dd MMM yyyy")}</td>
+                  <tr
+                    key={entry.id}
+                    className="border-b last:border-0 hover:bg-panel/50 transition-colors"
+                  >
+                    <td className="p-4 font-medium">
+                      {format(new Date(entry.date), "dd MMM yyyy")}
+                    </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         {entry.type === "CLIENT" ? (
@@ -231,40 +313,62 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                         ) : (
                           <ArrowUpRight className="w-4 h-4 text-rose-500" />
                         )}
-                        <span className={entry.type === "CLIENT" ? "text-emerald-700 font-semibold" : "text-rose-700"}>
+                        <span
+                          className={
+                            entry.type === "CLIENT"
+                              ? "text-emerald-700 font-semibold"
+                              : "text-rose-700"
+                          }
+                        >
                           {entry.description}
                         </span>
                       </div>
                     </td>
                     <td className="p-4">
                       <div className="flex flex-col">
-                        <span className="font-mono text-xs text-ink-muted">{entry.reference}</span>
+                        <span className="font-mono text-xs text-ink-muted">
+                          {entry.reference}
+                        </span>
                         {entry.method && (
-                          <span className="text-[10px] font-semibold text-ink-muted/80">{entry.method}</span>
+                          <span className="text-[10px] font-semibold text-ink-muted/80">
+                            {entry.method}
+                          </span>
                         )}
                       </div>
                     </td>
                     <td className="p-4 text-right">
                       {entry.inward > 0 ? (
                         <span className="font-bold text-emerald-600">
-                          {entry.inward.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                          {entry.inward.toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
                         </span>
-                      ) : "-"}
+                      ) : (
+                        "-"
+                      )}
                     </td>
                     <td className="p-4 text-right">
                       {entry.outward > 0 ? (
                         <span className="font-bold text-rose-600">
-                          {entry.outward.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                          {entry.outward.toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
                         </span>
-                      ) : "-"}
+                      ) : (
+                        "-"
+                      )}
                     </td>
                     <td className="p-4 text-right font-black text-ink">
-                      {entry.balance.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                      {entry.balance.toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })}
                     </td>
                     <td className="p-4">
-                      {entry.type === "CLIENT" && (
+                      {entry.type === "CLIENT" && isAdminOrOwner && (
                         <button
-                          onClick={() => handleDelete(entry.originalId, entry.type)}
+                          onClick={() =>
+                            handleDelete(entry.originalId, entry.type)
+                          }
                           className="p-1 text-ink-muted hover:text-red-500 hover:bg-red-50 rounded transition-colors"
                           title="Delete record"
                         >
@@ -291,64 +395,99 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
             >
               <div className="bg-primary p-6 text-white flex justify-between items-center">
                 <h3 className="text-lg font-bold">Record Client Payment</h3>
-                <button onClick={() => setIsAdding(false)} className="hover:bg-white/20 p-1 rounded-full transition-colors">
+                <button
+                  onClick={() => setIsAdding(false)}
+                  className="hover:bg-white/20 p-1 rounded-full transition-colors"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              
+
               <form onSubmit={handleAddPayment} className="p-6 space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-ink-muted">Date</label>
+                  <label className="text-xs font-bold text-ink-muted">
+                    Date
+                  </label>
                   <input
                     type="date"
                     required
                     value={newPayment.date}
-                    onChange={(e) => setNewPayment({ ...newPayment, date: e.target.value })}
+                    onChange={(e) =>
+                      setNewPayment({ ...newPayment, date: e.target.value })
+                    }
                     className="w-full bg-panel p-3 rounded-xl border outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
-                
+
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-ink-muted">Amount (₹)</label>
+                  <label className="text-xs font-bold text-ink-muted">
+                    Amount (₹)
+                  </label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     required
                     value={newPayment.amount || ""}
-                    onChange={(e) => setNewPayment({ ...newPayment, amount: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setNewPayment({
+                        ...newPayment,
+                        amount: Number(e.target.value),
+                      })
+                    }
                     className="w-full bg-panel p-3 rounded-xl border outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-ink-muted">Description</label>
+                  <label className="text-xs font-bold text-ink-muted">
+                    Description
+                  </label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Mobilization Advance"
                     value={newPayment.description}
-                    onChange={(e) => setNewPayment({ ...newPayment, description: e.target.value })}
+                    onChange={(e) =>
+                      setNewPayment({
+                        ...newPayment,
+                        description: e.target.value,
+                      })
+                    }
                     className="w-full bg-panel p-3 rounded-xl border outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-ink-muted">Reference / Cheque No.</label>
+                    <label className="text-xs font-bold text-ink-muted">
+                      Reference / Cheque No.
+                    </label>
                     <input
                       type="text"
                       required
                       value={newPayment.referenceNumber}
-                      onChange={(e) => setNewPayment({ ...newPayment, referenceNumber: e.target.value })}
+                      onChange={(e) =>
+                        setNewPayment({
+                          ...newPayment,
+                          referenceNumber: e.target.value,
+                        })
+                      }
                       className="w-full bg-panel p-3 rounded-xl border outline-none focus:ring-2 focus:ring-primary/50"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-ink-muted">Method</label>
+                    <label className="text-xs font-bold text-ink-muted">
+                      Method
+                    </label>
                     <select
                       value={newPayment.paymentMethod}
-                      onChange={(e) => setNewPayment({ ...newPayment, paymentMethod: e.target.value })}
+                      onChange={(e) =>
+                        setNewPayment({
+                          ...newPayment,
+                          paymentMethod: e.target.value,
+                        })
+                      }
                       className="w-full bg-panel p-3 rounded-xl border outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       <option>Bank Transfer</option>
@@ -358,7 +497,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     </select>
                   </div>
                 </div>
-                
+
                 <div className="pt-4 flex gap-3">
                   <button
                     type="button"

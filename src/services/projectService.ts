@@ -1,3 +1,4 @@
+import { useAuthStore } from "../store";
 import {
   db,
   collection,
@@ -11,10 +12,12 @@ import {
   OperationType,
 } from "../firebase";
 import { DependencyType, TaskDependency, Project, Task } from "../types";
+import { getProjectBasePath, getProjectSubCollectionPath } from "../utils/projectPath";
 
 export const projectService = {
   async createProject(newProject: any, userId: string) {
-    const path = "projects";
+    const user = useAuthStore.getState().user;
+    const path = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects` : "projects";
     try {
       const docRef = await addDoc(collection(db, path), {
         ...newProject,
@@ -22,6 +25,7 @@ export const projectService = {
         status: newProject.status,
         ownerId: userId,
         createdAt: new Date().toISOString(),
+        orgId: user?.currentOrgId || null,
       });
       return docRef.id;
     } catch (error) {
@@ -30,6 +34,7 @@ export const projectService = {
   },
 
   async deleteProject(projectId: string) {
+    const projectPath = getProjectBasePath(projectId);
     try {
       // First clear all sub-collections
       const collectionsToClear = [
@@ -47,7 +52,7 @@ export const projectService = {
       ];
 
       for (const colName of collectionsToClear) {
-        const path = `projects/${projectId}/${colName}`;
+        const path = `${projectPath}/${colName}`;
         const snapshot = await getDocs(collection(db, path));
 
         if (snapshot.empty) continue;
@@ -65,7 +70,7 @@ export const projectService = {
       }
 
       // Finally delete the project document itself
-      await deleteDoc(doc(db, "projects", projectId));
+      await deleteDoc(doc(db, projectPath));
     } catch (error) {
       console.error("Project deletion failed:", error);
       alert(
@@ -74,47 +79,50 @@ export const projectService = {
       handleFirestoreError(
         error,
         OperationType.DELETE,
-        `projects/${projectId}`,
+        projectPath,
       );
     }
   },
 
   async updateProject(projectId: string, updates: Partial<Project>) {
+    const projectPath = getProjectBasePath(projectId);
     try {
-      await updateDoc(doc(db, "projects", projectId), updates);
+      await updateDoc(doc(db, projectPath), updates);
     } catch (error) {
       handleFirestoreError(
         error,
         OperationType.UPDATE,
-        `projects/${projectId}`,
+        projectPath,
       );
     }
   },
 
   async updateProjectStatus(projectId: string, newStatus: string) {
+    const projectPath = getProjectBasePath(projectId);
     try {
-      await updateDoc(doc(db, "projects", projectId), {
+      await updateDoc(doc(db, projectPath), {
         status: newStatus,
       });
     } catch (error) {
       handleFirestoreError(
         error,
         OperationType.UPDATE,
-        `projects/${projectId}`,
+        projectPath,
       );
     }
   },
 
   async updateProjectImage(projectId: string, imageUrl: string) {
+    const projectPath = getProjectBasePath(projectId);
     try {
-      await updateDoc(doc(db, "projects", projectId), {
+      await updateDoc(doc(db, projectPath), {
         imageUrl,
       });
     } catch (error) {
       handleFirestoreError(
         error,
         OperationType.UPDATE,
-        `projects/${projectId}`,
+        projectPath,
       );
     }
   },
@@ -176,8 +184,9 @@ export const projectService = {
       new Set([...(taskToUpdate.dependencies || []), fromId]),
     );
 
+    const tasksPath = getProjectSubCollectionPath(projectId, "tasks");
     try {
-      await updateDoc(doc(db, `projects/${projectId}/tasks`, toId), {
+      await updateDoc(doc(db, tasksPath, toId), {
         advancedDependencies: updatedDeps,
         dependencies: updatedLegacyDeps,
       });
@@ -185,7 +194,7 @@ export const projectService = {
       handleFirestoreError(
         error,
         OperationType.UPDATE,
-        `projects/${projectId}/tasks/${toId}`,
+        `${tasksPath}/${toId}`,
       );
     }
   },

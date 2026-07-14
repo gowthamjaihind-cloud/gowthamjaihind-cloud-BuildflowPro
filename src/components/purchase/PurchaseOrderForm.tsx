@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Plus, Trash2, Loader2, Save } from "lucide-react";
@@ -14,7 +15,9 @@ interface PurchaseOrderFormProps {
 
 export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId, onClose }) => {
   const user = useAuthStore(state => state.user);
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [vendorId, setVendorId] = useState("");
   const [orderDate, setOrderDate] = useState(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date()));
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
@@ -34,7 +37,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
       newItems[index] = {
         ...newItems[index],
         itemId: invItem.id,
-        materialId: invItem.code || "",
+        materialId: invItem.materialId || "",
         name: invItem.name,
         unit: invItem.unit,
         rate: invItem.avgUnitCost || invItem.unitCost || 0
@@ -73,6 +76,13 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
     e.preventDefault();
     if (!vendorId || !selectedVendor || !user) return;
     
+    setError(null);
+    const invalidItem = items.find(i => i.orderedQty > 0 && i.rate === 0 && i.itemId);
+    if (invalidItem) {
+        setError(`Line item '${invalidItem.name}' has a rate of ₹0. Enter a valid rate — a zero rate will produce zero costs across the vendor ledger, inventory valuation, and task costs.`);
+        return;
+    }
+
     setIsSubmitting(true);
     try {
        const tenantPath = user.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -90,7 +100,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
           const year = orderDate.split('-')[0];
           const poNumber = `PO-${year}-${String(nextCount).padStart(4, '0')}`;
           
-          const validItems: POLineItem[] = items.filter(i => i.orderedQty > 0 && i.rate >= 0 && i.itemId).map(i => ({
+          const validItems: POLineItem[] = items.filter(i => i.orderedQty > 0 && i.rate > 0 && i.itemId).map(i => ({
              ...i,
              amount: i.orderedQty * i.rate,
              receivedQty: 0
@@ -116,6 +126,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
           
           t.set(counterRef, { count: nextCount }, { merge: true });
        });
+       queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'purchase_orders'] });
        onClose();
     } catch (e) {
        console.error("Failed to save PO", e);
@@ -145,14 +156,19 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
          </div>
          
          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+            {error && (
+              <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-bold flex flex-col gap-1">
+                <span>{error}</span>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-               <div className="space-y-1.5 focus-within:text-indigo-600 transition-colors">
+               <div className="space-y-1.5 focus-within:text-[#A3711C] transition-colors">
                  <label className="text-[10px] font-black uppercase tracking-widest text-inherit ml-1">Vendor</label>
                  <select
                    required
                    value={vendorId}
                    onChange={e => setVendorId(e.target.value)}
-                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium text-ink focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium text-ink focus:ring-2 focus:ring-[#A3711C] transition-all cursor-pointer"
                  >
                    <option value="">Select Vendor</option>
                    {vendors.map(v => (
@@ -160,14 +176,14 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                    ))}
                  </select>
                </div>
-               <div className="space-y-1.5 focus-within:text-indigo-600 transition-colors">
+               <div className="space-y-1.5 focus-within:text-[#A3711C] transition-colors">
                  <label className="text-[10px] font-black uppercase tracking-widest text-inherit ml-1">Order Date</label>
                  <input
                    type="date"
                    required
                    value={orderDate}
                    onChange={e => setOrderDate(e.target.value)}
-                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium font-mono text-ink focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium font-mono text-ink focus:ring-2 focus:ring-[#A3711C] transition-all cursor-pointer"
                  />
                </div>
             </div>
@@ -175,7 +191,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
             <div className="space-y-4">
               <div className="flex justify-between items-end border-b border-divider pb-2">
                  <h3 className="text-xs font-black text-ink uppercase tracking-widest">Line Items</h3>
-                 <button type="button" onClick={addItem} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-widest flex items-center gap-1">
+                 <button type="button" onClick={addItem} className="text-[10px] font-bold text-[#A3711C] hover:text-[#8a5d16] uppercase tracking-widest flex items-center gap-1">
                    <Plus className="w-3.5 h-3.5" /> Add
                  </button>
               </div>
@@ -236,31 +252,31 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4 pt-6 border-t border-divider">
-               <div className="space-y-1.5 focus-within:text-violet-600 transition-colors">
+               <div className="space-y-1.5 focus-within:text-primary transition-colors">
                  <label className="text-[10px] font-black uppercase tracking-widest text-inherit ml-1">Expected Delivery (Optional)</label>
                  <input
                    type="date"
                    value={expectedDeliveryDate}
                    onChange={e => setExpectedDeliveryDate(e.target.value)}
-                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium font-mono text-ink focus:ring-2 focus:ring-violet-500 transition-all cursor-pointer"
+                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium font-mono text-ink focus:ring-2 focus:ring-primary transition-all cursor-pointer"
                  />
                </div>
-               <div className="space-y-1.5 focus-within:text-indigo-600 transition-colors">
+               <div className="space-y-1.5 focus-within:text-[#A3711C] transition-colors">
                  <label className="text-[10px] font-black uppercase tracking-widest text-inherit ml-1">Notes</label>
                  <input
                    type="text"
                    placeholder="e.g. Deliver to North Gate"
                    value={notes}
                    onChange={e => setNotes(e.target.value)}
-                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium text-ink focus:ring-2 focus:ring-indigo-500 transition-all"
+                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium text-ink focus:ring-2 focus:ring-[#A3711C] transition-all"
                  />
                </div>
             </div>
 
-            <div className="mt-8 mb-4 p-6 bg-indigo-50 border border-indigo-100/50 rounded-[20px]">
+            <div className="mt-8 mb-4 p-6 bg-[#F3E8D2] border border-[#F3E8D2]/50 rounded-[20px]">
                <div className="flex justify-between items-center">
-                  <span className="text-xs font-black text-indigo-400 uppercase tracking-widest">Total Amount</span>
-                  <span className="text-2xl font-black text-indigo-600 tracking-tight font-mono">
+                  <span className="text-xs font-black text-[#A3711C] uppercase tracking-widest">Total Amount</span>
+                  <span className="text-2xl font-black text-[#A3711C] tracking-tight font-mono">
                      ₹{totalAmount.toLocaleString("en-IN")}
                   </span>
                </div>
@@ -270,7 +286,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
               <button
                 type="submit"
                 disabled={isSubmitting || !vendorId || totalAmount <= 0}
-                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-bold uppercase tracking-widest rounded-xl transition flex justify-center items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)]"
+                className="w-full py-4 bg-[#A3711C] hover:bg-[#8a5d16] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-bold uppercase tracking-widest rounded-xl transition flex justify-center items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)]"
               >
                 {isSubmitting ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> Saving PO...</>

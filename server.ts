@@ -1,109 +1,27 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import crypto from "crypto";
 import TelegramBot from "node-telegram-bot-api";
-import { initializeApp } from "firebase/app";
-import { 
-  initializeFirestore,
-  memoryLocalCache,
-  collection, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  addDoc,
-  serverTimestamp,
-  query,
-  where,
-  limit,
-  Timestamp,
-  setLogLevel
-} from "firebase/firestore";
+import { initializeApp, cert } from "firebase-admin/app";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import firebaseConfig from "./firebase-applet-config.json" with { type: "json" };
-
-// Suppress benign idle stream warnings in Node
-setLogLevel("error");
-
 import fs from "fs";
 
-// Initialize Firebase Client SDK for server-side use
-// This bypasses ambient credential issues by using the API key
-const firebaseApp = initializeApp(firebaseConfig);
-const firestoreClient = initializeFirestore(
-  firebaseApp,
-  {
-    experimentalForceLongPolling: true,
-    ignoreUndefinedProperties: true,
-    localCache: memoryLocalCache(),
-  },
-  firebaseConfig.firestoreDatabaseId,
-);
+// Initialize Firebase Admin SDK
+let adminApp;
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  adminApp = initializeApp({
+    credential: cert(serviceAccount)
+  });
+} else {
+  // Fallback to ADC
+  adminApp = initializeApp();
+}
 
-// Admin-like wrapper to minimize changes to the existing bot logic
-const db = {
-  collection: (path: string) => ({
-    doc: (id: string) => ({
-      get: async () => {
-        const snap = await getDoc(doc(firestoreClient, path, id));
-        return {
-          exists: snap.exists(),
-          data: () => snap.data(),
-          id: snap.id
-        };
-      },
-      set: (data: any, opts?: any) => setDoc(doc(firestoreClient, path, id), data, opts),
-      update: (data: any) => updateDoc(doc(firestoreClient, path, id), data),
-      delete: () => deleteDoc(doc(firestoreClient, path, id)),
-    }),
-    add: (data: any) => addDoc(collection(firestoreClient, path), data),
-    get: async () => {
-      const snap = await getDocs(collection(firestoreClient, path));
-      return {
-        empty: snap.empty,
-        size: snap.size,
-        forEach: (cb: any) => snap.forEach(cb),
-        docs: snap.docs.map(d => ({
-          id: d.id,
-          data: () => d.data()
-        }))
-      };
-    },
-    where: (field: string, op: any, value: any) => ({
-      get: async () => {
-        const snap = await getDocs(query(collection(firestoreClient, path), where(field, op, value)));
-        return {
-          empty: snap.empty,
-          size: snap.size,
-          forEach: (cb: any) => snap.forEach(cb),
-          docs: snap.docs.map(d => ({
-            id: d.id,
-            data: () => d.data()
-          }))
-        };
-      }
-    }),
-    limit: (n: number) => ({
-      get: async () => {
-        const snap = await getDocs(query(collection(firestoreClient, path), limit(n)));
-        return {
-          empty: snap.empty,
-          size: snap.size,
-          forEach: (cb: any) => snap.forEach(cb),
-          docs: snap.docs.map(d => ({
-            id: d.id,
-            data: () => d.data()
-          }))
-        };
-      }
-    })
-  })
-};
+const db = getFirestore(adminApp, firebaseConfig.firestoreDatabaseId);
 
-const FieldValue = {
-  serverTimestamp: () => serverTimestamp()
-};
 
 async function startServer() {
   const app = express();
@@ -111,7 +29,18 @@ async function startServer() {
 
   // --- Telegram Bot Logic ---
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  const webhookUrl = (process.env.TELEGRAM_WEBHOOK_URL || process.env.TELEGRAM_WEBHOOK_SECRET)?.trim();
+  const webhookUrl = process.env.TELEGRAM_WEBHOOK_URL?.trim();
+  let webhookSecret = (process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN || process.env.TELEGRAM_WEBHOOK_SECRET)?.trim();
+  
+  if (!webhookSecret && token) {
+    // Automatically derive a static secret from the bot token to ensure security without requiring manual setup
+    webhookSecret = crypto.createHash('sha256').update(token + "webhook-secret").digest('hex');
+  }
+
+  if (!webhookSecret || webhookSecret.length < 16) {
+    console.error("SECURITY: Webhook secret is not set or too short. The webhook is UNAUTHENTICATED and can be forged by anyone.");
+  }
+
   let bot: TelegramBot | null = null;
 
   if (token) {
@@ -141,6 +70,8 @@ async function startServer() {
           } catch (error: any) {
               if (error.message?.includes('403') || error.message?.includes('blocked')) {
                   console.warn(`User ${chatId} blocked the bot (403 Forbidden).`);
+              } else if (error.message?.includes('chat not found')) {
+                  console.warn(`Chat ${chatId} not found (likely a test ID).`);
               } else {
                   console.error(`Telegram sendMessage error for chat ${chatId}:`, error.message || error);
               }
@@ -185,14 +116,16 @@ async function startServer() {
 
       setupBotHandlers(bot);
 
-      if (webhookUrl && !webhookUrl.includes("your-app-domain.com") && !webhookUrl.includes("example.com") && !webhookUrl.includes("ais-dev")) {
+      if (webhookUrl && !webhookUrl.includes("your-app-domain.com") && !webhookUrl.includes("example.com")) {
         let cleanWebhookUrl = webhookUrl.trim().replace(/\/+$/, '').replace(/^["']|["']$/g, '');
         if (!cleanWebhookUrl.startsWith('http')) {
             cleanWebhookUrl = `https://${cleanWebhookUrl}`;
         }
         console.log(`Initializing Telegram Webhook at: ${cleanWebhookUrl}/api/telegram-webhook`);
         
-        bot.setWebHook(`${cleanWebhookUrl}/api/telegram-webhook`).then(() => {
+        bot.setWebHook(`${cleanWebhookUrl}/api/telegram-webhook`, {
+          secret_token: webhookSecret,
+        }).then(() => {
           console.log("Telegram Webhook registered successfully.");
         }).catch(err => {
           console.error("Webhook registration failed:", err.message || err);
@@ -201,6 +134,16 @@ async function startServer() {
         });
 
         app.post('/api/telegram-webhook', express.json(), async (req, res) => {
+          // Reject anything that does not carry the correct secret token.
+          const received = req.get('X-Telegram-Bot-Api-Secret-Token');
+
+          if (!webhookSecret || received !== webhookSecret) {
+            console.warn(
+              `Rejected unauthenticated webhook request from ${req.ip}`
+            );
+            return res.sendStatus(401);
+          }
+
           if (bot) {
             try {
               await bot.processUpdate(req.body);
@@ -302,10 +245,36 @@ function generateCalendar(year: number, month: number): any[][] {
   function setupBotHandlers(botInstance: TelegramBot | null) {
     if (!botInstance) return;
 
+    const sessionCache = new Map<number, any>();
+
+    // Listen to bot_sessions in real-time to prevent eventual consistency issues
+    db.collection("bot_sessions").onSnapshot((snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        const chatId = parseInt(change.doc.id);
+        if (isNaN(chatId)) return;
+        
+        if (change.type === "removed") {
+          sessionCache.delete(chatId);
+        } else {
+          sessionCache.set(chatId, change.doc.data());
+        }
+      });
+    }, (error) => {
+      console.error("Real-time bot_sessions listener error:", error);
+    });
+
     const getSession = async (chatId: number) => {
       try {
+        if (sessionCache.has(chatId)) {
+          return sessionCache.get(chatId);
+        }
         const doc = await db.collection("bot_sessions").doc(chatId.toString()).get();
-        return doc.exists ? doc.data() : null;
+        if (doc.exists) {
+          const data = doc.data();
+          sessionCache.set(chatId, data);
+          return data;
+        }
+        return null;
       } catch (e) {
         console.error("Session fetch error:", e);
         return null;
@@ -314,6 +283,16 @@ function generateCalendar(year: number, month: number): any[][] {
 
     const updateSession = async (chatId: number, data: any) => {
       try {
+        const current = sessionCache.get(chatId) || {};
+        const updated = { ...current };
+        for (const key of Object.keys(data)) {
+          if (data[key] === FieldValue.delete()) {
+            delete updated[key];
+          } else {
+            updated[key] = data[key];
+          }
+        }
+        sessionCache.set(chatId, updated);
         await db.collection("bot_sessions").doc(chatId.toString()).set(data, { merge: true });
       } catch (e) {
         console.error("Session update error:", e);
@@ -323,40 +302,40 @@ function generateCalendar(year: number, month: number): any[][] {
     const clearSession = async (chatId: number) => {
       try {
         const session = await getSession(chatId);
-        if (session && session.activeProjectId) {
-           await db.collection("bot_sessions").doc(chatId.toString()).set({ 
-               activeProjectId: session.activeProjectId,
-               email: session.email || null
-           });
-        } else if (session && session.email) {
-           await db.collection("bot_sessions").doc(chatId.toString()).set({ email: session.email });
-        } else {
-           await db.collection("bot_sessions").doc(chatId.toString()).delete();
-        }
+        const email = session?.email || null;
+        const activeProjectId = session?.activeProjectId || null;
+        
+        const cleanData: any = {};
+        if (email) cleanData.email = email;
+        if (activeProjectId) cleanData.activeProjectId = activeProjectId;
+        
+        sessionCache.set(chatId, cleanData);
+        await db.collection("bot_sessions").doc(chatId.toString()).set(cleanData);
       } catch (e) {
         console.error("Session clear error:", e);
       }
     };
 
-    const handleStartProjectSelect = async (chatId: number, prefixText: string = "Welcome to BuildFlow Bot! 🏗️") => {
+    const handleStartProjectSelect = async (chatId: number, prefixText: string = "Welcome to BuildFlow Bot! 🏗️", emailOverride?: string) => {
       try {
         const session = await getSession(chatId);
-        if (!session || !session.email) {
-            botInstance.sendMessage(chatId, "⚠️ Authentication required.\nPlease link your platform account using the command:\n`/login your.email@example.com 1234`", { parse_mode: 'Markdown' });
+        const email = emailOverride || session?.email;
+        if (!email) {
+            botInstance.sendMessage(chatId, "⚠️ Authentication required.\nPlease link your platform account using the command:\n`/link ABCD-EFGH`", { parse_mode: 'Markdown' });
             return;
         }
 
-        const usersSnap = await db.collection("users").where("email", "==", session.email).get();
+        const usersSnap = await db.collection("users").where("email", "==", email).get();
         let userDoc = usersSnap.docs[0];
         
         // Fallback for case insensitive match if direct match fails (Note: large user DBs will need a lowercase explicit field)
         if (!userDoc) {
            const allUsersSnap = await db.collection("users").get();
-           userDoc = allUsersSnap.docs.find((d: any) => d.data().email?.toLowerCase() === session.email.toLowerCase());
+           userDoc = allUsersSnap.docs.find((d: any) => d.data().email?.toLowerCase() === email.toLowerCase());
         }
         
         if (!userDoc) {
-            botInstance.sendMessage(chatId, `No platform user found for email: ${session.email}\nPlease ask your administrator to create your account.`);
+            botInstance.sendMessage(chatId, `No platform user found for email: ${email}\nPlease ask your administrator to create your account.`);
             return;
         }
 
@@ -370,7 +349,8 @@ function generateCalendar(year: number, month: number): any[][] {
 
         // Apply Enterprise Access control filter
         const visibleProjects = projectsSnapshot.docs.filter((doc: any) => {
-           if (userData.role === 'Admin') return true;
+           const role = (userData.role || '').toLowerCase();
+           if (role === 'admin' || role === 'owner') return true;
            if (userData.projectAccess && userData.projectAccess[doc.id] === 'none') return false;
            return true; 
         });
@@ -403,7 +383,7 @@ function generateCalendar(year: number, month: number): any[][] {
     const sendHomeMenu = async (chatId: number, prefix: string = "") => {
       const session = await getSession(chatId);
       if (!session || !session.email) {
-          botInstance.sendMessage(chatId, "Welcome to BuildFlow Bot! 🏗️\n\n⚠️ Authentication required.\nPlease link your platform account using the command:\n`/login your.email@example.com 1234`", { parse_mode: 'Markdown' });
+          botInstance.sendMessage(chatId, "Welcome to BuildFlow Bot! 🏗️\n\n⚠️ Authentication required.\nPlease link your platform account using the command:\n`/link ABCD-EFGH`", { parse_mode: 'Markdown' });
           return;
       }
       
@@ -667,51 +647,48 @@ function generateCalendar(year: number, month: number): any[][] {
       sendHomeMenu(chatId, "Welcome to BuildFlow Bot! 🏗️\n\nI can help you manage your site directly from the field.");
     });
 
-    botInstance.onText(/\/login (.+)/, async (msg, match) => {
+    botInstance.onText(/\/link (.+)/, async (msg, match) => {
       const chatId = msg.chat.id;
-      const input = match?.[1]?.trim() || '';
-      const parts = input.split(' ');
+      const code = (match?.[1]?.trim() || '').replace(/[\s-]/g, "").toUpperCase();
       
-      if (parts.length !== 2) {
-         botInstance.sendMessage(chatId, "Please provide your email and 4-digit PIN. Example:\n`/login user@example.com 1234`", { parse_mode: 'Markdown' });
+      if (!code) {
+         botInstance.sendMessage(chatId, "Please provide the link code. Example:\n`/link ABCD-EFGH`", { parse_mode: 'Markdown' });
          return;
       }
       
-      const email = parts[0];
-      const pin = parts[1];
+      const ref = db.collection("bot_link_codes").doc(code);
+      try {
+          const result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(ref);
+            if (!snap.exists) return { ok: false };
+            const data = snap.data()!;
+            if (data.used) return { ok: false };
+            if (Date.now() > (data.expiresAt || 0)) return { ok: false };
 
-      // Validate pin
-      const usersSnap = await db.collection("users").where("email", "==", email).get();
-      let userDoc = usersSnap.docs[0];
-      
-      if (!userDoc) {
-          const allUsersSnap = await db.collection("users").get();
-          userDoc = allUsersSnap.docs.find((d: any) => d.data().email?.toLowerCase() === email.toLowerCase());
-      }
-      
-      if (!userDoc) {
-          botInstance.sendMessage(chatId, `No platform user found for email: ${email}\nPlease ask your administrator to create your account.`);
-          return;
-      }
-      
-      const userData = userDoc.data();
-      if (!userData.botPin) {
-         botInstance.sendMessage(chatId, `You have not set up a Telegram Bot PIN for your account. Please ask your Admin to set it up in the Web Platform under Enterprise Access.`);
-         return;
-      }
-      
-      if (userData.botPin !== pin) {
-         botInstance.sendMessage(chatId, `❌ Invalid PIN. Please try again.`);
-         return;
-      }
+            tx.update(ref, { used: true, usedAt: Date.now(), usedByChatId: chatId });
+            tx.update(db.collection("users").doc(data.userId), {
+              telegramChatId: chatId,
+              telegramLinkedAt: Date.now(),
+            });
+            return { ok: true, email: data.email, userId: data.userId };
+          });
 
-      const { deleteField } = await import("firebase/firestore");
-      await updateSession(chatId, { email, activeProjectId: deleteField() });
-      await handleStartProjectSelect(chatId, `✅ Successfully linked account: ${email}\n\nPlease select your active project:`);
+          if (!result.ok) {
+             botInstance.sendMessage(chatId, "❌ That code isn't valid. It may have expired or already been used. Ask your admin for a new one.");
+             return;
+          }
+
+          const email = result.email;
+          await updateSession(chatId, { email, userId: result.userId, activeProjectId: FieldValue.delete() });
+          await handleStartProjectSelect(chatId, `✅ Successfully linked account: ${email}\n\nPlease select your active project:`, email);
+      } catch (err) {
+          console.error("Error linking account:", err);
+          botInstance.sendMessage(chatId, "❌ An error occurred while linking your account. Please try again.");
+      }
     });
 
-    botInstance.onText(/\/login$/, (msg) => {
-      botInstance.sendMessage(msg.chat.id, "Please provide your email address and PIN. Example:\n`/login gowtham.jaihind@gmail.com 1234`", { parse_mode: 'Markdown' });
+    botInstance.onText(/\/link$/, (msg) => {
+      botInstance.sendMessage(msg.chat.id, "Please provide your link code. Example:\n`/link ABCD-EFGH`", { parse_mode: 'Markdown' });
     });
 
     botInstance.onText(/\/log/, (msg) => handleLogCommand(msg.chat.id));
@@ -1729,20 +1706,7 @@ function generateCalendar(year: number, month: number): any[][] {
 
   // API demo route
   app.get("/api/health", async (req, res) => {
-    let webhookStatus = "untested";
-    if (bot && webhookUrl) {
-       try {
-         let cleanWebhookUrl = webhookUrl.trim().replace(/\/+$/, '').replace(/^["']|["']$/g, '');
-         if (!cleanWebhookUrl.startsWith('http')) {
-             cleanWebhookUrl = `https://${cleanWebhookUrl}`;
-         }
-         await bot.setWebHook(`${cleanWebhookUrl}/api/telegram-webhook`);
-         webhookStatus = "registered";
-       } catch (e: any) {
-         webhookStatus = "error: " + e.message;
-       }
-    }
-    res.json({ status: "ok", botActive: !!token, webhookStatus });
+    res.json({ status: "ok", botActive: !!bot });
   });
 
   app.get("/api/bot-ping", async (req, res) => {
