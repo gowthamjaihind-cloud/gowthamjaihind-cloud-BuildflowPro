@@ -22,6 +22,57 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
 
 const db = getFirestore(adminApp, firebaseConfig.firestoreDatabaseId);
 
+function getRelativeDateLabel(dateStr?: string): string {
+  if (!dateStr) return "";
+  try {
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (dateStr === todayStr) return "logged today";
+    
+    const today = new Date(todayStr);
+    const updateDate = new Date(dateStr);
+    const diffTime = today.getTime() - updateDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return "logged yesterday";
+    if (diffDays > 1 && diffDays < 7) {
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      return `logged ${days[updateDate.getDay()]}`;
+    }
+    
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const d = new Date(dateStr);
+    return `logged on ${d.getDate()} ${months[d.getMonth()]}`;
+  } catch (e) {
+    return "";
+  }
+}
+
+function getProgressOptions(current: number): number[] {
+  if (current >= 100) return [100];
+  const remaining = 100 - current;
+  if (remaining <= 40) {
+    const opts: number[] = [];
+    const start = Math.ceil((current + 1) / 5) * 5;
+    for (let p = start; p <= 100; p += 5) {
+      opts.push(p);
+    }
+    return opts;
+  } else {
+    const opts: number[] = [];
+    const start = Math.ceil((current + 1) / 10) * 10;
+    for (let p = start; p < 100; p += 10) {
+      opts.push(p);
+    }
+    if (!opts.includes(100)) opts.push(100);
+    if (opts.length > 8) {
+      const finalOpts = opts.slice(0, 7);
+      if (!finalOpts.includes(100)) finalOpts.push(100);
+      return finalOpts;
+    }
+    return opts;
+  }
+}
+
 
 async function startServer() {
   const app = express();
@@ -484,7 +535,57 @@ function generateCalendar(year: number, month: number): any[][] {
     const handleLogCommand = async (chatId: number) => {
       const session = await getSession(chatId);
       if (!session?.activeProjectId) return handleStartProjectSelect(chatId, "Project required!");
-      await showPhasesForLog(chatId, session.activeProjectId);
+      const projectId = session.activeProjectId;
+
+      try {
+        const tasksSnapshot = await db.collection(`projects/${projectId}/tasks`).get();
+        const activeTasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as any);
+        const incompleteTasks = activeTasks.filter((t: any) => t.status !== 'Completed' && t.type !== 'Summary');
+
+        if (incompleteTasks.length === 0) {
+          botInstance.sendMessage(chatId, "No active tasks for your active project.");
+          return;
+        }
+
+        // Sort by lastProgressUpdate descending, putting tasks with recent updates first
+        const sortedTasks = [...incompleteTasks].sort((a, b) => {
+          const dateA = a.lastProgressUpdate || '';
+          const dateB = b.lastProgressUpdate || '';
+          return dateB.localeCompare(dateA);
+        });
+
+        // Take top 3 for suggestions
+        const suggestions = sortedTasks.slice(0, 3);
+
+        let messageText = `🏗️ *What did you work on today?*\n`;
+        const keyboard: any[][] = [];
+
+        suggestions.forEach((task: any) => {
+          const relLabel = getRelativeDateLabel(task.lastProgressUpdate);
+          if (relLabel) {
+            messageText += `\n🔹 *${task.name}* (logged ${relLabel.replace("logged ", "")})`;
+          } else {
+            messageText += `\n🔹 *${task.name}*`;
+          }
+          keyboard.push([{
+            text: `🏗️ ${task.name}`,
+            callback_data: `sel_task:${task.id}`
+          }]);
+        });
+
+        keyboard.push([{ text: "🔍 Browse all tasks", callback_data: "browse_all_tasks" }]);
+        keyboard.push([{ text: "🔙 Main Menu", callback_data: "back_to_home" }]);
+
+        await updateSession(chatId, { step: 'selecting_recent_task' });
+
+        botInstance.sendMessage(chatId, messageText, {
+          parse_mode: 'Markdown',
+          reply_markup: { inline_keyboard: keyboard }
+        });
+      } catch (err: any) {
+        console.error("Error in handleLogCommand:", err);
+        await showPhasesForLog(chatId, projectId);
+      }
     };
 
     const showActiveTasksForProject = async (chatId: number, projectId: string) => {
@@ -879,25 +980,130 @@ function generateCalendar(year: number, month: number): any[][] {
         const taskId = data.split(':')[1];
         
         let taskName = 'Unknown Task';
-        const projectId = session.projectId || session.activeProjectId;
+        let currentProgress = 0;
+        const projectId = session?.projectId || session?.activeProjectId;
         if (projectId) {
             try {
                 const taskSnap = await db.collection(`projects/${projectId}/tasks`).doc(taskId).get();
                 if (taskSnap.exists) {
-                    taskName = taskSnap.data()?.name || 'Unknown Task';
+                    const taskData = taskSnap.data()!;
+                    taskName = taskData.name || 'Unknown Task';
+                    currentProgress = taskData.progress || 0;
                 }
             } catch (err) {
-                console.error("Error fetching task name:", err);
+                console.error("Error fetching task details:", err);
             }
         }
         
-        await updateSession(chatId, { step: 'awaiting_date', taskId, taskName });
-        const now = new Date();
-        const calKeyboard = generateCalendar(now.getFullYear(), now.getMonth());
-        botInstance?.sendMessage(chatId, `📅 *Step 4: Report Date*\nPlease select the date for this report:`, {
-          parse_mode: 'Markdown',
-          reply_markup: { inline_keyboard: calKeyboard }
+        const todayStr = new Date().toISOString().split('T')[0];
+        await updateSession(chatId, { 
+          step: 'awaiting_progress', 
+          taskId, 
+          taskName, 
+          reportDate: todayStr,
+          baseProgress: currentProgress,
+          materials: [],
+          labor: [],
+          photos: [],
+          remarks: ''
         });
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const now = new Date();
+        const dateFormatted = `Today, ${now.getDate()} ${months[now.getMonth()]}`;
+
+        const opts = getProgressOptions(currentProgress);
+        
+        const inline_keyboard: any[][] = [];
+        let r: any[] = [];
+        opts.forEach((opt) => {
+          r.push({
+            text: opt === 100 ? "100 ✓" : String(opt),
+            callback_data: `sel_prog:${opt}`
+          });
+          if (r.length === 4) {
+            inline_keyboard.push(r);
+            r = [];
+          }
+        });
+        if (r.length > 0) {
+          inline_keyboard.push(r);
+        }
+
+        inline_keyboard.push([{ text: "🔙 Cancel", callback_data: "back_to_home" }]);
+
+        const msgText = `*${taskName}*\n${dateFormatted} · now ${currentProgress}%\n\nProgress?`;
+        
+        botInstance?.sendMessage(chatId, msgText, {
+          parse_mode: 'Markdown',
+          reply_markup: { inline_keyboard }
+        });
+        botInstance.answerCallbackQuery(query.id);
+        return;
+      }
+
+      else if (data === 'browse_all_tasks') {
+         botInstance.answerCallbackQuery(query.id);
+         const pId = session?.projectId || session?.activeProjectId;
+         if (pId) {
+            return showPhasesForLog(chatId, pId);
+         }
+         return;
+      }
+
+      else if (data === 'stage_materials') {
+         botInstance.answerCallbackQuery(query.id);
+         const pId = session?.projectId || session?.activeProjectId;
+         if (pId) {
+            return showMaterialSelection(chatId, pId);
+         }
+         return;
+      }
+
+      else if (data === 'stage_labor') {
+         botInstance.answerCallbackQuery(query.id);
+         const pId = session?.projectId || session?.activeProjectId;
+         if (pId) {
+            return showLaborVendorSelection(chatId, pId);
+         }
+         return;
+      }
+
+      else if (data === 'stage_photo') {
+         botInstance.answerCallbackQuery(query.id);
+         await updateSession(chatId, { step: 'awaiting_photo' });
+         botInstance.sendMessage(chatId, "📸 Please upload/send the photo now.", {
+            reply_markup: { inline_keyboard: [[{ text: "🔙 Cancel", callback_data: "back_to_staging" }]] }
+         });
+         return;
+      }
+
+      else if (data === 'stage_note') {
+         botInstance.answerCallbackQuery(query.id);
+         await updateSession(chatId, { step: 'awaiting_note' });
+         botInstance.sendMessage(chatId, "📝 Please type your site note/remarks now.", {
+            reply_markup: { inline_keyboard: [[{ text: "🔙 Cancel", callback_data: "back_to_staging" }]] }
+         });
+         return;
+      }
+
+      else if (data === 'back_to_staging') {
+         botInstance.answerCallbackQuery(query.id);
+         return showStagingArea(chatId, session);
+      }
+
+      else if (data === 'save_log') {
+         botInstance.answerCallbackQuery(query.id);
+         return finishLogging(chatId, false);
+      }
+
+      else if (data.startsWith('sel_prog:')) {
+         const progress = parseInt(data.split(':')[1]);
+         const updatedSession = { ...session, progress };
+         await updateSession(chatId, { progress });
+         await showStagingArea(chatId, updatedSession);
+         botInstance.answerCallbackQuery(query.id);
+         return;
       }
 
       // Material Group Selection
@@ -1040,16 +1246,9 @@ function generateCalendar(year: number, month: number): any[][] {
           const fileLink = await botInstance.getFileLink(photo.file_id);
           const photosToSave = session.photos || [];
           photosToSave.push(fileLink);
-          await updateSession(chatId, { photos: photosToSave, step: 'awaiting_photo' });
-          botInstance.sendMessage(chatId, "Photo added! Send another photo, or save:", {
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: "Save & Log Another ➕", callback_data: "finish_log_next" }],
-                  [{ text: "Finish Day ✅", callback_data: "finish_log" }],
-                  [{ text: "🔙 Cancel Update", callback_data: "back_to_home" }]
-                ]
-              }
-          });
+          const updatedSession = { ...session, photos: photosToSave };
+          await updateSession(chatId, { photos: photosToSave });
+          await showStagingArea(chatId, updatedSession);
         } catch (error) {
           console.error("Photo link error", error);
           botInstance.sendMessage(chatId, "Failed to process photo. Try again.");
@@ -1059,27 +1258,22 @@ function generateCalendar(year: number, month: number): any[][] {
       
       if (!msg.text || msg.text.startsWith('/')) return;
 
-      if (session.step === 'awaiting_date') {
-        botInstance.sendMessage(chatId, "Please select the date using the calendar buttons above.");
-        return;
-      }
-      else if (session.step === 'awaiting_progress') {
+      if (session.step === 'awaiting_progress') {
         const progress = parseInt(msg.text);
         if (isNaN(progress) || progress < 0 || progress > 100) {
           botInstance.sendMessage(chatId, "Please enter a valid percentage (0-100).");
           return;
         }
-        await updateSession(chatId, { step: 'awaiting_remarks', progress });
-        botInstance.sendMessage(chatId, "✅ Progress recorded. \n\n*Step 4: Remarks*\nType any site remarks or milestone notes (or type 'None'):", { 
-          parse_mode: 'Markdown',
-          reply_markup: { inline_keyboard: [[{ text: "🔙 Cancel Update", callback_data: "back_to_home" }]] }
-        });
+        const updatedSession = { ...session, progress };
+        await updateSession(chatId, { progress });
+        await showStagingArea(chatId, updatedSession);
       } 
       
-      else if (session.step === 'awaiting_remarks') {
-        const remarks = msg.text.toLowerCase() === 'none' ? '' : msg.text;
-        await updateSession(chatId, { step: 'selecting_material', remarks });
-        showMaterialSelection(chatId, session.projectId);
+      else if (session.step === 'awaiting_note') {
+        const remarks = msg.text;
+        const updatedSession = { ...session, remarks };
+        await updateSession(chatId, { remarks });
+        await showStagingArea(chatId, updatedSession);
       }
 
       else if (session.step === 'awaiting_material_qty') {
@@ -1088,8 +1282,9 @@ function generateCalendar(year: number, month: number): any[][] {
           botInstance.sendMessage(chatId, "Please enter a valid quantity.");
           return;
         }
+        const pId = session.projectId || session.activeProjectId;
         const materials = session.materials || [];
-        const invSnap = await db.collection(`projects/${session.projectId}/inventory`).doc(session.currentMaterialId).get();
+        const invSnap = await db.collection(`projects/${pId}/inventory`).doc(session.currentMaterialId).get();
         const matData = invSnap.data();
 
         const unitCost = matData?.avgUnitCost || matData?.unitCost || 0;
@@ -1104,15 +1299,9 @@ function generateCalendar(year: number, month: number): any[][] {
           totalPrice: totalPrice
         });
 
+        const updatedSession = { ...session, materials, currentMaterialId: null };
         await updateSession(chatId, { materials, currentMaterialId: null });
-        botInstance.sendMessage(chatId, `Logged: ${matData?.name} x ${qty}. Add more?`, {
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "Add More ➕", callback_data: "add_more_materials" }, { text: "Next Step ➡️", callback_data: "skip_materials" }],
-              [{ text: "🔙 Cancel Update", callback_data: "back_to_home" }]
-            ]
-          }
-        });
+        await showStagingArea(chatId, updatedSession);
       }
 
       else if (session.step === 'awaiting_labor_headcount') {
@@ -1121,8 +1310,9 @@ function generateCalendar(year: number, month: number): any[][] {
           botInstance.sendMessage(chatId, "Please enter a valid count.");
           return;
         }
+        const pId = session.projectId || session.activeProjectId;
         const labor = session.labor || [];
-        const vendorSnap = await db.collection(`projects/${session.projectId}/suppliers`).doc(session.currentVendorId).get();
+        const vendorSnap = await db.collection(`projects/${pId}/suppliers`).doc(session.currentVendorId).get();
         const vendorData = vendorSnap.data();
 
         labor.push({
@@ -1134,15 +1324,9 @@ function generateCalendar(year: number, month: number): any[][] {
           cost: headcount * session.currentLaborRate
         });
 
+        const updatedSession = { ...session, labor, currentVendorId: null, currentLaborRole: null, currentLaborRate: null };
         await updateSession(chatId, { labor, currentVendorId: null, currentLaborRole: null, currentLaborRate: null });
-        botInstance.sendMessage(chatId, `Logged: ${headcount} ${session.currentLaborRole}(s). Add more labor?`, {
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "Add More ➕", callback_data: "add_more_labor" }, { text: "Next Step ➡️", callback_data: "skip_labor" }],
-              [{ text: "🔙 Cancel Update", callback_data: "back_to_home" }]
-            ]
-          }
-        });
+        await showStagingArea(chatId, updatedSession);
       }
       
       // Intake Handlers
@@ -1378,6 +1562,54 @@ function generateCalendar(year: number, month: number): any[][] {
     });
 
     // --- Helpers ---
+
+    const showStagingArea = async (chatId: number, session: any) => {
+      const dateParts = session.reportDate.split('-');
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const formattedDate = `${parseInt(dateParts[2])} ${months[parseInt(dateParts[1]) - 1]}`;
+
+      let messageText = `*${session.taskName}*\n${formattedDate} · ${session.baseProgress || 0}% ➔ ${session.progress}%\n`;
+
+      let stagedParts: string[] = [];
+      if (session.materials && session.materials.length > 0) {
+        const mats = session.materials.map((m: any) => `📦 ${m.name} x ${m.quantity} ${m.unit}`).join('\n');
+        stagedParts.push(`*Materials:*\n${mats}`);
+      }
+      if (session.labor && session.labor.length > 0) {
+        const labs = session.labor.map((l: any) => `👷 ${l.role} x ${l.headcount}`).join('\n');
+        stagedParts.push(`*Manpower:*\n${labs}`);
+      }
+      if (session.photos && session.photos.length > 0) {
+        stagedParts.push(`📸 *Photos:* ${session.photos.length} staged`);
+      }
+      if (session.remarks) {
+        stagedParts.push(`📝 *Note:* "${session.remarks}"`);
+      }
+
+      if (stagedParts.length > 0) {
+        messageText += `\nStaged Updates:\n${stagedParts.join('\n\n')}\n`;
+      }
+
+      const inline_keyboard = [
+        [{ text: "✅ Save", callback_data: "save_log" }],
+        [
+          { text: "➕ Materials", callback_data: "stage_materials" },
+          { text: "➕ Labour", callback_data: "stage_labor" }
+        ],
+        [
+          { text: "➕ Photo", callback_data: "stage_photo" },
+          { text: "➕ Note", callback_data: "stage_note" }
+        ],
+        [{ text: "✖ Cancel", callback_data: "back_to_home" }]
+      ];
+
+      await updateSession(chatId, { step: 'staging_area' });
+
+      botInstance.sendMessage(chatId, messageText, {
+        parse_mode: 'Markdown',
+        reply_markup: { inline_keyboard }
+      });
+    };
 
     async function showMaterialSelection(chatId: number, projectId: string) {
        const invSnap = await db.collection(`projects/${projectId}/inventory`).get();
@@ -1690,7 +1922,7 @@ function generateCalendar(year: number, month: number): any[][] {
                 await showPhasesForLog(chatId, projectId); 
             }
         } else {
-            botInstance.sendMessage(chatId, "✨ *Success! Site Report Published.* 🏗️\n\nAll inventory, labor, and progress records have been synced with the central dashboard.", { parse_mode: 'Markdown' });
+            botInstance.sendMessage(chatId, "✅ Logged.");
             await clearSession(chatId);
             sendHomeMenu(chatId);
         }

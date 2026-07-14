@@ -55,6 +55,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/react-query';
 import { useAuthInit } from "./hooks/useAuth";
 import { useProjectsQuery } from "./hooks/queries";
 import { useAuthStore, useProjectStore, useUIStore } from "./store";
@@ -134,9 +136,11 @@ class ErrorBoundary extends React.Component<
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <AppContent />
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ErrorBoundary>
+        <AppContent />
+      </ErrorBoundary>
+    </QueryClientProvider>
   );
 }
 
