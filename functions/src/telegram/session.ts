@@ -6,6 +6,7 @@ export interface BotSession {
   chatId: number;
   userId?: string;
   email?: string;
+  orgId?: string;
   activeProjectId?: string;
   step?: string | null;
   draft?: Record<string, any>;     // in-progress log data
