@@ -3,6 +3,10 @@ import { defineSecret } from "firebase-functions/params";
 import { TelegramApi } from "./api";
 import { getSession, setSession, clearStep } from "./session";
 import { checkRateLimit, redeemLinkCode, validateSession } from "./auth";
+import {
+  startLog, browseTasks, pickTask, showMenu, pickMaterial, askMaterialQty,
+  pickLabourRole, askHeadcount, saveLog,
+} from "./handlers/log";
 
 const BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = defineSecret("TELEGRAM_WEBHOOK_SECRET");
@@ -45,7 +49,67 @@ async function handleUpdate(tg: TelegramApi, update: any) {
 
   if (cb) {
     await tg.answerCallback(cb.id);
-    // Phase B will route callback queries here.
+    const chatId = cb.message.chat.id;
+    const messageId = cb.message.message_id;
+    const data: string = cb.data || "";
+
+    const session = await getSession(chatId);
+    if (!(await validateSession(chatId, session))) {
+      await tg.editMessage(chatId, messageId, "Session expired. Send /link to reconnect.");
+      return;
+    }
+
+    if (data === "xx") {
+      await clearStep(chatId);
+      await tg.editMessage(chatId, messageId, "Cancelled.");
+      return;
+    }
+    if (data === "bk") {
+      const s = await getSession(chatId);
+      await showMenu(tg, chatId, messageId, s!);
+      return;
+    }
+    if (data.startsWith("br:")) {
+      await browseTasks(tg, chatId, messageId, session!, Number(data.slice(3)));
+      return;
+    }
+    if (data.startsWith("t:")) {
+      await pickTask(tg, chatId, messageId, session!, data.slice(2));
+      return;
+    }
+    if (data.startsWith("p:")) {
+      await setSession(chatId, {
+        draft: { ...(session!.draft || {}), progressPercent: Number(data.slice(2)) },
+      });
+      const s = await getSession(chatId);
+      await showMenu(tg, chatId, messageId, s!);
+      return;
+    }
+    if (data === "m") {
+      await pickMaterial(tg, chatId, messageId, session!);
+      return;
+    }
+    if (data.startsWith("mi:")) {
+      await askMaterialQty(tg, chatId, messageId, session!, data.slice(3));
+      return;
+    }
+    if (data === "l") {
+      await pickLabourRole(tg, chatId, messageId, session!);
+      return;
+    }
+    if (data.startsWith("lr:")) {
+      await askHeadcount(tg, chatId, messageId, session!, data.slice(3));
+      return;
+    }
+    if (data === "nt") {
+      await setSession(chatId, { step: "log:note" });
+      await tg.editMessage(chatId, messageId, "Type your note.");
+      return;
+    }
+    if (data === "sv") {
+      await saveLog(tg, chatId, messageId, session!);
+      return;
+    }
     return;
   }
 
@@ -133,6 +197,11 @@ async function handleUpdate(tg: TelegramApi, update: any) {
         `/cancel — cancel what you're doing\n` +
         `/help — this message`
     );
+    return;
+  }
+
+  if (text === "/log") {
+    await startLog(tg, chatId, session!);
     return;
   }
 
