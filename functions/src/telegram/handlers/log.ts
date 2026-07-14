@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
+import * as crypto from "crypto";
 import { TelegramApi, InlineButton } from "../api";
-import { setSession, clearStep, BotSession } from "../session";
+import { getSession, setSession, clearStep, BotSession } from "../session";
 
 const db = admin.firestore();
 
@@ -75,16 +76,19 @@ export async function pickTask(
   }
   const t = snap.data()!;
   const current = t.progress || 0;
+  const logId = db.collection(`${base}/dailyLogs`).doc().id;
 
   await setSession(chatId, {
     step: "log:progress",
     draft: {
+      logId,
       taskId,
       taskName: t.name,
       workDate: todayISO(),
       currentProgress: current,
       materials: [],
       labour: [],
+      photoUrls: [],
     },
   });
 
@@ -125,7 +129,7 @@ export async function showMenu(
   const rows: InlineButton[][] = [
     [{ text: "✅ Save", callback_data: "sv" }],
     [{ text: "+ Materials", callback_data: "m" }, { text: "+ Labour", callback_data: "l" }],
-    [{ text: "+ Note", callback_data: "nt" }],
+    [{ text: "+ Photo", callback_data: "ph" }, { text: "+ Note", callback_data: "nt" }],
     [{ text: "✖ Cancel", callback_data: "xx" }],
   ];
 
@@ -210,6 +214,69 @@ export async function askHeadcount(
   await tg.editMessage(chatId, messageId, `<b>${roleName}</b>\n\nHow many workers?\n<i>Type a number.</i>`);
 }
 
+export async function handlePhoto(
+  tg: TelegramApi,
+  chatId: number,
+  session: BotSession,
+  photoSizes: any[]
+) {
+  const d: any = session.draft || {};
+  if (!d.logId) {
+    await tg.sendMessage(chatId, "Start with /log before sending a photo.");
+    return;
+  }
+
+  // Telegram sends several resolutions — the last one is the largest.
+  const largest = photoSizes[photoSizes.length - 1];
+  const filePath = await tg.getFile(largest.file_id);
+  if (!filePath) {
+    await tg.sendMessage(chatId, "Couldn't fetch that photo. Try again.");
+    return;
+  }
+
+  // Download the image bytes from Telegram.
+  const res = await fetch(
+    `https://api.telegram.org/file/bot${tg.botToken}/${filePath}`
+  );
+  if (!res.ok) {
+    await tg.sendMessage(chatId, "Couldn't download that photo. Try again.");
+    return;
+  }
+  const buffer = Buffer.from(await res.arrayBuffer());
+
+  // Upload to Firebase Storage, using the SAME path convention as the web app:
+  //   {projectPath}/dailyLogs/{logId}/photo_{ts}.jpg
+  const base = projPath(session.orgId, session.activeProjectId!);
+  const idx = (d.photoUrls || []).length;
+  const storagePath = `${base}/dailyLogs/${d.logId}/photo_${Date.now()}_${idx}.jpg`;
+
+  const bucket = admin.storage().bucket();
+  const file = bucket.file(storagePath);
+
+  // CRITICAL: set a download token so the resulting URL matches the format that
+  // getDownloadURL() produces in the web app. The dailyLogs Cloud Function's
+  // deletePhotos() parses "/o/" out of that URL — a signed URL would NOT match and
+  // photos would be orphaned in the bucket forever.
+  const token = crypto.randomUUID();
+
+  await file.save(buffer, {
+    metadata: {
+      contentType: "image/jpeg",
+      metadata: { firebaseStorageDownloadTokens: token },
+    },
+  });
+
+  const url =
+    `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
+    `${encodeURIComponent(storagePath)}?alt=media&token=${token}`;
+
+  const photoUrls = [...(d.photoUrls || []), url];
+  await setSession(chatId, { draft: { ...d, photoUrls } });
+
+  const s = await getSession(chatId);
+  await showMenu(tg, chatId, null, s!);
+}
+
 export async function saveLog(
   tg: TelegramApi, chatId: number, messageId: number, session: BotSession
 ) {
@@ -218,7 +285,7 @@ export async function saveLog(
 
   // Same payload shape as the web app, so the existing dailyLogs Cloud Function
   // handles task progress and inventory rollups automatically.
-  await db.collection(`${base}/dailyLogs`).add({
+  await db.collection(`${base}/dailyLogs`).doc(d.logId).set({
     taskId: d.taskId,
     projectId: session.activeProjectId,
     workDate: d.workDate,

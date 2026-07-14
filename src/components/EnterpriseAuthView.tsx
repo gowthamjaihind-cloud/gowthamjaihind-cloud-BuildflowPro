@@ -124,15 +124,29 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
 
   const handleGenerateLinkCode = async (u: UserProfile) => {
     if (currentUser.role !== "Admin") return;
-    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+    // Cryptographically secure. Unambiguous alphabet (no 0/O, no 1/I/L).
+    const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    const bytes = new Uint8Array(8);
+    crypto.getRandomValues(bytes);
+    const code = Array.from(bytes)
+      .map((b) => ALPHABET[b % ALPHABET.length])
+      .join("");
+
     try {
       await setDoc(doc(db, "bot_link_codes", code), {
         email: u.email,
         userId: u.uid,
-        expiresAt: Date.now() + 24 * 60 * 60 * 1000,
-        used: false
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
+        used: false,
+        createdByUid: currentUser.uid,
       });
-      window.alert(`Generated one-time link code for ${u.displayName || u.email}:\n\n${code}\n\nThey must send: /link ${code}`);
+      window.alert(
+        `One-time link code for ${u.displayName || u.email}:\n\n${code}\n\n` +
+        `They must send:  /link ${code}\n\n` +
+        `Expires in 15 minutes. Single use. It will not be shown again.`
+      );
     } catch (err: any) {
       handleFirestoreError(err, OperationType.CREATE, "bot_link_codes");
     }

@@ -5,7 +5,7 @@ import { getSession, setSession, clearStep } from "./session";
 import { checkRateLimit, redeemLinkCode, validateSession } from "./auth";
 import {
   startLog, browseTasks, pickTask, showMenu, pickMaterial, askMaterialQty,
-  pickLabourRole, askHeadcount, saveLog,
+  pickLabourRole, askHeadcount, saveLog, handlePhoto,
 } from "./handlers/log";
 
 const BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
@@ -101,6 +101,11 @@ async function handleUpdate(tg: TelegramApi, update: any) {
       await askHeadcount(tg, chatId, messageId, session!, data.slice(3));
       return;
     }
+    if (data === "ph") {
+      await setSession(chatId, { step: "log:photo" });
+      await tg.editMessage(chatId, messageId, "Send the photo now.");
+      return;
+    }
     if (data === "nt") {
       await setSession(chatId, { step: "log:note" });
       await tg.editMessage(chatId, messageId, "Type your note.");
@@ -110,6 +115,22 @@ async function handleUpdate(tg: TelegramApi, update: any) {
       await saveLog(tg, chatId, messageId, session!);
       return;
     }
+    return;
+  }
+
+  // Photos arrive with msg.photo and no msg.text
+  if (msg?.photo && Array.isArray(msg.photo) && msg.photo.length > 0) {
+    const chatId = msg.chat.id;
+    const session = await getSession(chatId);
+    if (!(await validateSession(chatId, session))) {
+      await tg.sendMessage(chatId, "You're not linked. Send /link to connect.");
+      return;
+    }
+    if (session!.step !== "log:photo") {
+      await tg.sendMessage(chatId, "Tap '+ Photo' in /log first, then send the photo.");
+      return;
+    }
+    await handlePhoto(tg, chatId, session!, msg.photo);
     return;
   }
 

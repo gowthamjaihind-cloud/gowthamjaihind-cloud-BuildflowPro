@@ -6,7 +6,11 @@ export interface InlineButton {
 }
 
 export class TelegramApi {
-  constructor(private token: string) {}
+  constructor(private readonly token: string) {}
+
+  get botToken(): string {
+    return this.token;
+  }
 
   private async call(method: string, body: unknown): Promise<any> {
     const res = await fetch(`${API}${this.token}/${method}`, {
@@ -49,5 +53,10 @@ export class TelegramApi {
 
   deleteMessage(chatId: number, messageId: number) {
     return this.call("deleteMessage", { chat_id: chatId, message_id: messageId });
+  }
+
+  async getFile(fileId: string): Promise<string | null> {
+    const json = await this.call("getFile", { file_id: fileId });
+    return json?.result?.file_path || null;
   }
 }
