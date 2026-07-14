@@ -205,5 +205,60 @@ async function handleUpdate(tg: TelegramApi, update: any) {
     return;
   }
 
+  const step = session!.step;
+
+  if (step === "log:progress") {
+    const pct = parseInt(text, 10);
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+      await tg.sendMessage(chatId, "Enter a number between 0 and 100.");
+      return;
+    }
+    await setSession(chatId, {
+      draft: { ...(session!.draft || {}), progressPercent: pct },
+    });
+    const s = await getSession(chatId);
+    await showMenu(tg, chatId, null, s!);
+    return;
+  }
+
+  if (step === "log:material_qty") {
+    const qty = parseFloat(text);
+    if (isNaN(qty) || qty <= 0) {
+      await tg.sendMessage(chatId, "Enter a quantity greater than 0.");
+      return;
+    }
+    const d: any = session!.draft || {};
+    const materials = [...(d.materials || []), { ...d.pendingMaterial, quantity: qty }];
+    const rest: any = { ...d };
+    delete rest.pendingMaterial;
+    await setSession(chatId, { draft: { ...rest, materials } });
+    const s = await getSession(chatId);
+    await showMenu(tg, chatId, null, s!);
+    return;
+  }
+
+  if (step === "log:labour_count") {
+    const n = parseInt(text, 10);
+    if (isNaN(n) || n <= 0) {
+      await tg.sendMessage(chatId, "Enter a headcount greater than 0.");
+      return;
+    }
+    const d: any = session!.draft || {};
+    const labour = [...(d.labour || []), { ...d.pendingLabour, headcount: n }];
+    const rest: any = { ...d };
+    delete rest.pendingLabour;
+    await setSession(chatId, { draft: { ...rest, labour } });
+    const s = await getSession(chatId);
+    await showMenu(tg, chatId, null, s!);
+    return;
+  }
+
+  if (step === "log:note") {
+    await setSession(chatId, { draft: { ...(session!.draft || {}), note: text } });
+    const s = await getSession(chatId);
+    await showMenu(tg, chatId, null, s!);
+    return;
+  }
+
   await tg.sendMessage(chatId, "I didn't understand that. Send /help.");
 }
