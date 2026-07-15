@@ -740,7 +740,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   maximumFractionDigits: 0,
                 })}
               </div>
-              {totals.actualMaterial > 0 && task.type !== "Summary" && (
+              {totals.actualMaterial > 0 && (
                 <button
                   onClick={() =>
                     setShowMaterialBreakdown(
@@ -786,7 +786,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   maximumFractionDigits: 0,
                 })}
               </div>
-              {totals.actualLabor > 0 && task.type !== "Summary" && (
+              {totals.actualLabor > 0 && (
                 <button
                   onClick={() =>
                     setShowLaborBreakdown(

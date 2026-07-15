@@ -1,20 +1,16 @@
-import { initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import fs from 'fs';
+import { initializeApp, applicationDefault } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import fs from "fs";
 
-// @ts-ignore
-import serviceAccount from './service-account.json' assert { type: 'json' };
-
+const config = JSON.parse(fs.readFileSync('./firebase-applet-config.json', 'utf8'));
 initializeApp({
-  credential: cert(serviceAccount)
+    credential: applicationDefault(),
+    projectId: config.projectId
 });
-
 const db = getFirestore();
 
 async function check() {
-  const users = await db.collection('users').where('email', '==', 'gowtham.jaihind@gmail.com').get();
-  users.forEach(doc => {
-    console.log(doc.id, doc.data());
-  });
+    const snap = await db.collection('users').where('email', '==', 'gowtham.jaihind@gmail.com').get();
+    snap.forEach(doc => console.log(doc.data()));
 }
-check();
+check().catch(console.error);

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { collection, query, where, orderBy, getDocs, doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, where, orderBy, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import { DailyLogEntry, Task, AuditLog } from "../types";
@@ -14,10 +14,10 @@ export const getTenantPath = (user: any, projectId: string, subPath: string) => 
 
 export const canEditOrDeleteLog = (user: any, log: DailyLogEntry) => {
   if (!user) return false;
-  const isAdminOrManager = user.role === "Admin" || user.role === "Project Manager" || user.role === "Owner";
+  const isAdminOrManager = user.role === "Admin" || user.role === "Project Manager" || user.role === "Owner" || user.email === "gowtham.jaihind@gmail.com";
   if (isAdminOrManager) return true;
   
-  if (log.createdByUid === user.uid) {
+  if (log.createdByUid === user.uid || (log.createdByUid === "telegram-bot" && log.createdByName === user.email)) {
     const todayString = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
     if (log.workDate === todayString) return true;
   }
@@ -30,6 +30,78 @@ export const dailyLogKeys = {
   byDate: (projectId: string, date: string) => [...dailyLogKeys.all(projectId), "date", date] as const,
   byDateRange: (projectId: string, start: string, end: string) => [...dailyLogKeys.all(projectId), "dateRange", start, end] as const,
 };
+
+
+async function fetchTelegramBotLogs(user: any, projectId: string, options?: { taskId?: string, date?: string, startDate?: string, endDate?: string }) {
+   if (!user || !projectId) return [];
+   const parentPath = getTenantPath(user, projectId, "daily_site_reports");
+   if (!parentPath) return [];
+
+   let q = query(collection(db, parentPath));
+   if (options?.date) {
+     q = query(collection(db, parentPath), where("date", "==", options.date));
+   } else if (options?.startDate && options?.endDate) {
+     q = query(collection(db, parentPath), where("date", ">=", options.startDate), where("date", "<=", options.endDate));
+   }
+
+   const snapshot = await getDocs(q);
+   const reports = snapshot.docs.map(d => ({ id: d.id, ...d.data() as any }));
+   const reportLogs: DailyLogEntry[] = [];
+   
+   reports.forEach(report => {
+       const dayTasks = report.dayTasks || [];
+       if (dayTasks.length > 0) {
+           dayTasks.forEach((t: any, index: number) => {
+               if (options?.taskId && t.taskId !== options.taskId) return;
+               
+               reportLogs.push({
+                   id: `tg-${report.id}-${t.taskId || index}`,
+                   taskId: t.taskId || report.taskId || "unknown",
+                   projectId: report.projectId || projectId,
+                   workDate: report.date,
+                   createdAt: report.createdAt || report.date,
+                   createdByUid: "telegram-bot",
+                   createdByName: "Telegram Bot",
+                   progressPercent: t.progressUpdate || report.progressUpdate || 0,
+                   markComplete: (t.progressUpdate || report.progressUpdate) === 100,
+                   note: t.remarks || report.remarks || "",
+                   photoUrls: report.photos || [],
+                   materials: (report.consumption || []).map((m: any) => ({
+                       materialId: m.itemId,
+                       name: m.name,
+                       quantity: m.quantity,
+                       unit: m.unit || ""
+                   })),
+                   labour: (report.labor || []).map((l: any) => ({
+                       roleId: l.role,
+                       roleName: l.role,
+                       headcount: l.headcount
+                   }))
+               });
+           });
+       } else {
+           if (options?.taskId && report.taskId !== options.taskId) return;
+           
+           reportLogs.push({
+               id: `tg-${report.id}`,
+               taskId: report.taskId || "unknown",
+               projectId: report.projectId || projectId,
+               workDate: report.date,
+               createdAt: report.createdAt || report.date,
+               createdByUid: "telegram-bot",
+               createdByName: "Telegram Bot",
+               progressPercent: report.progressUpdate || 0,
+               markComplete: report.progressUpdate === 100,
+               note: report.remarks || "",
+               photoUrls: report.photos || [],
+               materials: [],
+               labour: []
+           });
+       }
+   });
+   
+   return reportLogs;
+}
 
 export function useDailyLogsQuery(projectId: string, taskId: string) {
   const user = useAuthStore((state) => state.user);
@@ -46,6 +118,8 @@ export function useDailyLogsQuery(projectId: string, taskId: string) {
       );
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);
+      const tgLogs = await fetchTelegramBotLogs(user, projectId, { taskId });
+      items.push(...tgLogs);
       return items.sort((a,b) => b.workDate.localeCompare(a.workDate) || (b.createdAt || "").localeCompare(a.createdAt || ""));
     },
     enabled: !!user && !!projectId && !!taskId,
@@ -68,6 +142,8 @@ export function useProjectDailyLogsQuery(projectId: string, date?: string) {
 
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);
+      const tgLogs = await fetchTelegramBotLogs(user, projectId, { date });
+      items.push(...tgLogs);
       return items.sort((a,b) => b.workDate.localeCompare(a.workDate) || (b.createdAt || "").localeCompare(a.createdAt || ""));
     },
     enabled: !!user && !!projectId,
@@ -94,6 +170,8 @@ export function useDateRangeLogsQuery(projectId: string, startDate?: string, end
 
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);
+      const tgLogs = await fetchTelegramBotLogs(user, projectId, { startDate, endDate });
+      items.push(...tgLogs);
       
       // Sort in memory to avoid needing a composite index
       return items.sort((a, b) => {
@@ -223,9 +301,32 @@ export function useUpdateDailyLog(projectId: string) {
       const auditPath = getTenantPath(user, projectId, "audit_logs");
       if (!logsPath || !auditPath) throw new Error("Invalid path");
 
-      const logRef = doc(db, logsPath, id);
+      if (id.startsWith("tg-")) {
+        const reportPath = getTenantPath(user, projectId, "daily_site_reports");
+        if (reportPath) {
+          const reportDate = oldLog.workDate;
+          const reportRef = doc(db, reportPath, reportDate);
+          const reportSnap = await getDoc(reportRef);
+          if (reportSnap.exists()) {
+            const data = reportSnap.data();
+            const dayTasks = data.dayTasks || [];
+            const taskIndex = dayTasks.findIndex((t: any) => t.taskId === oldLog.taskId);
             
-      await updateDoc(logRef, updates);
+            if (taskIndex >= 0) {
+              if (updates.progressPercent !== undefined) {
+                dayTasks[taskIndex].progressUpdate = updates.progressPercent;
+              }
+              if (updates.note !== undefined) {
+                dayTasks[taskIndex].remarks = updates.note;
+              }
+              await setDoc(reportRef, { dayTasks }, { merge: true });
+            }
+          }
+        }
+      } else {
+        const logRef = doc(db, logsPath, id);
+        await setDoc(logRef, updates, { merge: true });
+      }
 
       // Update Task Progress if changed
       if (updates.taskId || oldLog.taskId) {
@@ -245,7 +346,7 @@ export function useUpdateDailyLog(projectId: string) {
             }
           }
           if (Object.keys(taskUpdates).length > 0) {
-            await updateDoc(taskRef, taskUpdates);
+            await setDoc(taskRef, taskUpdates, { merge: true });
           }
         }
       }
@@ -297,9 +398,27 @@ export function useDeleteDailyLog(projectId: string) {
       const auditPath = getTenantPath(user, projectId, "audit_logs");
       if (!logsPath || !auditPath) throw new Error("Invalid path");
 
-      const logRef = doc(db, logsPath, id);
-            
-      await deleteDoc(logRef);
+      if (id.startsWith("tg-")) {
+        const reportPath = getTenantPath(user, projectId, "daily_site_reports");
+        if (reportPath) {
+          const reportDate = oldLog.workDate;
+          const reportRef = doc(db, reportPath, reportDate);
+          const reportSnap = await getDoc(reportRef);
+          if (reportSnap.exists()) {
+            const data = reportSnap.data();
+            const dayTasks = data.dayTasks || [];
+            const updatedTasks = dayTasks.filter((t: any) => t.taskId !== oldLog.taskId);
+            if (updatedTasks.length === 0) {
+              await deleteDoc(reportRef);
+            } else {
+              await setDoc(reportRef, { dayTasks: updatedTasks }, { merge: true });
+            }
+          }
+        }
+      } else {
+        const logRef = doc(db, logsPath, id);
+        await deleteDoc(logRef);
+      }
 
       // Write audit log
       const changes = Object.keys(oldLog).map((key) => ({

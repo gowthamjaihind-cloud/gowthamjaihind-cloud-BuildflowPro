@@ -29,6 +29,7 @@ export interface RedeemResult {
   ok: boolean;
   email?: string;
   userId?: string;
+  orgId?: string;
 }
 
 // Consumes a one-time code inside a transaction so it can NEVER be redeemed twice.
@@ -47,12 +48,15 @@ export const redeemLinkCode = async (
     if (Date.now() > (data.expiresAt || 0)) return { ok: false };
 
     tx.update(ref, { used: true, usedAt: Date.now(), usedByChatId: chatId });
-    tx.update(db.collection("users").doc(data.userId), {
+    const userRef = db.collection("users").doc(data.userId);
+    const userSnap = await tx.get(userRef);
+    const orgId = userSnap.data()?.currentOrgId;
+    tx.update(userRef, {
       telegramChatId: chatId,
       telegramLinkedAt: Date.now(),
     });
 
-    return { ok: true, email: data.email, userId: data.userId };
+    return { ok: true, email: data.email, userId: data.userId, orgId };
   });
 };
 
@@ -69,7 +73,11 @@ export const validateSession = async (
 
   const u = snap.data()!;
   if (u.disabled === true || u.disabled === "true") return false;
-  if (u.telegramChatId !== chatId) return false; // unlinked by admin
+  if (u.telegramChatId !== chatId) return false;
+  if (u.currentOrgId !== session?.orgId) {
+    await db.collection("bot_sessions").doc(String(chatId)).update({ orgId: u.currentOrgId || null });
+    if (session) session.orgId = u.currentOrgId;
+  }
 
   return true;
 };

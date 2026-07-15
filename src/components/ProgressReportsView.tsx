@@ -11,6 +11,8 @@ import {
 import {
   useProjectDailyLogsQuery,
   useDateRangeLogsQuery,
+  useDeleteDailyLog,
+  canEditOrDeleteLog,
 } from "../hooks/useDailyLogs";
 import {
   useTasksQuery,
@@ -21,7 +23,7 @@ import { aggregateLogs } from "../utils/reportUtils";
 import { useAuthStore } from "../store";
 import { DailyLogEntry, MaterialIssue, DailyLaborLog } from "../types";
 import { DailyLogEntryScreen } from "./DailyLogEntryScreen";
-import { Edit2 } from "lucide-react";
+import { Edit2, Trash2 } from "lucide-react";
 import {
   Download,
   FileText,
@@ -50,6 +52,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
   );
 
   const [logToEdit, setLogToEdit] = useState<DailyLogEntry | null>(null);
+  const [logToDelete, setLogToDelete] = useState<DailyLogEntry | null>(null);
   const [selectedDate, setSelectedDate] = useState(
     new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }))
       .toISOString()
@@ -57,6 +60,22 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
   );
 
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const deleteLogMutation = useDeleteDailyLog(projectId);
+
+  const handleDeleteLog = (log: DailyLogEntry) => {
+    setLogToDelete(log);
+  };
+
+  const confirmDeleteLog = async () => {
+    if (!logToDelete) return;
+        try {
+        await deleteLogMutation.mutateAsync({ id: logToDelete.id, oldLog: logToDelete });
+        setLogToDelete(null);
+    } catch (err) {
+      console.error(err);
+      alert(`Failed to delete log: ${err.message || err}`);
+    }
+  };
 
   // Derived date bounds
   const startDate = useMemo(() => {
@@ -607,7 +626,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                   logs.map((log, index) => {
                     const task = tasks.find((t) => t.id === log.taskId);
                     return (
-                      <div key={log.id || index} className="border border-gray-200 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                      <div key={`${log.id}-${index}`} className="border border-gray-200 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                           <h4 className="text-sm font-bold text-ink mb-1">{task?.name || 'Unknown Task'}</h4>
                           <p className="text-xs text-ink-muted">
@@ -623,12 +642,23 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                             )}
                           </div>
                         </div>
-                        <button
+                        {canEditOrDeleteLog(user, log) && (
+                        <div className="print:hidden flex items-center gap-2">
+                          <button
                           onClick={() => setLogToEdit(log)}
-                          className="print:hidden text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-4 py-2 rounded-xl border border-divider hover:bg-[#F3E8D2] transition-colors whitespace-nowrap"
+                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-4 py-2 rounded-xl border border-divider hover:bg-[#F3E8D2] transition-colors whitespace-nowrap"
                         >
                           <Edit2 className="w-3.5 h-3.5" /> Edit Log
                         </button>
+                          <button
+                            onClick={() => handleDeleteLog(log)}
+                            className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center justify-center p-2 rounded-xl border border-divider hover:bg-red-50 transition-colors"
+                            title="Delete Log"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        )}
                       </div>
                     );
                   })
@@ -655,6 +685,33 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
           editLog={logToEdit}
           onClose={() => setLogToEdit(null)}
         />
+      )}
+      {logToDelete && (
+        <div className="fixed inset-0 bg-ink/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div className="bg-panel w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <h3 className="text-xl font-bold text-ink mb-2 text-center">
+              Delete Log Entry?
+            </h3>
+            <p className="text-sm font-medium text-ink-muted text-center mb-8">
+              This will update the task's progress, dates, and material/labour
+              rollups. This action cannot be undone.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setLogToDelete(null)}
+                className="py-3.5 px-6 rounded-2xl font-bold bg-panel hover:bg-divider text-ink transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteLog}
+                className="py-3.5 px-6 rounded-2xl font-bold bg-red-500 hover:bg-red-600 text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

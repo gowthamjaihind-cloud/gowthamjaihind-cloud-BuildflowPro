@@ -1,0 +1,1 @@
+sed -i 's/  if (u.telegramChatId !== chatId) return false; \/\/ unlinked by admin/  if (u.telegramChatId !== chatId) return false;\n  if (u.currentOrgId !== session?.orgId) {\n    await db.collection("bot_sessions").doc(String(chatId)).update({ orgId: u.currentOrgId || null });\n    if (session) session.orgId = u.currentOrgId;\n  }/' functions/src/telegram/auth.ts

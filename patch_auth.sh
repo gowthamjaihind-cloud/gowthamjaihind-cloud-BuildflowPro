@@ -1,0 +1,2 @@
+sed -i 's/    tx.update(db.collection("users").doc(data.userId), {/    const userRef = db.collection("users").doc(data.userId);\n    const userSnap = await tx.get(userRef);\n    const orgId = userSnap.data()?.currentOrgId;\n    tx.update(userRef, {/' functions/src/telegram/auth.ts
+sed -i 's/return { ok: true, email: data.email, userId: data.userId };/return { ok: true, email: data.email, userId: data.userId, orgId };/' functions/src/telegram/auth.ts

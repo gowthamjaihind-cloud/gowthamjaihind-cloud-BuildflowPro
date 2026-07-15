@@ -162,7 +162,7 @@ function AppContent() {
   const setViewingSettings = useUIStore((state) => state.setViewingSettings);
 
   const visibleProjects = projects.filter((p) => {
-    if (user?.role === "Admin") return true;
+    if (user?.role === "Admin" || user?.role === "Owner") return true;
     const access = user?.projectAccess?.[p.id];
     if (access === "none") return false;
     if (access === "read" || access === "write") return true;

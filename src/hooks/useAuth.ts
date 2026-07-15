@@ -35,11 +35,12 @@ export function useAuthInit() {
                 // Auto-upgrade specific email to Admin for testing
                 if (
                   firebaseUser.email === "gowtham.jaihind@gmail.com" &&
-                  data.role !== "Admin"
+                  data.role !== "Admin" &&
+                  data.role !== "Owner"
                 ) {
-                  const updatedProfile = { ...data, role: "Admin" as const };
+                  const updatedProfile = { ...data, role: "Owner" as const };
                   await updateDoc(doc(db, "users", firebaseUser.uid), {
-                    role: "Admin",
+                    role: "Owner",
                   });
                   setUser({ uid: firebaseUser.uid, ...updatedProfile });
                 } else {
@@ -58,7 +59,7 @@ export function useAuthInit() {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email || "",
                   displayName: firebaseUser.displayName || "User",
-                  role: isAdminFallback ? "Admin" : "Viewer",
+                  role: firebaseUser.email === "gowtham.jaihind@gmail.com" ? "Owner" : (isAdminFallback ? "Admin" : "Viewer"),
                   photoURL: firebaseUser.photoURL || undefined,
                 };
                 await setDoc(doc(db, "users", firebaseUser.uid), newProfile);

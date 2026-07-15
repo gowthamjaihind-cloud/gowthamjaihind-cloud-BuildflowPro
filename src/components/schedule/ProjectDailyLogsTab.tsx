@@ -124,9 +124,9 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                     Log Another
                   </button>
                 </div>
-                {logs.map((log) => (
+                {logs.map((log, index) => (
                   <div
-                    key={log.id}
+                    key={`${log.id}-${index}`}
                     className="bg-surface rounded-2xl p-5 border border-divider shadow-sm relative overflow-hidden"
                   >
                     {log.markComplete ? (

@@ -48,6 +48,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
   >({});
   
   const roles: UserRole[] = [
+    "Owner",
     "Admin",
     "Project Manager",
     "Site Engineer",
@@ -96,7 +97,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
   }, []);
 
   const handleUpdateRole = async (userId: string) => {
-    if (currentUser.role !== "Admin") {
+    if (currentUser.role !== "Admin" && currentUser.role !== "Owner") {
       return;
     }
 
@@ -123,7 +124,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
   };
 
   const handleGenerateLinkCode = async (u: UserProfile) => {
-    if (currentUser.role !== "Admin") return;
+    if (currentUser.role !== "Admin" && currentUser.role !== "Owner") return;
 
     // Cryptographically secure. Unambiguous alphabet (no 0/O, no 1/I/L).
     const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -153,7 +154,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
   };
 
   const handleUnlinkTelegram = async (u: UserProfile) => {
-    if (currentUser.role !== "Admin") return;
+    if (currentUser.role !== "Admin" && currentUser.role !== "Owner") return;
     try {
       await updateDoc(doc(db, "users", u.uid), {
         telegramChatId: null,
@@ -175,7 +176,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {currentUser.role !== "Admin" && (
+      {currentUser.role !== "Admin" && currentUser.role !== "Owner" && (
         <div className="bg-rose-50 border border-rose-200 p-6 rounded-3xl flex items-start gap-4">
           <ShieldAlert className="w-8 h-8 text-rose-500 mt-1" />
           <div>
@@ -183,7 +184,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
               Restricted Access
             </h3>
             <p className="text-rose-700 font-medium">
-              You must be an Enterprise Admin to modify roles. You are currently
+              You must be an Enterprise Admin or Owner to modify roles. You are currently
               viewing in read-only mode.
             </p>
           </div>
@@ -261,12 +262,49 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                     </div>
                   </td>
                   <td className="px-8 py-6">
+                    {editingUserId === u.uid ? (
+                      <select
+                        className="bg-surface border border-divider text-sm font-bold rounded-lg px-3 py-2 w-40 outline-none focus:border-primary"
+                        value={editingRole}
+                        onChange={(e) => setEditingRole(e.target.value as UserRole)}
+                      >
+                        {roles.map((r) => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="flex items-center gap-2 text-sm font-bold">
+                        {u.role === "Owner" ? (
+                          <span className="text-[#8E44AD] bg-[#8E44AD]/10 px-3 py-1.5 rounded-lg border border-[#8E44AD]/20 flex items-center gap-1.5 w-fit">
+                            <ShieldCheck className="w-4 h-4" /> Owner
+                          </span>
+                        ) : u.role === "Admin" ? (
+                          <span className="text-[#A3711C] bg-[#A3711C]/10 px-3 py-1.5 rounded-lg border border-[#A3711C]/20 flex items-center gap-1.5 w-fit">
+                            <ShieldCheck className="w-4 h-4" /> Admin
+                          </span>
+                        ) : u.role === "Project Manager" ? (
+                          <span className="text-[#0088CC] bg-[#0088CC]/10 px-3 py-1.5 rounded-lg border border-[#0088CC]/20 flex items-center gap-1.5 w-fit">
+                            <Users className="w-4 h-4" /> Manager
+                          </span>
+                        ) : u.role === "Site Engineer" ? (
+                          <span className="text-[#34C759] bg-[#34C759]/10 px-3 py-1.5 rounded-lg border border-[#34C759]/20 flex items-center gap-1.5 w-fit">
+                            <Construction className="w-4 h-4" /> Engineer
+                          </span>
+                        ) : (
+                          <span className="text-ink-muted bg-panel px-3 py-1.5 rounded-lg border border-divider w-fit">
+                            {u.role || "Viewer"}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-8 py-6">
                     {u.telegramChatId ? (
                       <div className="flex flex-col gap-1">
                         <span className="font-mono text-sm tracking-widest text-[#34C759] bg-[#34C759]/10 px-3 py-1.5 rounded-lg border border-[#34C759]/20 w-fit">
                           Linked
                         </span>
-                        {currentUser.role === "Admin" && (
+                        { (currentUser.role === "Admin" || currentUser.role === "Owner") && (
                           <button onClick={() => handleUnlinkTelegram(u)} className="text-xs text-rose-500 hover:underline w-fit">Unlink</button>
                         )}
                       </div>
@@ -275,7 +313,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                         <span className="text-ink-muted italic text-sm">
                           Not linked
                         </span>
-                        {currentUser.role === "Admin" && (
+                        { (currentUser.role === "Admin" || currentUser.role === "Owner") && (
                           <button onClick={() => handleGenerateLinkCode(u)} className="text-xs text-primary font-bold hover:underline w-fit">Generate Code</button>
                         )}
                       </div>
@@ -283,7 +321,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex flex-col gap-2 text-[13px] text-ink-muted font-medium">
-                      {editingUserId === u.uid && editingRole !== "Admin" ? (
+                      {editingUserId === u.uid && editingRole !== "Admin" && editingRole !== "Owner" ? (
                         <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
                           {projects.map((p) => (
                             <div
@@ -313,7 +351,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                             </div>
                           ))}
                         </div>
-                      ) : u.role === "Admin" ? (
+                      ) : u.role === "Admin" || u.role === "Owner" ? (
                         <span className="text-[#34C759] font-bold">
                           Universal Access
                         </span>
@@ -386,7 +424,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                           });
                           setEditingProjectAccess(accessMap);
                                                   }}
-                        disabled={currentUser.role !== "Admin"}
+                        disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
                         className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                         title="Edit Role"
                       >

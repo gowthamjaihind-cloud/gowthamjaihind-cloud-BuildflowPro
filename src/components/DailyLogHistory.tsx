@@ -61,9 +61,9 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
 
   return (
     <div className="space-y-4">
-      {logs.map((log) => (
+      {logs.map((log, index) => (
         <div
-          key={log.id}
+          key={`${log.id}-${index}`}
           className="bg-surface p-5 rounded-2xl border border-divider shadow-sm relative overflow-hidden"
         >
           {log.markComplete ? (

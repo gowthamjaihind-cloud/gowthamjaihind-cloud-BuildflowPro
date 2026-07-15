@@ -297,6 +297,7 @@ export async function saveLog(
     photoUrls: d.photoUrls || [],
     createdVia: "telegram",
     createdByUid: session.userId,
+    createdByName: session.email || "Telegram Bot",
     createdAt: new Date().toISOString(),
   });
 

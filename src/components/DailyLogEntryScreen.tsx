@@ -26,7 +26,7 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
-import { updateDoc, doc } from "firebase/firestore";
+import { updateDoc, setDoc, doc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import { compressImage } from "../utils/imageCompressor";
@@ -271,10 +271,10 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
 
         if (urls.length > 0) {
           const logRef = doc(db, tenantPathLogs, currentLogId);
-          await updateDoc(logRef, {
+          await setDoc(logRef, {
             photoUrls:
               editLog && existingPhotos ? [...existingPhotos, ...urls] : urls,
-          });
+          }, { merge: true });
         }
       }
     } catch (err) {

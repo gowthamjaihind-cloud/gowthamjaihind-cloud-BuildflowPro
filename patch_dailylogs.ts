@@ -1,73 +1,88 @@
-import * as fs from "fs";
+import fs from 'fs';
 
-const file = "src/hooks/useDailyLogs.ts";
-let content = fs.readFileSync(file, "utf8");
+const file = 'src/hooks/useDailyLogs.ts';
+let code = fs.readFileSync(file, 'utf8');
 
-content = content.replace(
-`      await runTransaction(db, async (transaction) => {
-        // Handle Materials
-        if (newEntry.materials && newEntry.materials.length > 0) {
-          for (const mat of newEntry.materials) {
-            if (mat.quantity > 0) {
-              const invRef = doc(db, inventoryPath, mat.materialId);
-              const invDoc = await transaction.get(invRef);
-              if (invDoc.exists()) {
-                const currentQty = invDoc.data().quantity || 0;
-                transaction.update(invRef, {
-                  quantity: Math.max(0, currentQty - mat.quantity)
-                });
-                
-                const issueRef = doc(collection(db, issuesPath));
-                transaction.set(issueRef, {
-                  projectId,
-                  date: newEntry.workDate,
-                  taskId: newEntry.taskId,
-                  materialId: mat.materialId,
-                  quantity: mat.quantity,
-                  unit: mat.unit,
-                  notes: \`Daily Progress: \${newEntry.taskId}\`,
-                  createdAt: now
-                });
-              }
-            }
-          }
-        }
-        transaction.set(newLogRef, latestEntry);
-      });`,
-`      await runTransaction(db, async (transaction) => {
-        // All reads first
-        const validMaterials = (newEntry.materials || []).filter(m => m.quantity > 0);
-        const invDocs: Record<string, any> = {};
-        for (const mat of validMaterials) {
-            const invRef = doc(db, inventoryPath, mat.materialId);
-            invDocs[mat.materialId] = await transaction.get(invRef);
-        }
+const helper = `
+async function fetchTelegramBotLogs(user: any, projectId: string, options?: { taskId?: string, date?: string, startDate?: string, endDate?: string }) {
+   if (!user || !projectId) return [];
+   const parentPath = getTenantPath(user, projectId, "daily_site_reports");
+   if (!parentPath) return [];
 
-        // Now perform writes
-        for (const mat of validMaterials) {
-            const invDoc = invDocs[mat.materialId];
-            if (invDoc && invDoc.exists()) {
-                const currentQty = invDoc.data().quantity || 0;
-                const invRef = doc(db, inventoryPath, mat.materialId);
-                transaction.update(invRef, {
-                  quantity: Math.max(0, currentQty - mat.quantity)
-                });
-                
-                const issueRef = doc(collection(db, issuesPath));
-                transaction.set(issueRef, {
-                  projectId,
-                  date: newEntry.workDate,
-                  taskId: newEntry.taskId,
-                  materialId: mat.materialId,
-                  quantity: mat.quantity,
-                  unit: mat.unit,
-                  notes: \`Daily Progress: \${newEntry.taskId}\`,
-                  createdAt: now
-                });
-            }
-        }
-        transaction.set(newLogRef, latestEntry);
-      });`
+   let q = query(collection(db, parentPath));
+   if (options?.date) {
+     q = query(collection(db, parentPath), where("date", "==", options.date));
+   } else if (options?.startDate && options?.endDate) {
+     q = query(collection(db, parentPath), where("date", ">=", options.startDate), where("date", "<=", options.endDate));
+   }
+
+   const snapshot = await getDocs(q);
+   const reports = snapshot.docs.map(d => ({ id: d.id, ...d.data() as any }));
+   const reportLogs: DailyLogEntry[] = [];
+   
+   reports.forEach(report => {
+       const dayTasks = report.dayTasks || [];
+       if (dayTasks.length > 0) {
+           dayTasks.forEach((t: any, index: number) => {
+               if (options?.taskId && t.taskId !== options.taskId) return;
+               
+               reportLogs.push({
+                   id: \`tg-\${report.id}-\${t.taskId || index}\`,
+                   taskId: t.taskId || report.taskId || "unknown",
+                   projectId: report.projectId || projectId,
+                   workDate: report.date,
+                   createdAt: report.createdAt || report.date,
+                   createdByUid: "telegram-bot",
+                   createdByName: "Telegram Bot",
+                   progressPercent: t.progressUpdate || report.progressUpdate || 0,
+                   markComplete: (t.progressUpdate || report.progressUpdate) === 100,
+                   note: t.remarks || report.remarks || "",
+                   photoUrls: report.photos || [],
+                   materials: [], 
+                   labour: []
+               });
+           });
+       } else {
+           if (options?.taskId && report.taskId !== options.taskId) return;
+           
+           reportLogs.push({
+               id: \`tg-\${report.id}\`,
+               taskId: report.taskId || "unknown",
+               projectId: report.projectId || projectId,
+               workDate: report.date,
+               createdAt: report.createdAt || report.date,
+               createdByUid: "telegram-bot",
+               createdByName: "Telegram Bot",
+               progressPercent: report.progressUpdate || 0,
+               markComplete: report.progressUpdate === 100,
+               note: report.remarks || "",
+               photoUrls: report.photos || [],
+               materials: [],
+               labour: []
+           });
+       }
+   });
+   
+   return reportLogs;
+}
+`;
+
+code = code.replace("export function useDailyLogsQuery", helper + "\nexport function useDailyLogsQuery");
+
+code = code.replace(
+  `      const snapshot = await getDocs(q);\n      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);`,
+  `      const snapshot = await getDocs(q);\n      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);\n      const tgLogs = await fetchTelegramBotLogs(user, projectId, { taskId });\n      items.push(...tgLogs);`
 );
 
-fs.writeFileSync(file, content);
+code = code.replace(
+  `      const snapshot = await getDocs(q);\n      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);\n      return items.sort((a,b) => b.workDate.localeCompare(a.workDate) || (b.createdAt || "").localeCompare(a.createdAt || ""));\n    },\n    enabled: !!user && !!projectId,\n  });\n}`,
+  `      const snapshot = await getDocs(q);\n      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);\n      const tgLogs = await fetchTelegramBotLogs(user, projectId, { date });\n      items.push(...tgLogs);\n      return items.sort((a,b) => b.workDate.localeCompare(a.workDate) || (b.createdAt || "").localeCompare(a.createdAt || ""));\n    },\n    enabled: !!user && !!projectId,\n  });\n}`
+);
+
+code = code.replace(
+  `      const snapshot = await getDocs(q);\n      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);\n      \n      // Sort in memory to avoid needing a composite index\n      return items.sort((a, b) => {`,
+  `      const snapshot = await getDocs(q);\n      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);\n      const tgLogs = await fetchTelegramBotLogs(user, projectId, { startDate, endDate });\n      items.push(...tgLogs);\n      \n      // Sort in memory to avoid needing a composite index\n      return items.sort((a, b) => {`
+);
+
+fs.writeFileSync(file, code);
+console.log("Patched " + file);

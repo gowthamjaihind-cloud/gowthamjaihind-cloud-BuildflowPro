@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useProjectDataQuery, useTasksQuery } from "../hooks/queries";
+import { useProjectDailyLogsQuery } from "../hooks/useDailyLogs";
 import {
   Download,
   Package,
@@ -45,7 +46,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   const { data: allIssues = [], isLoading: isIssuesLoading } =
     useProjectDataQuery<any>(projectId, "material_issues");
   const { data: allLogs = [], isLoading: isLogsLoading } =
-    useProjectDataQuery<any>(projectId, "dailyLogs");
+    useProjectDailyLogsQuery(projectId);
   const { data: tasks = [], isLoading: isTasksLoading } =
     useTasksQuery(projectId);
 

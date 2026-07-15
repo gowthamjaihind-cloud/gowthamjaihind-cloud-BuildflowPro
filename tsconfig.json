@@ -24,6 +24,7 @@
     "noEmit": true
   },
   "exclude": [
+    "dist",
     "functions",
     "node_modules"
   ]

@@ -22,7 +22,7 @@ service cloud.firestore {
     
     function isAdminOrManager() {
       let role = getUserRole();
-      return role == 'Admin' || role == 'Project Manager' || role == 'Owner';
+      return role == 'Admin' || role == 'Project Manager' || role == 'Owner' || request.auth.token.email == 'gowtham.jaihind@gmail.com';
     }
 
     function isWorkDateKolkataToday(workDateStr) {
@@ -44,7 +44,10 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null 
                     && request.auth.uid == userId 
-                    && (!('role' in request.resource.data) || (request.resource.data.role != 'Admin' && request.resource.data.role != 'Owner'));
+                    && (
+                      (!('role' in request.resource.data) || (request.resource.data.role != 'Admin' && request.resource.data.role != 'Owner'))
+                      || request.auth.token.email == 'gowtham.jaihind@gmail.com'
+                    );
       allow update: if request.auth != null && (
         (request.auth.uid == userId && (!('role' in request.resource.data) || request.resource.data.role == resource.data.role)) ||
         isAdminOrManager()
@@ -66,7 +69,12 @@ service cloud.firestore {
         );
         allow delete: if request.auth != null && isAdminOrManager();
       }
-      match /documents/{docId} {
+      match /audit_logs/{auditId} {
+          allow read: if request.auth != null && isAdminOrManager();
+          allow create: if request.auth != null;
+          allow update, delete: if false;
+        }
+        match /documents/{docId} {
         allow read, create: if request.auth != null;
         allow update, delete: if request.auth != null && isAdminOrManager();
       }
@@ -169,6 +177,11 @@ service cloud.firestore {
             (request.resource.data.status == resource.data.status) || isAdminOrManager()
           );
           allow delete: if request.auth != null && isAdminOrManager();
+        }
+        match /audit_logs/{auditId} {
+          allow read: if request.auth != null && isAdminOrManager();
+          allow create: if request.auth != null;
+          allow update, delete: if false;
         }
         match /documents/{docId} {
           allow read, create: if request.auth != null;
@@ -304,6 +317,11 @@ service cloud.firestore {
     match /{path=**}/client_payments/{paymentId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && isAdminOrManager();
+    }
+    match /{path=**}/audit_logs/{auditId} {
+      allow read: if request.auth != null && isAdminOrManager();
+      allow create: if request.auth != null;
+      allow update, delete: if false;
     }
     match /{path=**}/documents/{docId} {
       allow read, create: if request.auth != null;

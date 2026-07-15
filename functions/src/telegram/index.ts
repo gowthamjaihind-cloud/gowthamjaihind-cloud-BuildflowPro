@@ -7,6 +7,7 @@ import {
   startLog, browseTasks, pickTask, showMenu, pickMaterial, askMaterialQty,
   pickLabourRole, askHeadcount, saveLog, handlePhoto,
 } from "./handlers/log";
+import { showProjects, pickProject } from "./handlers/projects";
 
 const BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = defineSecret("TELEGRAM_WEBHOOK_SECRET");
@@ -75,6 +76,10 @@ async function handleUpdate(tg: TelegramApi, update: any) {
     }
     if (data.startsWith("t:")) {
       await pickTask(tg, chatId, messageId, session!, data.slice(2));
+      return;
+    }
+    if (data.startsWith("prj:")) {
+      await pickProject(tg, chatId, messageId, session!, data.slice(4));
       return;
     }
     if (data.startsWith("p:")) {
@@ -181,6 +186,7 @@ async function handleUpdate(tg: TelegramApi, update: any) {
     await setSession(chatId, {
       userId: result.userId,
       email: result.email,
+      orgId: result.orgId,
       linkedAt: Date.now(),
     });
 
@@ -223,6 +229,11 @@ async function handleUpdate(tg: TelegramApi, update: any) {
 
   if (text === "/log") {
     await startLog(tg, chatId, session!);
+    return;
+  }
+
+  if (text === "/projects") {
+    await showProjects(tg, chatId, session!);
     return;
   }
 

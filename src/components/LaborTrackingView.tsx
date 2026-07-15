@@ -56,6 +56,7 @@ import { useProjectData } from "../hooks/useProjectData";
 import { useTaskStore, useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTasksQuery, useProjectDataQuery } from "../hooks/queries";
+import { useProjectDailyLogsQuery } from "../hooks/useDailyLogs";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 
 interface LaborTrackingViewProps {
@@ -94,7 +95,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     "ledger",
   );
 
-  const { data: dailyLogs } = useProjectDataQuery<DailyLogEntry>(projectId, "dailyLogs");
+  const { data: dailyLogs } = useProjectDailyLogsQuery(projectId);
   const { data: legacyLaborLogs } = useProjectDataQuery<DailyLaborLog>(
     projectId,
     "labor_logs",
