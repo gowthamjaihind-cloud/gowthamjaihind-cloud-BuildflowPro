@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import {
   Plus,
   X,
@@ -7,6 +8,7 @@ import {
   Building2,
   ArrowDownRight,
   ArrowUpRight,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ClientPayment, VendorLedgerEntry, Vendor, CostEntry } from "../types";
@@ -194,6 +196,42 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
     });
   }, [clientPayments, vendorLedger, vendors, costEntries]);
 
+  const handleExportCSV = () => {
+    const headers = ["Date", "Description", "Reference", "Type", "Inward Received (₹)", "Outward Paid (₹)", "Running Balance (₹)"];
+    const rows = combinedLedger.map((row) => [
+      row.date || "",
+      row.description || "",
+      row.reference || "",
+      row.type || "",
+      row.inward || 0,
+      row.outward || 0,
+      row.balance || 0,
+    ]);
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToCSV(`Cash_Book_Ledger_${dateStr}`, headers, rows);
+  };
+
+  const handleExportPDF = () => {
+    const headers = ["Date", "Description", "Ref", "Type", "Inward (₹)", "Outward (₹)", "Balance (₹)"];
+    const rows = combinedLedger.map((row) => [
+      row.date || "",
+      row.description || "",
+      row.reference || "",
+      row.type || "",
+      `₹${(row.inward || 0).toLocaleString("en-IN")}`,
+      `₹${(row.outward || 0).toLocaleString("en-IN")}`,
+      `₹${(row.balance || 0).toLocaleString("en-IN")}`,
+    ]);
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToPDF(
+      "INTEGRATED CASH BOOK LEDGER",
+      `Project ID: ${projectId} | Inward: ₹${totalClientReceived.toLocaleString("en-IN")} | Outward: ₹${(totalVendorPaid + totalDirectCosts).toLocaleString("en-IN")}`,
+      headers,
+      rows,
+      `Cash_Book_Ledger_${dateStr}`
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -260,18 +298,34 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
       </div>
 
       <div className="bg-surface rounded-2xl border shadow-sm overflow-hidden">
-        <div className="p-6 border-b bg-panel/30 flex justify-between items-center">
+        <div className="p-6 border-b bg-panel/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h3 className="text-lg font-bold text-ink">
             Integrated Ledger (Cash Book)
           </h3>
-          {isAdminOrOwner && (
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setIsAdding(true)}
-              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors"
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 px-3 py-2 bg-panel hover:bg-divider border border-divider rounded-xl text-xs font-bold uppercase tracking-wider text-ink transition cursor-pointer"
             >
-              <Plus className="w-4 h-4" /> Add Payment
+              <Download className="w-4 h-4 text-slate-700" />
+              CSV
             </button>
-          )}
+            <button
+              onClick={handleExportPDF}
+              className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              PDF
+            </button>
+            {isAdminOrOwner && (
+              <button
+                onClick={() => setIsAdding(true)}
+                className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors ml-1"
+              >
+                <Plus className="w-4 h-4" /> Add Payment
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="overflow-x-auto">

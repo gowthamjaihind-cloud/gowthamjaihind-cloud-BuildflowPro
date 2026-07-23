@@ -15,6 +15,7 @@ import {
   orderBy,
   getDoc,
 } from "../firebase";
+import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import {
   Vendor,
   LaborRateCard,
@@ -152,6 +153,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
   const [isDeletingRate, setIsDeletingRate] = useState<string | null>(null);
   const [editingRateId, setEditingRateId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [expandedVendorId, setExpandedVendorId] = useState<string | null>(null);
 
   // Form States
   const [newRate, setNewRate] = useState<Partial<LaborRateCard>>({
@@ -361,7 +363,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     }));
 
     return (
-      <div className="space-y-12">
+      <div className="space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-surface/70 backdrop-blur-xl p-6 md:p-8 rounded-[24px] md:rounded-[32px] border border-white shadow-sm">
           <div>
             <h2 className="text-2xl md:text-3xl font-black text-ink tracking-tight leading-none mb-2">
@@ -382,57 +384,43 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
           </button>
         </div>
 
-        <div className="space-y-16">
-          {ratesByVendor.map(({ vendor, rates }) => (
-            <div key={vendor.id} className="space-y-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
-                <div className="flex items-center gap-5">
-                  <div className="w-12 h-12 bg-slate-900 text-white rounded-[18px] flex items-center justify-center font-black text-lg shadow-lg shadow-slate-200">
-                    {vendor.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-black text-ink tracking-tight leading-none mb-1">
-                      {vendor.name}
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">
-                        {rates.length} Labor Classifications
-                      </p>
-                      <div className="w-1 h-1 rounded-full bg-divider" />
-                      <p className="text-[10px] font-bold text-[#F3E8D2]0 uppercase tracking-widest">
-                        ID: {vendor.id.slice(0, 8)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setNewRate({
-                      vendorId: vendor.id,
-                      role: "",
-                      rate: 0,
-                      unit: "Shift",
-                    });
-                    setIsAddingRate(true);
-                  }}
-                  className="bg-panel text-ink px-6 py-3 rounded-xl hover:bg-slate-900 hover:text-white apple-transition shadow-sm flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] border border-divider"
+        <div className="space-y-4">
+          {ratesByVendor.map(({ vendor, rates }) => {
+            const isExpanded = expandedVendorId === vendor.id;
+            return (
+              <div
+                key={vendor.id}
+                className="bg-surface rounded-2xl border border-divider hover:border-amber-500/20 transition-all overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.01)]"
+              >
+                {/* Vendor Header Row */}
+                <div
+                  onClick={() => setExpandedVendorId(isExpanded ? null : vendor.id)}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-5 gap-4 cursor-pointer select-none hover:bg-panel/20 transition-colors"
                 >
-                  <Plus className="w-4 h-4" /> Add Rate for{" "}
-                  {vendor.name.split(" ")[0]}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {rates.length === 0 ? (
-                  <div className="col-span-full py-16 text-center bg-panel/50 border-2 border-dashed border-divider rounded-[40px]">
-                    <div className="w-16 h-16 bg-surface rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                      <Briefcase className="w-8 h-8 text-ink-muted" />
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-base shadow-sm">
+                      {vendor.name.charAt(0)}
                     </div>
-                    <p className="text-[10px] font-black text-ink-muted uppercase tracking-[0.3em] italic">
-                      No active rate cards for this entity
-                    </p>
+                    <div>
+                      <h3 className="text-base md:text-lg font-black text-ink tracking-tight leading-none mb-1.5">
+                        {vendor.name}
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">
+                          {rates.length} Labor Classification{rates.length !== 1 ? "s" : ""}
+                        </p>
+                        <div className="w-1 h-1 rounded-full bg-divider" />
+                        <p className="text-[10px] font-bold text-[#A3711C] uppercase tracking-widest">
+                          ID: {vendor.id.slice(0, 8)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setNewRate({
                           vendorId: vendor.id,
                           role: "",
@@ -441,71 +429,112 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         });
                         setIsAddingRate(true);
                       }}
-                      className="mt-4 text-[#A3711C] text-[10px] font-black uppercase tracking-widest hover:underline"
+                      className="bg-panel text-ink px-4 py-2 rounded-lg hover:bg-slate-900 hover:text-white apple-transition shadow-sm flex items-center justify-center gap-1.5 text-[9px] font-black uppercase tracking-[0.15em] border border-divider"
                     >
-                      Initialize Rate Sheet
+                      <Plus className="w-3.5 h-3.5" /> Add Rate
                     </button>
-                  </div>
-                ) : (
-                  rates.map((rate) => (
-                    <div
-                      key={rate.id}
-                      className="bg-surface p-8 rounded-[32px] border border-slate-50 shadow-[0_10px_30px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_60px_rgba(0,0,0,0.05)] apple-transition group relative overflow-hidden border-b-4 border-b-transparent hover:border-b-amber-500"
-                    >
-                      <div className="flex justify-between items-start mb-8">
-                        <div className="bg-panel p-4 rounded-2xl group-hover:bg-amber-50 group-hover:text-amber-600 apple-transition">
-                          <Users className="w-6 h-6" />
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-ink-muted mb-1">
-                            Daily Yield
-                          </p>
-                          <p className="text-2xl font-black text-emerald-600 font-mono tracking-tighter">
-                            ₹
-                            {rate.rate.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
-                          </p>
-                          <p className="text-[10px] text-ink-muted font-black uppercase tracking-widest">
-                            / {rate.unit}
-                          </p>
-                        </div>
-                      </div>
-                      <h3 className="text-xl font-black text-ink tracking-tight mb-8 leading-tight">
-                        {rate.role}
-                      </h3>
-
-                      {isAdminOrOwner && (
-                        <div className="flex justify-start gap-2 opacity-0 group-hover:opacity-100 apple-transition transform translate-y-2 group-hover:translate-y-0">
-                          <button
-                            onClick={() => {
-                              setNewRate({
-                                vendorId: rate.vendorId,
-                                role: rate.role,
-                                rate: rate.rate,
-                                unit: rate.unit,
-                              });
-                              setEditingRateId(rate.id);
-                              setIsAddingRate(true);
-                            }}
-                            className="p-3 bg-panel text-ink-muted rounded-xl hover:bg-slate-900 hover:text-white apple-transition shadow-sm"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setIsDeletingRate(rate.id)}
-                            className="p-3 bg-panel text-ink-muted rounded-xl hover:bg-red-500 hover:text-white apple-transition shadow-sm"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
+                    <div className={`p-1.5 text-ink-muted rounded-lg bg-panel/40 border border-divider/40 transition-transform duration-250 ${isExpanded ? "rotate-180 text-[#A3711C]" : ""}`}>
+                      <ChevronDown className="w-4 h-4" />
                     </div>
-                  ))
+                  </div>
+                </div>
+
+                {/* Rates list (Expanded view with minimal cards) */}
+                {isExpanded && (
+                  <div className="px-4 pb-5 pt-3 border-t border-divider/40 bg-panel/30">
+                    {rates.length === 0 ? (
+                      <div className="py-12 text-center bg-surface/50 border border-dashed border-divider/60 rounded-xl">
+                        <div className="w-12 h-12 bg-panel rounded-xl flex items-center justify-center mx-auto mb-3">
+                          <Briefcase className="w-5 h-5 text-ink-muted" />
+                        </div>
+                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.2em]">
+                          No active rate cards for this entity
+                        </p>
+                        <button
+                          onClick={() => {
+                            setNewRate({
+                              vendorId: vendor.id,
+                              role: "",
+                              rate: 0,
+                              unit: "Shift",
+                            });
+                            setIsAddingRate(true);
+                          }}
+                          className="mt-3 text-[#A3711C] text-[10px] font-black uppercase tracking-widest hover:underline"
+                        >
+                          Initialize Rate Sheet
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                        {rates.map((rate) => (
+                          <div
+                            key={rate.id}
+                            className="bg-surface p-3.5 rounded-xl border border-divider/60 hover:border-amber-500/30 transition-all flex flex-col justify-between group relative overflow-hidden shadow-sm"
+                          >
+                            <div className="flex justify-between items-start gap-2 mb-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="bg-panel p-1.5 rounded-lg text-amber-600 shrink-0">
+                                  <Users className="w-3.5 h-3.5" />
+                                </div>
+                                <h4 className="text-xs font-bold text-ink tracking-tight truncate" title={rate.role}>
+                                  {rate.role}
+                                </h4>
+                              </div>
+
+                              {isAdminOrOwner && (
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setNewRate({
+                                        vendorId: rate.vendorId,
+                                        role: rate.role,
+                                        rate: rate.rate,
+                                        unit: rate.unit,
+                                      });
+                                      setEditingRateId(rate.id);
+                                      setIsAddingRate(true);
+                                    }}
+                                    className="p-1 bg-panel text-ink-muted rounded hover:bg-slate-900 hover:text-white transition-all"
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setIsDeletingRate(rate.id);
+                                    }}
+                                    className="p-1 bg-panel text-ink-muted rounded hover:bg-red-500 hover:text-white transition-all"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex justify-between items-baseline border-t border-divider/30 pt-2.5 mt-1">
+                              <span className="text-[8px] font-black uppercase tracking-widest text-ink-muted">
+                                Daily Yield
+                              </span>
+                              <div className="text-right">
+                                <span className="text-sm font-bold text-emerald-600 font-mono">
+                                  ₹{rate.rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                                </span>
+                                <span className="text-[10px] text-ink-muted font-bold ml-1">
+                                  / {rate.unit}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -870,19 +899,19 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     );
   };
 
-  const handleExportCSV = () => {
+  const getExportData = () => {
     let headers: string[] = [];
-    let rows: any[][] = [];
+    let rows: (string | number)[][] = [];
 
     if (activeTab === "rates") {
-      headers = ["Supplier", "Role/Trade", "Rate", "Unit"];
+      headers = ["Supplier", "Role/Trade", "Rate (₹)", "Unit"];
       rows = rateCards.map((rate) => {
         const matchingVendor = vendors.find((v) => v.id === rate.vendorId);
         return [
-          `"${matchingVendor?.name || ""}"`,
-          `"${rate.role || ""}"`,
+          matchingVendor?.name || "N/A",
+          rate.role || "",
           rate.rate,
-          `"${rate.unit || ""}"`,
+          rate.unit || "Shift",
         ];
       });
     } else {
@@ -890,32 +919,35 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         "RA Bill No",
         "Supplier",
         "Date",
-        "Gross Amount",
-        "Deductions",
-        "Net Payable",
+        "Gross Amount (₹)",
+        "Deductions (₹)",
+        "Net Payable (₹)",
         "Status",
       ];
       rows = raBills.map((bill) => [
-        `"${bill.billNumber || ""}"`,
-        `"${bill.vendorName || ""}"`,
-        `"${bill.billDate || ""}"`,
-        bill.grossAmount,
-        bill.deductions,
-        bill.netAmount,
-        `"${bill.status || ""}"`,
+        bill.billNumber || "",
+        bill.vendorName || "",
+        bill.billDate || "",
+        bill.grossAmount || 0,
+        bill.deductions || 0,
+        bill.netAmount || 0,
+        bill.status || "Draft",
       ]);
     }
+    return { headers, rows };
+  };
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `${projectId}_${activeTab}_export.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportCSV = () => {
+    const { headers, rows } = getExportData();
+    exportToCSV(`Labor_${activeTab}_Export`, headers, rows);
+  };
+
+  const handleExportPDF = () => {
+    const { headers, rows } = getExportData();
+    const formattedRows = rows.map((r) =>
+      r.map((val) => typeof val === "number" ? `₹${val.toLocaleString("en-IN")}` : val)
+    );
+    exportToPDF(`Labor ${activeTab === "rates" ? "Pricing Matrix" : "RA Billing"} Report`, `Project ID: ${projectId}`, headers, formattedRows, `Labor_${activeTab}_Report`);
   };
 
   return (
@@ -933,18 +965,18 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
           ))}
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="hidden sm:flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 bg-[#F3E8D2] rounded-lg md:rounded-2xl border border-[#F3E8D2]/50">
-            <Users className="w-4 h-4 text-[#A3711C]" />
-            <span className="text-[10px] font-bold text-[#A3711C] uppercase tracking-widest leading-none">
-              Active Workload
-            </span>
-          </div>
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <button
             onClick={handleExportCSV}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-lg md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-800 apple-transition shadow-lg shadow-slate-200"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-slate-900 text-white px-4 md:px-5 py-2.5 md:py-3 rounded-lg md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] hover:bg-slate-800 apple-transition shadow-lg shadow-slate-200"
           >
-            <Download className="w-3.5 h-3.5 md:w-4 md:h-4" /> Export
+            <Download className="w-3.5 h-3.5" /> Export CSV
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-amber-600 text-white px-4 md:px-5 py-2.5 md:py-3 rounded-lg md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] hover:bg-amber-700 apple-transition shadow-lg shadow-amber-200"
+          >
+            <Download className="w-3.5 h-3.5" /> Export PDF
           </button>
         </div>
       </div>

@@ -9,8 +9,9 @@ export interface BotSession {
   orgId?: string;
   activeProjectId?: string;
   step?: string | null;
-  draft?: Record<string, any>;     // in-progress log data
-  recentTaskIds?: string[];        // for the Phase B "recent tasks" shortcut
+  draft?: Record<string, any>;
+  recentTaskIds?: string[];
+  saving?: boolean;          // idempotency guard against double-tap on Save
   linkedAt?: number;
   lastSeenAt?: number;
 }
@@ -21,22 +22,16 @@ export const getSession = async (chatId: number): Promise<BotSession | null> => 
 };
 
 export const setSession = async (chatId: number, data: Partial<BotSession>) => {
-  await db
-    .collection("bot_sessions")
-    .doc(String(chatId))
+  await db.collection("bot_sessions").doc(String(chatId))
     .set({ ...data, chatId, lastSeenAt: Date.now() }, { merge: true });
 };
 
-export const clearSession = async (chatId: number) => {
-  await db.collection("bot_sessions").doc(String(chatId)).delete();
-};
-
-// Clears only the in-progress flow, keeps the login + active project.
 export const clearStep = async (chatId: number) => {
   await db.collection("bot_sessions").doc(String(chatId)).set(
     {
       step: admin.firestore.FieldValue.delete(),
       draft: admin.firestore.FieldValue.delete(),
+      saving: admin.firestore.FieldValue.delete(),
     } as any,
     { merge: true }
   );

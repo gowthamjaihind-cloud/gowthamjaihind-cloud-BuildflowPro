@@ -12,6 +12,7 @@ import {
   handleFirestoreError,
   OperationType,
 } from "../firebase";
+import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { InventoryItem, Task } from "../types";
 import {
   Package,
@@ -29,6 +30,7 @@ import {
   ArrowDownRight,
   Settings,
   Save,
+  Download,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { RoleGuard } from "./RoleGuard";
@@ -333,6 +335,70 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
     return groups;
   }, [filteredItems]);
 
+  const handleExportCSV = () => {
+    const headers = [
+      "Material ID",
+      "Item Name",
+      "Category",
+      "Group Code",
+      "In Stock Qty",
+      "Unit",
+      "Unit Cost (₹)",
+      "Total Value (₹)",
+      "Min Threshold",
+    ];
+    const rows = filteredItems.map((item) => {
+      const avail = Math.max(0, item.quantity - (item.consumed || 0));
+      const cost = item.effectiveUnitCost || item.unitCost || 0;
+      return [
+        item.materialId || "-",
+        item.name || "",
+        item.category || "Material",
+        item.groupCode || "-",
+        avail,
+        item.unit || "MT",
+        cost,
+        avail * cost,
+        item.minThreshold || 0,
+      ];
+    });
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToCSV(`Inventory_Stock_${dateStr}`, headers, rows);
+  };
+
+  const handleExportPDF = () => {
+    const headers = [
+      "Material ID",
+      "Item Name",
+      "Category",
+      "Stock Qty",
+      "Unit",
+      "Unit Cost (₹)",
+      "Total Value (₹)",
+    ];
+    const rows = filteredItems.map((item) => {
+      const avail = Math.max(0, item.quantity - (item.consumed || 0));
+      const cost = item.effectiveUnitCost || item.unitCost || 0;
+      return [
+        item.materialId || "-",
+        item.name || "",
+        item.category || "Material",
+        avail,
+        item.unit || "MT",
+        `₹${cost.toLocaleString("en-IN")}`,
+        `₹${(avail * cost).toLocaleString("en-IN")}`,
+      ];
+    });
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToPDF(
+      "SITE INVENTORY STOCK REPORT",
+      `Project ID: ${projectId} | Total Items: ${filteredItems.length}`,
+      headers,
+      rows,
+      `Inventory_Stock_${dateStr}`
+    );
+  };
+
   const [physicalCounts, setPhysicalCounts] = useState<Record<string, number>>(
     {},
   );
@@ -519,6 +585,20 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             </button>
           ))}
           <div className="w-px h-4 bg-divider mx-1" />
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 px-3 py-2 bg-surface hover:bg-panel border border-divider rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest text-ink transition cursor-pointer"
+          >
+            <Download className="w-3 h-3 text-slate-700" />
+            <span>CSV</span>
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest transition shadow-sm cursor-pointer"
+          >
+            <Download className="w-3 h-3" />
+            <span>PDF</span>
+          </button>
           <RoleGuard
             allowedRoles={["Project Manager", "Site Engineer"]}
             projectId={projectId}

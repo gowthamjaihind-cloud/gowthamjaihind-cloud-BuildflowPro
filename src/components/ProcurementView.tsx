@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { PurchaseOrderTab } from "./purchase/PurchaseOrderTab";
 import { GoodsReceiptTab } from "./purchase/GoodsReceiptTab";
 import { MaterialReceiptForm } from "./purchase/MaterialReceiptForm";
@@ -541,13 +542,17 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     }
   };
 
-  const handleExportReport = () => {
-    let dataToExport = [];
-    let fileName = "";
-    let headers = [];
+  const getExportData = () => {
+    let dataToExport: (string | number)[][] = [];
+    let title = "";
+    let baseFileName = "";
+    let headers: string[] = [];
+
+    const dateSuffix = new Date().toISOString().split("T")[0];
 
     if (activeTab === "vendors") {
-      fileName = `vendors_${new Date().toISOString().split("T")[0]}.csv`;
+      title = "Vendors & Partners Registry";
+      baseFileName = `vendors_${dateSuffix}`;
       headers = [
         "Name",
         "Type",
@@ -555,7 +560,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         "Email",
         "Phone",
         "Address",
-        "Outstanding Balance",
+        "Outstanding Balance (₹)",
       ];
       dataToExport = vendors.map((v) => [
         v.name,
@@ -564,55 +569,53 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         v.email || "-",
         v.phone || "-",
         v.address || "-",
-        getVendorBalance(v.id).toFixed(2),
+        getVendorBalance(v.id),
       ]);
     } else if (activeTab === "receipts") {
-      fileName = `material_receipts_${new Date().toISOString().split("T")[0]}.csv`;
-      headers = ["Date", "Vendor", "Invoice Number", "Items", "Total Amount"];
+      title = "Material Receipts Register";
+      baseFileName = `material_receipts_${dateSuffix}`;
+      headers = ["Date", "Vendor", "Invoice Number", "Items", "Total Amount (₹)"];
       dataToExport = receipts.map((r) => [
         r.receiptDate,
         r.supplierName,
         r.invoiceNumber,
         r.items.map((i) => `${i.name} (Qty: ${i.quantity})`).join("; "),
-        r.totalAmount.toFixed(2),
+        r.totalAmount,
       ]);
     } else if (activeTab === "ledger") {
       const filteredLedger = selectedVendor
         ? ledger.filter((e) => e.vendorId === selectedVendor.id)
         : ledger;
-      fileName = selectedVendor
-        ? `ledger_${selectedVendor.name}_${new Date().toISOString().split("T")[0]}.csv`
-        : `ledger_all_${new Date().toISOString().split("T")[0]}.csv`;
-      headers = ["Date", "Vendor", "Type", "Description", "Amount"];
+      title = selectedVendor ? `Vendor Ledger - ${selectedVendor.name}` : "General Vendor Ledger";
+      baseFileName = selectedVendor
+        ? `ledger_${selectedVendor.name.replace(/\s+/g, "_")}_${dateSuffix}`
+        : `ledger_all_${dateSuffix}`;
+      headers = ["Date", "Vendor", "Type", "Description", "Amount (₹)"];
       dataToExport = filteredLedger.map((e) => [
-        new Date(e.date).toLocaleDateString(),
+        new Date(e.date).toLocaleDateString("en-IN"),
         vendors.find((v) => v.id === e.vendorId)?.name || "Unknown",
         e.type,
         e.description,
-        e.amount.toFixed(2),
+        e.amount,
       ]);
     }
 
+    return { headers, dataToExport, title, baseFileName };
+  };
+
+  const handleExportCSV = () => {
+    const { headers, dataToExport, baseFileName } = getExportData();
     if (dataToExport.length === 0) return;
+    exportToCSV(baseFileName, headers, dataToExport);
+  };
 
-    const csvRows = [
-      headers.join(","),
-      ...dataToExport.map((row) =>
-        row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(","),
-      ),
-    ];
-
-    const blob = new Blob([csvRows.join("\n")], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", fileName);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportPDF = () => {
+    const { headers, dataToExport, title, baseFileName } = getExportData();
+    if (dataToExport.length === 0) return;
+    const formattedRows = dataToExport.map((row) =>
+      row.map((val) => typeof val === "number" ? `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : val)
+    );
+    exportToPDF(title, `Project ID: ${projectId}`, headers, formattedRows, baseFileName);
   };
 
   const handleAddVendor = async (e: React.FormEvent) => {
@@ -1572,12 +1575,20 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               {vendors.length} Partners
             </span>
           </div>
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <button
-            onClick={handleExportReport}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-panel text-ink px-4 md:px-6 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-divider apple-transition border border-divider"
+            onClick={handleExportCSV}
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-panel text-ink px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-divider apple-transition border border-divider"
           >
-            <Download className="w-3.5 h-3.5 md:w-4 md:h-4" /> Export
+            <Download className="w-3.5 h-3.5" /> Export CSV
           </button>
+          <button
+            onClick={handleExportPDF}
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-amber-600 text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-amber-700 apple-transition shadow-sm"
+          >
+            <Download className="w-3.5 h-3.5" /> Export PDF
+          </button>
+        </div>
         </div>
       </div>
 

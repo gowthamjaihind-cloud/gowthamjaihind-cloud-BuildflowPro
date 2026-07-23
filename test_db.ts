@@ -1,14 +1,16 @@
-import { initializeApp, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-import firebaseConfig from "./firebase-applet-config.json" with { type: "json" };
+import { db } from "./src/server/firebase_client";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 
-try {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-  const adminApp = initializeApp({ credential: cert(serviceAccount) });
-  const db = getFirestore(adminApp, firebaseConfig.firestoreDatabaseId);
-  db.collection("users").get().then((snap) => {
-    console.log("Users in db:", snap.docs.length);
-    snap.docs.forEach(d => console.log(d.id, d.data().email));
-    process.exit(0);
-  });
-} catch (e) { console.error(e) }
+async function run() {
+  const sessions = await getDocs(collection(db, "bot_sessions"));
+  console.log("Sessions:");
+  sessions.docs.forEach(d => console.log(d.id, d.data()));
+
+  const users = await getDocs(collection(db, "users"));
+  console.log("Users:");
+  users.docs.forEach(d => console.log(d.id, d.data()));
+  
+  process.exit(0);
+}
+
+run().catch(console.error);

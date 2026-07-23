@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { exportToCSV } from "../utils/exportUtils";
 import {
   format,
   startOfWeek,
@@ -54,12 +55,19 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
   const [logToEdit, setLogToEdit] = useState<DailyLogEntry | null>(null);
   const [logToDelete, setLogToDelete] = useState<DailyLogEntry | null>(null);
   const [selectedDate, setSelectedDate] = useState(
-    new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }))
-      .toISOString()
-      .split("T")[0],
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date())
   );
 
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const safeFormat = (dateStr: string, fmt: string) => {
+    if (!dateStr) return "Invalid Date";
+    const [y, m, d] = dateStr.split("-").map(Number);
+    if (!y || !m || !d) return "Invalid Date";
+    const dt = new Date(y, m - 1, d);
+    if (isNaN(dt.getTime())) return "Invalid Date";
+    return format(dt, fmt);
+  };
+
   const deleteLogMutation = useDeleteDailyLog(projectId);
 
   const handleDeleteLog = (log: DailyLogEntry) => {
@@ -79,19 +87,25 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
 
   // Derived date bounds
   const startDate = useMemo(() => {
-    const d = new Date(selectedDate);
+    if (!selectedDate) return "";
+    const [y, m, d] = selectedDate.split("-").map(Number);
+    if (!y || !m || !d) return "";
+    const dt = new Date(y, m - 1, d);
     if (reportType === "daily") return selectedDate;
     if (reportType === "weekly")
-      return format(startOfWeek(d, { weekStartsOn: 1 }), "yyyy-MM-dd");
-    return format(startOfMonth(d), "yyyy-MM-dd");
+      return format(startOfWeek(dt, { weekStartsOn: 1 }), "yyyy-MM-dd");
+    return format(startOfMonth(dt), "yyyy-MM-dd");
   }, [selectedDate, reportType]);
 
   const endDate = useMemo(() => {
-    const d = new Date(selectedDate);
+    if (!selectedDate) return "";
+    const [y, m, d] = selectedDate.split("-").map(Number);
+    if (!y || !m || !d) return "";
+    const dt = new Date(y, m - 1, d);
     if (reportType === "daily") return selectedDate;
     if (reportType === "weekly")
-      return format(endOfWeek(d, { weekStartsOn: 1 }), "yyyy-MM-dd");
-    return format(endOfMonth(d), "yyyy-MM-dd");
+      return format(endOfWeek(dt, { weekStartsOn: 1 }), "yyyy-MM-dd");
+    return format(endOfMonth(dt), "yyyy-MM-dd");
   }, [selectedDate, reportType]);
 
   const { data: rawLogs = [], isLoading: isLoadingLogs } =
@@ -243,6 +257,39 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
     }, 150);
   };
 
+  const handleExportCSV = () => {
+    const headers = [
+      "Date",
+      "Task Name",
+      "Phase",
+      "Location",
+      "Progress Delta (%)",
+      "Current Progress (%)",
+      "Labor Count",
+      "Blockers",
+      "Notes",
+    ];
+    const rows: (string | number)[][] = [];
+    logs.forEach((log) => {
+      (log.entries || []).forEach((entry) => {
+        const task = tasks.find((t) => t.id === entry.taskId);
+        rows.push([
+          log.date || "",
+          task?.name || entry.taskId || "General Task",
+          task?.phase || "-",
+          task?.location || "-",
+          entry.progressDelta || 0,
+          entry.currentProgress || 0,
+          entry.laborCount || 0,
+          entry.blockers || "-",
+          entry.notes || log.notes || "-",
+        ]);
+      });
+    });
+    const dateSuffix = reportType === "daily" ? selectedDate : `${startDate}_to_${endDate}`;
+    exportToCSV(`${project?.name || "Project"}_${reportType}_Report_${dateSuffix}`, headers, rows);
+  };
+
   const getDayProgressDelta = () => {
     if (logs.length === 0) return 0;
     let cumulative = 0;
@@ -311,18 +358,28 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             className="bg-panel border-none outline-none font-bold text-sm text-ink px-3 py-1.5 rounded-lg"
           />
         </div>
-        <button
-          onClick={handleExportPDF}
-          disabled={logs.length === 0 || !canExport || isGeneratingPdf}
-          className={`flex items-center gap-2 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-primary text-white hover:bg-primary/80 active:scale-95"}`}
-        >
-          {isGeneratingPdf ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Download className="w-4 h-4" />
-          )}
-          {canExport ? "Export PDF" : "Manager Access Required"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            disabled={logs.length === 0 || !canExport}
+            className={`flex items-center gap-2 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-panel border border-divider hover:bg-divider text-ink active:scale-95 cursor-pointer"}`}
+          >
+            <Download className="w-4 h-4 text-slate-700" />
+            Export CSV
+          </button>
+          <button
+            onClick={handleExportPDF}
+            disabled={logs.length === 0 || !canExport || isGeneratingPdf}
+            className={`flex items-center gap-2 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-primary text-white hover:bg-primary/80 active:scale-95 cursor-pointer"}`}
+          >
+            {isGeneratingPdf ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            {canExport ? "Export PDF" : "Manager Access Required"}
+          </button>
+        </div>
       </div>
 
       {!canExport && (
@@ -363,8 +420,8 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                 </p>
                 <p className="text-base font-black">
                   {isDaily
-                    ? format(new Date(selectedDate), "dd MMM yyyy")
-                    : `${format(new Date(startDate), "dd MMM yyyy")} to ${format(new Date(endDate), "dd MMM yyyy")}`}
+                    ? safeFormat(selectedDate, "dd MMM yyyy")
+                    : `${safeFormat(startDate, "dd MMM yyyy")} to ${safeFormat(endDate, "dd MMM yyyy")}`}
                 </p>
               </div>
             </div>

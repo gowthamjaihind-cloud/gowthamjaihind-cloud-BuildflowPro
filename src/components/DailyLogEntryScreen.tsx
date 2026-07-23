@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   useSaveDailyLog,
@@ -84,6 +84,28 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
     (t) => t.type !== "Summary" && !t.isSystemGenerated,
   );
   const currentTask = tasks.find((t) => t.id === selectedTaskId);
+
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
+
+  const locations = useMemo(() => {
+    const locs = new Set<string>();
+    tasks.forEach((t) => {
+      if (t.location) {
+        locs.add(t.location);
+      } else {
+        locs.add("General / Site-wide");
+      }
+    });
+    return Array.from(locs).sort();
+  }, [tasks]);
+
+  useEffect(() => {
+    if (selectedTaskId && tasks.length > 0) {
+      const taskObj = tasks.find((t) => t.id === selectedTaskId);
+      const loc = taskObj?.location || "General / Site-wide";
+      setSelectedLocation(loc);
+    }
+  }, [selectedTaskId, tasks]);
 
   const { data: existingLogs = [] } = useDailyLogsQuery(
     projectId,
@@ -324,23 +346,54 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             className="p-6 md:p-8 space-y-8 w-full max-w-full"
           >
             {!taskId && (
-              <div className="space-y-2">
-                <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
-                  Select Task
-                </label>
-                <select
-                  required
-                  value={selectedTaskId}
-                  onChange={(e) => setSelectedTaskId(e.target.value)}
-                  className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-[#F3E8D2]0"
-                >
-                  <option value="">-- Choose Task --</option>
-                  {tasks.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} (wbs: {t.phase})
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
+                    Select Location
+                  </label>
+                  <select
+                    value={selectedLocation}
+                    onChange={(e) => {
+                      setSelectedLocation(e.target.value);
+                      setSelectedTaskId("");
+                    }}
+                    className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-[#F3E8D2]0"
+                  >
+                    <option value="">-- Choose Location --</option>
+                    {locations.map((loc) => (
+                      <option key={loc} value={loc}>
+                        {loc}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
+                    Select Task
+                  </label>
+                  <select
+                    required
+                    disabled={!selectedLocation}
+                    value={selectedTaskId}
+                    onChange={(e) => setSelectedTaskId(e.target.value)}
+                    className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-[#F3E8D2]0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">
+                      {!selectedLocation ? "-- Choose Location First --" : "-- Choose Task --"}
                     </option>
-                  ))}
-                </select>
+                    {tasks
+                      .filter((t) => {
+                        const loc = t.location || "General / Site-wide";
+                        return loc === selectedLocation;
+                      })
+                      .map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} (wbs: {t.phase})
+                        </option>
+                      ))}
+                  </select>
+                </div>
               </div>
             )}
 

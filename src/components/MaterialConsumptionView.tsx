@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { useProjectDataQuery, useTasksQuery } from "../hooks/queries";
 import { useProjectDailyLogsQuery } from "../hooks/useDailyLogs";
 import {
@@ -226,35 +227,30 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
     sortOrder,
   ]);
 
-  // Export to CSV helper
-  const handleExportCSV = (recordsToExport: any[]) => {
+  const getExportData = (recordsToExport: any[]) => {
     const headers = ["Date", "Material Name", "Consumed In Task", "Quantity", "Unit", "Source Type", "Log Note"];
-    const csvRows = [
-      headers.join(","),
-      ...recordsToExport.map((r) =>
-        [
-          `"${r.date}"`,
-          `"${(r.materialName || "").replace(/"/g, '""')}"`,
-          `"${(r.taskName || "").replace(/"/g, '""')}"`,
-          r.quantity,
-          `"${r.unit}"`,
-          `"${r.source}"`,
-          `"${(r.note || "").replace(/"/g, '""')}"`,
-        ].join(",")
-      ),
-    ];
+    const rows = recordsToExport.map((r) => [
+      r.date || "",
+      r.materialName || "",
+      r.taskName || "",
+      r.quantity || 0,
+      r.unit || "",
+      r.source || "",
+      r.note || "",
+    ]);
+    return { headers, rows };
+  };
 
-    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `Material_Consumption_${activeTab === "advanced-filter" ? "Filtered" : activeTab.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportCSV = (recordsToExport: any[]) => {
+    const { headers, rows } = getExportData(recordsToExport);
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToCSV(`Material_Consumption_${activeTab === "advanced-filter" ? "Filtered" : activeTab.replace(/\s+/g, "_")}_${dateStr}`, headers, rows);
+  };
+
+  const handleExportPDF = (recordsToExport: any[]) => {
+    const { headers, rows } = getExportData(recordsToExport);
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToPDF("Material Consumption Log", `Project ID: ${projectId}`, headers, rows, `Material_Consumption_${activeTab === "advanced-filter" ? "Filtered" : activeTab.replace(/\s+/g, "_")}_${dateStr}`);
   };
 
   const handleResetAdvancedFilters = () => {
@@ -294,15 +290,26 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
         </div>
         
         {allRecords.length > 0 && (
-          <button
-            id="export-current-btn"
-            onClick={() => handleExportCSV(activeTab === "advanced-filter" ? advancedFilteredRecords : activeMaterialRecords)}
-            disabled={activeTab === "advanced-filter" ? advancedFilteredRecords.length === 0 : activeMaterialRecords.length === 0}
-            className="flex items-center gap-2 px-5 py-3 bg-panel hover:bg-divider border border-divider rounded-xl text-xs font-bold uppercase tracking-wider text-ink transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-          >
-            <Download className="w-4 h-4 text-[#A3711C]" />
-            Export Tab to CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              id="export-current-csv-btn"
+              onClick={() => handleExportCSV(activeTab === "advanced-filter" ? advancedFilteredRecords : activeMaterialRecords)}
+              disabled={activeTab === "advanced-filter" ? advancedFilteredRecords.length === 0 : activeMaterialRecords.length === 0}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-panel hover:bg-divider border border-divider rounded-xl text-xs font-bold uppercase tracking-wider text-ink transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-[#A3711C]" />
+              Export CSV
+            </button>
+            <button
+              id="export-current-pdf-btn"
+              onClick={() => handleExportPDF(activeTab === "advanced-filter" ? advancedFilteredRecords : activeMaterialRecords)}
+              disabled={activeTab === "advanced-filter" ? advancedFilteredRecords.length === 0 : activeMaterialRecords.length === 0}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              Export PDF
+            </button>
+          </div>
         )}
       </div>
 

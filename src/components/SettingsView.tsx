@@ -30,11 +30,10 @@ interface SettingsViewProps {
 type SettingsSection =
   | "organization"
   | "enterprise"
-  | "security"
   | "notifications"
   | "billing"
   | "team"
-  | "appearance";
+  | "appearance"
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   onBack,
@@ -82,7 +81,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 label: "Identity & Authorization",
                 icon: Shield,
               },
-              { id: "security", label: "Security", icon: Shield },
             ].map((item) => (
               <button
                 key={item.id}
@@ -308,42 +306,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </section>
             )}
 
-            {activeTab === "security" && (
-              <section className="apple-glass p-8 squircle-24">
-                <h3 className="text-xl font-bold text-ink mb-6 flex items-center gap-2">
-                  <Shield className="w-6 h-6 text-primary" /> Security
-                  Protocols
-                </h3>
-                <div className="space-y-6">
-                  <div className="bg-surface p-6 rounded-[20px] flex items-center justify-between shadow-sm border border-divider">
-                    <div>
-                      <div className="font-bold text-ink">
-                        Two-Factor Authentication (2FA)
-                      </div>
-                      <div className="text-sm text-ink-muted">
-                        Require 2FA for all administrative accounts
-                      </div>
-                    </div>
-                    <div className="w-12 h-6 bg-[#34C759] rounded-full relative cursor-pointer">
-                      <div className="absolute right-1 top-1 w-4 h-4 bg-surface rounded-full"></div>
-                    </div>
-                  </div>
-                  <div className="bg-surface p-6 rounded-[20px] flex items-center justify-between shadow-sm border border-divider">
-                    <div>
-                      <div className="font-bold text-ink">Session Timeout</div>
-                      <div className="text-sm text-ink-muted">
-                        Automatically log out inactive users
-                      </div>
-                    </div>
-                    <select className="bg-panel border border-divider px-3 py-1.5 rounded-lg text-sm font-medium">
-                      <option>15 Minutes</option>
-                      <option>1 Hour</option>
-                      <option>4 Hours</option>
-                    </select>
-                  </div>
-                </div>
-              </section>
-            )}
+            
+            
+
           </div>
         </div>
       </div>

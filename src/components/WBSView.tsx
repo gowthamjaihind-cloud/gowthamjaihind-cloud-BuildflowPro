@@ -149,6 +149,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
     plannedOtherCost: 0,
     phase: "",
     location: "",
+    isChangeOrder: false,
   });
 
   const [openSection, setOpenSection] = useState<string | null>("identity");
@@ -314,6 +315,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
         plannedOtherCost: 0,
         phase: "",
         location: "",
+        isChangeOrder: false,
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, path);
@@ -1581,15 +1583,33 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                       <Edit2 className="w-4 h-4 md:w-5 md:h-5 text-ink-muted" />
                                     </div>
                                   </div>
-                                  <div className="flex gap-2 items-center px-2 md:px-4">
-                                    <div
-                                      className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${editingTask ? "bg-[#F3E8D2]0" : "bg-emerald-500"}`}
-                                    />
-                                    <span className="text-[8px] md:text-[9px] font-bold text-ink-muted uppercase tracking-widest">
-                                      {editingTask
-                                        ? `REFINING UNIT: ${editingTask.id}`
-                                        : "INITIALIZING NEW WORK UNIT"}
-                                    </span>
+                                  <div className="flex flex-wrap items-center gap-4 px-2 md:px-4 mt-2">
+                                    <div className="flex gap-2 items-center">
+                                      <div
+                                        className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${editingTask ? "bg-[#F3E8D2]0" : "bg-emerald-500"}`}
+                                      />
+                                      <span className="text-[8px] md:text-[9px] font-bold text-ink-muted uppercase tracking-widest">
+                                        {editingTask
+                                          ? `REFINING UNIT: ${editingTask.id}`
+                                          : "INITIALIZING NEW WORK UNIT"}
+                                      </span>
+                                    </div>
+                                    <label className="flex items-center gap-2 cursor-pointer bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-xl border border-amber-500/20 transition-all select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={editingTask ? (editingTask.isChangeOrder || false) : (newTask.isChangeOrder || false)}
+                                        onChange={(e) => {
+                                          const checked = e.target.checked;
+                                          editingTask
+                                            ? setEditingTask({ ...editingTask, isChangeOrder: checked })
+                                            : setNewTask({ ...newTask, isChangeOrder: checked });
+                                        }}
+                                        className="w-4 h-4 rounded text-amber-600 border-divider focus:ring-amber-500 accent-amber-600 cursor-pointer"
+                                      />
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-700">
+                                        Change Order Item
+                                      </span>
+                                    </label>
                                   </div>
                                 </div>
 

@@ -15,7 +15,6 @@ export function useProjectData<T>(
     | "ra_bills"
     | "material_issues"
     | "documents"
-    | "daily_site_reports"
     | "client_payments",
   orderByField?: string,
   orderDirection?: "asc" | "desc",

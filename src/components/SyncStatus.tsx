@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Cloud, CloudOff, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useIsFetching, useIsMutating } from "@tanstack/react-query";
 
 export const SyncStatus: React.FC = () => {
@@ -24,26 +24,44 @@ export const SyncStatus: React.FC = () => {
 
   if (!isOnline) {
     return (
-      <div className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-red-500/20">
-        <CloudOff className="w-3 h-3" />
-        <span>Offline</span>
+      <div
+        id="network-status-indicator"
+        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-rose-500/10 text-rose-600 rounded-full text-[11px] font-bold tracking-wide border border-rose-500/20 shadow-sm"
+        title="Network Disconnected (Offline)"
+      >
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+        </span>
+        <span className="text-[11px] font-bold">Offline</span>
       </div>
     );
   }
 
   if (isSyncing) {
     return (
-      <div className="flex items-center gap-2 px-4 py-2 bg-[#A3711C]/10 text-[#A3711C] rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-[#A3711C]/20">
+      <div
+        id="network-status-indicator"
+        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-[#A3711C]/10 text-[#A3711C] rounded-full text-[11px] font-bold tracking-wide border border-[#A3711C]/20 shadow-sm"
+        title="Syncing with cloud..."
+      >
         <RefreshCw className="w-3 h-3 animate-spin" />
-        <span>Syncing...</span>
+        <span className="hidden sm:inline text-[11px] font-bold">Syncing</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-[#34C759]/10 text-[#34C759] rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-[#34C759]/20">
-      <div className="w-1.5 h-1.5 bg-[#34C759] rounded-full animate-pulse shadow-sm" />
-      <span>Online</span>
+    <div
+      id="network-status-indicator"
+      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-[#34C759]/10 text-[#34C759] rounded-full text-[11px] font-bold tracking-wide border border-[#34C759]/20 shadow-sm"
+      title="Network Connected (Online)"
+    >
+      <span className="relative flex h-2.5 w-2.5">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#34C759] opacity-75" />
+        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#34C759]" />
+      </span>
+      <span className="text-[11px] font-bold">Online</span>
     </div>
   );
 };
+

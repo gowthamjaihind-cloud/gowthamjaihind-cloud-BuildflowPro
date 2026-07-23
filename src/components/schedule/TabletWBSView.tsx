@@ -1,6 +1,5 @@
 import { useAuthStore } from "../../store";
-import { useQueryClient } from "@tanstack/react-query";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useTasksQuery } from "../../hooks/queries";
 import {
   db,
@@ -15,8 +14,6 @@ import {
   Edit2,
   Plus,
   X,
-  ListTree,
-  AlignLeft,
   ShieldAlert,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -36,8 +33,9 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
   onOpenDailyLog,
 }) => {
   const { user } = useAuthStore();
-  const queryClient = useQueryClient();
-  const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
+  const basePath = user?.currentOrgId
+    ? `organizations/${user.currentOrgId}/projects/${projectId}`
+    : `projects/${projectId}`;
 
   const { data: rawTasks = [] } = useTasksQuery(projectId);
   const { taskTotalsMap } = useProjectCostTotals(projectId);
@@ -47,20 +45,36 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
     task: any | null;
   } | null>(null);
 
-  const {
-    roots,
-    groupedRoots,
-    currentNodes,
-    parentChain,
-    currentParentNode,
-    navigateDown,
-    navigateUp,
-    navigateToRoot,
-    navigateToBreadcrumb,
-    viewModeState,
-  } = useLocationDrilldown(rawTasks.filter((t) => !t.isSystemGenerated));
+  const { roots } = useLocationDrilldown(rawTasks.filter((t) => !t.isSystemGenerated));
+  const phaseGroups = useMemo(() => buildPhaseLocationGroups(roots), [roots]);
 
-  const [viewMode, setViewMode] = viewModeState;
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [hasInitializedExpand, setHasInitializedExpand] = useState(false);
+
+  useEffect(() => {
+    if (!hasInitializedExpand && phaseGroups.length > 0) {
+      const initial = new Set<string>();
+      const firstPhase = phaseGroups[0];
+      initial.add(firstPhase.id);
+      if (phaseGroups.length <= 1 && firstPhase.children && firstPhase.children.length > 0) {
+        initial.add(firstPhase.children[0].id);
+      }
+      setExpandedIds(initial);
+      setHasInitializedExpand(true);
+    }
+  }, [phaseGroups, hasInitializedExpand]);
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   const openEditSheet = (task: any) => {
     setSheetState({ isOpen: true, mode: "edit", task });
@@ -101,338 +115,229 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
     const s = start ? formatDate(start) : "?";
     const e = end ? formatDate(end) : "?";
 
-    // if same month, maybe "Jun 12-18", but simple is "Jun 12 - Jun 18"
     return `${s} – ${e}`;
   };
 
-  const renderDrilldownRow = (node: any) => {
-    const isGroup = node.type === "phase" || node.type === "location";
-    const hasChildren = isGroup || (node.children && node.children.length > 0);
+  const renderAccordionTaskNode = (node: any) => {
+    const hasChildren = node.children && node.children.length > 0;
+    const isExpanded = expandedIds.has(node.id);
     const taskCost = taskTotalsMap[node.id]?.totalActual || 0;
 
-    if (isGroup) {
-      return (
-        <div
-          key={node.id}
-          className="flex items-center justify-between p-4 border-b border-divider bg-surface active:bg-panel transition-colors hover:bg-panel cursor-pointer"
-          onClick={() => navigateDown(node)}
-        >
-          <div className="flex-1 min-w-0 pr-4 flex items-center gap-6">
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#A3711C]">
-                  {node.type}
-                </span>
-              </div>
-              <span className="text-sm font-bold text-ink truncate block">
-                {node.name}
-              </span>
-              <span className="text-xs font-bold text-ink-muted mt-1">
-                {node.taskCount} {node.taskCount === 1 ? "task" : "tasks"}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="p-2 text-ink-muted">
-              <ChevronRight className="w-5 h-5" />
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     return (
-      <div
-        key={node.id}
-        className="flex items-center justify-between p-4 border-b border-divider bg-surface active:bg-panel transition-colors hover:bg-panel"
-      >
-        <div
-          className="flex-1 min-w-0 pr-4 flex items-center gap-6 cursor-pointer"
-          onClick={() =>
-            hasChildren ? navigateDown(node) : openEditSheet(node)
-          }
-        >
-          {/* Main Info */}
-          <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-mono text-ink-muted bg-panel px-1.5 py-0.5 rounded font-bold">
-                {node.wbsCode}
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#A3711C]">
-                {node.type}
-              </span>
-            </div>
-            <span className="text-sm font-bold text-ink truncate block">
+      <div key={node.id} className="border-b border-divider/50 py-3 px-4">
+        <div className="flex items-center justify-between gap-4">
+          <div
+            className={`flex items-center gap-3 flex-1 min-w-0 ${hasChildren ? "cursor-pointer" : ""}`}
+            onClick={() => {
+              if (hasChildren) toggleExpand(node.id);
+            }}
+          >
+            {hasChildren ? (
+              <ChevronRight
+                className={`w-4 h-4 text-ink-muted shrink-0 transition-transform duration-200 ${
+                  isExpanded ? "rotate-90" : "rotate-0"
+                }`}
+              />
+            ) : (
+              <div className="w-4 h-4 shrink-0" />
+            )}
+
+            <span className="text-xs font-mono text-ink-muted shrink-0 min-w-[36px]">
+              {node.wbsCode}
+            </span>
+
+            <span
+              className={`text-sm font-bold truncate ${
+                node.type === "Summary" ? "text-ink" : "text-ink/80"
+              }`}
+            >
               {node.name}
             </span>
           </div>
 
-          {/* Stats: Progress, Status, Dates, Cost */}
-          <div className="hidden sm:flex items-center gap-6 shrink-0 w-[450px]">
-            {/* Progress Bar */}
-            <div className="w-24 shrink-0">
-              <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="hidden sm:flex items-center gap-5">
+              {/* Progress */}
+              <div className="w-24 flex items-center gap-2">
                 <div className="flex-1 h-1.5 bg-divider rounded-full overflow-hidden">
                   <div
-                    className={`h-full ${node.computedProgress === 100 ? "bg-emerald-500" : "bg-[#F3E8D2]0"}`}
+                    className={`h-full ${node.computedProgress === 100 ? "bg-emerald-500" : "bg-[#A3711C]"}`}
                     style={{ width: `${node.computedProgress}%` }}
                   />
                 </div>
-                <span className="text-xs font-mono font-bold text-ink-muted w-8 text-right">
+                <span
+                  className={`text-xs font-mono font-bold w-8 text-right ${
+                    node.computedProgress === 100 ? "text-emerald-500" : "text-[#A3711C]"
+                  }`}
+                >
                   {node.computedProgress}%
                 </span>
               </div>
-            </div>
 
-            {/* Status */}
-            <div className="w-24 shrink-0">
-              {node.status && (
-                <span
-                  className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-widest ${getStatusColor(node.status)}`}
-                >
-                  {node.status}
-                </span>
-              )}
-            </div>
-
-            {/* Dates */}
-            <div className="w-28 shrink-0">
-              <span className="text-xs font-mono font-medium text-ink-muted">
-                {formatDates(node.startDate, node.endDate)}
-              </span>
-            </div>
-
-            {/* Cost */}
-            <div className="w-24 shrink-0 text-right">
-              <span className="text-sm font-mono font-bold text-ink">
-                {taskCost > 0 ? `₹${taskCost.toLocaleString()}` : "—"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {hasChildren ? (
-            <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openEditSheet(node);
-                }}
-                className="p-2 text-ink-muted hover:text-[#A3711C] bg-panel rounded-full"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <div className="p-2 text-ink-muted">
-                <ChevronRight className="w-5 h-5" />
+              {/* Status */}
+              <div className="w-24 shrink-0">
+                {node.status && (
+                  <span
+                    className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-widest ${getStatusColor(
+                      node.status
+                    )}`}
+                  >
+                    {node.status}
+                  </span>
+                )}
               </div>
-            </>
-          ) : (
+
+              {/* Dates */}
+              <div className="w-28 shrink-0">
+                <span className="text-xs font-mono text-ink-muted">
+                  {formatDates(node.startDate, node.endDate)}
+                </span>
+              </div>
+
+              {/* Cost */}
+              <div className="w-24 shrink-0 text-right">
+                <span className="text-sm font-mono font-bold text-ink">
+                  {taskCost > 0 ? `₹${taskCost.toLocaleString("en-IN")}` : "—"}
+                </span>
+              </div>
+            </div>
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 openEditSheet(node);
               }}
-              className="p-2 text-[#A3711C] bg-[#F3E8D2] hover:bg-[#F3E8D2] rounded-full transition-colors"
+              className="p-2 text-ink-muted hover:text-[#A3711C] bg-panel rounded-xl transition-colors cursor-pointer"
             >
               <Edit2 className="w-4 h-4" />
             </button>
-          )}
+          </div>
         </div>
+
+        {hasChildren && isExpanded && (
+          <div className="mt-2 ml-4 pl-3 border-l border-divider/50 space-y-1">
+            {node.children.map((child: any) => renderAccordionTaskNode(child))}
+          </div>
+        )}
       </div>
     );
   };
 
-  const renderOutlineNode = (node: any, level = 0) => {
-    const taskCost = taskTotalsMap[node.id]?.totalActual || 0;
+  const renderAccordionLocation = (locationGroup: any) => {
+    const hasTasks = locationGroup.children && locationGroup.children.length > 0;
+    const isExpanded = expandedIds.has(locationGroup.id);
 
     return (
-      <div
-        key={node.id}
-        className="border-b border-divider/50 py-3 pl-4 pr-4 flex items-center justify-between"
-      >
+      <div key={locationGroup.id} className="mb-3">
         <div
-          className="flex items-center gap-3 flex-1 min-w-0"
-          style={{ paddingLeft: level * 20 }}
+          onClick={() => {
+            if (hasTasks) toggleExpand(locationGroup.id);
+          }}
+          className={`flex items-center justify-between p-3.5 bg-panel/60 hover:bg-panel transition-colors rounded-xl border border-divider/70 ${
+            hasTasks ? "cursor-pointer" : ""
+          }`}
         >
-          <span className="text-xs font-mono text-ink-muted min-w-[40px]">
-            {node.wbsCode}
-          </span>
-          <span
-            className={`text-sm font-bold truncate ${node.type === "Summary" ? "text-ink" : "text-ink/80"}`}
-          >
-            {node.name}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-6 shrink-0 w-[450px]">
-          <div className="w-24 flex items-center gap-2">
-            <div className="flex-1 h-1.5 bg-divider rounded-full overflow-hidden">
-              <div
-                className={`h-full ${node.computedProgress === 100 ? "bg-emerald-500" : "bg-[#F3E8D2]0"}`}
-                style={{ width: `${node.computedProgress}%` }}
+          <div className="flex items-center gap-3 min-w-0">
+            {hasTasks ? (
+              <ChevronRight
+                className={`w-4 h-4 text-ink-muted shrink-0 transition-transform duration-200 ${
+                  isExpanded ? "rotate-90" : "rotate-0"
+                }`}
               />
-            </div>
-            <span
-              className={`text-xs font-mono ${node.computedProgress === 100 ? "text-emerald-500" : "text-[#A3711C]"} font-bold w-8 text-right`}
-            >
-              {node.computedProgress}%
+            ) : (
+              <div className="w-4 h-4 shrink-0" />
+            )}
+            <span className="text-xs font-bold uppercase tracking-wide text-ink truncate">
+              {locationGroup.name}
+            </span>
+            <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-surface text-ink-muted border border-divider shrink-0">
+              {locationGroup.children.length}{" "}
+              {locationGroup.children.length === 1 ? "task" : "tasks"}
             </span>
           </div>
+        </div>
 
-          <div className="w-24 shrink-0">
-            {node.status && (
-              <span
-                className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-widest ${getStatusColor(node.status)}`}
-              >
-                {node.status}
-              </span>
+        {hasTasks && isExpanded && (
+          <div className="mt-2.5 ml-3 bg-surface rounded-xl border border-divider overflow-hidden divide-y divide-divider/50">
+            {locationGroup.children.map((task: any) => renderAccordionTaskNode(task))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderAccordionPhase = (phaseGroup: any) => {
+    const hasLocations = phaseGroup.children && phaseGroup.children.length > 0;
+    const isExpanded = expandedIds.has(phaseGroup.id);
+
+    return (
+      <div key={phaseGroup.id} className="mb-6">
+        <div
+          onClick={() => {
+            if (hasLocations) toggleExpand(phaseGroup.id);
+          }}
+          className={`flex items-center justify-between p-4 bg-surface hover:bg-panel transition-colors rounded-2xl border border-divider shadow-sm ${
+            hasLocations ? "cursor-pointer" : ""
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            {hasLocations ? (
+              <ChevronRight
+                className={`w-4 h-4 text-[#A3711C] shrink-0 transition-transform duration-200 ${
+                  isExpanded ? "rotate-90" : "rotate-0"
+                }`}
+              />
+            ) : (
+              <div className="w-4 h-4 shrink-0" />
+            )}
+            <span className="text-xs font-black uppercase tracking-widest text-[#A3711C] truncate">
+              {phaseGroup.name}
+            </span>
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#F3E8D2] text-[#A3711C] shrink-0">
+              {phaseGroup.children.length}{" "}
+              {phaseGroup.children.length === 1 ? "location" : "locations"}
+            </span>
+          </div>
+        </div>
+
+        {hasLocations && isExpanded && (
+          <div className="mt-3 pl-3 sm:pl-4 space-y-3">
+            {phaseGroup.children.map((locationGroup: any) =>
+              renderAccordionLocation(locationGroup)
             )}
           </div>
-
-          <div className="w-28 shrink-0">
-            <span className="text-xs font-mono text-ink-muted">
-              {formatDates(node.startDate, node.endDate)}
-            </span>
-          </div>
-
-          <div className="w-24 shrink-0 text-right">
-            <span className="text-sm font-mono font-bold text-ink">
-              {taskCost > 0 ? `₹${taskCost.toLocaleString()}` : "—"}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderOutlineTree = (nodes: any[], level = 0) => {
-    return nodes.map((node) => (
-      <React.Fragment key={node.id}>
-        {renderOutlineNode(node, level)}
-        {node.children.length > 0 &&
-          renderOutlineTree(node.children, level + 1)}
-      </React.Fragment>
-    ));
-  };
-
-  const phaseGroups = useMemo(() => buildPhaseLocationGroups(roots), [roots]);
-  const skipPhase = phaseGroups.length <= 1;
-
-  const renderOutlinePhaseGroup = (phaseGroup: any) => {
-    return (
-      <div key={phaseGroup.id} className="mb-8">
-        {!skipPhase && (
-          <h3 className="text-xs font-black uppercase tracking-widest text-[#A3711C] mb-3 pl-4">
-            {phaseGroup.name}
-          </h3>
         )}
-        {phaseGroup.children.map((locationGroup: any) => {
-          const skipLocation = phaseGroup.children.length <= 1;
-          return (
-            <div
-              key={locationGroup.id}
-              className={`${!skipPhase ? "mb-6 pl-4" : "mb-8"}`}
-            >
-              {!skipLocation && (
-                <h4 className="text-[11px] font-bold uppercase tracking-wide text-ink-muted mb-2 pl-2">
-                  {locationGroup.name}
-                </h4>
-              )}
-              <div className="bg-surface rounded-xl border border-divider overflow-hidden">
-                {renderOutlineTree(locationGroup.children)}
-              </div>
-            </div>
-          );
-        })}
       </div>
     );
   };
 
   return (
     <div className="flex flex-col h-full bg-surface-dark/5 min-h-[500px] rounded-3xl overflow-hidden relative">
-      {/* Top Header */}
-      <div className="bg-surface p-4 border-b border-divider flex items-center justify-between shrink-0">
-        <div className="flex items-center bg-panel rounded-xl p-1 shrink-0">
-          <button
-            onClick={() => setViewMode("drilldown")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${viewMode === "drilldown" ? "bg-surface text-ink shadow-sm" : "text-ink-muted"}`}
-          >
-            <ListTree className="w-3.5 h-3.5" /> Drill-down
-          </button>
-          <button
-            onClick={() => setViewMode("outline")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${viewMode === "outline" ? "bg-surface text-ink shadow-sm" : "text-ink-muted"}`}
-          >
-            <AlignLeft className="w-3.5 h-3.5" /> Outline
-          </button>
-        </div>
+      <div className="flex-1 overflow-y-auto no-scrollbar p-4 bg-surface pb-24">
+        {phaseGroups.length === 0 ? (
+          <div className="p-8 text-center bg-surface border border-divider rounded-2xl">
+            <p className="text-ink-muted text-sm">No WBS tasks found.</p>
+          </div>
+        ) : (
+          phaseGroups.map(renderAccordionPhase)
+        )}
       </div>
 
-      {viewMode === "drilldown" ? (
-        <div className="flex flex-col flex-1 overflow-hidden">
-          {/* Breadcrumb */}
-          {currentParentNode && (
-            <div className="bg-panel px-4 py-3 border-b border-divider flex items-center gap-2 shrink-0 overflow-x-auto no-scrollbar">
-              <button
-                onClick={navigateToRoot}
-                className="text-[#A3711C] text-xs font-black uppercase tracking-widest whitespace-nowrap"
-              >
-                All Locations
-              </button>
-              {parentChain.map((p, idx) => (
-                <React.Fragment key={p.id}>
-                  <ChevronRight className="w-3.5 h-3.5 text-ink-muted shrink-0" />
-                  <button
-                    onClick={() => navigateToBreadcrumb(p)}
-                    className={`text-xs font-black uppercase tracking-widest whitespace-nowrap ${idx === parentChain.length - 1 ? "text-ink" : "text-[#A3711C]"}`}
-                  >
-                    {p.name}
-                  </button>
-                </React.Fragment>
-              ))}
-            </div>
-          )}
-
-          {/* Drilldown List */}
-          <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
-            {currentNodes.length === 0 ? (
-              <div className="p-8 text-center bg-surface border-b border-divider">
-                <p className="text-ink-muted text-sm mb-4">
-                  No work packages here.
-                </p>
-              </div>
-            ) : (
-              currentNodes.map(renderDrilldownRow)
-            )}
-          </div>
-
-          {/* Add Button */}
-          <RoleGuard
-            allowedRoles={[
-              "Project Manager",
-              "Site Engineer",
-              "Admin",
-              "Admin",
-            ]}
-            projectId={projectId}
-            requireWriteAccess
+      {/* Floating Add Button */}
+      <RoleGuard
+        allowedRoles={["Project Manager", "Site Engineer", "Admin"]}
+        projectId={projectId}
+        requireWriteAccess
+      >
+        <div className="absolute bottom-6 right-6 z-20">
+          <button
+            onClick={openAddSheet}
+            className="bg-[#A3711C] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-[#8a5d16] active:scale-95 transition-all cursor-pointer"
           >
-            <div className="absolute bottom-6 right-6 z-20">
-              <button
-                onClick={openAddSheet}
-                className="bg-[#A3711C] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-[#8a5d16] active:scale-95 transition-all"
-              >
-                <Plus className="w-6 h-6" />
-              </button>
-            </div>
-          </RoleGuard>
+            <Plus className="w-6 h-6" />
+          </button>
         </div>
-      ) : (
-        <div className="flex-1 overflow-y-auto no-scrollbar p-4 bg-surface pb-12">
-          {phaseGroups.map(renderOutlinePhaseGroup)}
-        </div>
-      )}
+      </RoleGuard>
 
       {/* Task Bottom Sheet */}
       <AnimatePresence>
@@ -441,7 +346,7 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
             projectId={projectId}
             mode={sheetState.mode}
             task={sheetState.task}
-            parentNode={currentParentNode}
+            parentNode={null}
             onClose={() => setSheetState(null)}
             onOpenFullForm={onOpenFullForm}
             onOpenDailyLog={onOpenDailyLog}
@@ -453,7 +358,6 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
 };
 
 // --- Bottom Sheet Component ---
-// Similar to MobileTaskSheet but could be slightly wider
 
 interface TabletTaskSheetProps {
   projectId: string;
@@ -474,8 +378,10 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
   onOpenFullForm,
   onOpenDailyLog,
 }) => {
-  const user = useAuthStore(state => state.user);
-  const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
+  const user = useAuthStore((state) => state.user);
+  const basePath = user?.currentOrgId
+    ? `organizations/${user.currentOrgId}/projects/${projectId}`
+    : `projects/${projectId}`;
   const [designation, setDesignation] = useState(task?.name || "");
   const [status, setStatus] = useState(task?.status || "Pending");
   const [isSaving, setIsSaving] = useState(false);
@@ -523,7 +429,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
       handleFirestoreError(
         e,
         mode === "add" ? OperationType.CREATE : OperationType.UPDATE,
-        `${basePath}/tasks`,
+        `${basePath}/tasks`
       );
     } finally {
       setIsSaving(false);
@@ -537,11 +443,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
       await deleteDoc(doc(db, `${basePath}/tasks`, task.id));
       onClose();
     } catch (e) {
-      handleFirestoreError(
-        e,
-        OperationType.DELETE,
-        `${basePath}/tasks`,
-      );
+      handleFirestoreError(e, OperationType.DELETE, `${basePath}/tasks`);
     }
   };
 
@@ -717,7 +619,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
                 onClose();
                 onOpenFullForm(
                   mode === "edit" ? task : undefined,
-                  mode === "add" ? parentNode?.id : undefined,
+                  mode === "add" ? parentNode?.id : undefined
                 );
               }}
               className="w-full bg-panel text-ink py-4 rounded-xl font-bold text-sm hover:bg-divider transition"

@@ -16,6 +16,8 @@ import { useProjectsQuery } from "../hooks/queries";
 import { CreateProjectModal } from "../features/projects/components/CreateProjectModal";
 import { EditProjectModal } from "../features/projects/components/EditProjectModal";
 import { Edit2 } from "lucide-react";
+import { SyncStatus } from "../components/SyncStatus";
+import { TelegramBotStatus } from "../components/TelegramBotStatus";
 
 export const PortfolioPage: React.FC = () => {
   const user = useAuthStore((state) => state.user);
@@ -114,7 +116,9 @@ export const PortfolioPage: React.FC = () => {
               Construction Management App
             </p>
           </div>
-          <div className="flex flex-wrap sm:flex-nowrap gap-3 sm:gap-4 w-full md:w-auto">
+          <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 w-full md:w-auto items-center">
+            <SyncStatus />
+            <TelegramBotStatus />
             <button
               onClick={() => logout()}
               className="bg-surface text-rose-500 border border-divider p-3 sm:p-4 md:p-5 rounded-[16px] sm:rounded-2xl md:rounded-3xl hover:bg-rose-50 apple-transition active:scale-95 shadow-sm hover:shadow-md shrink-0"

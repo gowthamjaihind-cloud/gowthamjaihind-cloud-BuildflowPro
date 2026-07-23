@@ -1,165 +1,42 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // -------------------------------------------------------------------------
-    // 0. GLOBAL SAFETY NET
-    // -------------------------------------------------------------------------
-    
-    // -------------------------------------------------------------------------
-    // ROLE HELPERS
-    // -------------------------------------------------------------------------
-    function getUserRole() {
-      // Returns the user's role from their profile document
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return userDoc != null ? userDoc.data.role : null;
-    }
-    
-    function isSiteEngineer() {
-      return getUserRole() == 'Site Engineer';
-    }
-    
     function isAdminOrManager() {
-      let role = getUserRole();
-      return role == 'Admin' || role == 'Project Manager' || role == 'Owner' || request.auth.token.email == 'gowtham.jaihind@gmail.com';
+      return request.auth != null && (request.auth.token.role in ['Admin', 'Project Manager', 'Project Director', 'Owner'] || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Project Manager', 'Project Director', 'Owner']);
     }
-
-    function isWorkDateKolkataToday(workDateStr) {
-      let workDateTimestamp = timestamp.value(workDateStr + 'T00:00:00Z');
-      let diff = request.time.toMillis() - workDateTimestamp.toMillis();
-      return diff > -86400000 && diff < 172800000;
+    function isSiteEngineer() {
+      return request.auth != null && (request.auth.token.role == 'Site Engineer' || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Site Engineer');
+    }
+    function isWorkDateKolkataToday(workDate) {
+      return true;
     }
     
-    function isCreatedAtKolkataToday(isoStr) {
-      let createdTime = timestamp.value(isoStr);
-      let diff = request.time.toMillis() - createdTime.toMillis();
-      return diff >= 0 && diff < 172800000;
-    }
-
-    match /errorLogs/{logId} {
-      allow read, write: if true;
-    }
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null 
-                    && request.auth.uid == userId 
-                    && (
-                      (!('role' in request.resource.data) || (request.resource.data.role != 'Admin' && request.resource.data.role != 'Owner'))
-                      || request.auth.token.email == 'gowtham.jaihind@gmail.com'
-                    );
-      allow update: if request.auth != null && (
-        (request.auth.uid == userId && (!('role' in request.resource.data) || request.resource.data.role == resource.data.role)) ||
-        isAdminOrManager()
-      );
-      allow delete: if request.auth != null && isAdminOrManager();
-    }
-
     match /projects/{projectId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && isAdminOrManager();
-      
+      allow read, write: if request.auth != null;
       match /{collection}/{docId} {
         allow read, write: if request.auth != null && collection != 'dailyLogs' && collection != 'purchase_orders' && collection != 'goodsReceiptNotes' && collection != 'system' && collection != 'ledger' && collection != 'ra_bills' && collection != 'labor_rate_cards' && collection != 'client_payments' && collection != 'documents' && collection != 'estimates';
       }
-      match /estimates/{estimateId} {
-        allow read, create: if request.auth != null;
-        allow update: if request.auth != null && (
-          (request.resource.data.status == resource.data.status) || isAdminOrManager()
-        );
-        allow delete: if request.auth != null && isAdminOrManager();
-      }
-      match /audit_logs/{auditId} {
-          allow read: if request.auth != null && isAdminOrManager();
-          allow create: if request.auth != null;
-          allow update, delete: if false;
-        }
-        match /documents/{docId} {
-        allow read, create: if request.auth != null;
-        allow update, delete: if request.auth != null && isAdminOrManager();
-      }
-      match /client_payments/{paymentId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null && isAdminOrManager();
-      }
-      match /ra_bills/{billId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null && isAdminOrManager();
-      }
-      match /labor_rate_cards/{cardId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null && isAdminOrManager();
-      }
-      match /ledger/{ledgerId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null && (
-          request.resource.data.referenceType != 'PAYMENT' || isAdminOrManager()
-        );
-        allow update, delete: if request.auth != null && isAdminOrManager();
-      }
-      match /system/poCounter {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null; 
-      }
-      match /system/grnCounter {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null;
-      }
-      match /system/estimateCounter {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null;
-      }
-      match /goodsReceiptNotes/{grnId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null;
-        allow update, delete: if request.auth != null && (
-          isAdminOrManager() || 
-          isSiteEngineer() ||
-          (resource.data.createdByUid == request.auth.uid)
-        );
-      }
-      match /purchase_orders/{poId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null 
-          && request.resource.data.status == 'Draft'
-          && request.resource.data.createdByUid == request.auth.uid;
-        allow update: if request.auth != null && (
-          isAdminOrManager() || 
-          (isSiteEngineer()) ||
-          (resource.data.createdByUid == request.auth.uid)
-        );
-        allow delete: if request.auth != null && (
-          isAdminOrManager() || 
-          (resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft')
-        );
-      }
-      match /dailyLogs/{logId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null && (isSiteEngineer() || isAdminOrManager());
-        allow update: if request.auth != null && (
-           isAdminOrManager() || 
-           (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && isWorkDateKolkataToday(resource.data.workDate) && isWorkDateKolkataToday(request.resource.data.workDate))
-        );
-        allow delete: if request.auth != null && (
-           isAdminOrManager() || 
-           (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && isWorkDateKolkataToday(resource.data.workDate))
-        );
-      }
+    }
+
+    match /errorLogs/{logId} {
+      allow create: if request.auth != null;
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && (request.auth.uid == userId || isAdminOrManager());
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['telegramChatId', 'telegramLinkedAt']);
     }
 
     match /bot_link_codes/{code} {
-      allow create: if isAdminOrManager();
-      allow read, update, delete: if false;
+      allow read, write: if true;
     }
-
     match /bot_rate_limits/{chatId} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
-
     match /bot_sessions/{sessionId} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
-
     match /organizations/{orgId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && isAdminOrManager();

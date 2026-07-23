@@ -12,6 +12,7 @@ import {
   handleFirestoreError,
   OperationType,
 } from "../firebase";
+import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import {
   CostEntry,
   Task,
@@ -517,7 +518,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
     }
   };
 
-  const exportToCSV = () => {
+  const getReportData = () => {
     const headers = [
       "Task Name",
       "Planned Material",
@@ -544,22 +545,34 @@ export const CostManagement: React.FC<CostManagementProps> = ({
         totals.totalPlanned,
         totals.totalActual,
         totals.totalPlanned - totals.totalActual,
-      ].join(",");
+      ];
     });
 
-    const csvContent = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `Project_Cost_Report_${new Date().toISOString().split("T")[0]}.csv`,
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    return { headers, rows };
+  };
+
+  const handleExportCSV = () => {
+    const { headers, rows } = getReportData();
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToCSV(`Project_Cost_Report_${dateStr}`, headers, rows);
+  };
+
+  const handleExportPDF = () => {
+    const { headers, rows } = getReportData();
+    const formattedRows = rows.map((r) => [
+      r[0],
+      `₹${Number(r[1]).toLocaleString("en-IN")}`,
+      `₹${Number(r[2]).toLocaleString("en-IN")}`,
+      `₹${Number(r[3]).toLocaleString("en-IN")}`,
+      `₹${Number(r[4]).toLocaleString("en-IN")}`,
+      `₹${Number(r[5]).toLocaleString("en-IN")}`,
+      `₹${Number(r[6]).toLocaleString("en-IN")}`,
+      `₹${Number(r[7]).toLocaleString("en-IN")}`,
+      `₹${Number(r[8]).toLocaleString("en-IN")}`,
+      `₹${Number(r[9]).toLocaleString("en-IN")}`,
+    ]);
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToPDF("Project Cost Management Report", `Project ID: ${projectId}`, headers, formattedRows, `Project_Cost_Report_${dateStr}`);
   };
 
   const startEditing = (task: Task) => {
@@ -1169,12 +1182,18 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           ))}
         </div>
 
-        <div className="flex items-center gap-4 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <button
-            onClick={exportToCSV}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-surface/30 text-ink-muted px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-surface/50 hover:text-ink shadow-sm apple-transition"
+            onClick={handleExportCSV}
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-surface/30 text-ink-muted px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] hover:bg-surface/50 hover:text-ink shadow-sm apple-transition border border-divider/40"
           >
-            <Download className="w-4 h-4" /> Export CSV
+            <Download className="w-3.5 h-3.5" /> CSV
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-surface/30 text-ink-muted px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] hover:bg-surface/50 hover:text-ink shadow-sm apple-transition border border-divider/40"
+          >
+            <Download className="w-3.5 h-3.5 text-amber-600" /> PDF
           </button>
           <button
             onClick={() => {

@@ -107,6 +107,7 @@ export interface Task {
   laborAllocations?: LaborAllocation[];
   budgetedCost?: number;
   actualCost?: number;
+  isChangeOrder?: boolean;
 
   // Detailed Cost Breakdown
   plannedMaterialCost?: number;
@@ -374,6 +375,7 @@ export interface EstimateLineItem {
   unit: string;
   rate: number;
   totalAmount: number;
+  isChangeOrder?: boolean;
 }
 
 export interface ClientEstimate {

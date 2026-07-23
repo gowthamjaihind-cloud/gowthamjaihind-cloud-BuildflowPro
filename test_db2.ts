@@ -1,12 +1,10 @@
-import { initializeApp, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-import firebaseConfig from "./firebase-applet-config.json" with { type: "json" };
-try {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-  const adminApp = initializeApp({ credential: cert(serviceAccount) });
-  const db = getFirestore(adminApp, firebaseConfig.firestoreDatabaseId);
-  db.collection("users").get().then((snap) => {
-    snap.docs.forEach(d => console.log(d.id, d.data().email, d.data().botPin));
-    process.exit(0);
-  });
-} catch (e) { console.error(e) }
+import { db } from "./src/server/firebase_client";
+import { collection, getDocs } from "firebase/firestore";
+
+async function run() {
+  const codes = await getDocs(collection(db, "bot_link_codes"));
+  console.log("Codes:");
+  codes.docs.forEach(d => console.log(d.id, d.data()));
+  process.exit(0);
+}
+run().catch(console.error);

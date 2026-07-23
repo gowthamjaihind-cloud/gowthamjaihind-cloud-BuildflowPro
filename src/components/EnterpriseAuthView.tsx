@@ -3,15 +3,17 @@ import { UserProfile, UserRole, Project } from "../types";
 import {
   db,
   collection,
-  getDocs,
+  getDocs, getDoc,
   doc,
   setDoc,
   updateDoc,
   query,
+  where,
   onSnapshot,
   writeBatch,
   deleteDoc,
 } from "../firebase";
+import { deleteField } from "firebase/firestore";
 import {
   ShieldCheck,
   Users,
@@ -25,6 +27,7 @@ import {
   X,
   MessageSquare,
   Send,
+  CheckCircle2,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { handleFirestoreError, OperationType } from "../firebase";
@@ -43,9 +46,72 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
     const [loading, setLoading] = useState(true);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingRole, setEditingRole] = useState<UserRole>("Viewer");
+  
   const [editingProjectAccess, setEditingProjectAccess] = useState<
     Record<string, "read" | "write" | "none">
   >({});
+  
+  const [showLinkCode, setShowLinkCode] = useState<{code: string, displayCode: string, email: string} | null>(null);
+
+  const unlinkBot = async (uid: string) => {
+    try {
+      await updateDoc(doc(db, "users", uid), {
+        telegramChatId: deleteField(),
+        telegramLinkedAt: deleteField()
+      });
+    } catch (err: any) {
+      console.error("Error unlinking:", err);
+      alert("Failed to unlink bot");
+    }
+  };
+
+  const generateLinkCode = async (uid: string, email: string) => {
+    try {
+      const q = query(
+        collection(db, "bot_link_codes"),
+        where("userId", "==", uid),
+        where("used", "==", false)
+      );
+      const snap = await getDocs(q);
+      const now = Date.now();
+      
+      let foundCode = null;
+
+      snap.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.expiresAt > now) {
+          foundCode = docSnap.id;
+        }
+      });
+
+      if (foundCode) {
+        const rawCode = foundCode.replace("-", "");
+        const displayCode = `${rawCode.slice(0,4)}-${rawCode.slice(4,8)}`;
+        setShowLinkCode({code: rawCode, displayCode, email});
+        return;
+      }
+      
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let randomString = "";
+      for (let i = 0; i < 8; i++) {
+        randomString += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const rawCode = randomString;
+      const displayCode = `${rawCode.slice(0,4)}-${rawCode.slice(4,8)}`;
+      
+      await setDoc(doc(db, "bot_link_codes", rawCode), {
+        userId: uid,
+        email,
+        createdAt: now,
+        expiresAt: now + 15 * 60 * 1000,
+        used: false
+      });
+      
+      setShowLinkCode({code: rawCode, displayCode, email});
+    } catch (e) {
+      console.error(e);
+    }
+  };
   
   const roles: UserRole[] = [
     "Owner",
@@ -57,27 +123,36 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
   ];
 
   useEffect(() => {
-    // We only fetch if they are an admin or we want to show it disabled
-    const fetchUsers = async () => {
-      try {
-        const uSnap = await getDocs(collection(db, "users"));
-        setUsers(
-          uSnap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UserProfile),
-        );
-      } catch (err: any) {
-        console.error(err);
-        if (err.message?.includes("Missing or insufficient permissions")) {
-          console.error("You do not have permission to view users.");
-        } else {
-          handleFirestoreError(err, OperationType.LIST, "users");
-        }
-      } finally {
+    if (currentUser?.role !== "Admin" && currentUser?.role !== "Owner") {
+      setLoading(false);
+      return;
+    }
+
+    // Real-time listener for users
+    const unsubscribeUsers = onSnapshot(
+      collection(db, "users"),
+      (uSnap) => {
+        const all = uSnap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UserProfile);
+        const valid = all.filter((u) => {
+          if (!u.email || typeof u.email !== "string" || u.email.trim() === "") return false;
+          const lowerEmail = u.email.toLowerCase().trim();
+          if (lowerEmail.includes("anonymous")) return false;
+          if (lowerEmail.includes("telegram-bot") || lowerEmail.includes("telegrambot")) return false;
+          if (lowerEmail.endsWith("@system") || lowerEmail.includes("bot@")) return false;
+          if (!lowerEmail.includes("@")) return false;
+          return true;
+        });
+        setUsers(valid);
+        setLoading(false);
+      },
+      (err: any) => {
+        console.error("Error listening to users:", err);
         setLoading(false);
       }
-    };
+    );
 
     // Also fetch projects to assign access
-    const unsubscribe = onSnapshot(
+    const unsubscribeProjects = onSnapshot(
       collection(db, "projects"),
       (snap) => {
         setProjects(
@@ -89,12 +164,11 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       },
     );
 
-    
-    fetchUsers();
     return () => {
-      unsubscribe();
-          };
-  }, []);
+      unsubscribeUsers();
+      unsubscribeProjects();
+    };
+  }, [currentUser?.role]);
 
   const handleUpdateRole = async (userId: string) => {
     if (currentUser.role !== "Admin" && currentUser.role !== "Owner") {
@@ -123,48 +197,6 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
     }
   };
 
-  const handleGenerateLinkCode = async (u: UserProfile) => {
-    if (currentUser.role !== "Admin" && currentUser.role !== "Owner") return;
-
-    // Cryptographically secure. Unambiguous alphabet (no 0/O, no 1/I/L).
-    const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-    const bytes = new Uint8Array(8);
-    crypto.getRandomValues(bytes);
-    const code = Array.from(bytes)
-      .map((b) => ALPHABET[b % ALPHABET.length])
-      .join("");
-
-    try {
-      await setDoc(doc(db, "bot_link_codes", code), {
-        email: u.email,
-        userId: u.uid,
-        createdAt: Date.now(),
-        expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
-        used: false,
-        createdByUid: currentUser.uid,
-      });
-      window.alert(
-        `One-time link code for ${u.displayName || u.email}:\n\n${code}\n\n` +
-        `They must send:  /link ${code}\n\n` +
-        `Expires in 15 minutes. Single use. It will not be shown again.`
-      );
-    } catch (err: any) {
-      handleFirestoreError(err, OperationType.CREATE, "bot_link_codes");
-    }
-  };
-
-  const handleUnlinkTelegram = async (u: UserProfile) => {
-    if (currentUser.role !== "Admin" && currentUser.role !== "Owner") return;
-    try {
-      await updateDoc(doc(db, "users", u.uid), {
-        telegramChatId: null,
-        telegramLinkedAt: null,
-      });
-      setUsers(users.map(user => user.uid === u.uid ? { ...user, telegramChatId: undefined, telegramLinkedAt: undefined } : user));
-    } catch (err: any) {
-      handleFirestoreError(err, OperationType.UPDATE, "users");
-    }
-  };
 
   if (loading) {
     return (
@@ -190,33 +222,6 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
           </div>
         </div>
       )}
-
-      <div className="flex gap-8 mb-8">
-        <div className="flex-1 bg-surface p-8 rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-divider flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-[#0088CC]/10 text-[#0088CC] rounded-2xl">
-              <Send className="w-8 h-8" />
-            </div>
-            <div>
-              <div className="font-bold text-xl text-ink">
-                Telegram Integration
-              </div>
-              <div className="text-sm text-ink-muted mt-1">
-                Manage bot configuration and global alerts
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-xs font-black uppercase tracking-widest text-[#0088CC] bg-[#0088CC]/10 px-3 py-1.5 rounded-lg">
-              Active
-            </span>
-            <button className="bg-panel text-ink/80 px-6 py-3 rounded-2xl font-bold text-sm tracking-wide hover:bg-divider transition-colors">
-              Configure Bot
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div className="bg-surface rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-divider overflow-hidden">
         <div className="p-8 border-b border-divider flex items-center justify-between bg-panel/50">
           <h2 className="text-xl font-bold flex items-center gap-3">
@@ -228,9 +233,8 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-divider text-ink-muted text-[11px] uppercase tracking-widest font-black">
-                <th className="px-8 py-6">User Identity</th>
+                <th className="px-8 py-6">User Email / Identity</th>
                 <th className="px-8 py-6">Platform Role</th>
-                <th className="px-8 py-6">Telegram Link</th>
                 <th className="px-8 py-6">Projects Access</th>
                 <th className="px-8 py-6 text-right">Actions</th>
               </tr>
@@ -239,26 +243,37 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
               {users.map((u) => (
                 <tr key={u.uid} className="hover:bg-panel/50 transition-colors">
                   <td className="px-8 py-6">
-                    <div className="flex items-center gap-4">
-                      {u.photoURL ? (
-                        <img
-                          src={u.photoURL}
-                          alt=""
-                          className="w-10 h-10 rounded-full bg-divider"
-                        />
+                    <div className="font-bold text-ink text-sm">{u.email}</div>
+                    <div className="mt-2 flex items-center gap-2">
+                      {u.telegramChatId ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[#34C759] bg-[#34C759]/10 px-2.5 py-1 rounded-md border border-[#34C759]/20 flex items-center gap-1 font-bold text-xs">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Telegram Linked
+                          </span>
+                          <button
+                            onClick={() => unlinkBot(u.uid)}
+                            disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
+                            className="text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded-md transition-colors disabled:opacity-50"
+                            title="Unlink Telegram Bot"
+                          >
+                            Unlink
+                          </button>
+                        </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">
-                          {u.displayName.charAt(0)}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-ink-muted bg-panel px-2.5 py-1 rounded-md border border-divider text-xs font-bold">
+                            Telegram Not Linked
+                          </span>
+                          <button
+                            onClick={() => generateLinkCode(u.uid, u.email)}
+                            disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
+                            className="text-xs font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                            title="Generate Telegram Link Code"
+                          >
+                            <Send className="w-3.5 h-3.5" /> Link Bot
+                          </button>
                         </div>
                       )}
-                      <div>
-                        <div className="font-bold text-ink">
-                          {u.displayName}
-                        </div>
-                        <div className="text-[13px] text-ink-muted">
-                          {u.email}
-                        </div>
-                      </div>
                     </div>
                   </td>
                   <td className="px-8 py-6">
@@ -294,27 +309,6 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                           <span className="text-ink-muted bg-panel px-3 py-1.5 rounded-lg border border-divider w-fit">
                             {u.role || "Viewer"}
                           </span>
-                        )}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-8 py-6">
-                    {u.telegramChatId ? (
-                      <div className="flex flex-col gap-1">
-                        <span className="font-mono text-sm tracking-widest text-[#34C759] bg-[#34C759]/10 px-3 py-1.5 rounded-lg border border-[#34C759]/20 w-fit">
-                          Linked
-                        </span>
-                        { (currentUser.role === "Admin" || currentUser.role === "Owner") && (
-                          <button onClick={() => handleUnlinkTelegram(u)} className="text-xs text-rose-500 hover:underline w-fit">Unlink</button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        <span className="text-ink-muted italic text-sm">
-                          Not linked
-                        </span>
-                        { (currentUser.role === "Admin" || currentUser.role === "Owner") && (
-                          <button onClick={() => handleGenerateLinkCode(u)} className="text-xs text-primary font-bold hover:underline w-fit">Generate Code</button>
                         )}
                       </div>
                     )}
@@ -440,6 +434,32 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       </div>
 
       
+
+      {showLinkCode && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-surface w-full max-w-md rounded-3xl p-8 border border-divider shadow-2xl relative">
+            <button
+              onClick={() => setShowLinkCode(null)}
+              className="absolute right-6 top-6 p-2 bg-panel rounded-full hover:bg-divider transition-colors"
+            >
+              <X className="w-5 h-5 text-ink-muted" />
+            </button>
+            <h2 className="text-2xl font-black text-ink mb-2">Telegram Link Code</h2>
+            <p className="text-ink-muted font-medium mb-6">
+              Link code for <b>{showLinkCode.email}</b>
+            </p>
+            <div className="bg-panel rounded-2xl p-6 mb-6 text-center border border-divider">
+              <p className="text-sm font-bold text-ink-muted mb-3 uppercase tracking-wider">Ask them to send:</p>
+              <code className="text-3xl font-black text-primary bg-primary/10 px-4 py-2 rounded-xl">
+                /link {showLinkCode.displayCode}
+              </code>
+            </div>
+            <p className="text-center text-sm font-medium text-amber-600 bg-amber-50 py-3 rounded-xl">
+              Expires in 15 minutes.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { motion } from "motion/react";
 import {
   Plus,
@@ -254,6 +255,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
           unit: "Lump Sum",
           rate: 0,
           totalAmount: 0,
+          isChangeOrder: task?.isChangeOrder || false,
         };
       },
     );
@@ -389,33 +391,91 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
   const remainingMaterialBudget = scopedCost.plannedMaterial - scopedCost.actualMaterial;
 
   if (selectedEstimate) {
+    const baseContractItems = selectedEstimate.items.filter((item) => !item.isChangeOrder);
+    const changeOrderItems = selectedEstimate.items.filter((item) => item.isChangeOrder);
+    const baseSubTotal = baseContractItems.reduce((sum, item) => sum + item.totalAmount, 0);
+    const coSubTotal = changeOrderItems.reduce((sum, item) => sum + item.totalAmount, 0);
+
+    const handleEstimateExportCSV = () => {
+      if (!selectedEstimate) return;
+      const headers = ["Description", "Quantity", "Unit", "Rate (₹)", "Total Amount (₹)", "Classification"];
+      const rows = (selectedEstimate.items || []).map((item) => [
+        item.description || "",
+        item.quantity || 0,
+        item.unit || "",
+        item.rate || 0,
+        item.totalAmount || 0,
+        item.isChangeOrder ? "Change Order" : "Base Contract",
+      ]);
+      exportToCSV(`Estimate_${selectedEstimate.estimateNumber}`, headers, rows);
+    };
+
+    const handleEstimateExportPDF = () => {
+      if (!selectedEstimate) return;
+      const headers = ["Description", "Qty", "Unit", "Rate (₹)", "Total (₹)", "Type"];
+      const rows = (selectedEstimate.items || []).map((item) => [
+        item.description || "",
+        item.quantity || 0,
+        item.unit || "",
+        `₹${(item.rate || 0).toLocaleString("en-IN")}`,
+        `₹${(item.totalAmount || 0).toLocaleString("en-IN")}`,
+        item.isChangeOrder ? "Change Order" : "Base Contract",
+      ]);
+      exportToPDF(
+        `CLIENT ESTIMATE: ${selectedEstimate.estimateNumber}`,
+        `Client: ${selectedEstimate.clientName || "N/A"} | Date: ${new Date(selectedEstimate.dateCreated).toLocaleDateString()} | Total: ₹${selectedEstimate.totalAmount.toLocaleString("en-IN")}`,
+        headers,
+        rows,
+        `Estimate_${selectedEstimate.estimateNumber}`
+      );
+    };
+
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setSelectedEstimateId(null)}
-            className="p-2 bg-surface border border-white/20 rounded-xl hover:bg-panel transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-ink" />
-          </button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-ink">
-                Estimate {selectedEstimate.estimateNumber}
-              </h2>
-              <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(selectedEstimate.status)}`}
-              >
-                {getStatusIcon(selectedEstimate.status)}
-                {selectedEstimate.status}
-              </span>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setSelectedEstimateId(null)}
+              className="p-2 bg-surface border border-white/20 rounded-xl hover:bg-panel transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-ink" />
+            </button>
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-ink">
+                  Estimate {selectedEstimate.estimateNumber}
+                </h2>
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(selectedEstimate.status)}`}
+                >
+                  {getStatusIcon(selectedEstimate.status)}
+                  {selectedEstimate.status}
+                </span>
+              </div>
+              <p className="text-ink-muted text-sm mt-1">
+                Created on{" "}
+                {new Date(selectedEstimate.dateCreated).toLocaleDateString()} •
+                Valid until{" "}
+                {new Date(selectedEstimate.dateValidUntil).toLocaleDateString()}
+              </p>
             </div>
-            <p className="text-ink-muted text-sm mt-1">
-              Created on{" "}
-              {new Date(selectedEstimate.dateCreated).toLocaleDateString()} •
-              Valid until{" "}
-              {new Date(selectedEstimate.dateValidUntil).toLocaleDateString()}
-            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleEstimateExportCSV}
+              className="flex items-center gap-1.5 px-3 py-2 bg-panel hover:bg-divider border border-divider rounded-xl text-xs font-bold uppercase tracking-wider text-ink transition cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-slate-700" />
+              CSV
+            </button>
+            <button
+              onClick={handleEstimateExportPDF}
+              className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              PDF
+            </button>
           </div>
         </div>
 
@@ -450,116 +510,174 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     Add items manually or sync from your WBS/Tasks list.
                   </p>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {selectedEstimate.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="bg-panel border border-white/10 rounded-xl p-4 flex flex-col gap-3 group relative"
+              ) : (() => {
+                const renderItemCard = (item: EstimateLineItem) => (
+                  <div
+                    key={item.id}
+                    className="bg-panel border border-white/10 rounded-xl p-4 flex flex-col gap-3 group relative"
+                  >
+                    <button
+                      onClick={() => removeLineItem(item.id)}
+                      className="absolute top-4 right-4 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all pointer-events-none group-hover:pointer-events-auto"
                     >
-                      <button
-                        onClick={() => removeLineItem(item.id)}
-                        className="absolute top-4 right-4 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all pointer-events-none group-hover:pointer-events-auto"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-8">
-                        <div>
-                          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
-                            Task / Item Name
-                          </label>
-                          <input
-                            type="text"
-                            value={item.taskName}
-                            onChange={(e) =>
-                              updateLineItem(
-                                item.id,
-                                "taskName",
-                                e.target.value,
-                              )
-                            }
-                            className="w-full bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm text-ink outline-none focus:border-primary/50"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
-                            Description
-                          </label>
-                          <input
-                            type="text"
-                            value={item.description}
-                            onChange={(e) =>
-                              updateLineItem(
-                                item.id,
-                                "description",
-                                e.target.value,
-                              )
-                            }
-                            className="w-full bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm text-ink outline-none focus:border-primary/50"
-                          />
-                        </div>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-8">
+                      <div>
+                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
+                          Task / Item Name
+                        </label>
+                        <input
+                          type="text"
+                          value={item.taskName}
+                          onChange={(e) =>
+                            updateLineItem(
+                              item.id,
+                              "taskName",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm text-ink outline-none focus:border-primary/50"
+                        />
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-white/5 pt-3">
-                        <div>
-                          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
-                            Quantity
-                          </label>
-                          <input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateLineItem(
-                                item.id,
-                                "quantity",
-                                parseFloat(e.target.value),
-                              )
-                            }
-                            className="w-full bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm text-ink outline-none focus:border-primary/50"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
-                            Unit
-                          </label>
-                          <input
-                            type="text"
-                            value={item.unit}
-                            onChange={(e) =>
-                              updateLineItem(item.id, "unit", e.target.value)
-                            }
-                            className="w-full bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm text-ink outline-none focus:border-primary/50"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
-                            Rate (₹)
-                          </label>
-                          <input
-                            type="number"
-                            value={item.rate}
-                            onChange={(e) =>
-                              updateLineItem(
-                                item.id,
-                                "rate",
-                                parseFloat(e.target.value),
-                              )
-                            }
-                            className="w-full bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm text-ink outline-none focus:border-primary/50"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
-                            Total (₹)
-                          </label>
-                          <div className="w-full bg-surface/50 border border-transparent rounded-lg px-3 py-1.5 text-sm text-ink font-bold">
-                            {item.totalAmount.toLocaleString()}
-                          </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
+                          Description
+                        </label>
+                        <input
+                          type="text"
+                          value={item.description}
+                          onChange={(e) =>
+                            updateLineItem(
+                              item.id,
+                              "description",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm text-ink outline-none focus:border-primary/50"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-white/5 pt-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
+                          Quantity
+                        </label>
+                        <input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            updateLineItem(
+                              item.id,
+                              "quantity",
+                              parseFloat(e.target.value),
+                            )
+                          }
+                          className="w-full bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm text-ink outline-none focus:border-primary/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
+                          Unit
+                        </label>
+                        <input
+                          type="text"
+                          value={item.unit}
+                          onChange={(e) =>
+                            updateLineItem(item.id, "unit", e.target.value)
+                          }
+                          className="w-full bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm text-ink outline-none focus:border-primary/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
+                          Rate (₹)
+                        </label>
+                        <input
+                          type="number"
+                          value={item.rate}
+                          onChange={(e) =>
+                            updateLineItem(
+                              item.id,
+                              "rate",
+                              parseFloat(e.target.value),
+                            )
+                          }
+                          className="w-full bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm text-ink outline-none focus:border-primary/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
+                          Total (₹)
+                        </label>
+                        <div className="w-full bg-surface/50 border border-transparent rounded-lg px-3 py-1.5 text-sm text-ink font-bold font-mono">
+                          {item.totalAmount.toLocaleString()}
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div className="flex items-center gap-2 mt-1 pt-2 border-t border-white/5">
+                      <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
+                        Classification:
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateLineItem(item.id, "isChangeOrder", !item.isChangeOrder);
+                        }}
+                        className={`px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase transition-all ${
+                          item.isChangeOrder
+                            ? "bg-amber-500/20 text-amber-600 border border-amber-500/30"
+                            : "bg-surface/60 text-ink-muted hover:text-ink border border-white/10"
+                        }`}
+                      >
+                        {item.isChangeOrder ? "Change Order" : "Base Contract"}
+                      </button>
+                    </div>
+                  </div>
+                );
+
+                return (
+                  <div className="space-y-8">
+                    {/* Base Contract Section */}
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center border-b border-divider pb-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-ink">
+                          Base Contract Items ({baseContractItems.length})
+                        </span>
+                        <span className="text-sm font-black text-ink font-mono">
+                          Subtotal: ₹{baseSubTotal.toLocaleString()}
+                        </span>
+                      </div>
+                      {baseContractItems.length === 0 ? (
+                        <p className="text-xs text-ink-muted italic py-2 text-center">No base contract items in this estimate.</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {baseContractItems.map(renderItemCard)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Change Order Section */}
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center border-b border-amber-500/25 pb-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-amber-600">
+                          Change Order Items ({changeOrderItems.length})
+                        </span>
+                        <span className="text-sm font-black text-amber-600 font-mono">
+                          Subtotal: ₹{coSubTotal.toLocaleString()}
+                        </span>
+                      </div>
+                      {changeOrderItems.length === 0 ? (
+                        <p className="text-xs text-ink-muted italic py-2 text-center">No change order items in this estimate.</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {changeOrderItems.map(renderItemCard)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -742,7 +860,20 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
               <h3 className="font-bold text-ink text-left">Quote Summary</h3>
               <div className="space-y-3 pt-2">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-ink-muted font-medium">Subtotal</span>
+                  <span className="text-ink-muted font-medium">Base Contract Subtotal</span>
+                  <span className="text-ink font-bold">
+                    ₹{baseSubTotal.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-amber-600 font-medium">Change Order Subtotal</span>
+                  <span className="text-amber-600 font-bold">
+                    ₹{coSubTotal.toLocaleString()}
+                  </span>
+                </div>
+                <div className="border-t border-white/10 my-1"></div>
+                <div className="flex justify-between items-center text-sm font-bold">
+                  <span className="text-ink">Combined Subtotal</span>
                   <span className="text-ink font-bold">
                     ₹{selectedEstimate.subTotal.toLocaleString()}
                   </span>

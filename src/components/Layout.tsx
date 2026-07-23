@@ -19,8 +19,8 @@ import {
   Calculator,
   CheckCircle2,
 } from "lucide-react";
-import { BotStatusIndicator } from "./BotStatusIndicator";
 import { SyncStatus } from "./SyncStatus";
+import { TelegramBotStatus } from "./TelegramBotStatus";
 import { useAuthStore, useUIStore, useProjectStore } from "../store";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 
@@ -231,10 +231,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
-            <BotStatusIndicator />
-            <div className="hidden md:flex">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2">
               <SyncStatus />
+              <TelegramBotStatus />
             </div>
             <button
               onClick={() => setActiveProject(null)}

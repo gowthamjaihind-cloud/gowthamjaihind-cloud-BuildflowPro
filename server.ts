@@ -1,33 +1,59 @@
+import { startPolling, handleTelegramWebhook, getTelegramBotStatus } from './src/server/telegram';
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
-import { initializeApp, cert } from "firebase-admin/app";
+import { initializeApp, cert, applicationDefault } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import firebaseConfig from "./firebase-applet-config.json" with { type: "json" };
 import fs from "fs";
 
-// Initialize Firebase Admin SDK
-let adminApp;
-if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-  adminApp = initializeApp({
-    credential: cert(serviceAccount)
-  });
+// --- Firebase Admin Setup ---
+const serviceAccountPath = path.join(process.cwd(), 'firebase-service-account.json');
+let db: FirebaseFirestore.Firestore;
+
+if (fs.existsSync(serviceAccountPath)) {
+  try {
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    
+    initializeApp({
+      credential: cert(serviceAccount),
+      projectId: firebaseConfig.projectId
+    });
+    console.log("Firebase Admin initialized securely.");
+  } catch (e) {
+    console.error("Failed to initialize Firebase Admin with service account:", e);
+    process.exit(1);
+  }
 } else {
-  // Fallback to ADC
-  adminApp = initializeApp();
+  console.warn("⚠️ firebase-service-account.json not found! Falling back to unauthenticated connection.");
+  initializeApp({
+    credential: applicationDefault(),
+    projectId: firebaseConfig.projectId
+  });
 }
 
-const db = getFirestore(adminApp, firebaseConfig.firestoreDatabaseId);
+// In preview environments where custom DBs are created, we must honor the databaseId
+const dbOptions: FirebaseFirestore.Settings = {
+  ignoreUndefinedProperties: true
+};
+
+if (firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== "(default)") {
+  dbOptions.databaseId = firebaseConfig.firestoreDatabaseId;
+}
+
+db = getFirestore();
+db.settings(dbOptions);
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // --- Native Express Middleware ---
   app.use(express.json());
 
-  // API demo route
+  
+  app.post("/api/telegram-webhook", handleTelegramWebhook);
+  app.get("/api/telegram-status", getTelegramBotStatus);
+
   app.get("/api/health", async (req, res) => {
     res.json({ status: "ok" });
   });
@@ -44,6 +70,7 @@ async function startServer() {
       } catch (e: any) {
         connectionTest = `error: ${e.message}`;
       }
+
       res.json({
         configProjectId: configProjectId,
         configDatabaseId: dbId,
@@ -69,6 +96,21 @@ async function startServer() {
     });
   }
 
+  
+  // Start Telegram bot polling
+
+  
+  // Start Telegram bot polling
+  
+
+  
+  // Start Telegram bot polling
+
+  
+  // Start Telegram bot polling
+  
+
+  startPolling();
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });

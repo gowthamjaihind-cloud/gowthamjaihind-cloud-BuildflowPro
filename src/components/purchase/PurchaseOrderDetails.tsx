@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
+import { exportToCSV, exportToPDF } from "../../utils/exportUtils";
 import { motion, AnimatePresence } from "motion/react";
 import { X, CheckCircle, Download, FileText, Trash2, Loader2, PackagePlus } from "lucide-react";
 import { PurchaseOrder, GoodsReceiptNote } from "../../types";
@@ -64,36 +65,34 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
     }
   };
 
-  const handleExport = () => {
-    const headers = ["Item", "Qty", "Unit", "Rate (Rs)", "Amount (Rs)"];
-    const rows = po.lineItems.map(item => [
-      item.name,
-      item.orderedQty.toString(),
-      item.unit,
-      item.rate.toString(),
-      item.amount.toString()
+  const getPOExportData = () => {
+    const headers = ["Item Name", "Ordered Qty", "Unit", "Rate (₹)", "Amount (₹)"];
+    const items = po.lineItems || [];
+    const rows = items.map(item => [
+      item.name || "",
+      item.orderedQty || 0,
+      item.unit || "",
+      item.rate || 0,
+      item.amount || 0
     ]);
-    
-    let csvContent = `PO Number,${po.poNumber}\n`;
-    csvContent += `Vendor,${po.vendorName}\n`;
-    csvContent += `Date,${po.orderDate}\n`;
-    csvContent += `Status,${po.status}\n`;
-    if (po.expectedDeliveryDate) csvContent += `Expected Delivery,${po.expectedDeliveryDate}\n`;
-    csvContent += `\n${headers.join(",")}\n`;
-    rows.forEach(r => {
-      csvContent += `${r.map(v => `"${v}"`).join(",")}\n`;
-    });
-    csvContent += `\nTotal Amount,,,,${po.totalAmount}`;
+    return { headers, rows };
+  };
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `PO_${po.poNumber}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportCSV = () => {
+    const { headers, rows } = getPOExportData();
+    exportToCSV(`PO_${po.poNumber}`, headers, rows);
+  };
+
+  const handleExportPDF = () => {
+    const { headers, rows } = getPOExportData();
+    const formattedRows = rows.map(r => [
+      r[0],
+      r[1],
+      r[2],
+      `₹${Number(r[3]).toLocaleString("en-IN")}`,
+      `₹${Number(r[4]).toLocaleString("en-IN")}`
+    ]);
+    exportToPDF(`PURCHASE ORDER: ${po.poNumber}`, `Vendor: ${po.vendorName} | Date: ${po.orderDate} | Total: ₹${po.totalAmount.toLocaleString("en-IN")}`, headers, formattedRows, `PO_${po.poNumber}`);
   };
 
   return (
@@ -111,10 +110,21 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
              <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">{po.status} • {po.vendorName}</p>
            </div>
            <div className="flex items-center gap-2">
-             <button onClick={handleExport} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer group" title="Export CSV">
-               <Download className="w-5 h-5 group-hover:text-[#A3711C] transition-colors" />
+             <button
+               onClick={handleExportCSV}
+               className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
+               title="Export CSV"
+             >
+               <Download className="w-3.5 h-3.5 text-slate-700" /> CSV
              </button>
-             <button type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
+             <button
+               onClick={handleExportPDF}
+               className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
+               title="Export PDF"
+             >
+               <Download className="w-3.5 h-3.5" /> PDF
+             </button>
+             <button type="button" onClick={onClose} className="p-2 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer ml-1">
                <X className="w-5 h-5" />
              </button>
            </div>

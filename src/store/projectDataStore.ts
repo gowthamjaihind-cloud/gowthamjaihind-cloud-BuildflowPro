@@ -45,7 +45,6 @@ interface ProjectDataState {
       | "ra_bills"
       | "material_issues"
       | "documents"
-      | "daily_site_reports"
       | "client_payments",
     orderByField?: string,
     orderDirection?: "asc" | "desc",
@@ -64,7 +63,6 @@ interface ProjectDataState {
       | "ra_bills"
       | "material_issues"
       | "documents"
-      | "daily_site_reports"
       | "client_payments",
     orderByField?: string,
     orderDirection?: "asc" | "desc",
@@ -148,7 +146,6 @@ export const useProjectDataStore = create<ProjectDataState>((set, get) => ({
       | "ra_bills"
       | "material_issues"
       | "documents"
-      | "daily_site_reports"
       | "client_payments",
     orderByField?: string,
     orderDirection?: "asc" | "desc",

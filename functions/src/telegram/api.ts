@@ -8,10 +8,6 @@ export interface InlineButton {
 export class TelegramApi {
   constructor(private readonly token: string) {}
 
-  get botToken(): string {
-    return this.token;
-  }
-
   private async call(method: string, body: unknown): Promise<any> {
     const res = await fetch(`${API}${this.token}/${method}`, {
       method: "POST",
@@ -19,44 +15,37 @@ export class TelegramApi {
       body: JSON.stringify(body),
     });
     const json = await res.json();
-    if (!json.ok) {
-      console.error(`Telegram ${method} failed:`, json.description);
-    }
+    if (!json.ok) console.error(`Telegram ${method} failed:`, json.description);
     return json;
   }
 
   sendMessage(chatId: number, text: string, buttons?: InlineButton[][]) {
     return this.call("sendMessage", {
-      chat_id: chatId,
-      text,
-      parse_mode: "HTML",
+      chat_id: chatId, text, parse_mode: "HTML",
       reply_markup: buttons ? { inline_keyboard: buttons } : undefined,
     });
   }
 
   editMessage(chatId: number, messageId: number, text: string, buttons?: InlineButton[][]) {
     return this.call("editMessageText", {
-      chat_id: chatId,
-      message_id: messageId,
-      text,
-      parse_mode: "HTML",
+      chat_id: chatId, message_id: messageId, text, parse_mode: "HTML",
       reply_markup: buttons ? { inline_keyboard: buttons } : undefined,
     });
   }
 
   answerCallback(callbackId: string, text?: string) {
-    return this.call("answerCallbackQuery", {
-      callback_query_id: callbackId,
-      text,
-    });
+    return this.call("answerCallbackQuery", { callback_query_id: callbackId, text });
   }
 
   deleteMessage(chatId: number, messageId: number) {
     return this.call("deleteMessage", { chat_id: chatId, message_id: messageId });
   }
 
-  async getFile(fileId: string): Promise<string | null> {
-    const json = await this.call("getFile", { file_id: fileId });
-    return json?.result?.file_path || null;
+  getFile(fileId: string): Promise<string | null> {
+    return this.call("getFile", { file_id: fileId }).then((j) => j?.result?.file_path || null);
+  }
+
+  get botToken(): string {
+    return this.token;
   }
 }
