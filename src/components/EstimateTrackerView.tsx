@@ -143,9 +143,9 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       case "Sent to Client":
         return "bg-[#E2E8ED] text-[#56778E] border-[#C5D2DB]";
       case "Approved":
-        return "bg-[#87BCBF]/20 text-[#326B70] border-[#87BCBF]/40";
+        return "bg-[#34D399]/20 text-[#047857] border-[#34D399]/40";
       case "Rejected":
-        return "bg-[#9C3B2E]/15 text-[#742C22] border-[#9C3B2E]/30";
+        return "bg-[#EF4444]/15 text-[#B91C1C] border-[#EF4444]/30";
     }
   };
 
@@ -518,7 +518,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   >
                     <button
                       onClick={() => removeLineItem(item.id)}
-                      className="absolute top-4 right-4 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-[#9C3B2E] transition-all pointer-events-none group-hover:pointer-events-auto"
+                      className="absolute top-4 right-4 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-[#EF4444] transition-all pointer-events-none group-hover:pointer-events-auto"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -713,8 +713,8 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <div
                       className={`text-2xl font-bold ${
                         selectedEstimate.subTotal - scopedCost.actual >= 0
-                          ? "text-[#3E8388]"
-                          : "text-[#9C3B2E]"
+                          ? "text-[#059669]"
+                          : "text-[#EF4444]"
                       }`}
                     >
                       ₹{(selectedEstimate.subTotal - scopedCost.actual).toLocaleString()}
@@ -722,8 +722,8 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <div
                       className={`text-sm font-medium ${
                         selectedEstimate.subTotal - scopedCost.actual >= 0
-                          ? "text-[#3E8388]"
-                          : "text-[#9C3B2E]"
+                          ? "text-[#059669]"
+                          : "text-[#EF4444]"
                       }`}
                     >
                       {selectedEstimate.subTotal > 0
@@ -733,7 +733,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   </div>
                 </div>
                 {selectedEstimate.subTotal - scopedCost.actual < 0 && (
-                  <div className="text-[#9C3B2E] text-xs font-medium text-right mt-1">
+                  <div className="text-[#EF4444] text-xs font-medium text-right mt-1">
                     Cost has exceeded the contract value by ₹{(scopedCost.actual - selectedEstimate.subTotal).toLocaleString()}
                   </div>
                 )}
@@ -773,7 +773,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <div className="flex justify-between items-center">
                       <span className="text-ink-muted">Cost Performance</span>
                       <span className={`font-medium ${
-                        forecast.cpi >= 1.0 ? "text-[#3E8388]" : forecast.cpi >= 0.9 ? "text-[#D97D54]" : "text-[#9C3B2E]"
+                        forecast.cpi >= 1.0 ? "text-[#059669]" : forecast.cpi >= 0.9 ? "text-[#D97D54]" : "text-[#EF4444]"
                       }`}>
                         {forecast.cpi.toFixed(2)} (
                         {forecast.cpi >= 1.0 ? "On or under budget" : forecast.cpi >= 0.9 ? "Slightly overspending" : "Overspending"}
@@ -795,8 +795,8 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                         <div
                           className={`text-2xl font-bold ${
                             forecast.forecastMargin >= 0
-                              ? "text-[#3E8388]"
-                              : "text-[#9C3B2E]"
+                              ? "text-[#059669]"
+                              : "text-[#EF4444]"
                           }`}
                         >
                           ₹{forecast.forecastMargin.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -804,8 +804,8 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                         <div
                           className={`text-sm font-medium ${
                             forecast.forecastMargin >= 0
-                              ? "text-[#3E8388]"
-                              : "text-[#9C3B2E]"
+                              ? "text-[#059669]"
+                              : "text-[#EF4444]"
                           }`}
                         >
                           {forecast.forecastMarginPercent !== null
@@ -815,7 +815,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                       </div>
                     </div>
                     {forecast.forecastMargin < 0 && (
-                      <div className="text-[#9C3B2E] text-xs font-medium text-right mt-1">
+                      <div className="text-[#EF4444] text-xs font-medium text-right mt-1">
                         At the current spend rate this job finishes at a LOSS of ₹{Math.abs(forecast.forecastMargin).toLocaleString(undefined, { maximumFractionDigits: 0 })}.
                       </div>
                     )}
@@ -929,7 +929,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                           );
                         updateSelectedEstimate({ status: "Approved" });
                       }}
-                      className="w-full bg-[#5FA3A7] hover:bg-[#3E8388] text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-green-500/20"
+                      className="w-full bg-[#10B981] hover:bg-[#059669] text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-green-500/20"
                     >
                       Approve
                     </button>
@@ -941,14 +941,14 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                           );
                         updateSelectedEstimate({ status: "Rejected" });
                       }}
-                      className="w-full bg-[#9C3B2E] hover:bg-[#8A3428] text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-red-500/20"
+                      className="w-full bg-[#EF4444] hover:bg-[#DC2626] text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-red-500/20"
                     >
                       Reject
                     </button>
                   </div>
                 )}
                 {selectedEstimate.status === "Approved" && (
-                  <div className="bg-green-500/10 border border-green-500/20 text-[#326B70] text-center py-2 rounded-xl font-bold flex items-center justify-center gap-2">
+                  <div className="bg-green-500/10 border border-green-500/20 text-[#047857] text-center py-2 rounded-xl font-bold flex items-center justify-center gap-2">
                     <CheckCircle2 className="w-5 h-5" /> Client Approved
                   </div>
                 )}
@@ -1077,7 +1077,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
         </button>
       </div>
 
-      <div className="bg-surface rounded-2xl border apple-glass p-4 sm:p-6 shadow-sm space-y-4">
+      <div className="soft-card rounded-2xl p-4 sm:p-6 space-y-4">
         <div className="flex items-center gap-3 bg-panel px-4 py-2.5 rounded-xl border-2 border-white/40 focus-within:border-primary/50 transition-colors shadow-inner">
           <Search className="w-5 h-5 text-ink-muted" />
           <input
@@ -1172,10 +1172,10 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right">
-                      <div className={`font-bold ${marginValue >= 0 ? "text-[#3E8388]" : "text-[#9C3B2E]"}`}>
+                      <div className={`font-bold ${marginValue >= 0 ? "text-[#059669]" : "text-[#EF4444]"}`}>
                         ₹{marginValue.toLocaleString()}
                       </div>
-                      <div className={`text-[11px] font-medium ${marginValue >= 0 ? "text-[#3E8388]/80" : "text-[#9C3B2E]/80"}`}>
+                      <div className={`text-[11px] font-medium ${marginValue >= 0 ? "text-[#059669]/80" : "text-[#EF4444]/80"}`}>
                         {marginPercent !== "—" ? `${marginPercent}%` : "—"}
                       </div>
                     </td>

@@ -209,13 +209,13 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {currentUser.role !== "Admin" && currentUser.role !== "Owner" && (
-        <div className="bg-[#9C3B2E]/8 border border-[#9C3B2E]/30 p-6 rounded-3xl flex items-start gap-4">
-          <ShieldAlert className="w-8 h-8 text-[#9C3B2E] mt-1" />
+        <div className="bg-[#EF4444]/8 border border-[#EF4444]/30 p-6 rounded-3xl flex items-start gap-4">
+          <ShieldAlert className="w-8 h-8 text-[#EF4444] mt-1" />
           <div>
-            <h3 className="text-lg font-bold text-[#4E1D17]">
+            <h3 className="text-lg font-bold text-[#7F1D1D]">
               Restricted Access
             </h3>
-            <p className="text-[#742C22] font-medium">
+            <p className="text-[#B91C1C] font-medium">
               You must be an Enterprise Admin or Owner to modify roles. You are currently
               viewing in read-only mode.
             </p>
@@ -247,13 +247,13 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                     <div className="mt-2 flex items-center gap-2">
                       {u.telegramChatId ? (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[#3E8388] bg-[#3E8388]/10 px-2.5 py-1 rounded-md border border-[#3E8388]/20 flex items-center gap-1 font-bold text-xs">
+                          <span className="text-[#059669] bg-[#059669]/10 px-2.5 py-1 rounded-md border border-[#059669]/20 flex items-center gap-1 font-bold text-xs">
                             <CheckCircle2 className="w-3.5 h-3.5" /> Telegram Linked
                           </span>
                           <button
                             onClick={() => unlinkBot(u.uid)}
                             disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
-                            className="text-xs font-semibold text-[#9C3B2E] hover:text-[#742C22] bg-[#9C3B2E]/8 hover:bg-[#9C3B2E]/15 px-2 py-1 rounded-md transition-colors disabled:opacity-50"
+                            className="text-xs font-semibold text-[#EF4444] hover:text-[#B91C1C] bg-[#EF4444]/8 hover:bg-[#EF4444]/15 px-2 py-1 rounded-md transition-colors disabled:opacity-50"
                             title="Unlink Telegram Bot"
                           >
                             Unlink
@@ -302,7 +302,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                             <Users className="w-4 h-4" /> Manager
                           </span>
                         ) : u.role === "Site Engineer" ? (
-                          <span className="text-[#3E8388] bg-[#3E8388]/10 px-3 py-1.5 rounded-lg border border-[#3E8388]/20 flex items-center gap-1.5 w-fit">
+                          <span className="text-[#059669] bg-[#059669]/10 px-3 py-1.5 rounded-lg border border-[#059669]/20 flex items-center gap-1.5 w-fit">
                             <Construction className="w-4 h-4" /> Engineer
                           </span>
                         ) : (
@@ -346,7 +346,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                           ))}
                         </div>
                       ) : u.role === "Admin" || u.role === "Owner" ? (
-                        <span className="text-[#3E8388] font-bold">
+                        <span className="text-[#059669] font-bold">
                           Universal Access
                         </span>
                       ) : (
@@ -391,7 +391,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() => handleUpdateRole(u.uid)}
-                          className="p-2 bg-[#3E8388] text-white rounded-xl hover:bg-[#3E8388] transition-colors"
+                          className="p-2 bg-[#059669] text-white rounded-xl hover:bg-[#059669] transition-colors"
                           title="Save Role"
                         >
                           <Save className="w-4 h-4" />

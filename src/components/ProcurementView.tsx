@@ -704,14 +704,14 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 <p className="text-sm font-semibold text-ink-muted">
                   Total Payments Made
                 </p>
-                <h3 className="text-3xl font-black text-[#3E8388] mt-1">
+                <h3 className="text-3xl font-black text-[#059669] mt-1">
                   ₹
                   {totalPayments.toLocaleString("en-IN", {
                     maximumFractionDigits: 0,
                   })}
                 </h3>
               </div>
-              <div className="bg-[#87BCBF]/20 p-3 rounded-xl text-[#3E8388]">
+              <div className="bg-[#34D399]/20 p-3 rounded-xl text-[#059669]">
                 <HandCoins className="w-6 h-6" />
               </div>
             </div>
@@ -723,14 +723,14 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 <p className="text-sm font-semibold text-ink-muted">
                   Total Outstanding Balance
                 </p>
-                <h3 className="text-3xl font-black text-[#9C3B2E] mt-1">
+                <h3 className="text-3xl font-black text-[#EF4444] mt-1">
                   ₹
                   {totalOutstanding.toLocaleString("en-IN", {
                     maximumFractionDigits: 0,
                   })}
                 </h3>
               </div>
-              <div className="bg-[#9C3B2E]/15 p-3 rounded-xl text-[#9C3B2E]">
+              <div className="bg-[#EF4444]/15 p-3 rounded-xl text-[#EF4444]">
                 <Wallet className="w-6 h-6" />
               </div>
             </div>
@@ -776,7 +776,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       </button>
                       <button
                         onClick={() => setIsDeletingVendor(vendor.id)}
-                        className="p-1.5 md:p-2 text-ink-muted hover:text-[#9C3B2E] apple-transition"
+                        className="p-1.5 md:p-2 text-ink-muted hover:text-[#EF4444] apple-transition"
                       >
                         <Trash2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
                       </button>
@@ -786,7 +786,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         Outstanding
                       </p>
                       <p
-                        className={`text-lg md:text-xl font-black tracking-tighter ${getVendorBalance(vendor.id) > 0 ? "text-[#9C3B2E]" : "text-[#5FA3A7]"}`}
+                        className={`text-lg md:text-xl font-black tracking-tighter ${getVendorBalance(vendor.id) > 0 ? "text-[#EF4444]" : "text-[#10B981]"}`}
                       >
                         ₹
                         {getVendorBalance(vendor.id).toLocaleString("en-IN", {
@@ -797,7 +797,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         <p className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-ink-muted">
                           Payments Made
                         </p>
-                        <p className="text-sm md:text-base font-bold text-[#3E8388]">
+                        <p className="text-sm md:text-base font-bold text-[#059669]">
                           ₹
                           {ledger
                             .filter(
@@ -911,7 +911,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           <div className="overflow-x-auto scrollbar-hide">
             <table className="w-full text-left min-w-[700px] md:min-w-[800px]">
               <thead>
-                <tr className="bg-surface-dark text-white/40 border-b border-white/5">
+                <tr className="bg-surface-dark text-white/75 border-b border-white/10">
                   <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
                     Timeline
                   </th>
@@ -959,7 +959,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           {receipt.invoiceNumber}
                         </span>
                         {receipt.matchStatus === "Fully Matched" && (
-                          <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-[#3E8388] bg-[#87BCBF]/12 px-2 py-1 rounded-full">
+                          <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-[#059669] bg-[#34D399]/12 px-2 py-1 rounded-full">
                             Matched
                           </span>
                         )}
@@ -1014,7 +1014,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           </button>
                           <button
                             onClick={() => setIsDeletingReceipt(receipt.id)}
-                            className="p-2.5 md:p-3 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-xl text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition"
+                            className="p-2.5 md:p-3 bg-[#EF4444]/8 border border-[#EF4444]/20 shadow-sm rounded-xl text-[#EF4444] hover:bg-[#EF4444]/15 hover:text-[#B91C1C] active:scale-90 apple-transition"
                           >
                             <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           </button>
@@ -1043,7 +1043,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   </div>
                   <div className="flex items-center gap-2">
                     {receipt.matchStatus === "Fully Matched" && (
-                      <span className="font-bold text-[9px] uppercase tracking-widest text-[#3E8388] bg-[#87BCBF]/12 px-2 py-1 rounded-full">
+                      <span className="font-bold text-[9px] uppercase tracking-widest text-[#059669] bg-[#34D399]/12 px-2 py-1 rounded-full">
                         Matched
                       </span>
                     )}
@@ -1118,7 +1118,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     </button>
                     <button
                       onClick={() => setIsDeletingReceipt(receipt.id)}
-                      className="flex-1 py-2 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-full text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                      className="flex-1 py-2 bg-[#EF4444]/8 border border-[#EF4444]/20 shadow-sm rounded-full text-[#EF4444] hover:bg-[#EF4444]/15 hover:text-[#B91C1C] active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                     >
                       <Trash2 className="w-4 h-4 mr-1.5" /> Delete
                     </button>
@@ -1188,7 +1188,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             <div className="overflow-x-auto scrollbar-hide">
               <table className="w-full text-left min-w-[700px] md:min-w-[800px]">
                 <thead>
-                  <tr className="bg-surface-dark text-white/40 border-b border-white/5">
+                  <tr className="bg-surface-dark text-white/75 border-b border-white/10">
                     <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
                       Timeline
                     </th>
@@ -1298,7 +1298,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                               </button>
                               <button
                                 onClick={() => handleDeleteLedgerEntry(entry.id)}
-                                className="p-2.5 md:p-3 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-xl text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition"
+                                className="p-2.5 md:p-3 bg-[#EF4444]/8 border border-[#EF4444]/20 shadow-sm rounded-xl text-[#EF4444] hover:bg-[#EF4444]/15 hover:text-[#B91C1C] active:scale-90 apple-transition"
                               >
                                 <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                               </button>
@@ -1325,7 +1325,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                                 onClick={() =>
                                   setIsDeletingReceipt(entry.referenceId || null)
                                 }
-                                className="p-2.5 md:p-3 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-xl text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition"
+                                className="p-2.5 md:p-3 bg-[#EF4444]/8 border border-[#EF4444]/20 shadow-sm rounded-xl text-[#EF4444] hover:bg-[#EF4444]/15 hover:text-[#B91C1C] active:scale-90 apple-transition"
                               >
                                 <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                               </button>
@@ -1334,7 +1334,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                             <div className="flex justify-end gap-1.5 md:gap-2">
                               <button
                                 onClick={() => handleDeleteLedgerEntry(entry.id)}
-                                className="p-2.5 md:p-3 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-xl text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition"
+                                className="p-2.5 md:p-3 bg-[#EF4444]/8 border border-[#EF4444]/20 shadow-sm rounded-xl text-[#EF4444] hover:bg-[#EF4444]/15 hover:text-[#B91C1C] active:scale-90 apple-transition"
                               >
                                 <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                               </button>
@@ -1373,7 +1373,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   <div className="font-bold text-white text-sm tracking-tight leading-none mb-1">
                     {selectedVendor ? selectedVendor.name : "All Vendors"}
                   </div>
-                  <div className="text-[10px] font-black text-white/50 uppercase tracking-widest bg-white/10 px-2 py-1 rounded-lg">
+                  <div className="text-[10px] font-black text-white/70 uppercase tracking-widest bg-onyx/40 px-2 py-1 rounded-lg">
                     OPENING BALANCE
                   </div>
                 </div>
@@ -1382,7 +1382,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1 tracking-[0.1em]">
                       CR (+)
                     </div>
-                    <div className="text-lg font-bold text-[#87BCBF] tracking-tighter font-mono leading-none">
+                    <div className="text-lg font-bold text-[#34D399] tracking-tighter font-mono leading-none">
                       {openingBalance >= 0
                         ? `₹${openingBalance.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                         : "-"}
@@ -1474,7 +1474,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           </button>
                           <button
                             onClick={() => handleDeleteLedgerEntry(entry.id)}
-                            className="flex-1 py-2 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-full text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                            className="flex-1 py-2 bg-[#EF4444]/8 border border-[#EF4444]/20 shadow-sm rounded-full text-[#EF4444] hover:bg-[#EF4444]/15 hover:text-[#B91C1C] active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
                             <Trash2 className="w-4 h-4 mr-1.5" /> Delete
                           </button>
@@ -1501,7 +1501,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                             onClick={() =>
                               setIsDeletingReceipt(entry.referenceId || null)
                             }
-                            className="flex-1 py-2 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-full text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                            className="flex-1 py-2 bg-[#EF4444]/8 border border-[#EF4444]/20 shadow-sm rounded-full text-[#EF4444] hover:bg-[#EF4444]/15 hover:text-[#B91C1C] active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
                             <Trash2 className="w-4 h-4 mr-1.5" /> Delete
                           </button>
@@ -1509,7 +1509,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       ) : (
                         <button
                           onClick={() => handleDeleteLedgerEntry(entry.id)}
-                          className="w-full py-2 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-full text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                          className="w-full py-2 bg-[#EF4444]/8 border border-[#EF4444]/20 shadow-sm rounded-full text-[#EF4444] hover:bg-[#EF4444]/15 hover:text-[#B91C1C] active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                         >
                           <Trash2 className="w-4 h-4 mr-1.5" /> Delete
                         </button>
@@ -1766,8 +1766,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               className="bg-surface rounded-2xl w-full max-w-sm overflow-hidden"
             >
               <div className="p-6 text-center space-y-4">
-                <div className="w-12 h-12 bg-[#9C3B2E]/15 rounded-full flex items-center justify-center mx-auto">
-                  <Trash2 className="w-6 h-6 text-[#9C3B2E]" />
+                <div className="w-12 h-12 bg-[#EF4444]/15 rounded-full flex items-center justify-center mx-auto">
+                  <Trash2 className="w-6 h-6 text-[#EF4444]" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-ink">Delete Party?</h3>
@@ -1786,7 +1786,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   <button
                     onClick={() => handleDeleteVendor(isDeletingVendor)}
                     disabled={isDeleting}
-                    className="flex-1 py-3 bg-[#9C3B2E] hover:bg-[#8A3428] text-white rounded-xl font-bold transition-colors disabled:opacity-50"
+                    className="flex-1 py-3 bg-[#EF4444] hover:bg-[#DC2626] text-white rounded-xl font-bold transition-colors disabled:opacity-50"
                   >
                     {isDeleting ? "Deleting..." : "Delete"}
                   </button>
@@ -1804,8 +1804,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               className="bg-surface rounded-2xl w-full max-w-sm overflow-hidden"
             >
               <div className="p-6 text-center space-y-4">
-                <div className="w-12 h-12 bg-[#9C3B2E]/15 rounded-full flex items-center justify-center mx-auto">
-                  <Trash2 className="w-6 h-6 text-[#9C3B2E]" />
+                <div className="w-12 h-12 bg-[#EF4444]/15 rounded-full flex items-center justify-center mx-auto">
+                  <Trash2 className="w-6 h-6 text-[#EF4444]" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-ink">
@@ -1827,7 +1827,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   <button
                     onClick={() => handleDeleteReceipt(isDeletingReceipt)}
                     disabled={isDeleting}
-                    className="flex-1 py-3 bg-[#9C3B2E] hover:bg-[#8A3428] text-white rounded-xl font-bold transition-colors disabled:opacity-50"
+                    className="flex-1 py-3 bg-[#EF4444] hover:bg-[#DC2626] text-white rounded-xl font-bold transition-colors disabled:opacity-50"
                   >
                     {isDeleting ? "Deleting..." : "Delete"}
                   </button>
@@ -1844,7 +1844,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden"
             >
-              <div className="bg-[#3E8388] p-5 md:p-6 text-white flex justify-between items-center">
+              <div className="bg-[#059669] p-5 md:p-6 text-white flex justify-between items-center">
                 <h3 className="text-xl font-black">
                   {editingPaymentId ? "Edit Payment" : "Record Payment"}
                 </h3>
@@ -1894,7 +1894,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     type="number"
                     required
                     placeholder="Amount (₹)"
-                    className="w-full bg-panel p-4 rounded-xl font-black text-xl text-[#3E8388]"
+                    className="w-full bg-panel p-4 rounded-xl font-black text-xl text-[#059669]"
                     value={newPayment.amount || ""}
                     onChange={(e) =>
                       setNewPayment({
@@ -1998,7 +1998,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-[#3E8388] text-white py-4 rounded-xl font-black uppercase tracking-widest"
+                  className="w-full bg-[#059669] text-white py-4 rounded-xl font-black uppercase tracking-widest"
                 >
                   {editingPaymentId ? "Update Payment" : "Post Payment"}
                 </button>

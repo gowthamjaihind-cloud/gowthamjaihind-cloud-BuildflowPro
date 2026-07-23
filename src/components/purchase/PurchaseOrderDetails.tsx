@@ -160,7 +160,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                      po.status === 'Draft' ? 'bg-ice text-[#56778E]' :
                      po.status === 'Approved' ? 'bg-[#E2E8ED] text-[#56778E]' :
                      po.status === 'Partially Received' ? 'bg-[#D97D54]/10 text-[#C0653F]' :
-                     'bg-[#87BCBF]/12 text-[#3E8388]'
+                     'bg-[#34D399]/12 text-[#059669]'
                   }`}>
                      {po.status}
                   </span>
@@ -185,7 +185,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                            <tr key={i} className="border-b border-divider/50 last:border-none">
                               <td className="p-4">{item.name}</td>
                               <td className="p-4 text-right font-mono">{item.orderedQty} {item.unit}</td>
-                              <td className="p-4 text-right font-mono text-[#3E8388] font-bold">{item.receivedQty || 0} {item.unit}</td>
+                              <td className="p-4 text-right font-mono text-[#059669] font-bold">{item.receivedQty || 0} {item.unit}</td>
                               <td className="p-4 text-right font-mono">₹{item.rate.toLocaleString("en-IN")}</td>
                               <td className="p-4 text-right font-mono text-ink">₹{item.amount.toLocaleString("en-IN")}</td>
                            </tr>
@@ -211,12 +211,12 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
 
          <div className="p-6 border-t border-divider bg-panel flex flex-wrap justify-end gap-4 shrink-0">
             {(po.status === "Approved" || po.status === "Partially Received") && (
-               <button onClick={() => setShowGRNForm(true)} className="px-6 py-3 bg-[#3E8388] hover:bg-[#326B70] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(5,150,105,0.2)]">
+               <button onClick={() => setShowGRNForm(true)} className="px-6 py-3 bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(5,150,105,0.2)]">
                  <PackagePlus className="w-4 h-4" /> Record Goods Receipt
                </button>
             )}
             {canEditOrDelete && (
-               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-[#9C3B2E]/8 hover:bg-[#9C3B2E]/15 text-[#9C3B2E] text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
+               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-[#EF4444]/8 hover:bg-[#EF4444]/15 text-[#EF4444] text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} {po.status === "Draft" ? "Delete Draft" : "Delete PO"}
                </button>
             )}

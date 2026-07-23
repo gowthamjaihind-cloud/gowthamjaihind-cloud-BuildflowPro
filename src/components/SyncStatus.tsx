@@ -28,11 +28,11 @@ export const SyncStatus: React.FC = () => {
     return (
       <div
         id="network-status-indicator"
-        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-rose-500/10 text-[#9C3B2E] rounded-full text-[11px] font-bold tracking-wide border border-rose-500/20 shadow-sm"
+        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-rose-500/10 text-[#EF4444] rounded-full text-[11px] font-bold tracking-wide border border-rose-500/20 shadow-sm"
         title="Network Disconnected (Offline)"
       >
         <span className="relative flex h-2.5 w-2.5">
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#9C3B2E]" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#EF4444]" />
         </span>
         <span className="text-[11px] font-bold">Offline</span>
       </div>
@@ -55,12 +55,12 @@ export const SyncStatus: React.FC = () => {
   return (
     <div
       id="network-status-indicator"
-      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-[#3E8388]/10 text-[#3E8388] rounded-full text-[11px] font-bold tracking-wide border border-[#3E8388]/20 shadow-sm"
+      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-[#059669]/10 text-[#059669] rounded-full text-[11px] font-bold tracking-wide border border-[#059669]/20 shadow-sm"
       title="Network Connected (Online)"
     >
       <span className="relative flex h-2.5 w-2.5">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3E8388] opacity-75" />
-        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#3E8388]" />
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#059669] opacity-75" />
+        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#059669]" />
       </span>
       <span className="text-[11px] font-bold">Online</span>
     </div>

@@ -21,7 +21,7 @@ import { TelegramBotStatus } from "../components/TelegramBotStatus";
 const statusPillClasses = (status?: string) => {
   switch (status) {
     case "Active":
-      return "text-[#3E8388] bg-[#87BCBF]/15 dark:text-[#87BCBF] dark:bg-[#87BCBF]/10";
+      return "text-[#059669] bg-[#34D399]/15 dark:text-[#34D399] dark:bg-[#34D399]/10";
     case "On Hold":
       return "text-[#B85F3B] bg-[#D97D54]/12 dark:text-[#E29677] dark:bg-[#D97D54]/15";
     case "Completed":
@@ -133,7 +133,7 @@ export const PortfolioPage: React.FC = () => {
             <TelegramBotStatus />
             <button
               onClick={() => logout()}
-              className="soft-card text-[#9C3B2E] p-3 sm:p-4 md:p-5 rounded-[16px] sm:rounded-2xl md:rounded-3xl hover:bg-[#9C3B2E]/8 apple-transition active:scale-95 shrink-0"
+              className="soft-card text-[#EF4444] p-3 sm:p-4 md:p-5 rounded-[16px] sm:rounded-2xl md:rounded-3xl hover:bg-[#EF4444]/8 apple-transition active:scale-95 shrink-0"
               title="Sign Out"
             >
               <SignOut weight="duotone" className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -233,7 +233,7 @@ export const PortfolioPage: React.FC = () => {
                     )}
                     <button
                       onClick={(e) => handleDeleteProjectClick(e, project.id)}
-                      className="p-1.5 md:p-2 text-ink-muted hover:text-[#9C3B2E] apple-transition"
+                      className="p-1.5 md:p-2 text-ink-muted hover:text-[#EF4444] apple-transition"
                       title="Delete Project"
                     >
                       <Trash
@@ -305,7 +305,7 @@ export const PortfolioPage: React.FC = () => {
               </button>
               <button
                 onClick={confirmDeleteProject}
-                className="px-4 py-2 bg-[#9C3B2E] hover:bg-[#7E2F25] text-white font-medium rounded-xl shadow-sm transition-colors"
+                className="px-4 py-2 bg-[#EF4444] hover:bg-[#B91C1C] text-white font-medium rounded-xl shadow-sm transition-colors"
               >
                 Delete
               </button>

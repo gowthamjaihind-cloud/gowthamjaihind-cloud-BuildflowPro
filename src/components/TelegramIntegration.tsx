@@ -152,7 +152,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
           <div className="font-bold text-ink flex items-center gap-2">
             Telegram Bot Status
             {isLinked ? (
-              <span className="px-2 py-0.5 bg-[#87BCBF]/20 text-[#326B70] text-xs rounded-full flex items-center gap-1 font-medium">
+              <span className="px-2 py-0.5 bg-[#34D399]/20 text-[#047857] text-xs rounded-full flex items-center gap-1 font-medium">
                 <CheckCircle2 className="w-3 h-3" /> Linked ✅
               </span>
             ) : (
@@ -172,7 +172,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
               <button
                 onClick={unlinkBot}
                 disabled={loading}
-                className="px-4 py-2 bg-[#9C3B2E]/8 text-[#9C3B2E] font-semibold rounded-xl hover:bg-[#9C3B2E]/15 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="px-4 py-2 bg-[#EF4444]/8 text-[#EF4444] font-semibold rounded-xl hover:bg-[#EF4444]/15 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Unlink Bot"}
               </button>
@@ -224,7 +224,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
       )}
       
       {error && (
-        <div className="p-4 bg-[#9C3B2E]/8 text-[#742C22] rounded-xl border border-[#9C3B2E]/20 flex items-start gap-2 text-sm">
+        <div className="p-4 bg-[#EF4444]/8 text-[#B91C1C] rounded-xl border border-[#EF4444]/20 flex items-start gap-2 text-sm">
           <AlertCircle className="w-5 h-5 shrink-0" />
           <p>{error}</p>
         </div>

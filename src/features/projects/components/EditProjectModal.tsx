@@ -106,7 +106,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onSubmit={handleUpdateProject}
-            className="apple-glass-dark bg-surface/70 w-full max-w-2xl rounded-[40px] p-6 md:p-12 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+            className="soft-card w-full max-w-2xl rounded-[40px] p-6 md:p-12 shadow-2xl relative max-h-[90vh] overflow-y-auto"
           >
             <div className="relative z-10 mb-12 flex justify-between items-start">
               <div>
@@ -176,7 +176,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                         onClick={() =>
                           setEditedProject({ ...editedProject, imageUrl: "" })
                         }
-                        className="text-[#9C3B2E] hover:bg-[#9C3B2E]/8 text-sm font-medium px-4 py-1.5 rounded-lg apple-transition"
+                        className="text-[#EF4444] hover:bg-[#EF4444]/8 text-sm font-medium px-4 py-1.5 rounded-lg apple-transition"
                       >
                         Remove Image
                       </button>

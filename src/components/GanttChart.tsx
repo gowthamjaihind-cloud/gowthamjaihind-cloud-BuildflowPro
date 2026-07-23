@@ -297,7 +297,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
               onClick={() => setShowCriticalPath(!showCriticalPath)}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
                 showCriticalPath
-                  ? "bg-[#9C3B2E]/8 text-[#9C3B2E] border border-[#9C3B2E]/20"
+                  ? "bg-[#EF4444]/8 text-[#EF4444] border border-[#EF4444]/20"
                   : "bg-panel text-ink border border-divider"
               }`}
             >
@@ -406,7 +406,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   refY="2"
                   orient="auto"
                 >
-                  <path d="M0,0 L6,2 L0,4 Z" fill="#9C3B2E" />
+                  <path d="M0,0 L6,2 L0,4 Z" fill="#EF4444" />
                 </marker>
                 <marker
                   id="arrowhead-linking"
@@ -495,7 +495,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       key={`dep-${dep.id}-${task.id}-${depIdx}`}
                       d={`M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`}
                       fill="none"
-                      stroke={isCritical ? "#9C3B2E" : "#6E8CA0"}
+                      stroke={isCritical ? "#EF4444" : "#6E8CA0"}
                       strokeWidth={isCritical ? "2.5" : "1.5"}
                       strokeDasharray={dep.type !== "FS" ? "4 4" : "none"}
                       markerEnd={
@@ -571,13 +571,13 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                           : task.type === "Summary"
                             ? "bg-[#465D6E] shadow-sm"
                             : isCritical
-                              ? "bg-gradient-to-r from-[#9C3B2E] to-[#8A3428] shadow-[0_0_10px_rgba(156,59,46,0.4)]"
+                              ? "bg-gradient-to-r from-[#EF4444] to-[#DC2626] shadow-[0_0_10px_rgba(239,68,68,0.4)]"
                               : "bg-[#D97D54] shadow-sm"
                       }`}
                     />
                     <div className="flex flex-col min-w-0">
                       <span
-                        className={`truncate font-medium ${isCritical ? "text-[#9C3B2E] font-bold" : "text-ink"}`}
+                        className={`truncate font-medium ${isCritical ? "text-[#EF4444] font-bold" : "text-ink"}`}
                       >
                         {task.name}
                       </span>
@@ -607,7 +607,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                           : task.type === "Summary"
                             ? "bg-[#465D6E] cursor-pointer"
                             : isCritical
-                              ? "bg-gradient-to-r from-[#9C3B2E] to-[#8A3428] cursor-move"
+                              ? "bg-gradient-to-r from-[#EF4444] to-[#DC2626] cursor-move"
                               : "bg-[#D97D54] cursor-move"
                       }`}
                       style={{

@@ -383,7 +383,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       <span className="text-xs font-normal text-ink-muted">{materialInsights.unit}</span>
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#87BCBF]/12 text-[#3E8388] flex items-center justify-center border border-[#87BCBF]/30">
+                  <div className="w-10 h-10 rounded-xl bg-[#34D399]/12 text-[#059669] flex items-center justify-center border border-[#34D399]/30">
                     <TrendingUp className="w-5 h-5" />
                   </div>
                 </div>

@@ -87,11 +87,11 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Delayed":
-        return "text-[#9C3B2E] bg-red-500/10";
+        return "text-[#EF4444] bg-red-500/10";
       case "In Progress":
         return "text-[#D97D54] bg-amber-500/10";
       case "Completed":
-        return "text-[#5FA3A7] bg-emerald-500/10";
+        return "text-[#10B981] bg-emerald-500/10";
       default:
         return "text-ink-muted bg-slate-500/10";
     }
@@ -161,13 +161,13 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
               <div className="w-24 flex items-center gap-2">
                 <div className="flex-1 h-1.5 bg-divider rounded-full overflow-hidden">
                   <div
-                    className={`h-full ${node.computedProgress === 100 ? "bg-[#5FA3A7]" : "bg-[#D97D54]"}`}
+                    className={`h-full ${node.computedProgress === 100 ? "bg-[#10B981]" : "bg-[#D97D54]"}`}
                     style={{ width: `${node.computedProgress}%` }}
                   />
                 </div>
                 <span
                   className={`text-xs font-mono font-bold w-8 text-right ${
-                    node.computedProgress === 100 ? "text-[#5FA3A7]" : "text-[#D97D54]"
+                    node.computedProgress === 100 ? "text-[#10B981]" : "text-[#D97D54]"
                   }`}
                 >
                   {node.computedProgress}%
@@ -636,7 +636,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="w-full bg-[#9C3B2E]/8 text-[#9C3B2E] py-4 rounded-xl font-bold text-sm hover:bg-[#9C3B2E]/15 transition mt-2"
+                  className="w-full bg-[#EF4444]/8 text-[#EF4444] py-4 rounded-xl font-bold text-sm hover:bg-[#EF4444]/15 transition mt-2"
                 >
                   Delete Task
                 </button>

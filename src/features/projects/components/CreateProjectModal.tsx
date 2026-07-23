@@ -114,7 +114,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onSubmit={handleCreateProject}
-            className="apple-glass-dark bg-surface/70 w-full max-w-2xl rounded-[40px] p-6 md:p-12 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+            className="soft-card w-full max-w-2xl rounded-[40px] p-6 md:p-12 shadow-2xl relative max-h-[90vh] overflow-y-auto"
           >
             <div className="relative z-10 mb-12 flex justify-between items-start">
               <div>
@@ -182,7 +182,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       onClick={() =>
                         setNewProject({ ...newProject, imageUrl: "" })
                       }
-                      className="p-3 text-[#9C3B2E] hover:bg-[#9C3B2E]/10 rounded-xl app-transition flex-shrink-0"
+                      className="p-3 text-[#EF4444] hover:bg-[#EF4444]/10 rounded-xl app-transition flex-shrink-0"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>

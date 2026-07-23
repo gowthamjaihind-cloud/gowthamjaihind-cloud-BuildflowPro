@@ -122,7 +122,7 @@ export const MobileWBSView: React.FC<MobileWBSViewProps> = ({
             <span
               className={`text-[10px] font-mono font-bold ${
                 node.computedProgress === 100
-                  ? "text-[#5FA3A7]"
+                  ? "text-[#10B981]"
                   : "text-[#D97D54]"
               }`}
             >
@@ -563,7 +563,7 @@ const MobileTaskSheet: React.FC<MobileTaskSheetProps> = ({
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="w-full bg-[#9C3B2E]/8 text-[#9C3B2E] py-4 rounded-xl font-bold text-sm hover:bg-[#9C3B2E]/15 transition mt-2"
+                  className="w-full bg-[#EF4444]/8 text-[#EF4444] py-4 rounded-xl font-bold text-sm hover:bg-[#EF4444]/15 transition mt-2"
                 >
                   Delete Task
                 </button>

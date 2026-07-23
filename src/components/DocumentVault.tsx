@@ -365,7 +365,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               <>
                 <button
                   onClick={handleBulkDelete}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-red-900/40 hover:bg-red-900/60 text-[#D28E84] rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-red-900/40 hover:bg-red-900/60 text-[#F87171] rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors"
                 >
                   <Trash2 size={14} /> Delete
                 </button>
@@ -478,12 +478,12 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 onClick={() => fileInputRef.current?.click()}
                 className={`border-4 border-dashed rounded-2xl p-5 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 ${
                   selectedFile
-                    ? "border-[#87BCBF]/40 bg-emerald-50/30"
+                    ? "border-[#34D399]/40 bg-emerald-50/30"
                     : "border-divider hover:border-[#F7E4DB] hover:bg-panel"
                 }`}
               >
                 <div
-                  className={`p-4 rounded-3xl ${selectedFile ? "bg-[#87BCBF]/20 text-[#3E8388]" : "bg-[#F7E4DB] text-[#D97D54]"}`}
+                  className={`p-4 rounded-3xl ${selectedFile ? "bg-[#34D399]/20 text-[#059669]" : "bg-[#F7E4DB] text-[#D97D54]"}`}
                 >
                   {selectedFile ? (
                     <File className="w-8 h-8" />
@@ -777,10 +777,10 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         <Shield
                           className={`w-4 h-4 ${
                             docItem.accessLevel === "Confidential"
-                              ? "text-[#9C3B2E]"
+                              ? "text-[#EF4444]"
                               : docItem.accessLevel === "Internal"
                                 ? "text-[#D97D54]"
-                                : "text-[#5FA3A7]"
+                                : "text-[#10B981]"
                           }`}
                         />
                         <span className="text-ink-muted">

@@ -657,13 +657,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             })}
           </td>
           <td
-            className={`py-4 text-right font-bold ${variance < 0 ? "text-[#9C3B2E]" : "text-[#5FA3A7]"}`}
+            className={`py-4 text-right font-bold ${variance < 0 ? "text-[#EF4444]" : "text-[#10B981]"}`}
           >
             ₹{variance.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
           </td>
           <td className="py-4 text-right">
             <span
-              className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${variance < 0 ? "bg-[#9C3B2E]/8 text-[#9C3B2E]" : "bg-[#87BCBF]/12 text-[#3E8388]"}`}
+              className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${variance < 0 ? "bg-[#EF4444]/8 text-[#EF4444]" : "bg-[#34D399]/12 text-[#059669]"}`}
             >
               {variance < 0 ? "Over Budget" : "On Track"}
             </span>
@@ -862,11 +862,11 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
           <td className="p-3 text-center">
             {totals.totalPlanned - totals.totalActual < 0 ? (
-              <span className="px-1.5 py-0.5 bg-[#9C3B2E]/15 text-[#9C3B2E] rounded-full text-[8px] font-black uppercase tracking-widest">
+              <span className="px-1.5 py-0.5 bg-[#EF4444]/15 text-[#EF4444] rounded-full text-[8px] font-black uppercase tracking-widest">
                 Over
               </span>
             ) : (
-              <span className="px-1.5 py-0.5 bg-[#87BCBF]/20 text-[#3E8388] rounded-full text-[8px] font-black uppercase tracking-widest">
+              <span className="px-1.5 py-0.5 bg-[#34D399]/20 text-[#059669] rounded-full text-[8px] font-black uppercase tracking-widest">
                 Track
               </span>
             )}
@@ -877,13 +877,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               <div className="flex gap-1 justify-end">
                 <button
                   onClick={() => handleSaveTaskCosts(task.id)}
-                  className="p-1 bg-[#87BCBF]/20 text-[#3E8388] rounded hover:bg-[#C3E2E0]"
+                  className="p-1 bg-[#34D399]/20 text-[#059669] rounded hover:bg-[#A7F3D0]"
                 >
                   <Check className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setEditingTaskId(null)}
-                  className="p-1 bg-[#9C3B2E]/15 text-[#9C3B2E] rounded hover:bg-[#E3B4AD]"
+                  className="p-1 bg-[#EF4444]/15 text-[#EF4444] rounded hover:bg-[#FCA5A5]"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1159,7 +1159,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
   return (
     <div className="space-y-10 pb-32">
-      <div className="apple-glass p-5 md:p-6 rounded-2xl flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
+      <div className="soft-card p-5 md:p-6 rounded-2xl flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
         <div className="flex gap-2 bg-surface/30 p-1 rounded-xl w-full md:w-fit max-w-full overflow-x-auto scrollbar-hide ring-1 ring-white/20 shadow-inner">
           {(
             ["dashboard", "wbs", "direct_costs", "report", "payments"] as const
@@ -1263,8 +1263,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     <span
                       className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
                         isOver
-                          ? "bg-[#9C3B2E]/8 text-[#9C3B2E] border border-[#9C3B2E]/30"
-                          : "bg-[#87BCBF]/12 text-[#3E8388] border border-[#87BCBF]/40"
+                          ? "bg-[#EF4444]/8 text-[#EF4444] border border-[#EF4444]/30"
+                          : "bg-[#34D399]/12 text-[#059669] border border-[#34D399]/40"
                       }`}
                     >
                       {isOver ? "Over Budget" : "On Track"}
@@ -1302,10 +1302,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <div
                         className={`h-full rounded-full transition-all duration-1000 ${
                           isOver
-                            ? "bg-[#9C3B2E]"
+                            ? "bg-[#EF4444]"
                             : percentage > 80
                               ? "bg-[#E1946F]"
-                              : "bg-[#5FA3A7]"
+                              : "bg-[#10B981]"
                         }`}
                         style={{
                           width: `${Math.min(100, Math.max(0, percentage))}%`,
@@ -1319,7 +1319,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       </div>
                       <div
                         className={`text-sm font-bold ${
-                          isOver ? "text-[#9C3B2E]" : "text-[#5FA3A7]"
+                          isOver ? "text-[#EF4444]" : "text-[#10B981]"
                         }`}
                       >
                         {isOver ? "-" : "+"}₹
@@ -1335,7 +1335,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-12 xl:col-span-8 apple-glass p-5 md:p-6 squircle-24">
+            <div className="lg:col-span-12 xl:col-span-8 soft-card p-5 md:p-6 squircle-24">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 md:mb-10">
                 <div>
                   <h3 className="text-xl md:text-[24px] font-semibold text-ink tracking-tight mb-1">
@@ -1347,7 +1347,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 </div>
                 <div className="flex gap-4 md:gap-6">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-[#3E8388]" />
+                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-[#059669]" />
                     <span className="text-[11px] md:text-[13px] font-medium text-ink-muted">
                       Planned
                     </span>
@@ -1406,7 +1406,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     />
                     <Bar
                       dataKey="Budget"
-                      fill="#3E8388"
+                      fill="#059669"
                       radius={[8, 8, 0, 0]}
                       barSize={40}
                     />
@@ -1423,7 +1423,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
             <div className="lg:col-span-12 xl:col-span-4 bg-surface-dark p-5 md:p-6 squircle-24 shadow-2xl relative overflow-hidden flex flex-col">
               <h3 className="text-[17px] font-bold text-white tracking-tight mb-8 flex items-center gap-3 relative z-10">
-                <div className="bg-surface/10 p-2 rounded-xl">
+                <div className="bg-onyx/40 p-2 rounded-xl">
                   <Calendar className="w-5 h-5 text-primary" />
                 </div>
                 Latest Transactions
@@ -1439,7 +1439,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   .map((entry) => (
                     <div
                       key={entry.id}
-                      className="bg-surface/5 border border-white/5 p-5 rounded-3xl group hover:bg-surface/10 apple-transition flex justify-between items-center"
+                      className="bg-onyx/40 border border-white/10 p-5 rounded-3xl group hover:bg-white/10 apple-transition flex justify-between items-center"
                     >
                       <div>
                         <div className="font-bold text-white text-[15px] tracking-tight mb-1">
@@ -1451,7 +1451,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       </div>
                       <div className="text-right">
                         <div
-                          className={`text-[15px] font-bold font-mono tracking-tighter ${entry.type === "Actual" ? "text-primary" : "text-[#3E8388]"}`}
+                          className={`text-[15px] font-bold font-mono tracking-tighter ${entry.type === "Actual" ? "text-primary" : "text-[#059669]"}`}
                         >
                           ₹
                           {entry.amount.toLocaleString("en-IN", {
@@ -1638,7 +1638,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                               className="p-2 px-10 border-b border-divider"
                             >
                               <div className="flex items-center gap-2">
-                                <div className="p-1 bg-[#87BCBF]/20 text-[#3E8388] rounded">
+                                <div className="p-1 bg-[#34D399]/20 text-[#059669] rounded">
                                   <MapPin className="w-3 h-3" />
                                 </div>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
@@ -1730,7 +1730,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         </td>
                         <td className="p-4">
                           <span
-                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-[#87BCBF]/20 text-[#326B70]" : "bg-[#E2E8ED] text-[#56778E]"}`}
+                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-[#34D399]/20 text-[#047857]" : "bg-[#E2E8ED] text-[#56778E]"}`}
                           >
                             {entry.type}
                           </span>
@@ -1754,7 +1754,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             </button>
                             <button
                               onClick={() => setDeletingId(entry.id)}
-                              className="p-1 text-ink-muted hover:text-[#9C3B2E] hover:bg-[#9C3B2E]/8 rounded transition-colors"
+                              className="p-1 text-ink-muted hover:text-[#EF4444] hover:bg-[#EF4444]/8 rounded transition-colors"
                               title="Delete record"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1808,7 +1808,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <div className="text-[9px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold text-[#3E8388]">
+                  <div className="text-xs font-bold text-[#059669]">
                     ₹
                     {stats.materialPlanned.toLocaleString("en-IN", {
                       maximumFractionDigits: 0,
@@ -1839,7 +1839,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <div className="text-[9px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold text-[#3E8388]">
+                  <div className="text-xs font-bold text-[#059669]">
                     ₹
                     {stats.laborPlanned.toLocaleString("en-IN", {
                       maximumFractionDigits: 0,
@@ -1864,7 +1864,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <div className="text-[9px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold text-[#3E8388]">
+                  <div className="text-xs font-bold text-[#059669]">
                     ₹
                     {stats.otherPlanned.toLocaleString("en-IN", {
                       maximumFractionDigits: 0,
@@ -1943,7 +1943,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             className="p-2 px-10 border-b border-divider"
                           >
                             <div className="flex items-center gap-2">
-                              <div className="p-1 bg-[#87BCBF]/20 text-[#3E8388] rounded">
+                              <div className="p-1 bg-[#34D399]/20 text-[#059669] rounded">
                                 <MapPin className="w-3 h-3" />
                               </div>
                               <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
@@ -2234,8 +2234,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               className="bg-surface rounded-3xl w-full max-w-sm overflow-hidden"
             >
               <div className="p-6 text-center space-y-4">
-                <div className="w-16 h-16 bg-[#9C3B2E]/15 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Trash2 className="w-8 h-8 text-[#9C3B2E]" />
+                <div className="w-16 h-16 bg-[#EF4444]/15 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Trash2 className="w-8 h-8 text-[#EF4444]" />
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-ink">Delete Entry?</h3>
@@ -2256,7 +2256,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       const entry = entries.find((e) => e.id === deletingId);
                       if (entry) handleDeleteEntry(entry);
                     }}
-                    className="flex-1 py-3.5 bg-[#9C3B2E] hover:bg-[#8A3428] text-white rounded-2xl font-bold transition-colors"
+                    className="flex-1 py-3.5 bg-[#EF4444] hover:bg-[#DC2626] text-white rounded-2xl font-bold transition-colors"
                   >
                     Delete
                   </button>

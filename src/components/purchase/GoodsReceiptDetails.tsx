@@ -175,7 +175,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
                            <th className="p-4 text-right">Ordered</th>
                            <th className="p-4 text-right">Received</th>
                            <th className="p-4 text-right">Accepted</th>
-                           <th className="p-4 text-right text-[#9C3B2E]">Rejected</th>
+                           <th className="p-4 text-right text-[#EF4444]">Rejected</th>
                         </tr>
                      </thead>
                      <tbody className="text-sm font-medium">
@@ -184,8 +184,8 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
                               <td className="p-4">{item.name}</td>
                               <td className="p-4 text-right font-mono text-ink-muted">{item.orderedQty} {item.unit}</td>
                               <td className="p-4 text-right font-mono">{item.receivedQty} {item.unit}</td>
-                              <td className="p-4 text-right font-mono text-[#3E8388]">{item.acceptedQty} {item.unit}</td>
-                              <td className="p-4 text-right font-mono text-[#9C3B2E]">{item.rejectedQty > 0 ? item.rejectedQty : "-"}</td>
+                              <td className="p-4 text-right font-mono text-[#059669]">{item.acceptedQty} {item.unit}</td>
+                              <td className="p-4 text-right font-mono text-[#EF4444]">{item.rejectedQty > 0 ? item.rejectedQty : "-"}</td>
                            </tr>
                         ))}
                      </tbody>
@@ -219,7 +219,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
 
          {canEditOrDelete && (
             <div className="p-6 border-t border-divider bg-panel flex justify-end gap-4 shrink-0">
-               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-[#9C3B2E]/8 hover:bg-[#9C3B2E]/15 text-[#9C3B2E] text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
+               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-[#EF4444]/8 hover:bg-[#EF4444]/15 text-[#EF4444] text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} Delete GRN
                </button>
             </div>

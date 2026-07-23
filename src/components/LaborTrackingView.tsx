@@ -505,7 +505,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                                       e.stopPropagation();
                                       setIsDeletingRate(rate.id);
                                     }}
-                                    className="p-1 bg-panel text-ink-muted rounded hover:bg-[#9C3B2E] hover:text-white transition-all"
+                                    className="p-1 bg-panel text-ink-muted rounded hover:bg-[#EF4444] hover:text-white transition-all"
                                   >
                                     <Trash2 className="w-3 h-3" />
                                   </button>
@@ -518,7 +518,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                                 Daily Yield
                               </span>
                               <div className="text-right">
-                                <span className="text-sm font-bold text-[#3E8388] font-mono">
+                                <span className="text-sm font-bold text-[#059669] font-mono">
                                   ₹{rate.rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                                 </span>
                                 <span className="text-[10px] text-ink-muted font-bold ml-1">
@@ -610,18 +610,18 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                     <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-ink-muted mb-2 md:mb-3">
                       Amount Paid
                     </p>
-                    <p className="text-base md:text-2xl font-mono font-black text-[#3E8388] tracking-tighter leading-none">
+                    <p className="text-base md:text-2xl font-mono font-black text-[#059669] tracking-tighter leading-none">
                       ₹
                       {bill.totalPaid.toLocaleString("en-IN", {
                         maximumFractionDigits: 0,
                       })}
                     </p>
                   </div>
-                  <div className="flex-1 min-w-[140px] bg-red-50/50 p-4 md:p-6 rounded-2xl md:rounded-[32px] border border-[#9C3B2E]/20 shadow-inner">
-                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-[#E3B4AD] mb-2 md:mb-3">
+                  <div className="flex-1 min-w-[140px] bg-red-50/50 p-4 md:p-6 rounded-2xl md:rounded-[32px] border border-[#EF4444]/20 shadow-inner">
+                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-[#FCA5A5] mb-2 md:mb-3">
                       Outstanding
                     </p>
-                    <p className="text-xl md:text-2xl font-mono font-black text-[#9C3B2E] tracking-tighter leading-none">
+                    <p className="text-xl md:text-2xl font-mono font-black text-[#EF4444] tracking-tighter leading-none">
                       ₹
                       {bill.netPayable.toLocaleString("en-IN", {
                         maximumFractionDigits: 0,
@@ -688,13 +688,13 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                       </div>
                     </div>
                     <div className="flex items-start gap-2 shrink-0">
-                      <span className="bg-[#87BCBF]/12 text-[#3E8388] px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] border border-emerald-100/50 shadow-sm shrink-0">
+                      <span className="bg-[#34D399]/12 text-[#059669] px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] border border-emerald-100/50 shadow-sm shrink-0">
                         {bill.status}
                       </span>
                       {isAdminOrOwner && (
                         <button
                           onClick={() => handleDeleteRABill(bill.id)}
-                          className="p-1.5 text-ink-muted hover:text-[#9C3B2E] bg-red-50/50 rounded-lg apple-transition shrink-0"
+                          className="p-1.5 text-ink-muted hover:text-[#EF4444] bg-red-50/50 rounded-lg apple-transition shrink-0"
                         >
                           <Trash2 className="w-3.5 md:w-4 h-3.5 md:h-4" />
                         </button>
@@ -779,7 +779,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
               <div className="overflow-x-auto scrollbar-hide">
                 <table className="w-full text-left min-w-[900px] md:min-w-[1000px]">
                   <thead>
-                    <tr className="bg-surface-dark text-white/40 border-b border-white/5">
+                    <tr className="bg-surface-dark text-white/75 border-b border-white/10">
                       <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/30 italic">
                         Ref No.
                       </th>
@@ -833,7 +833,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                           })}
                         </td>
                         <td className="px-6 md:px-10 py-6 md:py-8 text-center">
-                          <span className="bg-[#87BCBF]/12 text-[#3E8388] px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] border border-emerald-100/50 shadow-sm">
+                          <span className="bg-[#34D399]/12 text-[#059669] px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] border border-emerald-100/50 shadow-sm">
                             {bill.status}
                           </span>
                         </td>
@@ -841,7 +841,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                           <td className="px-6 md:px-10 py-6 md:py-8 text-right">
                             <button
                               onClick={() => handleDeleteRABill(bill.id)}
-                              className="opacity-0 group-hover:opacity-100 p-2 text-ink-muted hover:text-[#9C3B2E] apple-transition"
+                              className="opacity-0 group-hover:opacity-100 p-2 text-ink-muted hover:text-[#EF4444] apple-transition"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1099,8 +1099,8 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-[40px] p-10 max-w-md w-full text-center"
             >
-              <div className="bg-[#9C3B2E]/8 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <AlertCircle className="w-10 h-10 text-[#9C3B2E]" />
+              <div className="bg-[#EF4444]/8 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <AlertCircle className="w-10 h-10 text-[#EF4444]" />
               </div>
               <h3 className="text-2xl font-black text-ink mb-2">
                 Delete Rate Card?
@@ -1119,7 +1119,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                 <button
                   onClick={() => handleDeleteRate(isDeletingRate)}
                   disabled={isProcessing}
-                  className="flex-1 bg-[#8A3428] text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#742C22] transition-all shadow-xl shadow-[#9C3B2E]/10 disabled:opacity-50"
+                  className="flex-1 bg-[#DC2626] text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#B91C1C] transition-all shadow-xl shadow-[#EF4444]/10 disabled:opacity-50"
                 >
                   {isProcessing ? "Deleting..." : "Delete Rate"}
                 </button>

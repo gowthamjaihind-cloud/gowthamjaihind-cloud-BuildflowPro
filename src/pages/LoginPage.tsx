@@ -24,7 +24,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full apple-glass rounded-[48px] p-20 shadow-2xl relative z-10 text-center border-white/50"
+        className="max-w-md w-full soft-card rounded-[48px] p-20 shadow-2xl relative z-10 text-center"
       >
         <div className="bg-surface-dark w-24 h-24 rounded-[32px] flex items-center justify-center mx-auto mb-10 shadow-2xl shadow-primary/20 rotate-3">
           <Construction className="w-12 h-12 text-white" />
@@ -60,14 +60,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         </button>
 
         {loginError && (
-          <div className="mt-6 flex items-start gap-3 text-[13px] font-medium text-[#9C3B2E] bg-[#9C3B2E]/10 p-4 rounded-2xl text-left border border-[#9C3B2E]/20">
+          <div className="mt-6 flex items-start gap-3 text-[13px] font-medium text-[#EF4444] bg-[#EF4444]/10 p-4 rounded-2xl text-left border border-[#EF4444]/20">
             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
             <p>{loginError}</p>
           </div>
         )}
 
         <div className="mt-12 flex items-center justify-center gap-3 text-[13px] font-semibold text-ink-muted">
-          <ShieldCheck className="w-4 h-4 text-[#3E8388]" />
+          <ShieldCheck className="w-4 h-4 text-[#059669]" />
           Secure Enterprise Authentication
         </div>
       </motion.div>

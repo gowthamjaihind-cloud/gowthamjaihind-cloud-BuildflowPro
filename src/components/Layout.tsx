@@ -121,7 +121,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       <div className="p-6 md:p-8 shrink-0 mt-auto">
         <div
-          className={`apple-glass rounded-[16px] md:rounded-[24px] p-4 md:p-6 ${uiMode === "site" ? "!bg-transparent !p-2 !shadow-none" : ""}`}
+          className={`soft-card rounded-[16px] md:rounded-[24px] p-4 md:p-6 ${uiMode === "site" ? "!bg-transparent !p-2 !shadow-none !border-0" : ""}`}
         >
           {user && showLabels && (
             <div className="flex items-center gap-3 md:gap-4">
@@ -134,7 +134,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   className={`w-10 h-10 md:w-12 md:h-12 rounded-[12px] md:rounded-[16px] object-cover shadow-2xl ${uiMode === "site" ? "!rounded-full" : ""}`}
                   alt=""
                 />
-                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 md:w-4 md:h-4 bg-[#3E8388] border-2 border-white rounded-full shadow-sm" />
+                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 md:w-4 md:h-4 bg-[#059669] border-2 border-white rounded-full shadow-sm" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold truncate text-ink text-[15px] md:text-[17px] tracking-tight">
@@ -157,7 +157,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     >
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden md:flex apple-glass rounded-[32px] transition-all duration-700 ease-[cubic-bezier(0.2,0,0,1)] flex-col shadow-2xl relative z-20 ${isSidebarOpen ? "w-[280px] xl:w-80" : "w-24 overflow-hidden"} ${uiMode === "site" ? "!rounded-none !shadow-none border-r border-[#C8D1D3] !bg-surface" : ""}`}
+        className={`hidden md:flex soft-card rounded-[32px] transition-all duration-700 ease-[cubic-bezier(0.2,0,0,1)] flex-col relative z-20 ${isSidebarOpen ? "w-[280px] xl:w-80" : "w-24 overflow-hidden"} ${uiMode === "site" ? "!rounded-none !shadow-none border-r border-[#C8D1D3] !bg-surface" : ""}`}
       >
         <SidebarContent showLabels={isSidebarOpen} />
       </aside>
@@ -185,7 +185,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         {/* Top Bar Navigation */}
         <header
-          className={`bg-surface/80 sm:bg-transparent sm:apple-glass border-b border-onyx/5 sm:border-0 rounded-none sm:rounded-[24px] px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 flex items-center justify-between z-20 shrink-0 ${uiMode === "site" ? "!rounded-none !bg-white !border-b !border-[#C8D1D3] !py-3" : ""}`}
+          className={`soft-card rounded-none sm:rounded-[24px] px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 flex items-center justify-between z-20 shrink-0 ${uiMode === "site" ? "!rounded-none !bg-white !border-b !border-[#C8D1D3] !py-3" : ""}`}
         >
           <div className="flex items-center gap-3 sm:gap-5">
             <button

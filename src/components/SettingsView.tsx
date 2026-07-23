@@ -42,6 +42,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [activeTab, setActiveTab] = useState<SettingsSection>("organization");
   const companyName = useUIStore((state) => state.companyName);
   const setCompanyName = useUIStore((state) => state.setCompanyName);
+  const uiMode = useUIStore((state) => state.uiMode);
+  const setUIMode = useUIStore((state) => state.setUIMode);
+  const darkMode = useUIStore((state) => state.darkMode);
+  const setDarkMode = useUIStore((state) => state.setDarkMode);
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [draftCompanyName, setDraftCompanyName] = useState(companyName);
 
@@ -108,7 +112,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
 
             {activeTab === "organization" && (
-              <section className="apple-glass p-8 squircle-24">
+              <section className="soft-card p-8 squircle-24">
                 <h3 className="text-xl font-bold text-ink mb-6">
                   Default Organization
                 </h3>
@@ -193,7 +197,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
 
             {activeTab === "appearance" && (
-              <section className="apple-glass p-8 squircle-24">
+              <section className="soft-card p-8 squircle-24">
                 <h3 className="text-xl font-bold text-ink mb-6 flex items-center gap-2">
                   <Monitor className="w-6 h-6 text-primary" /> Appearance
                 </h3>
@@ -202,12 +206,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <h4 className="font-bold text-ink mb-4">UI Work Mode</h4>
                     <div className="flex gap-4">
                       <button
-                        onClick={() =>
-                          useUIStore.getState().setUIMode("executive")
-                        }
+                        onClick={() => setUIMode("executive")}
                         className={`flex-1 p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
-                          useUIStore.getState().uiMode === "executive"
-                            ? "border-primary ring-2 ring-primary/20 bg-surface"
+                          uiMode === "executive"
+                            ? "border-primary ring-2 ring-primary/20 bg-primary/5"
                             : "border-divider bg-panel hover:bg-surface"
                         }`}
                       >
@@ -220,10 +222,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </span>
                       </button>
                       <button
-                        onClick={() => useUIStore.getState().setUIMode("site")}
+                        onClick={() => setUIMode("site")}
                         className={`flex-1 p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
-                          useUIStore.getState().uiMode === "site"
-                            ? "border-primary ring-2 ring-primary/20 bg-surface"
+                          uiMode === "site"
+                            ? "border-primary ring-2 ring-primary/20 bg-primary/5"
                             : "border-divider bg-panel hover:bg-surface"
                         }`}
                       >
@@ -242,10 +244,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <h4 className="font-bold text-ink mb-4">Display Mode</h4>
                     <div className="flex gap-4">
                       <button
-                        onClick={() => useUIStore.getState().setDarkMode(false)}
+                        onClick={() => setDarkMode(false)}
                         className={`flex-1 p-4 rounded-xl border flex items-center justify-center gap-3 transition-all ${
-                          !useUIStore.getState().darkMode
-                            ? "border-primary ring-2 ring-primary/20 bg-surface"
+                          !darkMode
+                            ? "border-primary ring-2 ring-primary/20 bg-primary/5"
                             : "border-divider bg-panel hover:bg-surface"
                         }`}
                       >
@@ -255,10 +257,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </span>
                       </button>
                       <button
-                        onClick={() => useUIStore.getState().setDarkMode(true)}
+                        onClick={() => setDarkMode(true)}
                         className={`flex-1 p-4 rounded-xl border flex items-center justify-center gap-3 transition-all ${
-                          useUIStore.getState().darkMode
-                            ? "border-primary ring-2 ring-primary/20 bg-surface"
+                          darkMode
+                            ? "border-primary ring-2 ring-primary/20 bg-primary/5"
                             : "border-divider bg-panel hover:bg-surface"
                         }`}
                       >

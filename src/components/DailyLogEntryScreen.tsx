@@ -462,7 +462,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <button
                   type="button"
                   onClick={() => setMarkComplete(!markComplete)}
-                  className={`w-14 h-8 rounded-full flex items-center transition-colors px-1 ${markComplete ? "bg-[#5FA3A7] justify-end" : "bg-divider justify-start"}`}
+                  className={`w-14 h-8 rounded-full flex items-center transition-colors px-1 ${markComplete ? "bg-[#10B981] justify-end" : "bg-divider justify-start"}`}
                 >
                   <div className="w-6 h-6 bg-surface rounded-full shadow-sm" />
                 </button>
@@ -515,7 +515,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     onClick={() =>
                       setMaterials(materials.filter((_, idx) => idx !== i))
                     }
-                    className="p-3 text-[#9C3B2E] bg-[#9C3B2E]/8 rounded-lg shrink-0"
+                    className="p-3 text-[#EF4444] bg-[#EF4444]/8 rounded-lg shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -567,7 +567,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     onClick={() =>
                       setLabour(labour.filter((_, idx) => idx !== i))
                     }
-                    className="p-3 text-[#9C3B2E] bg-[#9C3B2E]/8 rounded-lg shrink-0"
+                    className="p-3 text-[#EF4444] bg-[#EF4444]/8 rounded-lg shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -585,7 +585,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                   onClick={toggleRecording}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-colors ${
                     isRecording
-                      ? "bg-[#9C3B2E]/8 text-[#9C3B2E] animate-pulse"
+                      ? "bg-[#EF4444]/8 text-[#EF4444] animate-pulse"
                       : "bg-panel text-ink-muted hover:bg-divider"
                   }`}
                 >
@@ -641,7 +641,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       <button
                         type="button"
                         onClick={() => removePhoto(idx)}
-                        className="absolute top-1 right-1 p-1 bg-onyx/60 hover:bg-[#8A3428] text-white rounded-lg backdrop-blur-md transition-colors"
+                        className="absolute top-1 right-1 p-1 bg-onyx/60 hover:bg-[#DC2626] text-white rounded-lg backdrop-blur-md transition-colors"
                       >
                         <X className="w-3 h-3" />
                       </button>

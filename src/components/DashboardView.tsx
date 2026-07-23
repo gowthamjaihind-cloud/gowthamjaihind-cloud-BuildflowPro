@@ -107,7 +107,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Top Row: Compact Info Panels */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         {/* Profile Panel (Reduced Size) */}
-        <section className="apple-glass p-5 md:p-6 squircle-24 flex items-center gap-5">
+        <section className="soft-card p-5 md:p-6 squircle-24 flex items-center gap-5">
           <div className="relative shrink-0">
             <img
               src={
@@ -136,14 +136,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Tasks
               </div>
               <div className="text-[10px] md:text-xs font-bold whitespace-nowrap">
-                <span className="text-[#3E8388] mr-1">98%</span>Uptime
+                <span className="text-[#059669] mr-1">98%</span>Uptime
               </div>
             </div>
           </div>
         </section>
 
         {/* Global Progress Panel */}
-        <section className="apple-glass p-5 md:p-6 squircle-24 flex flex-col justify-center">
+        <section className="soft-card p-5 md:p-6 squircle-24 flex flex-col justify-center">
           <div className="flex justify-between items-center mb-2 md:mb-3">
             <h3 className="text-xs md:text-[15px] font-bold text-ink">
               Completion
@@ -172,7 +172,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div className="relative z-10">
             {tasksAtRisk.count === 0 ? (
-              <div className="flex items-center gap-2 text-[#87BCBF]">
+              <div className="flex items-center gap-2 text-[#34D399]">
                 <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="text-sm md:text-base font-bold">
                   All tasks on track
@@ -187,7 +187,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </span>
                 </div>
                 {tasksAtRisk.criticalCount > 0 && (
-                  <span className="text-xs md:text-sm text-[#D28E84] font-bold bg-rose-500/10 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full inline-block w-max">
+                  <span className="text-xs md:text-sm text-[#F87171] font-bold bg-rose-500/10 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full inline-block w-max">
                     {tasksAtRisk.criticalCount} on critical path
                   </span>
                 )}
@@ -216,7 +216,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Timeline
             </span>
           </div>
-          <div className="apple-glass rounded-2xl overflow-hidden p-0 shadow-sm border border-white/10">
+          <div className="soft-card rounded-2xl overflow-hidden p-0">
             <ScheduleView
               projectId={activeProjectId}
               tasks={scheduleTasks}
@@ -236,7 +236,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               WBS Hierarchy
             </span>
           </div>
-          <div className="apple-glass rounded-2xl overflow-hidden p-1 shadow-sm overflow-x-auto">
+          <div className="soft-card rounded-2xl overflow-hidden p-1 overflow-x-auto">
             <WBSView projectId={activeProjectId} />
           </div>
         </section>

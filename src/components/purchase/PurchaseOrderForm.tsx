@@ -163,7 +163,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
          
          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
             {error && (
-              <div className="p-4 bg-[#9C3B2E]/8 text-[#9C3B2E] rounded-xl text-sm font-bold flex flex-col gap-1">
+              <div className="p-4 bg-[#EF4444]/8 text-[#EF4444] rounded-xl text-sm font-bold flex flex-col gap-1">
                 <span>{error}</span>
               </div>
             )}
@@ -249,7 +249,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                     </span>
                   </div>
                   {items.length > 1 && (
-                    <button type="button" onClick={() => removeItem(idx)} className="p-2 text-ink-muted hover:text-[#9C3B2E] hover:bg-white rounded-lg transition mb-1 shrink-0">
+                    <button type="button" onClick={() => removeItem(idx)} className="p-2 text-ink-muted hover:text-[#EF4444] hover:bg-white rounded-lg transition mb-1 shrink-0">
                       <Trash2 className="w-4 h-4 cursor-pointer" />
                     </button>
                   )}

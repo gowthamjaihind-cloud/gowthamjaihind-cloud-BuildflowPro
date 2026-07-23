@@ -305,7 +305,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
 
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
            {error && (
-             <div className="p-4 bg-[#9C3B2E]/8 text-[#9C3B2E] rounded-xl text-sm font-medium border border-[#9C3B2E]/20">
+             <div className="p-4 bg-[#EF4444]/8 text-[#EF4444] rounded-xl text-sm font-medium border border-[#EF4444]/20">
                {error}
              </div>
            )}
@@ -378,11 +378,11 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                                       step="0.01"
                                       value={item.acceptedQty || ""}
                                       onChange={(e) => handleAcceptedChange(i, e.target.value)}
-                                      className="w-full p-2 text-right bg-surface border border-divider rounded-lg font-mono text-sm text-[#3E8388] focus:border-[#5FA3A7]"
+                                      className="w-full p-2 text-right bg-surface border border-divider rounded-lg font-mono text-sm text-[#059669] focus:border-[#10B981]"
                                       placeholder="0"
                                    />
                                 </td>
-                                <td className="p-4 text-right font-mono text-[#9C3B2E]">
+                                <td className="p-4 text-right font-mono text-[#EF4444]">
                                    {item.rejectedQty > 0 ? item.rejectedQty : "-"}
                                 </td>
                              </tr>
@@ -418,7 +418,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                        <button
                           type="button"
                           onClick={() => setPhotos(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute top-1 right-1 p-1 bg-red-500/90 hover:bg-[#8A3428] text-white rounded-lg shadow-sm transition opacity-0 group-hover:opacity-100"
+                          className="absolute top-1 right-1 p-1 bg-red-500/90 hover:bg-[#DC2626] text-white rounded-lg shadow-sm transition opacity-0 group-hover:opacity-100"
                        >
                           <X className="w-3.5 h-3.5" />
                        </button>

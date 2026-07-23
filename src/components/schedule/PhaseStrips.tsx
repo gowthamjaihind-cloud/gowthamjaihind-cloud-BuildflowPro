@@ -11,7 +11,7 @@ export const PhaseStrips: React.FC<Props> = ({ phases, onNavigate }) => {
   if (phases.length === 0) {
     return (
       <div 
-        className="apple-glass border border-divider rounded-[24px] p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors w-full"
+        className="soft-card-interactive rounded-[24px] p-8 flex flex-col items-center justify-center text-center w-full"
         onClick={onNavigate}
       >
         <p className="text-ink font-bold text-sm">Dashboard Phase Strips</p>
@@ -22,7 +22,7 @@ export const PhaseStrips: React.FC<Props> = ({ phases, onNavigate }) => {
 
   return (
     <div 
-      className="apple-glass border border-divider rounded-[24px] p-6 backdrop-blur-[20px] cursor-pointer hover:bg-surface-dark/5 transition-colors w-full"
+      className="soft-card-interactive rounded-[24px] p-6 hover:bg-surface-dark/5 w-full"
       onClick={onNavigate}
     >
       <h3 className="text-ink font-bold text-sm mb-6 uppercase tracking-widest">Dashboard Phase Strips</h3>
@@ -47,7 +47,7 @@ export const PhaseStrips: React.FC<Props> = ({ phases, onNavigate }) => {
 
               <div className="flex items-center justify-between pt-0.5">
                 <span className="text-[11px] text-ink-muted font-bold uppercase tracking-widest">{phase.unitsLabel}</span>
-                <span className={`text-[11px] font-bold ${phase.scheduleHealth === 'behind' ? 'text-[#9C3B2E]' : 'text-primary'}`}>
+                <span className={`text-[11px] font-bold ${phase.scheduleHealth === 'behind' ? 'text-[#EF4444]' : 'text-primary'}`}>
                   {phase.healthLabel}
                 </span>
               </div>

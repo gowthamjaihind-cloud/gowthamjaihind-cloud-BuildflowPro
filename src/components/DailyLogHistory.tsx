@@ -164,7 +164,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
               </button>
               <button
                 onClick={() => setLogToDelete(log)}
-                className="text-xs font-bold text-ink-muted hover:text-[#9C3B2E] flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#9C3B2E]/8 transition"
+                className="text-xs font-bold text-ink-muted hover:text-[#EF4444] flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#EF4444]/8 transition"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Delete
               </button>
@@ -185,7 +185,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
       {logToDelete && (
         <div className="fixed inset-0 bg-ink/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-sm rounded-[32px] p-8 shadow-2xl relative">
-            <div className="w-16 h-16 bg-[#9C3B2E]/8 text-[#9C3B2E] rounded-full flex items-center justify-center mb-6 mx-auto">
+            <div className="w-16 h-16 bg-[#EF4444]/8 text-[#EF4444] rounded-full flex items-center justify-center mb-6 mx-auto">
               <Trash2 className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-black text-center text-ink mb-2">
@@ -204,7 +204,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
               </button>
               <button
                 onClick={handleDelete}
-                className="py-3.5 px-6 rounded-2xl font-bold bg-[#9C3B2E] hover:bg-[#8A3428] text-white transition shadow-[0_4px_20px_rgba(156,59,46,0.3)] cursor-pointer"
+                className="py-3.5 px-6 rounded-2xl font-bold bg-[#EF4444] hover:bg-[#DC2626] text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
               >
                 Delete
               </button>

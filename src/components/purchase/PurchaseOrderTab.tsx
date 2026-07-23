@@ -114,7 +114,7 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                           po.status === 'Draft' ? 'bg-ice text-[#56778E]' :
                           po.status === 'Approved' ? 'bg-[#E2E8ED] text-[#56778E]' :
                           po.status === 'Partially Received' ? 'bg-[#D97D54]/10 text-[#C0653F]' :
-                          'bg-[#87BCBF]/12 text-[#3E8388]'
+                          'bg-[#34D399]/12 text-[#059669]'
                         }`}>
                           {po.status}
                         </span>

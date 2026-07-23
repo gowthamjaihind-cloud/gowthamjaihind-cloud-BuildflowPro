@@ -471,7 +471,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         <div className="bg-surface-dark p-4 md:p-5 rounded-2xl text-white relative overflow-hidden group shadow-xl">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-2 md:mb-6">
-              <div className="bg-surface/10 p-2 md:p-3 rounded-xl border border-white/5 backdrop-blur-md">
+              <div className="bg-onyx/40 p-2 md:p-3 rounded-xl border border-white/10">
                 <IndianRupee className="w-3.5 h-3.5 md:w-5 md:h-5 text-white" />
               </div>
               <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">
@@ -494,7 +494,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         <div className="bg-surface p-4 md:p-5 rounded-2xl border border-divider shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-2 md:mb-6">
-              <div className="bg-[#87BCBF]/12 p-2 md:p-3 rounded-xl shadow-sm text-[#3E8388]">
+              <div className="bg-[#34D399]/12 p-2 md:p-3 rounded-xl shadow-sm text-[#059669]">
                 <TrendingUp className="w-3.5 h-3.5 md:w-5 md:h-5" />
               </div>
               <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-600/50">
@@ -517,7 +517,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         <div className="bg-surface p-4 md:p-5 rounded-2xl border border-divider shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-2 md:mb-6">
-              <div className="bg-[#9C3B2E]/8 p-2 md:p-3 rounded-xl shadow-sm text-[#9C3B2E]">
+              <div className="bg-[#EF4444]/8 p-2 md:p-3 rounded-xl shadow-sm text-[#EF4444]">
                 <AlertTriangle className="w-3.5 h-3.5 md:w-5 md:h-5" />
               </div>
               <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] text-red-600/50">
@@ -676,7 +676,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             </span>
                             {item.quantity - (item.consumed || 0) <=
                               item.minThreshold && (
-                              <span className="text-[9px] font-bold text-[#9C3B2E] uppercase tracking-widest bg-[#9C3B2E]/8 px-1.5 py-0.5 rounded border border-[#9C3B2E]/20">
+                              <span className="text-[9px] font-bold text-[#EF4444] uppercase tracking-widest bg-[#EF4444]/8 px-1.5 py-0.5 rounded border border-[#EF4444]/20">
                                 Low Stock
                               </span>
                             )}
@@ -705,7 +705,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         item.quantity - (item.consumed || 0),
                       render: (item) => (
                         <div
-                          className={`text-xs md:text-base font-bold ${item.quantity - (item.consumed || 0) <= item.minThreshold ? "text-[#9C3B2E]" : "text-ink"}`}
+                          className={`text-xs md:text-base font-bold ${item.quantity - (item.consumed || 0) <= item.minThreshold ? "text-[#EF4444]" : "text-ink"}`}
                         >
                           {(item.quantity - (item.consumed || 0)).toLocaleString(
                             undefined,
@@ -764,7 +764,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                           </button>
                           <button
                             onClick={() => setItemToDelete(item)}
-                            className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-[#9C3B2E] border border-transparent hover:border-divider"
+                            className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-[#EF4444] border border-transparent hover:border-divider"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -786,7 +786,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             </span>
                             <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest">{item.groupCode || item.category}</span>
                             {(item.quantity - (item.consumed || 0)) <= item.minThreshold && (
-                              <span className="text-[9px] font-bold text-[#9C3B2E] uppercase tracking-widest bg-[#9C3B2E]/8 px-1.5 py-0.5 rounded border border-[#9C3B2E]/20">
+                              <span className="text-[9px] font-bold text-[#EF4444] uppercase tracking-widest bg-[#EF4444]/8 px-1.5 py-0.5 rounded border border-[#EF4444]/20">
                                 Low Stock
                               </span>
                             )}
@@ -796,7 +796,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                           <button onClick={() => setEditingItem(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-[#D97D54] transition-colors">
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => setItemToDelete(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-[#9C3B2E] transition-colors">
+                          <button onClick={() => setItemToDelete(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-[#EF4444] transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -904,7 +904,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               </td>
                               <td className="px-6 py-3 text-center">
                                 <div
-                                  className={`text-[10px] md:text-xs font-bold font-mono px-2 py-1 rounded-lg ${Math.abs(variance) < 0.05 ? "text-ink-muted" : variance > 0 ? "bg-[#87BCBF]/12 text-[#3E8388]" : "bg-[#9C3B2E]/8 text-[#9C3B2E]"}`}
+                                  className={`text-[10px] md:text-xs font-bold font-mono px-2 py-1 rounded-lg ${Math.abs(variance) < 0.05 ? "text-ink-muted" : variance > 0 ? "bg-[#34D399]/12 text-[#059669]" : "bg-[#EF4444]/8 text-[#EF4444]"}`}
                                 >
                                   {variance > 0 ? "+" : ""}
                                   {variance.toFixed(1)} {item.unit}
@@ -921,7 +921,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                     physicalCounts[item.id] === undefined ||
                                     physicalCounts[item.id] === available
                                       ? "bg-panel text-ink-muted pointer-events-none"
-                                      : "bg-[#3E8388] text-white hover:bg-[#326B70] shadow-sm"
+                                      : "bg-[#059669] text-white hover:bg-[#047857] shadow-sm"
                                   }`}
                                 >
                                   Sync
@@ -947,7 +947,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                           <div key={item.id} className="bg-surface p-4 rounded-2xl border border-divider/40 shadow-sm">
                             <div className="flex justify-between items-start mb-3">
                               <div className="font-bold text-ink text-sm tracking-tight">{item.name}</div>
-                              <div className={`text-[10px] font-bold font-mono px-2 py-1 rounded-lg ${Math.abs(variance) < 0.05 ? "text-ink-muted bg-panel" : variance > 0 ? "bg-[#87BCBF]/12 text-[#3E8388]" : "bg-[#9C3B2E]/8 text-[#9C3B2E]"}`}>
+                              <div className={`text-[10px] font-bold font-mono px-2 py-1 rounded-lg ${Math.abs(variance) < 0.05 ? "text-ink-muted bg-panel" : variance > 0 ? "bg-[#34D399]/12 text-[#059669]" : "bg-[#EF4444]/8 text-[#EF4444]"}`}>
                                 {variance > 0 ? "+" : ""}{variance.toFixed(1)} {item.unit}
                               </div>
                             </div>
@@ -969,7 +969,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             <button
                               disabled={!hasChange}
                               onClick={() => handleReconcile(item)}
-                              className={`w-full mt-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest apple-transition ${hasChange ? "bg-[#3E8388] text-white hover:bg-[#326B70] shadow-sm" : "bg-panel text-ink-muted pointer-events-none"}`}
+                              className={`w-full mt-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest apple-transition ${hasChange ? "bg-[#059669] text-white hover:bg-[#047857] shadow-sm" : "bg-panel text-ink-muted pointer-events-none"}`}
                             >
                               Sync
                             </button>
@@ -1043,7 +1043,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                   onClick={() =>
                                     handleDeleteConfig("materialCodes", idx)
                                   }
-                                  className="text-ink-muted hover:text-[#9C3B2E] transition-colors"
+                                  className="text-ink-muted hover:text-[#EF4444] transition-colors"
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </button>
@@ -1138,7 +1138,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                   onClick={() =>
                                     handleDeleteConfig("groupCodes", idx)
                                   }
-                                  className="text-ink-muted hover:text-[#9C3B2E] transition-colors"
+                                  className="text-ink-muted hover:text-[#EF4444] transition-colors"
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </button>
@@ -1233,7 +1233,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                   onClick={() =>
                                     handleDeleteConfig("units", idx)
                                   }
-                                  className="text-ink-muted hover:text-[#9C3B2E] transition-colors"
+                                  className="text-ink-muted hover:text-[#EF4444] transition-colors"
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </button>
@@ -1293,8 +1293,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-surface rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-5 text-center"
             >
-              <div className="bg-[#9C3B2E]/8 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 border border-[#9C3B2E]/20">
-                <Trash2 className="w-5 h-5 text-[#9C3B2E]" />
+              <div className="bg-[#EF4444]/8 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 border border-[#EF4444]/20">
+                <Trash2 className="w-5 h-5 text-[#EF4444]" />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-ink mb-2">
                 Delete Item?
@@ -1306,7 +1306,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               <div className="flex flex-col gap-2">
                 <button
                   onClick={confirmDelete}
-                  className="w-full py-3 bg-[#8A3428] text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#742C22] transition-all shadow-sm"
+                  className="w-full py-3 bg-[#DC2626] text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#B91C1C] transition-all shadow-sm"
                 >
                   Delete Item
                 </button>
@@ -1341,7 +1341,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       setIsAdding(false);
                       setEditingItem(null);
                     }}
-                    className="p-1.5 bg-surface/10 hover:bg-surface/20 rounded-lg transition-all"
+                    className="p-1.5 bg-onyx/40 hover:bg-white/10 rounded-lg transition-all"
                   >
                     <X className="w-4 h-4" />
                   </button>

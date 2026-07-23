@@ -241,14 +241,14 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               <p className="text-sm font-semibold text-ink-muted">
                 Total Client Received
               </p>
-              <h3 className="text-3xl font-black text-[#3E8388] mt-1">
+              <h3 className="text-3xl font-black text-[#059669] mt-1">
                 ₹
                 {totalClientReceived.toLocaleString("en-IN", {
                   maximumFractionDigits: 0,
                 })}
               </h3>
             </div>
-            <div className="bg-[#87BCBF]/20 p-3 rounded-xl text-[#3E8388]">
+            <div className="bg-[#34D399]/20 p-3 rounded-xl text-[#059669]">
               <Building2 className="w-6 h-6" />
             </div>
           </div>
@@ -260,14 +260,14 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               <p className="text-sm font-semibold text-ink-muted">
                 Total Vendor Paid
               </p>
-              <h3 className="text-3xl font-black text-[#9C3B2E] mt-1">
+              <h3 className="text-3xl font-black text-[#EF4444] mt-1">
                 ₹
                 {totalVendorPaid.toLocaleString("en-IN", {
                   maximumFractionDigits: 0,
                 })}
               </h3>
             </div>
-            <div className="bg-[#9C3B2E]/15 p-3 rounded-xl text-[#9C3B2E]">
+            <div className="bg-[#EF4444]/15 p-3 rounded-xl text-[#EF4444]">
               <HandCoins className="w-6 h-6" />
             </div>
           </div>
@@ -363,15 +363,15 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         {entry.type === "CLIENT" ? (
-                          <ArrowDownRight className="w-4 h-4 text-[#5FA3A7]" />
+                          <ArrowDownRight className="w-4 h-4 text-[#10B981]" />
                         ) : (
-                          <ArrowUpRight className="w-4 h-4 text-[#9C3B2E]" />
+                          <ArrowUpRight className="w-4 h-4 text-[#EF4444]" />
                         )}
                         <span
                           className={
                             entry.type === "CLIENT"
-                              ? "text-[#326B70] font-semibold"
-                              : "text-[#742C22]"
+                              ? "text-[#047857] font-semibold"
+                              : "text-[#B91C1C]"
                           }
                         >
                           {entry.description}
@@ -392,7 +392,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     </td>
                     <td className="p-4 text-right">
                       {entry.inward > 0 ? (
-                        <span className="font-bold text-[#3E8388]">
+                        <span className="font-bold text-[#059669]">
                           {entry.inward.toLocaleString("en-IN", {
                             maximumFractionDigits: 0,
                           })}
@@ -403,7 +403,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     </td>
                     <td className="p-4 text-right">
                       {entry.outward > 0 ? (
-                        <span className="font-bold text-[#9C3B2E]">
+                        <span className="font-bold text-[#EF4444]">
                           {entry.outward.toLocaleString("en-IN", {
                             maximumFractionDigits: 0,
                           })}
@@ -423,7 +423,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                           onClick={() =>
                             handleDelete(entry.originalId, entry.type)
                           }
-                          className="p-1 text-ink-muted hover:text-[#9C3B2E] hover:bg-[#9C3B2E]/8 rounded transition-colors"
+                          className="p-1 text-ink-muted hover:text-[#EF4444] hover:bg-[#EF4444]/8 rounded transition-colors"
                           title="Delete record"
                         >
                           <X className="w-4 h-4" />
@@ -562,7 +562,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-3 bg-[#3E8388] hover:bg-[#326B70] text-white rounded-xl font-bold shadow-md transition-colors"
+                    className="flex-1 px-4 py-3 bg-[#059669] hover:bg-[#047857] text-white rounded-xl font-bold shadow-md transition-colors"
                   >
                     Save Payment
                   </button>
