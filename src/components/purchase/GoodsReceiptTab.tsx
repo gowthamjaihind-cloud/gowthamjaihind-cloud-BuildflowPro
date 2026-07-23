@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { useProjectData } from "../../hooks/useProjectData";
 import { GoodsReceiptNote } from "../../types";
-import { Search } from "lucide-react";
+import {
+  MagnifyingGlass as Search,
+} from "@phosphor-icons/react";
 import { GoodsReceiptDetails } from "./GoodsReceiptDetails";
 
 interface GoodsReceiptTabProps {
@@ -33,7 +35,7 @@ export const GoodsReceiptTab: React.FC<GoodsReceiptTabProps> = ({ projectId }) =
              placeholder="Search GRNs..."
              value={searchTerm}
              onChange={(e) => setSearchTerm(e.target.value)}
-             className="w-full pl-9 pr-4 py-2 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#A3711C] focus:ring-1 focus:ring-[#A3711C] transition-colors"
+             className="w-full pl-9 pr-4 py-2 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#D97D54] focus:ring-1 focus:ring-[#D97D54] transition-colors"
            />
         </div>
       </div>
@@ -62,10 +64,10 @@ export const GoodsReceiptTab: React.FC<GoodsReceiptTabProps> = ({ projectId }) =
                     <tr 
                       key={grn.id} 
                       onClick={() => setSelectedGRN(grn)}
-                      className="border-b border-divider/50 hover:bg-[#F3E8D2]/30 transition cursor-pointer group"
+                      className="border-b border-divider/50 hover:bg-[#F7E4DB]/30 transition cursor-pointer group"
                     >
                       <td className="p-4 align-middle">
-                        <div className="font-mono text-xs font-bold text-ink group-hover:text-[#A3711C] transition-colors">
+                        <div className="font-mono text-xs font-bold text-ink group-hover:text-[#D97D54] transition-colors">
                           {grn.grnNumber}
                         </div>
                       </td>

@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { X, Save, Camera, Trash2, Image as ImageIcon } from "lucide-react";
+import {
+  X,
+  FloppyDisk as Save,
+  Camera,
+  Trash as Trash2,
+  Image as ImageIcon,
+} from "@phosphor-icons/react";
 import { doc, setDoc, runTransaction, updateDoc, collection } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../../firebase";
 import { PurchaseOrder, GoodsReceiptNote, GRNLineItem } from "../../types";
@@ -299,7 +305,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
 
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
            {error && (
-             <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
+             <div className="p-4 bg-[#9C3B2E]/8 text-[#9C3B2E] rounded-xl text-sm font-medium border border-[#9C3B2E]/20">
                {error}
              </div>
            )}
@@ -312,7 +318,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                    required
                    value={receiptDate}
                    onChange={e => setReceiptDate(e.target.value)}
-                   className="w-full px-4 py-3 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#A3711C] focus:ring-1 focus:ring-[#A3711C] transition-colors"
+                   className="w-full px-4 py-3 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#D97D54] focus:ring-1 focus:ring-[#D97D54] transition-colors"
                  />
               </div>
               <div>
@@ -321,7 +327,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                    type="text"
                    value={challanNumber}
                    onChange={e => setChallanNumber(e.target.value)}
-                   className="w-full px-4 py-3 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#A3711C] focus:ring-1 focus:ring-[#A3711C] transition-colors"
+                   className="w-full px-4 py-3 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#D97D54] focus:ring-1 focus:ring-[#D97D54] transition-colors"
                    placeholder="e.g. DC-10294"
                  />
               </div>
@@ -361,7 +367,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                                       step="0.01"
                                       value={item.receivedQty || ""}
                                       onChange={(e) => handleReceivedChange(i, e.target.value)}
-                                      className="w-full p-2 text-right bg-surface border border-divider rounded-lg font-mono text-sm focus:border-[#A3711C]"
+                                      className="w-full p-2 text-right bg-surface border border-divider rounded-lg font-mono text-sm focus:border-[#D97D54]"
                                       placeholder="0"
                                    />
                                 </td>
@@ -372,11 +378,11 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                                       step="0.01"
                                       value={item.acceptedQty || ""}
                                       onChange={(e) => handleAcceptedChange(i, e.target.value)}
-                                      className="w-full p-2 text-right bg-surface border border-divider rounded-lg font-mono text-sm text-green-600 focus:border-green-500"
+                                      className="w-full p-2 text-right bg-surface border border-divider rounded-lg font-mono text-sm text-[#3E8388] focus:border-[#5FA3A7]"
                                       placeholder="0"
                                    />
                                 </td>
-                                <td className="p-4 text-right font-mono text-red-500">
+                                <td className="p-4 text-right font-mono text-[#9C3B2E]">
                                    {item.rejectedQty > 0 ? item.rejectedQty : "-"}
                                 </td>
                              </tr>
@@ -393,7 +399,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 rows={3}
-                className="w-full p-4 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#A3711C] focus:ring-1 focus:ring-[#A3711C] transition-colors resize-none"
+                className="w-full p-4 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#D97D54] focus:ring-1 focus:ring-[#D97D54] transition-colors resize-none"
                 placeholder="Any comments about the delivery condition..."
               />
            </div>
@@ -412,16 +418,16 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                        <button
                           type="button"
                           onClick={() => setPhotos(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute top-1 right-1 p-1 bg-red-500/90 hover:bg-red-600 text-white rounded-lg shadow-sm transition opacity-0 group-hover:opacity-100"
+                          className="absolute top-1 right-1 p-1 bg-red-500/90 hover:bg-[#8A3428] text-white rounded-lg shadow-sm transition opacity-0 group-hover:opacity-100"
                        >
                           <X className="w-3.5 h-3.5" />
                        </button>
                     </div>
                  ))}
                  
-                 <label className="w-24 h-24 flex flex-col items-center justify-center gap-2 bg-panel hover:bg-divider border-2 border-dashed border-divider hover:border-[#A3711C] rounded-xl transition cursor-pointer group flex-shrink-0">
-                    <Camera className="w-6 h-6 text-ink-muted group-hover:text-[#A3711C] transition-colors" />
-                    <span className="text-[9px] font-black uppercase text-ink-muted group-hover:text-[#A3711C] tracking-widest">Add Photo</span>
+                 <label className="w-24 h-24 flex flex-col items-center justify-center gap-2 bg-panel hover:bg-divider border-2 border-dashed border-divider hover:border-[#D97D54] rounded-xl transition cursor-pointer group flex-shrink-0">
+                    <Camera className="w-6 h-6 text-ink-muted group-hover:text-[#D97D54] transition-colors" />
+                    <span className="text-[9px] font-black uppercase text-ink-muted group-hover:text-[#D97D54] tracking-widest">Add Photo</span>
                     <input 
                        type="file" 
                        accept="image/*" 
@@ -443,7 +449,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
            <button 
              onClick={handleSubmit} 
              disabled={isSubmitting} 
-             className="px-8 py-4 bg-[#A3711C] hover:bg-[#8a5d16] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] disabled:opacity-50"
+             className="px-8 py-4 bg-[#D97D54] hover:bg-[#B85F3B] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] disabled:opacity-50"
            >
              {isSubmitting ? <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span> : <Save className="w-4 h-4" />} Save Receipt
            </button>

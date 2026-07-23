@@ -11,11 +11,11 @@ import { format } from "date-fns";
 import {
   Calendar,
   Users,
-  Box,
-  CheckCircle2,
-  Edit2,
-  Trash2,
-} from "lucide-react";
+  Cube as Box,
+  CheckCircle as CheckCircle2,
+  PencilSimple as Edit2,
+  Trash as Trash2,
+} from "@phosphor-icons/react";
 import { DailyLogEntryScreen } from "../DailyLogEntryScreen";
 import { useAuthStore } from "../../store";
 
@@ -119,7 +119,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                   </span>
                   <button
                     onClick={() => setLogModalOpen(true)}
-                    className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline bg-[#F3E8D2] px-3 py-2 rounded-md"
+                    className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline bg-[#F7E4DB] px-3 py-2 rounded-md"
                   >
                     Log Another
                   </button>
@@ -225,13 +225,13 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                       <div className="mt-4 pt-3 flex items-center justify-end gap-2 border-t border-divider/50">
                         <button
                           onClick={() => setLogToEdit(log)}
-                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#F3E8D2] transition"
+                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#F7E4DB] transition"
                         >
                           <Edit2 className="w-3.5 h-3.5" /> Edit
                         </button>
                         <button
                           onClick={() => setLogToDelete(log)}
-                          className="text-xs font-bold text-ink-muted hover:text-red-500 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50 transition"
+                          className="text-xs font-bold text-ink-muted hover:text-[#9C3B2E] flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#9C3B2E]/8 transition"
                         >
                           <Trash2 className="w-3.5 h-3.5" /> Delete
                         </button>
@@ -251,7 +251,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
 
               <div className="mb-6">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-[#D97D54]/10 text-[#C0653F] flex items-center justify-center shrink-0">
                     <Users className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-bold text-ink-muted">
@@ -268,7 +268,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
 
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-[#F3E8D2] text-primary flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-[#F7E4DB] text-primary flex items-center justify-center shrink-0">
                     <Box className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-bold text-ink-muted">
@@ -326,7 +326,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
       {logToDelete && (
         <div className="fixed inset-0 bg-ink/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-sm rounded-[32px] p-8 shadow-2xl relative">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6 mx-auto">
+            <div className="w-16 h-16 bg-[#9C3B2E]/8 text-[#9C3B2E] rounded-full flex items-center justify-center mb-6 mx-auto">
               <Trash2 className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-black text-center text-ink mb-2">
@@ -345,7 +345,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
               </button>
               <button
                 onClick={handleDelete}
-                className="py-3.5 px-6 rounded-2xl font-bold bg-red-500 hover:bg-red-600 text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
+                className="py-3.5 px-6 rounded-2xl font-bold bg-[#9C3B2E] hover:bg-[#8A3428] text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
               >
                 Delete
               </button>

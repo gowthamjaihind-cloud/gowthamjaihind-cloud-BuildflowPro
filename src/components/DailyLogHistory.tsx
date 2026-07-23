@@ -5,7 +5,14 @@ import {
   canEditOrDeleteLog,
 } from "../hooks/useDailyLogs";
 import { format } from "date-fns";
-import { Clock, Box, Users, MessageSquare, Edit2, Trash2 } from "lucide-react";
+import {
+  Clock,
+  Cube as Box,
+  Users,
+  ChatText as MessageSquare,
+  PencilSimple as Edit2,
+  Trash as Trash2,
+} from "@phosphor-icons/react";
 import { DailyLogEntryScreen } from "./DailyLogEntryScreen";
 import { DailyLogEntry } from "../types";
 import { useAuthStore } from "../store";
@@ -139,8 +146,8 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
           )}
 
           {log.note && (
-            <div className="mt-4 bg-amber-50/50 p-3 rounded-xl border border-amber-100 flex gap-2 items-start text-amber-900">
-              <MessageSquare className="w-4 h-4 shrink-0 mt-0.5 text-amber-500 opacity-60" />
+            <div className="mt-4 bg-amber-50/50 p-3 rounded-xl border border-[#D97D54]/20 flex gap-2 items-start text-[#5E2F1B]">
+              <MessageSquare className="w-4 h-4 shrink-0 mt-0.5 text-[#D97D54] opacity-60" />
               <p className="text-[11px] font-medium leading-relaxed italic">
                 {log.note}
               </p>
@@ -151,13 +158,13 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
             <div className="mt-4 pt-3 flex items-center justify-end gap-2 border-t border-divider/50">
               <button
                 onClick={() => setLogToEdit(log)}
-                className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#F3E8D2] transition"
+                className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#F7E4DB] transition"
               >
                 <Edit2 className="w-3.5 h-3.5" /> Edit
               </button>
               <button
                 onClick={() => setLogToDelete(log)}
-                className="text-xs font-bold text-ink-muted hover:text-red-500 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50 transition"
+                className="text-xs font-bold text-ink-muted hover:text-[#9C3B2E] flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#9C3B2E]/8 transition"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Delete
               </button>
@@ -178,7 +185,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
       {logToDelete && (
         <div className="fixed inset-0 bg-ink/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-sm rounded-[32px] p-8 shadow-2xl relative">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6 mx-auto">
+            <div className="w-16 h-16 bg-[#9C3B2E]/8 text-[#9C3B2E] rounded-full flex items-center justify-center mb-6 mx-auto">
               <Trash2 className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-black text-center text-ink mb-2">
@@ -197,7 +204,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
               </button>
               <button
                 onClick={handleDelete}
-                className="py-3.5 px-6 rounded-2xl font-bold bg-red-500 hover:bg-red-600 text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
+                className="py-3.5 px-6 rounded-2xl font-bold bg-[#9C3B2E] hover:bg-[#8A3428] text-white transition shadow-[0_4px_20px_rgba(156,59,46,0.3)] cursor-pointer"
               >
                 Delete
               </button>

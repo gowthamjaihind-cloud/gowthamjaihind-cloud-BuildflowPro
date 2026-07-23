@@ -12,13 +12,13 @@ import {
   X,
   Calendar,
   Plus,
-  Trash2,
-  CheckCircle2,
-  Mic,
+  Trash as Trash2,
+  CheckCircle as CheckCircle2,
+  Microphone as Mic,
   Camera,
   Image as ImageIcon,
-  Loader2,
-} from "lucide-react";
+  CircleNotch as Loader2,
+} from "@phosphor-icons/react";
 import { useTasksQuery } from "../hooks/queries";
 import {
   getStorage,
@@ -357,7 +357,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       setSelectedLocation(e.target.value);
                       setSelectedTaskId("");
                     }}
-                    className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-[#F3E8D2]0"
+                    className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-[#D97D54]"
                   >
                     <option value="">-- Choose Location --</option>
                     {locations.map((loc) => (
@@ -377,7 +377,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     disabled={!selectedLocation}
                     value={selectedTaskId}
                     onChange={(e) => setSelectedTaskId(e.target.value)}
-                    className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-[#F3E8D2]0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-[#D97D54] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">
                       {!selectedLocation ? "-- Choose Location First --" : "-- Choose Task --"}
@@ -398,11 +398,11 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             )}
 
             {taskId && currentTask && (
-              <div className="bg-[#F3E8D2] p-4 rounded-xl border border-[#F3E8D2]">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#F3E8D2]0 block mb-1">
+              <div className="bg-[#F7E4DB] p-4 rounded-xl border border-[#F7E4DB]">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#D97D54] block mb-1">
                   Logging for Task
                 </span>
-                <span className="text-sm font-bold text-[#8a5d16] block">
+                <span className="text-sm font-bold text-[#B85F3B] block">
                   {currentTask.name}
                 </span>
               </div>
@@ -417,7 +417,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 required
                 value={workDate}
                 onChange={(e) => setWorkDate(e.target.value)}
-                className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-[#F3E8D2]0 font-mono"
+                className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-[#D97D54] font-mono"
               />
               <p className="text-[10px] text-ink-muted font-bold ml-1">
                 The date the work was actually performed on site.
@@ -429,7 +429,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
                   Cumulative Progress
                 </label>
-                <span className="text-xl font-black text-[#A3711C] font-mono">
+                <span className="text-xl font-black text-[#D97D54] font-mono">
                   {markComplete ? 100 : progressPercent}%
                 </span>
               </div>
@@ -442,7 +442,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 value={markComplete ? 100 : progressPercent}
                 onChange={(e) => setProgressPercent(parseInt(e.target.value))}
                 disabled={markComplete}
-                className="w-full h-2 bg-divider rounded-lg appearance-none cursor-pointer accent-[#A3711C] disabled:opacity-50"
+                className="w-full h-2 bg-divider rounded-lg appearance-none cursor-pointer accent-[#D97D54] disabled:opacity-50"
               />
               {latestLog && (
                 <p className="text-[10px] text-ink-muted font-bold text-right italic">
@@ -462,7 +462,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <button
                   type="button"
                   onClick={() => setMarkComplete(!markComplete)}
-                  className={`w-14 h-8 rounded-full flex items-center transition-colors px-1 ${markComplete ? "bg-emerald-500 justify-end" : "bg-divider justify-start"}`}
+                  className={`w-14 h-8 rounded-full flex items-center transition-colors px-1 ${markComplete ? "bg-[#5FA3A7] justify-end" : "bg-divider justify-start"}`}
                 >
                   <div className="w-6 h-6 bg-surface rounded-full shadow-sm" />
                 </button>
@@ -478,7 +478,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleAddMaterial}
-                  className="text-[#A3711C] text-xs font-bold hover:underline flex items-center gap-1"
+                  className="text-[#D97D54] text-xs font-bold hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> Add Material
                 </button>
@@ -515,7 +515,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     onClick={() =>
                       setMaterials(materials.filter((_, idx) => idx !== i))
                     }
-                    className="p-3 text-red-500 bg-red-50 rounded-lg shrink-0"
+                    className="p-3 text-[#9C3B2E] bg-[#9C3B2E]/8 rounded-lg shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -532,7 +532,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleAddLabor}
-                  className="text-[#A3711C] text-xs font-bold hover:underline flex items-center gap-1"
+                  className="text-[#D97D54] text-xs font-bold hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> Add Labor
                 </button>
@@ -567,7 +567,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     onClick={() =>
                       setLabour(labour.filter((_, idx) => idx !== i))
                     }
-                    className="p-3 text-red-500 bg-red-50 rounded-lg shrink-0"
+                    className="p-3 text-[#9C3B2E] bg-[#9C3B2E]/8 rounded-lg shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -585,7 +585,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                   onClick={toggleRecording}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-colors ${
                     isRecording
-                      ? "bg-red-50 text-red-600 animate-pulse"
+                      ? "bg-[#9C3B2E]/8 text-[#9C3B2E] animate-pulse"
                       : "bg-panel text-ink-muted hover:bg-divider"
                   }`}
                 >
@@ -597,7 +597,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 rows={3}
-                className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-[#F3E8D2]0 resize-none"
+                className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-[#D97D54] resize-none"
                 placeholder="Any issues, delays, or general remarks?"
               />
             </div>
@@ -641,7 +641,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       <button
                         type="button"
                         onClick={() => removePhoto(idx)}
-                        className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-600 text-white rounded-lg backdrop-blur-md transition-colors"
+                        className="absolute top-1 right-1 p-1 bg-onyx/60 hover:bg-[#8A3428] text-white rounded-lg backdrop-blur-md transition-colors"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -661,7 +661,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             form="daily-log-form"
             type="submit"
             disabled={saveMutation.isPending || !selectedTaskId}
-            className="w-full bg-[#A3711C] text-white rounded-2xl py-4 text-sm font-bold shadow-lg hover:bg-[#8a5d16] active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-50"
+            className="w-full bg-[#D97D54] text-white rounded-2xl py-4 text-sm font-bold shadow-lg hover:bg-[#B85F3B] active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-50"
           >
             {saveMutation.isPending ? (
               "Saving..."

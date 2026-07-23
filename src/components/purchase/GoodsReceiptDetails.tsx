@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { X, Trash2, Loader2, Image as ImageIcon } from "lucide-react";
+import {
+  X,
+  Trash as Trash2,
+  CircleNotch as Loader2,
+  Image as ImageIcon,
+} from "@phosphor-icons/react";
 import { GoodsReceiptNote, PurchaseOrder } from "../../types";
 import { useAuthStore } from "../../store";
 import { doc, deleteDoc, runTransaction, addDoc, collection } from "firebase/firestore";
@@ -170,7 +175,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
                            <th className="p-4 text-right">Ordered</th>
                            <th className="p-4 text-right">Received</th>
                            <th className="p-4 text-right">Accepted</th>
-                           <th className="p-4 text-right text-red-500">Rejected</th>
+                           <th className="p-4 text-right text-[#9C3B2E]">Rejected</th>
                         </tr>
                      </thead>
                      <tbody className="text-sm font-medium">
@@ -179,8 +184,8 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
                               <td className="p-4">{item.name}</td>
                               <td className="p-4 text-right font-mono text-ink-muted">{item.orderedQty} {item.unit}</td>
                               <td className="p-4 text-right font-mono">{item.receivedQty} {item.unit}</td>
-                              <td className="p-4 text-right font-mono text-green-600">{item.acceptedQty} {item.unit}</td>
-                              <td className="p-4 text-right font-mono text-red-500">{item.rejectedQty > 0 ? item.rejectedQty : "-"}</td>
+                              <td className="p-4 text-right font-mono text-[#3E8388]">{item.acceptedQty} {item.unit}</td>
+                              <td className="p-4 text-right font-mono text-[#9C3B2E]">{item.rejectedQty > 0 ? item.rejectedQty : "-"}</td>
                            </tr>
                         ))}
                      </tbody>
@@ -188,8 +193,8 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
                </div>
                
                {grn.notes && (
-                  <div className="mt-6 p-4 bg-yellow-50/50 border border-yellow-100 rounded-xl">
-                     <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1.5">Notes</p>
+                  <div className="mt-6 p-4 bg-yellow-50/50 border border-[#D97D54]/20 rounded-xl">
+                     <p className="text-[10px] font-black text-[#C0653F] uppercase tracking-widest mb-1.5">Notes</p>
                      <p className="text-sm font-medium text-ink/80">{grn.notes}</p>
                   </div>
                )}
@@ -214,7 +219,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
 
          {canEditOrDelete && (
             <div className="p-6 border-t border-divider bg-panel flex justify-end gap-4 shrink-0">
-               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
+               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-[#9C3B2E]/8 hover:bg-[#9C3B2E]/15 text-[#9C3B2E] text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} Delete GRN
                </button>
             </div>

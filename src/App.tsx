@@ -39,20 +39,21 @@ import { DashboardView } from "./components/DashboardView";
 import { SettingsView } from "./components/SettingsView";
 import { EnterpriseAuthView } from "./components/EnterpriseAuthView";
 import {
-  Construction,
+  Barricade as Construction,
   Plus,
   ArrowRight,
-  Loader2,
+  CircleNotch as Loader2,
   ShieldCheck,
-  AlertCircle,
-  RefreshCw,
-  Trash2,
-  Settings,
+  WarningCircle as AlertCircle,
+  ArrowsClockwise as RefreshCw,
+  Trash as Trash2,
+  GearSix as Settings,
   Info,
   X,
-  LogOut,
+  SignOut as LogOut,
   Image as ImageIcon,
-} from "lucide-react";
+  IconContext,
+} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -111,8 +112,8 @@ class ErrorBoundary extends React.Component<
       return (
         <div className="h-screen flex items-center justify-center p-6">
           <div className="max-w-md w-full apple-glass p-12 squircle-24 text-center">
-            <div className="bg-[#FF3B30]/10 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-[#FF3B30]/20">
-              <AlertCircle className="w-10 h-10 text-[#FF3B30]" />
+            <div className="bg-[#9C3B2E]/10 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-[#9C3B2E]/20">
+              <AlertCircle className="w-10 h-10 text-[#9C3B2E]" />
             </div>
             <h2 className="text-[24px] font-bold text-ink mb-3">
               Something went wrong
@@ -122,7 +123,7 @@ class ErrorBoundary extends React.Component<
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="w-full bg-surface-dark text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-black apple-transition shadow-xl"
+              className="w-full bg-surface-dark text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-onyx apple-transition shadow-xl"
             >
               <RefreshCw className="w-5 h-5" /> Reload Application
             </button>
@@ -137,9 +138,11 @@ class ErrorBoundary extends React.Component<
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ErrorBoundary>
-        <AppContent />
-      </ErrorBoundary>
+      <IconContext.Provider value={{ weight: "duotone" }}>
+        <ErrorBoundary>
+          <AppContent />
+        </ErrorBoundary>
+      </IconContext.Provider>
     </QueryClientProvider>
   );
 }
@@ -182,7 +185,7 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-900 text-white">
+      <div className="h-screen flex items-center justify-center bg-surface-dark text-white">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
       </div>
     );

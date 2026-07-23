@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Save, Trash2, Plus, AlertCircle, CheckCircle2, ChevronDown, Package } from "lucide-react";
+import {
+  X,
+  FloppyDisk as Save,
+  Trash as Trash2,
+  Plus,
+  WarningCircle as AlertCircle,
+  CheckCircle as CheckCircle2,
+  CaretDown as ChevronDown,
+  Package,
+} from "@phosphor-icons/react";
 import { doc, getDoc, runTransaction, collection } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../../firebase";
 import {
@@ -263,8 +272,8 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
         className="bg-surface rounded-[24px] md:rounded-[32px] w-full max-w-5xl overflow-hidden my-auto shadow-2xl"
       >
         <div className={`p-6 md:p-8 text-white flex justify-between items-center transition-colors
-          ${overallMatchStatus === "Fully Matched" ? "bg-emerald-600" : 
-            overallMatchStatus === "Has Discrepancies" ? "bg-amber-600" : "bg-slate-700"}`}
+          ${overallMatchStatus === "Fully Matched" ? "bg-[#3E8388]" : 
+            overallMatchStatus === "Has Discrepancies" ? "bg-[#C0653F]" : "bg-[#465D6E]"}`}
         >
           <div>
             <h3 className="text-xl md:text-2xl font-black">
@@ -281,7 +290,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
 
         <form onSubmit={handleSave} className="p-5 md:p-8 space-y-6 md:space-y-8">
           {error && (
-            <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-bold flex flex-col gap-1">
+            <div className="p-4 bg-[#9C3B2E]/8 text-[#9C3B2E] rounded-xl text-sm font-bold flex flex-col gap-1">
               <span>{error}</span>
             </div>
           )}
@@ -291,7 +300,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Vendor</label>
               <select
                 required
-                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#A3711C] outline-none"
+                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#D97D54] outline-none"
                 value={supplierId}
                 onChange={(e) => {
                    setSupplierId(e.target.value);
@@ -310,7 +319,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
             <div className="space-y-1.5 md:space-y-2">
               <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Purchase Order (Optional)</label>
               <select
-                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#A3711C] outline-none disabled:opacity-50"
+                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#D97D54] outline-none disabled:opacity-50"
                 value={poId}
                 onChange={(e) => {
                    setPoId(e.target.value);
@@ -330,7 +339,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <div className="relative">
                  <select
                    multiple
-                   className="w-full bg-panel p-2 rounded-xl text-xs font-bold border-2 border-transparent focus:border-[#A3711C] outline-none min-h-[58px]"
+                   className="w-full bg-panel p-2 rounded-xl text-xs font-bold border-2 border-transparent focus:border-[#D97D54] outline-none min-h-[58px]"
                    value={grnIds}
                    onChange={(e) => setGrnIds(Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))}
                    disabled={!poId}
@@ -351,7 +360,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <input
                 required
                 placeholder="INV-001"
-                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#A3711C] outline-none"
+                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#D97D54] outline-none"
                 value={invoiceNumber}
                 onChange={(e) => setInvoiceNumber(e.target.value)}
               />
@@ -361,7 +370,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <input
                 type="date"
                 required
-                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#A3711C] outline-none"
+                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#D97D54] outline-none"
                 value={receiptDate}
                 onChange={(e) => setReceiptDate(e.target.value)}
               />
@@ -369,12 +378,12 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
           </div>
 
           <div className="space-y-4">
-            <div className="flex justify-between items-center bg-[#F3E8D2] p-4 rounded-xl border border-[#F3E8D2]/50">
-              <h4 className="text-xs font-black uppercase tracking-widest text-[#8a5d16]">Invoice Items</h4>
+            <div className="flex justify-between items-center bg-[#F7E4DB] p-4 rounded-xl border border-[#F7E4DB]/50">
+              <h4 className="text-xs font-black uppercase tracking-widest text-[#B85F3B]">Invoice Items</h4>
               <button
                 type="button"
                 onClick={() => setItems([...items, { itemId: "", materialId: "", name: "", quantity: 0, unitRate: 0, totalPrice: 0 }])}
-                className="text-[#A3711C] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-[#F3E8D2] px-4 py-2 rounded-xl transition-all"
+                className="text-[#D97D54] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-[#F7E4DB] px-4 py-2 rounded-xl transition-all"
               >
                 <Plus className="w-3 h-3" /> Add Item
               </button>
@@ -390,9 +399,9 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                           <th className="p-3 text-right">PO Rate</th>
                           <th className="p-3 text-right border-l border-divider/50">Ord Qty</th>
                           <th className="p-3 text-right">Rec Qty (GRN)</th>
-                          <th className="p-3 text-right border-l border-divider/50 bg-[#F3E8D2]/50">Inv Qty</th>
-                          <th className="p-3 text-right bg-[#F3E8D2]/50">Inv Rate</th>
-                          <th className="p-3 bg-[#F3E8D2]/50">Status</th>
+                          <th className="p-3 text-right border-l border-divider/50 bg-[#F7E4DB]/50">Inv Qty</th>
+                          <th className="p-3 text-right bg-[#F7E4DB]/50">Inv Rate</th>
+                          <th className="p-3 bg-[#F7E4DB]/50">Status</th>
                           <th className="p-3"></th>
                        </tr>
                     </thead>
@@ -414,7 +423,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                              <td className="p-3 text-right font-mono text-xs text-ink-muted border-l border-divider/50">{data.orderedQty > 0 ? data.orderedQty : '-'}</td>
                              <td className="p-3 text-right font-mono text-xs text-ink-muted">{data.grnAcceptedQty > 0 ? data.grnAcceptedQty : '-'}</td>
                              
-                             <td className="p-2 border-l border-divider/50 bg-[#F3E8D2]/20">
+                             <td className="p-2 border-l border-divider/50 bg-[#F7E4DB]/20">
                                 <input type="number" className="w-20 text-right bg-panel border-divider border rounded p-1 ml-auto block" value={data.item.quantity || ''} onChange={e => {
                                    const qty = parseFloat(e.target.value) || 0;
                                    const newItems = [...items];
@@ -422,7 +431,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                                    setItems(newItems);
                                 }}/>
                              </td>
-                             <td className="p-2 bg-[#F3E8D2]/20">
+                             <td className="p-2 bg-[#F7E4DB]/20">
                                 <input type="number" className="w-24 text-right bg-panel border-divider border rounded p-1 ml-auto block" value={data.item.unitRate || ''} onChange={e => {
                                    const rate = parseFloat(e.target.value) || 0;
                                    const newItems = [...items];
@@ -430,14 +439,14 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                                    setItems(newItems);
                                 }}/>
                              </td>
-                             <td className="p-3 text-xs bg-[#F3E8D2]/20">
-                                {data.status === "Matched" && <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full font-bold">Matched</span>}
-                                {data.status === "Rate mismatch" && <span className="text-amber-600 bg-amber-50 px-2 py-1 rounded-full font-bold" title="Rate != PO">Rate mismatch</span>}
-                                {data.status === "Quantity mismatch" && <span className="text-amber-600 bg-amber-50 px-2 py-1 rounded-full font-bold" title="Qty != GRN">Qty mismatch</span>}
-                                {data.status === "Unmatched" && <span className="text-red-600 bg-red-50 px-2 py-1 rounded-full font-bold">Unmatched</span>}
+                             <td className="p-3 text-xs bg-[#F7E4DB]/20">
+                                {data.status === "Matched" && <span className="text-[#3E8388] bg-[#87BCBF]/12 px-2 py-1 rounded-full font-bold">Matched</span>}
+                                {data.status === "Rate mismatch" && <span className="text-[#C0653F] bg-[#D97D54]/10 px-2 py-1 rounded-full font-bold" title="Rate != PO">Rate mismatch</span>}
+                                {data.status === "Quantity mismatch" && <span className="text-[#C0653F] bg-[#D97D54]/10 px-2 py-1 rounded-full font-bold" title="Qty != GRN">Qty mismatch</span>}
+                                {data.status === "Unmatched" && <span className="text-[#9C3B2E] bg-[#9C3B2E]/8 px-2 py-1 rounded-full font-bold">Unmatched</span>}
                              </td>
                              <td className="p-2 text-right">
-                                <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
+                                <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-[#D28E84] hover:text-[#9C3B2E] hover:bg-[#9C3B2E]/8 p-1.5 rounded-lg transition-colors">
                                    <Trash2 className="w-4 h-4" />
                                 </button>
                              </td>
@@ -509,7 +518,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                   </div>
                 </div>
                 <div className="col-span-1 flex justify-end pb-1 pb-1">
-                  <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-colors">
+                  <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-[#D28E84] hover:text-[#9C3B2E] hover:bg-[#9C3B2E]/8 p-2 rounded-xl transition-colors">
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
@@ -530,7 +539,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
              </div>
              <div className="text-right">
                <p className="text-[10px] font-black text-ink-muted uppercase tracking-widest mb-1">Total Invoice Value</p>
-               <h3 className="text-3xl font-black font-mono text-emerald-600 tracking-tight">₹{totalAmount.toLocaleString("en-IN")}</h3>
+               <h3 className="text-3xl font-black font-mono text-[#3E8388] tracking-tight">₹{totalAmount.toLocaleString("en-IN")}</h3>
              </div>
           </div>
 
@@ -538,7 +547,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
             <button type="button" onClick={onClose} className="px-6 py-3 bg-panel hover:bg-divider text-ink text-xs font-bold uppercase tracking-widest rounded-xl transition">
               Cancel
             </button>
-            <button type="submit" disabled={isSubmitting || items.length === 0 || !supplierId} className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 shadow-[0_4px_20px_rgba(5,150,105,0.2)] disabled:opacity-50 disabled:shadow-none">
+            <button type="submit" disabled={isSubmitting || items.length === 0 || !supplierId} className="px-8 py-3 bg-[#3E8388] hover:bg-[#326B70] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 shadow-[0_4px_20px_rgba(5,150,105,0.2)] disabled:opacity-50 disabled:shadow-none">
               <Save className="w-4 h-4" /> Save Invoice
             </button>
           </div>

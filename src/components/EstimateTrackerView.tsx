@@ -3,23 +3,23 @@ import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { motion } from "motion/react";
 import {
   Plus,
-  Search,
+  MagnifyingGlass as Search,
   FileText,
-  FileCheck,
+  FileText as FileCheck,
   FileX,
-  Send,
-  Download,
+  PaperPlaneTilt as Send,
+  DownloadSimple as Download,
   Calculator,
-  CheckCircle2,
-  ChevronRight,
-  CalculatorIcon,
+  CheckCircle as CheckCircle2,
+  CaretRight as ChevronRight,
+  Calculator as CalculatorIcon,
   ArrowLeft,
-  Trash2,
+  Trash as Trash2,
   Link,
-  TrendingUp,
-  TrendingDown,
+  TrendUp as TrendingUp,
+  TrendDown as TrendingDown,
   Minus,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { ClientEstimate, EstimateLineItem, Task, PurchaseOrder } from "../types";
 import { useTasksQuery, useProjectDataQuery } from "../hooks/queries";
 import {
@@ -139,13 +139,13 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
   const getStatusColor = (status: ClientEstimate["status"]) => {
     switch (status) {
       case "Draft":
-        return "bg-gray-100 text-gray-700 border-gray-200";
+        return "bg-ice text-ink/80 border-divider";
       case "Sent to Client":
-        return "bg-[#E3E8F0] text-[#4A6FA5] border-[#C9D3E3]";
+        return "bg-[#E2E8ED] text-[#56778E] border-[#C5D2DB]";
       case "Approved":
-        return "bg-green-100 text-green-700 border-green-200";
+        return "bg-[#87BCBF]/20 text-[#326B70] border-[#87BCBF]/40";
       case "Rejected":
-        return "bg-red-100 text-red-700 border-red-200";
+        return "bg-[#9C3B2E]/15 text-[#742C22] border-[#9C3B2E]/30";
     }
   };
 
@@ -466,12 +466,12 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
               onClick={handleEstimateExportCSV}
               className="flex items-center gap-1.5 px-3 py-2 bg-panel hover:bg-divider border border-divider rounded-xl text-xs font-bold uppercase tracking-wider text-ink transition cursor-pointer"
             >
-              <Download className="w-4 h-4 text-slate-700" />
+              <Download className="w-4 h-4 text-ink/80" />
               CSV
             </button>
             <button
               onClick={handleEstimateExportPDF}
-              className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
             >
               <Download className="w-4 h-4" />
               PDF
@@ -518,7 +518,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   >
                     <button
                       onClick={() => removeLineItem(item.id)}
-                      className="absolute top-4 right-4 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all pointer-events-none group-hover:pointer-events-auto"
+                      className="absolute top-4 right-4 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-[#9C3B2E] transition-all pointer-events-none group-hover:pointer-events-auto"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -626,7 +626,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                         }}
                         className={`px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase transition-all ${
                           item.isChangeOrder
-                            ? "bg-amber-500/20 text-amber-600 border border-amber-500/30"
+                            ? "bg-amber-500/20 text-[#C0653F] border border-amber-500/30"
                             : "bg-surface/60 text-ink-muted hover:text-ink border border-white/10"
                         }`}
                       >
@@ -660,10 +660,10 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     {/* Change Order Section */}
                     <div className="space-y-4">
                       <div className="flex justify-between items-center border-b border-amber-500/25 pb-2">
-                        <span className="text-xs font-black uppercase tracking-widest text-amber-600">
+                        <span className="text-xs font-black uppercase tracking-widest text-[#C0653F]">
                           Change Order Items ({changeOrderItems.length})
                         </span>
-                        <span className="text-sm font-black text-amber-600 font-mono">
+                        <span className="text-sm font-black text-[#C0653F] font-mono">
                           Subtotal: ₹{coSubTotal.toLocaleString()}
                         </span>
                       </div>
@@ -713,7 +713,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <div
                       className={`text-2xl font-bold ${
                         selectedEstimate.subTotal - scopedCost.actual >= 0
-                          ? "text-[#3F6B3A]"
+                          ? "text-[#3E8388]"
                           : "text-[#9C3B2E]"
                       }`}
                     >
@@ -722,7 +722,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <div
                       className={`text-sm font-medium ${
                         selectedEstimate.subTotal - scopedCost.actual >= 0
-                          ? "text-[#3F6B3A]"
+                          ? "text-[#3E8388]"
                           : "text-[#9C3B2E]"
                       }`}
                     >
@@ -746,8 +746,8 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
             </div>
 
             {uncoveredCost > 0 && (
-              <div className="p-4 rounded-xl border border-[#A3711C]/40 bg-[#F3E8D2]">
-                <div className="text-[#A3711C] text-sm font-bold mb-1">
+              <div className="p-4 rounded-xl border border-[#D97D54]/40 bg-[#F7E4DB]">
+                <div className="text-[#D97D54] text-sm font-bold mb-1">
                   ₹{uncoveredCost.toLocaleString()} of cost isn't included in this margin
                 </div>
                 <div className="text-ink-muted text-xs leading-relaxed">
@@ -773,7 +773,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <div className="flex justify-between items-center">
                       <span className="text-ink-muted">Cost Performance</span>
                       <span className={`font-medium ${
-                        forecast.cpi >= 1.0 ? "text-[#3F6B3A]" : forecast.cpi >= 0.9 ? "text-[#A3711C]" : "text-[#9C3B2E]"
+                        forecast.cpi >= 1.0 ? "text-[#3E8388]" : forecast.cpi >= 0.9 ? "text-[#D97D54]" : "text-[#9C3B2E]"
                       }`}>
                         {forecast.cpi.toFixed(2)} (
                         {forecast.cpi >= 1.0 ? "On or under budget" : forecast.cpi >= 0.9 ? "Slightly overspending" : "Overspending"}
@@ -795,7 +795,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                         <div
                           className={`text-2xl font-bold ${
                             forecast.forecastMargin >= 0
-                              ? "text-[#3F6B3A]"
+                              ? "text-[#3E8388]"
                               : "text-[#9C3B2E]"
                           }`}
                         >
@@ -804,7 +804,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                         <div
                           className={`text-sm font-medium ${
                             forecast.forecastMargin >= 0
-                              ? "text-[#3F6B3A]"
+                              ? "text-[#3E8388]"
                               : "text-[#9C3B2E]"
                           }`}
                         >
@@ -847,7 +847,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   Material ordered but not yet received. Becomes job cost when consumed.
                 </div>
                 {committed.total > remainingMaterialBudget && remainingMaterialBudget > 0 && (
-                  <div className="text-[#A3711C] text-xs font-medium mt-2">
+                  <div className="text-[#D97D54] text-xs font-medium mt-2">
                     You've committed ₹{committed.total.toLocaleString()} but only
                     ₹{remainingMaterialBudget.toLocaleString()} of material budget remains.
                     Possible over-ordering.
@@ -866,8 +866,8 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-amber-600 font-medium">Change Order Subtotal</span>
-                  <span className="text-amber-600 font-bold">
+                  <span className="text-[#C0653F] font-medium">Change Order Subtotal</span>
+                  <span className="text-[#C0653F] font-bold">
                     ₹{coSubTotal.toLocaleString()}
                   </span>
                 </div>
@@ -929,7 +929,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                           );
                         updateSelectedEstimate({ status: "Approved" });
                       }}
-                      className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-green-500/20"
+                      className="w-full bg-[#5FA3A7] hover:bg-[#3E8388] text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-green-500/20"
                     >
                       Approve
                     </button>
@@ -941,14 +941,14 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                           );
                         updateSelectedEstimate({ status: "Rejected" });
                       }}
-                      className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-red-500/20"
+                      className="w-full bg-[#9C3B2E] hover:bg-[#8A3428] text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-red-500/20"
                     >
                       Reject
                     </button>
                   </div>
                 )}
                 {selectedEstimate.status === "Approved" && (
-                  <div className="bg-green-500/10 border border-green-500/20 text-green-700 text-center py-2 rounded-xl font-bold flex items-center justify-center gap-2">
+                  <div className="bg-green-500/10 border border-green-500/20 text-[#326B70] text-center py-2 rounded-xl font-bold flex items-center justify-center gap-2">
                     <CheckCircle2 className="w-5 h-5" /> Client Approved
                   </div>
                 )}
@@ -973,7 +973,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
 
         {/* Sync Modal */}
         {isSyncModalOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <div className="bg-surface w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden border border-white/20 flex flex-col max-h-[80vh]">
               <div className="bg-panel px-6 py-4 flex justify-between items-center border-b border-white/10 shrink-0">
                 <h3 className="text-[17px] font-bold text-ink flex items-center gap-2">
@@ -1163,7 +1163,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                         {estScopedCost.unlinkedCount > 0 && (
                           <span 
                             title="Some line items aren't linked to a WBS task — cost is incomplete."
-                            className="text-amber-500 cursor-help"
+                            className="text-[#D97D54] cursor-help"
                           >
                             *
                           </span>
@@ -1172,10 +1172,10 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right">
-                      <div className={`font-bold ${marginValue >= 0 ? "text-[#3F6B3A]" : "text-[#9C3B2E]"}`}>
+                      <div className={`font-bold ${marginValue >= 0 ? "text-[#3E8388]" : "text-[#9C3B2E]"}`}>
                         ₹{marginValue.toLocaleString()}
                       </div>
-                      <div className={`text-[11px] font-medium ${marginValue >= 0 ? "text-[#3F6B3A]/80" : "text-[#9C3B2E]/80"}`}>
+                      <div className={`text-[11px] font-medium ${marginValue >= 0 ? "text-[#3E8388]/80" : "text-[#9C3B2E]/80"}`}>
                         {marginPercent !== "—" ? `${marginPercent}%` : "—"}
                       </div>
                     </td>
@@ -1206,7 +1206,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       </div>
 
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-white/20">
             <div className="bg-panel px-6 py-4 flex justify-between items-center border-b border-white/10">
               <h3 className="text-[17px] font-bold text-ink flex items-center gap-2">

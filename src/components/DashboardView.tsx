@@ -1,13 +1,13 @@
 import React from "react";
 import { motion } from "motion/react";
 import {
-  Construction,
+  Barricade as Construction,
   Info,
   Users,
-  RefreshCw,
-  AlertTriangle,
-  CheckCircle2,
-} from "lucide-react";
+  ArrowsClockwise as RefreshCw,
+  Warning as AlertTriangle,
+  CheckCircle as CheckCircle2,
+} from "@phosphor-icons/react";
 import { WBSView } from "./WBSView";
 import { auth } from "../firebase";
 import { useQueryClient } from "@tanstack/react-query";
@@ -136,7 +136,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Tasks
               </div>
               <div className="text-[10px] md:text-xs font-bold whitespace-nowrap">
-                <span className="text-[#34C759] mr-1">98%</span>Uptime
+                <span className="text-[#3E8388] mr-1">98%</span>Uptime
               </div>
             </div>
           </div>
@@ -157,7 +157,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               initial={{ width: 0 }}
               animate={{ width: `${completionPercentage}%` }}
               transition={{ duration: 1, ease: [0.2, 0, 0, 1] }}
-              className="h-full bg-gradient-to-r from-primary to-[#C8924A]"
+              className="h-full bg-gradient-to-r from-primary to-[#E29677]"
             />
           </div>
         </section>
@@ -172,7 +172,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div className="relative z-10">
             {tasksAtRisk.count === 0 ? (
-              <div className="flex items-center gap-2 text-emerald-400">
+              <div className="flex items-center gap-2 text-[#87BCBF]">
                 <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="text-sm md:text-base font-bold">
                   All tasks on track
@@ -180,14 +180,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             ) : (
               <div className="flex flex-col gap-1 md:gap-1.5">
-                <div className="flex items-center gap-2 text-amber-400">
+                <div className="flex items-center gap-2 text-[#E1946F]">
                   <AlertTriangle className="w-4 h-4 md:w-5 md:h-5" />
                   <span className="text-sm md:text-base font-bold">
                     Require attention
                   </span>
                 </div>
                 {tasksAtRisk.criticalCount > 0 && (
-                  <span className="text-xs md:text-sm text-rose-400 font-bold bg-rose-500/10 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full inline-block w-max">
+                  <span className="text-xs md:text-sm text-[#D28E84] font-bold bg-rose-500/10 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full inline-block w-max">
                     {tasksAtRisk.criticalCount} on critical path
                   </span>
                 )}

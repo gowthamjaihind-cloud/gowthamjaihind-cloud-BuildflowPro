@@ -1,23 +1,23 @@
 import React, { useState } from "react";
 import {
-  RefreshCw,
+  ArrowsClockwise as RefreshCw,
   Layout,
   Shield,
   Bell,
-  ChevronRight,
-  Settings,
+  CaretRight as ChevronRight,
+  GearSix as Settings,
   Info,
   CreditCard,
   Users,
-  LogOut,
-  ArrowLeftRight,
-  Trash2,
-  Send,
-  LayoutDashboard,
-  Save,
+  SignOut as LogOut,
+  ArrowsLeftRight as ArrowLeftRight,
+  Trash as Trash2,
+  PaperPlaneTilt as Send,
+  SquaresFour as LayoutDashboard,
+  FloppyDisk as Save,
   Monitor,
-  Edit2,
-} from "lucide-react";
+  PencilSimple as Edit2,
+} from "@phosphor-icons/react";
 import { Project, UserProfile } from "../types";
 import { EnterpriseAuthView } from "./EnterpriseAuthView";
 import { useUIStore } from "../store";
@@ -87,7 +87,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onClick={() => setActiveTab(item.id as SettingsSection)}
                 className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl apple-transition font-semibold text-[15px] ${
                   activeTab === item.id
-                    ? "bg-surface text-ink shadow-sm ring-1 ring-black/5"
+                    ? "bg-surface text-ink shadow-sm ring-1 ring-onyx/5"
                     : "text-ink-muted hover:text-ink hover:bg-surface/40"
                 }`}
               >
@@ -121,7 +121,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
-                          className="w-full bg-surface border border-[#E5E5EA] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink"
+                          className="w-full bg-surface border border-[#C8D1D3] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink"
                           placeholder="Enter company name"
                           value={draftCompanyName}
                           onChange={(e) => setDraftCompanyName(e.target.value)}
@@ -131,13 +131,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             setCompanyName(draftCompanyName);
                             setIsEditingCompany(false);
                           }}
-                          className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#0056B3] transition-colors"
+                          className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors"
                         >
                           Save
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between bg-surface border border-[#E5E5EA] px-4 py-3 rounded-xl">
+                      <div className="flex items-center justify-between bg-surface border border-[#C8D1D3] px-4 py-3 rounded-xl">
                         <span className="text-ink font-semibold">
                           {companyName || "No Company Name Set"}
                         </span>
@@ -159,7 +159,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </label>
                     <input
                       type="text"
-                      className="w-full bg-surface border border-[#E5E5EA] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink"
+                      className="w-full bg-surface border border-[#C8D1D3] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink"
                       placeholder="e.g. 29ABCDE1234F1Z5"
                     />
                   </div>
@@ -167,7 +167,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <label className="block text-sm font-semibold text-ink mb-2">
                       Base Currency
                     </label>
-                    <select className="w-full bg-surface border border-[#E5E5EA] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink appearance-none">
+                    <select className="w-full bg-surface border border-[#C8D1D3] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink appearance-none">
                       <option value="INR">INR (₹)</option>
                       <option value="USD">USD ($)</option>
                       <option value="EUR">EUR (€)</option>
@@ -183,7 +183,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           target.innerHTML = originalText;
                         }, 2000);
                       }}
-                      className="bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#0056B3] transition-colors apple-transition active:scale-95"
+                      className="bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#B85F3B] transition-colors apple-transition active:scale-95"
                     >
                       <Save className="w-5 h-5" /> Save Configuration
                     </button>
@@ -239,39 +239,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
 
                   <div>
-                    <h4 className="font-bold text-ink mb-4">Color Scheme</h4>
-                    <div className="flex flex-wrap gap-4">
-                      {[
-                        { id: "default", color: "#A3711C", label: "Brass" },
-                        { id: "green", color: "#14452F", label: "Racing Green" },
-                        { id: "claret", color: "#7B2D3A", label: "Claret" },
-                        { id: "oxford", color: "#1F3A5F", label: "Oxford Blue" },
-                        { id: "ochre", color: "#8B6508", label: "Ochre" },
-                      ].map((scheme) => (
-                        <button
-                          key={scheme.id}
-                          onClick={() =>
-                            useUIStore.getState().setColorScheme(scheme.id)
-                          }
-                          className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${
-                            useUIStore.getState().colorScheme === scheme.id
-                              ? "border-primary ring-2 ring-primary/20 bg-surface"
-                              : "border-divider bg-panel hover:bg-surface"
-                          }`}
-                        >
-                          <div
-                            className="w-8 h-8 rounded-full shadow-sm"
-                            style={{ backgroundColor: scheme.color }}
-                          ></div>
-                          <span className="text-xs font-semibold text-ink">
-                            {scheme.label}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
                     <h4 className="font-bold text-ink mb-4">Display Mode</h4>
                     <div className="flex gap-4">
                       <button
@@ -295,7 +262,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             : "border-divider bg-panel hover:bg-surface"
                         }`}
                       >
-                        <div className="w-5 h-5 rounded-full border border-slate-700 bg-slate-900 shadow-inner"></div>
+                        <div className="w-5 h-5 rounded-full border border-[#465D6E] bg-surface-dark shadow-inner"></div>
                         <span className="font-semibold text-ink">
                           Dark Mode
                         </span>

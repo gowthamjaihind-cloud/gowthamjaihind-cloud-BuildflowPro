@@ -25,8 +25,8 @@ export default defineConfig(({mode}) => {
         manifest: {
           name: 'BuildFlow',
           short_name: 'BuildFlow',
-          theme_color: '#4f46e5',
-          background_color: '#ffffff',
+          theme_color: '#324755',
+          background_color: '#F0F3F4',
           display: 'standalone',
           icons: [
             {

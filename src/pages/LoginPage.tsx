@@ -1,6 +1,12 @@
 import React from "react";
 import { motion } from "motion/react";
-import { Construction, ArrowRight, Loader2, ShieldCheck, AlertCircle } from "lucide-react";
+import {
+  Barricade as Construction,
+  ArrowRight,
+  CircleNotch as Loader2,
+  ShieldCheck,
+  WarningCircle as AlertCircle,
+} from "@phosphor-icons/react";
 
 interface LoginPageProps {
   isLoggingIn: boolean;
@@ -33,7 +39,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         <button
           onClick={onLogin}
           disabled={isLoggingIn}
-          className={`w-full bg-surface-dark text-white py-6 rounded-3xl font-bold flex items-center justify-center gap-4 hover:bg-black apple-transition active:scale-[0.98] shadow-2xl shadow-slate-200 group text-[17px] ${isLoggingIn ? "opacity-50 cursor-not-allowed" : ""}`}
+          className={`w-full bg-surface-dark text-white py-6 rounded-3xl font-bold flex items-center justify-center gap-4 hover:bg-onyx apple-transition active:scale-[0.98] shadow-2xl shadow-drab/10 group text-[17px] ${isLoggingIn ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           {isLoggingIn ? (
             <>
@@ -54,14 +60,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         </button>
 
         {loginError && (
-          <div className="mt-6 flex items-start gap-3 text-[13px] font-medium text-[#FF3B30] bg-[#FF3B30]/10 p-4 rounded-2xl text-left border border-[#FF3B30]/20">
+          <div className="mt-6 flex items-start gap-3 text-[13px] font-medium text-[#9C3B2E] bg-[#9C3B2E]/10 p-4 rounded-2xl text-left border border-[#9C3B2E]/20">
             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
             <p>{loginError}</p>
           </div>
         )}
 
         <div className="mt-12 flex items-center justify-center gap-3 text-[13px] font-semibold text-ink-muted">
-          <ShieldCheck className="w-4 h-4 text-[#34C759]" />
+          <ShieldCheck className="w-4 h-4 text-[#3E8388]" />
           Secure Enterprise Authentication
         </div>
       </motion.div>

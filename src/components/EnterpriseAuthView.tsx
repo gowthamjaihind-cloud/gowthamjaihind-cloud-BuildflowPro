@@ -17,18 +17,18 @@ import { deleteField } from "firebase/firestore";
 import {
   ShieldCheck,
   Users,
-  Construction,
+  Barricade as Construction,
   ArrowLeft,
-  Loader2,
-  Save,
-  Trash2,
-  Edit2,
-  ShieldAlert,
+  CircleNotch as Loader2,
+  FloppyDisk as Save,
+  Trash as Trash2,
+  PencilSimple as Edit2,
+  ShieldWarning as ShieldAlert,
   X,
-  MessageSquare,
-  Send,
-  CheckCircle2,
-} from "lucide-react";
+  ChatText as MessageSquare,
+  PaperPlaneTilt as Send,
+  CheckCircle as CheckCircle2,
+} from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import { handleFirestoreError, OperationType } from "../firebase";
 
@@ -209,13 +209,13 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {currentUser.role !== "Admin" && currentUser.role !== "Owner" && (
-        <div className="bg-rose-50 border border-rose-200 p-6 rounded-3xl flex items-start gap-4">
-          <ShieldAlert className="w-8 h-8 text-rose-500 mt-1" />
+        <div className="bg-[#9C3B2E]/8 border border-[#9C3B2E]/30 p-6 rounded-3xl flex items-start gap-4">
+          <ShieldAlert className="w-8 h-8 text-[#9C3B2E] mt-1" />
           <div>
-            <h3 className="text-lg font-bold text-rose-900">
+            <h3 className="text-lg font-bold text-[#4E1D17]">
               Restricted Access
             </h3>
-            <p className="text-rose-700 font-medium">
+            <p className="text-[#742C22] font-medium">
               You must be an Enterprise Admin or Owner to modify roles. You are currently
               viewing in read-only mode.
             </p>
@@ -239,7 +239,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                 <th className="px-8 py-6 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-divider/60">
               {users.map((u) => (
                 <tr key={u.uid} className="hover:bg-panel/50 transition-colors">
                   <td className="px-8 py-6">
@@ -247,13 +247,13 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                     <div className="mt-2 flex items-center gap-2">
                       {u.telegramChatId ? (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[#34C759] bg-[#34C759]/10 px-2.5 py-1 rounded-md border border-[#34C759]/20 flex items-center gap-1 font-bold text-xs">
+                          <span className="text-[#3E8388] bg-[#3E8388]/10 px-2.5 py-1 rounded-md border border-[#3E8388]/20 flex items-center gap-1 font-bold text-xs">
                             <CheckCircle2 className="w-3.5 h-3.5" /> Telegram Linked
                           </span>
                           <button
                             onClick={() => unlinkBot(u.uid)}
                             disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
-                            className="text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded-md transition-colors disabled:opacity-50"
+                            className="text-xs font-semibold text-[#9C3B2E] hover:text-[#742C22] bg-[#9C3B2E]/8 hover:bg-[#9C3B2E]/15 px-2 py-1 rounded-md transition-colors disabled:opacity-50"
                             title="Unlink Telegram Bot"
                           >
                             Unlink
@@ -290,19 +290,19 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                     ) : (
                       <div className="flex items-center gap-2 text-sm font-bold">
                         {u.role === "Owner" ? (
-                          <span className="text-[#8E44AD] bg-[#8E44AD]/10 px-3 py-1.5 rounded-lg border border-[#8E44AD]/20 flex items-center gap-1.5 w-fit">
+                          <span className="text-[#324755] bg-[#324755]/10 px-3 py-1.5 rounded-lg border border-[#324755]/20 flex items-center gap-1.5 w-fit">
                             <ShieldCheck className="w-4 h-4" /> Owner
                           </span>
                         ) : u.role === "Admin" ? (
-                          <span className="text-[#A3711C] bg-[#A3711C]/10 px-3 py-1.5 rounded-lg border border-[#A3711C]/20 flex items-center gap-1.5 w-fit">
+                          <span className="text-[#D97D54] bg-[#D97D54]/10 px-3 py-1.5 rounded-lg border border-[#D97D54]/20 flex items-center gap-1.5 w-fit">
                             <ShieldCheck className="w-4 h-4" /> Admin
                           </span>
                         ) : u.role === "Project Manager" ? (
-                          <span className="text-[#0088CC] bg-[#0088CC]/10 px-3 py-1.5 rounded-lg border border-[#0088CC]/20 flex items-center gap-1.5 w-fit">
+                          <span className="text-[#56778E] bg-[#56778E]/10 px-3 py-1.5 rounded-lg border border-[#56778E]/20 flex items-center gap-1.5 w-fit">
                             <Users className="w-4 h-4" /> Manager
                           </span>
                         ) : u.role === "Site Engineer" ? (
-                          <span className="text-[#34C759] bg-[#34C759]/10 px-3 py-1.5 rounded-lg border border-[#34C759]/20 flex items-center gap-1.5 w-fit">
+                          <span className="text-[#3E8388] bg-[#3E8388]/10 px-3 py-1.5 rounded-lg border border-[#3E8388]/20 flex items-center gap-1.5 w-fit">
                             <Construction className="w-4 h-4" /> Engineer
                           </span>
                         ) : (
@@ -346,7 +346,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                           ))}
                         </div>
                       ) : u.role === "Admin" || u.role === "Owner" ? (
-                        <span className="text-[#34C759] font-bold">
+                        <span className="text-[#3E8388] font-bold">
                           Universal Access
                         </span>
                       ) : (
@@ -371,7 +371,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                                 >
                                   <span className="truncate">{p.name}</span>
                                   <span
-                                    className={`font-bold ${u.projectAccess![p.id] === "write" ? "text-[#A3711C]" : "text-ink-muted"}`}
+                                    className={`font-bold ${u.projectAccess![p.id] === "write" ? "text-[#D97D54]" : "text-ink-muted"}`}
                                   >
                                     {u.projectAccess![p.id] === "write"
                                       ? "R/W"
@@ -391,14 +391,14 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() => handleUpdateRole(u.uid)}
-                          className="p-2 bg-[#34C759] text-white rounded-xl hover:bg-[#28A745] transition-colors"
+                          className="p-2 bg-[#3E8388] text-white rounded-xl hover:bg-[#3E8388] transition-colors"
                           title="Save Role"
                         >
                           <Save className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setEditingUserId(null)}
-                          className="p-2 bg-divider text-ink rounded-xl hover:bg-slate-300 transition-colors"
+                          className="p-2 bg-divider text-ink rounded-xl hover:bg-fossil transition-colors"
                           title="Cancel"
                         >
                           <X className="w-4 h-4" />
@@ -436,7 +436,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       
 
       {showLinkCode && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-md rounded-3xl p-8 border border-divider shadow-2xl relative">
             <button
               onClick={() => setShowLinkCode(null)}
@@ -454,7 +454,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                 /link {showLinkCode.displayCode}
               </code>
             </div>
-            <p className="text-center text-sm font-medium text-amber-600 bg-amber-50 py-3 rounded-xl">
+            <p className="text-center text-sm font-medium text-[#C0653F] bg-[#D97D54]/10 py-3 rounded-xl">
               Expires in 15 minutes.
             </p>
           </div>

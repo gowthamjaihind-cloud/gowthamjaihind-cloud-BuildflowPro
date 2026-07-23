@@ -24,16 +24,19 @@ import { aggregateLogs } from "../utils/reportUtils";
 import { useAuthStore } from "../store";
 import { DailyLogEntry, MaterialIssue, DailyLaborLog } from "../types";
 import { DailyLogEntryScreen } from "./DailyLogEntryScreen";
-import { Edit2, Trash2 } from "lucide-react";
 import {
-  Download,
+  PencilSimple as Edit2,
+  Trash as Trash2,
+} from "@phosphor-icons/react";
+import {
+  DownloadSimple as Download,
   FileText,
-  CheckCircle2,
+  CheckCircle as CheckCircle2,
   Package,
   Users,
-  Activity,
-  Loader2,
-} from "lucide-react";
+  Pulse as Activity,
+  CircleNotch as Loader2,
+} from "@phosphor-icons/react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -364,7 +367,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             disabled={logs.length === 0 || !canExport}
             className={`flex items-center gap-2 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-panel border border-divider hover:bg-divider text-ink active:scale-95 cursor-pointer"}`}
           >
-            <Download className="w-4 h-4 text-slate-700" />
+            <Download className="w-4 h-4 text-ink/80" />
             Export CSV
           </button>
           <button
@@ -383,7 +386,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       </div>
 
       {!canExport && (
-        <p className="text-xs text-orange-600 bg-orange-50 p-3 rounded-lg border border-orange-100 font-bold uppercase tracking-widest">
+        <p className="text-xs text-[#C0653F] bg-[#D97D54]/10 p-3 rounded-lg border border-[#D97D54]/20 font-bold uppercase tracking-widest">
           Note: PDF Export is restricted to Admin or Manager roles.
         </p>
       )}
@@ -401,21 +404,21 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
           {/* This ID is targeted by HTML2Canvas */}
           <div
             id="report-printable-area"
-            className="p-8 md:p-12 text-black bg-white"
+            className="p-8 md:p-12 text-ink bg-white"
           >
             {/* Report Header */}
-            <div className="border-b-2 border-black pb-6 mb-8 flex justify-between items-end">
+            <div className="border-b-2 border-onyx pb-6 mb-8 flex justify-between items-end">
               <div>
                 <h1 className="text-3xl font-black uppercase tracking-tighter mb-2">
                   {project?.name || "Project"}
                 </h1>
-                <h2 className="text-lg font-bold text-gray-600 uppercase tracking-widest">
+                <h2 className="text-lg font-bold text-[#56778E] uppercase tracking-widest">
                   {reportType.charAt(0).toUpperCase() + reportType.slice(1)}{" "}
                   Progress Report
                 </h2>
               </div>
               <div className="text-right">
-                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">
+                <p className="text-sm font-bold text-ink-muted uppercase tracking-widest mb-1">
                   Period
                 </p>
                 <p className="text-base font-black">
@@ -428,22 +431,22 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
 
             {/* Summary Band */}
             <div className="grid grid-cols-3 gap-6 mb-10">
-              <div className="bg-gray-50 p-5 border border-gray-200 rounded-xl">
-                <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
+              <div className="bg-page p-5 border border-divider rounded-xl">
+                <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-ink-muted mb-2">
                   <Activity className="w-3.5 h-3.5" /> Tasks Active
                 </span>
                 <p className="text-2xl font-black font-mono">
                   {logsByTask.size}
                 </p>
               </div>
-              <div className="bg-gray-50 p-5 border border-gray-200 rounded-xl">
-                <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
+              <div className="bg-page p-5 border border-divider rounded-xl">
+                <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-ink-muted mb-2">
                   <Users className="w-3.5 h-3.5" /> Total Labour Days
                 </span>
                 <p className="text-2xl font-black font-mono">{totalLabor}</p>
               </div>
-              <div className="bg-gray-50 p-5 border border-gray-200 rounded-xl">
-                <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
+              <div className="bg-page p-5 border border-divider rounded-xl">
+                <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-ink-muted mb-2">
                   <Package className="w-3.5 h-3.5" /> Unique Materials
                 </span>
                 <p className="text-2xl font-black font-mono">
@@ -455,12 +458,12 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             {/* Site-Wide Totals (Weekly/Monthly like tables) */}
             {!isDaily && (
               <div className="mb-10">
-                <h3 className="text-sm font-black uppercase tracking-widest mb-4 bg-black text-white py-2 px-4 rounded">
+                <h3 className="text-sm font-black uppercase tracking-widest mb-4 bg-onyx text-white py-2 px-4 rounded">
                   Period Consolidation
                 </h3>
                 <div className="grid grid-cols-2 gap-8">
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3 border-b pb-2">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-ink-muted mb-3 border-b pb-2">
                       Material Consumption
                     </h4>
                     <table className="w-full text-sm">
@@ -468,12 +471,12 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                         {materialsRollup.map((m, i) => (
                           <tr
                             key={i}
-                            className="border-b border-gray-100 last:border-0"
+                            className="border-b border-divider/60 last:border-0"
                           >
                             <td className="py-2 pr-4 font-medium">{m.name}</td>
                             <td className="py-2 text-right font-mono font-bold">
                               {m.count}{" "}
-                              <span className="text-[10px] text-gray-500 uppercase">
+                              <span className="text-[10px] text-ink-muted uppercase">
                                 {m.unit}
                               </span>
                             </td>
@@ -483,7 +486,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                     </table>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3 border-b pb-2">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-ink-muted mb-3 border-b pb-2">
                       Labour Deployment
                     </h4>
                     <table className="w-full text-sm">
@@ -491,14 +494,14 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                         {laborByRole.map((l, i) => (
                           <tr
                             key={i}
-                            className="border-b border-gray-100 last:border-0"
+                            className="border-b border-divider/60 last:border-0"
                           >
                             <td className="py-2 pr-4 font-medium">
                               {l.roleName}
                             </td>
                             <td className="py-2 text-right font-mono font-bold">
                               {l.count}{" "}
-                              <span className="text-[10px] text-gray-500 uppercase">
+                              <span className="text-[10px] text-ink-muted uppercase">
                                 shifts
                               </span>
                             </td>
@@ -512,7 +515,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             )}
 
             {/* Per-Task Breakdown */}
-            <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-black text-white py-2 px-4 rounded">
+            <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-onyx text-white py-2 px-4 rounded">
               Task Progress Details
             </h3>
             <div className="space-y-8">
@@ -537,15 +540,15 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                 return (
                   <div
                     key={taskId}
-                    className="border border-gray-200 rounded-2xl p-6"
+                    className="border border-divider rounded-2xl p-6"
                   >
-                    <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-4">
+                    <div className="flex justify-between items-start mb-4 border-b border-divider/60 pb-4">
                       <div>
                         <h4 className="text-lg font-black tracking-tight">
                           {task?.name || `Task ${taskId}`}
                         </h4>
                         {task?.phase && (
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-ink-muted">
                             Phase: {task.phase}
                           </span>
                         )}
@@ -554,7 +557,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                         <span className="text-2xl font-black text-primary font-mono leading-none">
                           {latestLog.progressPercent}%
                         </span>
-                        <span className="block text-[8px] font-bold uppercase tracking-widest text-gray-400 mt-1">
+                        <span className="block text-[8px] font-bold uppercase tracking-widest text-ink-muted/80 mt-1">
                           Cum. Progress
                         </span>
                       </div>
@@ -566,14 +569,14 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                         <div className="space-y-4">
                           {taskAgg.materialsRollup.length > 0 && (
                             <div>
-                              <h5 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">
+                              <h5 className="text-[10px] font-bold uppercase tracking-widest text-ink-muted/80 mb-2">
                                 Materials
                               </h5>
                               <ul className="text-xs space-y-1">
                                 {taskAgg.materialsRollup.map((m, i) => (
                                   <li
                                     key={i}
-                                    className="flex justify-between border-b border-gray-50 pb-1"
+                                    className="flex justify-between border-b border-divider/40 pb-1"
                                   >
                                     <span>{m.name}</span>
                                     <span className="font-mono font-bold">
@@ -586,14 +589,14 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                           )}
                           {taskAgg.laborByRole.length > 0 && (
                             <div>
-                              <h5 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">
+                              <h5 className="text-[10px] font-bold uppercase tracking-widest text-ink-muted/80 mb-2">
                                 Labour
                               </h5>
                               <ul className="text-xs space-y-1">
                                 {taskAgg.laborByRole.map((l, i) => (
                                   <li
                                     key={i}
-                                    className="flex justify-between border-b border-gray-50 pb-1"
+                                    className="flex justify-between border-b border-divider/40 pb-1"
                                   >
                                     <span>{l.roleName}</span>
                                     <span className="font-mono font-bold">
@@ -608,24 +611,24 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                       )}
 
                       <div>
-                        <h5 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">
+                        <h5 className="text-[10px] font-bold uppercase tracking-widest text-ink-muted/80 mb-2">
                           Remarks / Notes
                         </h5>
-                        <div className="text-xs space-y-2 text-gray-700 font-medium italic">
+                        <div className="text-xs space-y-2 text-ink/80 font-medium italic">
                           {tLogs
                             .filter((l) => l.note)
                             .map((l, i) => (
                               <p key={i}>
                                 "{l.note}"{" "}
                                 {!isDaily && (
-                                  <span className="text-[8px] not-italic text-gray-400 ml-1">
+                                  <span className="text-[8px] not-italic text-ink-muted/80 ml-1">
                                     ({l.workDate})
                                   </span>
                                 )}
                               </p>
                             ))}
                           {tLogs.filter((l) => l.note).length === 0 && (
-                            <span className="text-gray-400">
+                            <span className="text-ink-muted/80">
                               No remarks provided.
                             </span>
                           )}
@@ -636,7 +639,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                           (l) => l.photoUrls && l.photoUrls.length > 0,
                         ) && (
                           <div className="mt-4">
-                            <h5 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">
+                            <h5 className="text-[10px] font-bold uppercase tracking-widest text-ink-muted/80 mb-2">
                               Photos attached
                             </h5>
                             <div className="flex gap-2 flex-wrap">
@@ -654,7 +657,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                                 ))}
                               {tLogs.flatMap((l) => l.photoUrls || []).length >
                                 4 && (
-                                <div className="w-16 h-16 bg-gray-50 rounded border flex items-center justify-center text-[10px] font-bold text-gray-400">
+                                <div className="w-16 h-16 bg-page rounded border flex items-center justify-center text-[10px] font-bold text-ink-muted/80">
                                   +
                                   {tLogs.flatMap((l) => l.photoUrls || [])
                                     .length - 4}
@@ -673,24 +676,24 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             
             {/* Daily Logs History */}
             <div className="mt-12 break-before-page">
-              <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-black text-white py-2 px-4 rounded">
+              <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-onyx text-white py-2 px-4 rounded">
                 Daily Logs History
               </h3>
               <div className="space-y-4">
                 {logs.length === 0 ? (
-                  <p className="text-sm text-gray-500 italic">No daily logs found for this period.</p>
+                  <p className="text-sm text-ink-muted italic">No daily logs found for this period.</p>
                 ) : (
                   logs.map((log, index) => {
                     const task = tasks.find((t) => t.id === log.taskId);
                     return (
-                      <div key={`${log.id}-${index}`} className="border border-gray-200 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                      <div key={`${log.id}-${index}`} className="border border-divider rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                           <h4 className="text-sm font-bold text-ink mb-1">{task?.name || 'Unknown Task'}</h4>
                           <p className="text-xs text-ink-muted">
                             <span className="font-mono">{log.workDate}</span> • {log.progressPercent}% progress
                             {log.markComplete ? ' (Completed)' : ''}
                           </p>
-                          <div className="mt-2 text-xs text-gray-600">
+                          <div className="mt-2 text-xs text-[#56778E]">
                             {log.materials && log.materials.length > 0 && (
                               <span className="mr-3"><b>Mat:</b> {log.materials.length} items</span>
                             )}
@@ -703,13 +706,13 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                         <div className="print:hidden flex items-center gap-2">
                           <button
                           onClick={() => setLogToEdit(log)}
-                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-4 py-2 rounded-xl border border-divider hover:bg-[#F3E8D2] transition-colors whitespace-nowrap"
+                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-4 py-2 rounded-xl border border-divider hover:bg-[#F7E4DB] transition-colors whitespace-nowrap"
                         >
                           <Edit2 className="w-3.5 h-3.5" /> Edit Log
                         </button>
                           <button
                             onClick={() => handleDeleteLog(log)}
-                            className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center justify-center p-2 rounded-xl border border-divider hover:bg-red-50 transition-colors"
+                            className="text-xs font-bold text-[#9C3B2E] hover:text-[#9C3B2E] flex items-center justify-center p-2 rounded-xl border border-divider hover:bg-[#9C3B2E]/8 transition-colors"
                             title="Delete Log"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -724,7 +727,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="mt-12 pt-6 border-t border-gray-200 flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            <div className="mt-12 pt-6 border-t border-divider flex justify-between text-[10px] font-bold text-ink-muted/80 uppercase tracking-widest">
               <span>Generated via BuildFlow Pro</span>
               <span>
                 Generated by {user?.displayName || user?.email} on{" "}
@@ -762,7 +765,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
               </button>
               <button
                 onClick={confirmDeleteLog}
-                className="py-3.5 px-6 rounded-2xl font-bold bg-red-500 hover:bg-red-600 text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
+                className="py-3.5 px-6 rounded-2xl font-bold bg-[#9C3B2E] hover:bg-[#8A3428] text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
               >
                 Delete
               </button>

@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Image as ImageIcon, Trash2 } from "lucide-react";
+import {
+  X,
+  Image as ImageIcon,
+  Trash as Trash2,
+} from "@phosphor-icons/react";
 import { useProjectStore } from "../../../store";
 import { Project } from "../../../types";
 
@@ -95,7 +99,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/20 backdrop-blur-3xl z-[100] flex items-center justify-center p-6"
+          className="fixed inset-0 bg-onyx/20 backdrop-blur-3xl z-[100] flex items-center justify-center p-6"
         >
           <motion.form
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -172,7 +176,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                         onClick={() =>
                           setEditedProject({ ...editedProject, imageUrl: "" })
                         }
-                        className="text-red-500 hover:bg-red-50 text-sm font-medium px-4 py-1.5 rounded-lg apple-transition"
+                        className="text-[#9C3B2E] hover:bg-[#9C3B2E]/8 text-sm font-medium px-4 py-1.5 rounded-lg apple-transition"
                       >
                         Remove Image
                       </button>
@@ -234,7 +238,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               <div className="md:col-span-2 mt-8">
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white py-4 md:py-5 rounded-2xl font-bold text-[17px] hover:bg-[#0056B3] apple-transition shadow-xl hover:shadow-2xl active:scale-[0.98]"
+                  className="w-full bg-primary text-white py-4 md:py-5 rounded-2xl font-bold text-[17px] hover:bg-[#B85F3B] apple-transition shadow-xl hover:shadow-2xl active:scale-[0.98]"
                 >
                   Save Changes
                 </button>

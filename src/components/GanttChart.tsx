@@ -16,7 +16,14 @@ import {
 } from "date-fns";
 import { Task, DependencyType, TaskDependency } from "../types";
 import { motion, AnimatePresence } from "motion/react";
-import { ZoomIn, ZoomOut, Activity, Flag, Tag, Filter } from "lucide-react";
+import {
+  MagnifyingGlassPlus as ZoomIn,
+  MagnifyingGlassMinus as ZoomOut,
+  Pulse as Activity,
+  Flag,
+  Tag,
+  Funnel as Filter,
+} from "@phosphor-icons/react";
 
 interface GanttChartProps {
   tasks: Task[];
@@ -276,7 +283,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 onClick={() => setZoomLevel(level)}
                 className={`flex-1 sm:flex-none px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-md transition-all ${
                   zoomLevel === level
-                    ? "bg-surface text-[#A3711C] shadow-sm"
+                    ? "bg-surface text-[#D97D54] shadow-sm"
                     : "text-ink-muted hover:text-ink/80"
                 }`}
               >
@@ -290,7 +297,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
               onClick={() => setShowCriticalPath(!showCriticalPath)}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
                 showCriticalPath
-                  ? "bg-red-50 text-red-600 border border-red-100"
+                  ? "bg-[#9C3B2E]/8 text-[#9C3B2E] border border-[#9C3B2E]/20"
                   : "bg-panel text-ink border border-divider"
               }`}
             >
@@ -389,7 +396,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   refY="2"
                   orient="auto"
                 >
-                  <path d="M0,0 L6,2 L0,4 Z" fill="#cbd5e1" />
+                  <path d="M0,0 L6,2 L0,4 Z" fill="#C8D1D3" />
                 </marker>
                 <marker
                   id="arrowhead-critical"
@@ -399,7 +406,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   refY="2"
                   orient="auto"
                 >
-                  <path d="M0,0 L6,2 L0,4 Z" fill="#ef4444" />
+                  <path d="M0,0 L6,2 L0,4 Z" fill="#9C3B2E" />
                 </marker>
                 <marker
                   id="arrowhead-linking"
@@ -409,7 +416,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   refY="2"
                   orient="auto"
                 >
-                  <path d="M0,0 L6,2 L0,4 Z" fill="#6366f1" />
+                  <path d="M0,0 L6,2 L0,4 Z" fill="#6E8CA0" />
                 </marker>
               </defs>
               {filteredTasks.map((task, taskIndex) => {
@@ -488,7 +495,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       key={`dep-${dep.id}-${task.id}-${depIdx}`}
                       d={`M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`}
                       fill="none"
-                      stroke={isCritical ? "#ef4444" : "#94a3b8"}
+                      stroke={isCritical ? "#9C3B2E" : "#6E8CA0"}
                       strokeWidth={isCritical ? "2.5" : "1.5"}
                       strokeDasharray={dep.type !== "FS" ? "4 4" : "none"}
                       markerEnd={
@@ -507,7 +514,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 <path
                   d={`M ${linkingFrom.x} ${linkingFrom.y} L ${mousePos.x} ${mousePos.y}`}
                   fill="none"
-                  stroke="#6366f1"
+                  stroke="#6E8CA0"
                   strokeWidth="2"
                   strokeDasharray="4 2"
                   markerEnd="url(#arrowhead-linking)"
@@ -560,17 +567,17 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                     <div
                       className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full flex-shrink-0 ${
                         task.type === "Milestone"
-                          ? "bg-gradient-to-br from-amber-400 to-orange-500 rotate-45 shadow-sm"
+                          ? "bg-gradient-to-br from-[#E1946F] to-[#D97D54] rotate-45 shadow-sm"
                           : task.type === "Summary"
-                            ? "bg-slate-700 shadow-sm"
+                            ? "bg-[#465D6E] shadow-sm"
                             : isCritical
-                              ? "bg-gradient-to-r from-red-500 to-rose-600 shadow-[0_0_10px_rgba(239,68,68,0.4)]"
-                              : "bg-[#A3711C] shadow-sm"
+                              ? "bg-gradient-to-r from-[#9C3B2E] to-[#8A3428] shadow-[0_0_10px_rgba(156,59,46,0.4)]"
+                              : "bg-[#D97D54] shadow-sm"
                       }`}
                     />
                     <div className="flex flex-col min-w-0">
                       <span
-                        className={`truncate font-medium ${isCritical ? "text-red-600 font-bold" : "text-ink"}`}
+                        className={`truncate font-medium ${isCritical ? "text-[#9C3B2E] font-bold" : "text-ink"}`}
                       >
                         {task.name}
                       </span>
@@ -594,14 +601,14 @@ export const GanttChart: React.FC<GanttChartProps> = ({
 
                     {/* Task Bar */}
                     <div
-                      className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] text-white font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${isDraggingThis ? "opacity-70 ring-2 ring-[#A3711C] ring-offset-1" : ""} ${
+                      className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] text-white font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${isDraggingThis ? "opacity-70 ring-2 ring-[#D97D54] ring-offset-1" : ""} ${
                         task.type === "Milestone"
-                          ? "bg-gradient-to-br from-amber-400 to-orange-500 w-7 !rounded-sm rotate-45 justify-center border-2 border-white cursor-pointer"
+                          ? "bg-gradient-to-br from-[#E1946F] to-[#D97D54] w-7 !rounded-sm rotate-45 justify-center border-2 border-white cursor-pointer"
                           : task.type === "Summary"
-                            ? "bg-slate-700 cursor-pointer"
+                            ? "bg-[#465D6E] cursor-pointer"
                             : isCritical
-                              ? "bg-gradient-to-r from-red-500 to-rose-600 cursor-move"
-                              : "bg-[#A3711C] cursor-move"
+                              ? "bg-gradient-to-r from-[#9C3B2E] to-[#8A3428] cursor-move"
+                              : "bg-[#D97D54] cursor-move"
                       }`}
                       style={{
                         left: left,
@@ -657,7 +664,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                     >
                       {/* Linking Start Handle (Left Circle) */}
                       <div
-                        className="absolute -left-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-[#F3E8D2]0 rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
+                        className="absolute -left-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-[#D97D54] rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
                         title="Link to this task"
                         onMouseUp={(e) => {
                           if (linkingFrom && linkingFrom.taskId !== task.id) {
@@ -691,7 +698,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
 
                       {/* Linking End Handle (Right Circle) */}
                       <div
-                        className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-[#F3E8D2]0 rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
+                        className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-[#D97D54] rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
                         title="Drag to link to another task"
                         onMouseDown={(e) => {
                           const rect = e.currentTarget.getBoundingClientRect();
@@ -751,7 +758,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       ) : (
                         <>
                           <div
-                            className="absolute left-0 top-0 bottom-0 bg-black/20 backdrop-blur-[1px] transition-all pointer-events-none rounded-l-lg"
+                            className="absolute left-0 top-0 bottom-0 bg-onyx/20 backdrop-blur-[1px] transition-all pointer-events-none rounded-l-lg"
                             style={{ width: `${task.progress}%` }}
                           />
                           <div className="relative z-10 flex items-center justify-between w-full px-1 pointer-events-none overflow-hidden">
@@ -797,11 +804,11 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   {hoveredTask.task.name}
                 </h4>
                 {hoveredTask.task.type === "Milestone" ? (
-                  <span className="shrink-0 inline-flex items-center justify-center bg-amber-500/20 text-amber-300 rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                  <span className="shrink-0 inline-flex items-center justify-center bg-amber-500/20 text-[#F0C6B2] rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">
                     Milestone
                   </span>
                 ) : (
-                  <span className="shrink-0 font-mono text-xs font-bold text-slate-300">
+                  <span className="shrink-0 font-mono text-xs font-bold text-fossil">
                     {hoveredTask.task.progress}%
                   </span>
                 )}
@@ -809,10 +816,10 @@ export const GanttChart: React.FC<GanttChartProps> = ({
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-slate-800/80 p-2 rounded-lg">
-                  <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mb-1">
+                  <div className="text-[9px] text-ink-muted/80 uppercase tracking-widest font-bold mb-1">
                     Start
                   </div>
-                  <div className="font-medium text-slate-200">
+                  <div className="font-medium text-fossil">
                     {format(
                       new Date(hoveredTask.task.startDate),
                       "MMM d, yyyy",
@@ -820,10 +827,10 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   </div>
                 </div>
                 <div className="bg-slate-800/80 p-2 rounded-lg">
-                  <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mb-1">
+                  <div className="text-[9px] text-ink-muted/80 uppercase tracking-widest font-bold mb-1">
                     End
                   </div>
-                  <div className="font-medium text-slate-200">
+                  <div className="font-medium text-fossil">
                     {format(new Date(hoveredTask.task.endDate), "MMM d, yyyy")}
                   </div>
                 </div>
@@ -836,7 +843,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       {hoveredTask.task.activityCodes.map((code) => (
                         <span
                           key={code}
-                          className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-300"
+                          className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#3A4F5F] border border-[#465D6E] text-[10px] text-fossil"
                         >
                           {code}
                         </span>
@@ -846,7 +853,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 )}
               {breakpoint === "mobile" && (
                 <button
-                  className="w-full mt-2 py-1.5 bg-[#A3711C] hover:bg-[#8a5d16] text-white text-xs font-bold rounded-lg pointer-events-auto"
+                  className="w-full mt-2 py-1.5 bg-[#D97D54] hover:bg-[#B85F3B] text-white text-xs font-bold rounded-lg pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     setHoveredTask(null);

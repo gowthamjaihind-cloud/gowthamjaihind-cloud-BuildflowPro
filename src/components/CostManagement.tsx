@@ -23,27 +23,27 @@ import {
   MaterialIssue,
 } from "../types";
 import {
-  IndianRupee,
-  TrendingUp,
-  PieChart,
+  CurrencyInr as IndianRupee,
+  TrendUp as TrendingUp,
+  ChartPie as PieChart,
   Plus,
   Calendar,
-  ListTree,
-  ChevronRight,
-  ChevronDown,
+  TreeStructure as ListTree,
+  CaretRight as ChevronRight,
+  CaretDown as ChevronDown,
   FileText,
-  Download,
-  Save,
-  Edit3,
+  DownloadSimple as Download,
+  FloppyDisk as Save,
+  PencilSimpleLine as Edit3,
   Check,
   X,
-  AlertCircle,
-  Trash2,
-  Layers,
+  WarningCircle as AlertCircle,
+  Trash as Trash2,
+  Stack as Layers,
   MapPin,
-  Search,
+  MagnifyingGlass as Search,
   Info,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import {
   BarChart,
   Bar,
@@ -598,7 +598,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               style={{ paddingLeft: `${level * 24}px` }}
               className="flex items-center gap-2"
             >
-              {level > 0 && <span className="w-3 h-px bg-slate-300" />}
+              {level > 0 && <span className="w-3 h-px bg-fossil" />}
               {task.name}
             </div>
           </td>
@@ -657,13 +657,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             })}
           </td>
           <td
-            className={`py-4 text-right font-bold ${variance < 0 ? "text-red-500" : "text-emerald-500"}`}
+            className={`py-4 text-right font-bold ${variance < 0 ? "text-[#9C3B2E]" : "text-[#5FA3A7]"}`}
           >
             ₹{variance.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
           </td>
           <td className="py-4 text-right">
             <span
-              className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${variance < 0 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}
+              className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${variance < 0 ? "bg-[#9C3B2E]/8 text-[#9C3B2E]" : "bg-[#87BCBF]/12 text-[#3E8388]"}`}
             >
               {variance < 0 ? "Over Budget" : "On Track"}
             </span>
@@ -694,7 +694,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             <div className="flex items-center gap-1.5 md:gap-2 min-w-0">
               <div
                 className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full shrink-0 ${
-                  task.type === "Summary" ? "bg-slate-900" : "bg-[#F3E8D2]0"
+                  task.type === "Summary" ? "bg-surface-dark" : "bg-[#D97D54]"
                 }`}
               />
               {children.length > 0 && (
@@ -747,7 +747,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           </td>
           <td className="p-3 text-right hidden sm:table-cell bg-panel/30">
             <div className="flex flex-col items-end">
-              <div className="text-[11px] font-black text-[#A3711C]">
+              <div className="text-[11px] font-black text-[#D97D54]">
                 ₹
                 {totals.actualMaterial.toLocaleString("en-IN", {
                   maximumFractionDigits: 0,
@@ -793,7 +793,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           </td>
           <td className="p-3 text-right hidden md:table-cell bg-panel/30">
             <div className="flex flex-col items-end">
-              <div className="text-[11px] font-black text-[#A3711C]">
+              <div className="text-[11px] font-black text-[#D97D54]">
                 ₹
                 {totals.actualLabor.toLocaleString("en-IN", {
                   maximumFractionDigits: 0,
@@ -806,7 +806,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       showLaborBreakdown === task.id ? null : task.id,
                     )
                   }
-                  className={`flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest mt-1 p-1 rounded hover:bg-[#F3E8D2] apple-transition ${showLaborBreakdown === task.id ? "text-[#A3711C] bg-[#F3E8D2]" : "text-ink-muted"}`}
+                  className={`flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest mt-1 p-1 rounded hover:bg-[#F7E4DB] apple-transition ${showLaborBreakdown === task.id ? "text-[#D97D54] bg-[#F7E4DB]" : "text-ink-muted"}`}
                 >
                   <Info className="w-2.5 h-2.5" /> Details
                 </button>
@@ -838,7 +838,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             )}
           </td>
           <td className="p-3 text-right hidden xl:table-cell bg-panel/30">
-            <div className="text-[11px] font-black text-[#A3711C]">
+            <div className="text-[11px] font-black text-[#D97D54]">
               ₹
               {totals.actualOther.toLocaleString("en-IN", {
                 maximumFractionDigits: 0,
@@ -853,7 +853,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               maximumFractionDigits: 0,
             })}
           </td>
-          <td className="p-3 text-right font-black text-primary bg-[#F3E8D2]/30">
+          <td className="p-3 text-right font-black text-primary bg-[#F7E4DB]/30">
             ₹
             {totals.totalActual.toLocaleString("en-IN", {
               maximumFractionDigits: 0,
@@ -862,11 +862,11 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
           <td className="p-3 text-center">
             {totals.totalPlanned - totals.totalActual < 0 ? (
-              <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full text-[8px] font-black uppercase tracking-widest">
+              <span className="px-1.5 py-0.5 bg-[#9C3B2E]/15 text-[#9C3B2E] rounded-full text-[8px] font-black uppercase tracking-widest">
                 Over
               </span>
             ) : (
-              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-600 rounded-full text-[8px] font-black uppercase tracking-widest">
+              <span className="px-1.5 py-0.5 bg-[#87BCBF]/20 text-[#3E8388] rounded-full text-[8px] font-black uppercase tracking-widest">
                 Track
               </span>
             )}
@@ -877,13 +877,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               <div className="flex gap-1 justify-end">
                 <button
                   onClick={() => handleSaveTaskCosts(task.id)}
-                  className="p-1 bg-emerald-100 text-emerald-600 rounded hover:bg-emerald-200"
+                  className="p-1 bg-[#87BCBF]/20 text-[#3E8388] rounded hover:bg-[#C3E2E0]"
                 >
                   <Check className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setEditingTaskId(null)}
-                  className="p-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                  className="p-1 bg-[#9C3B2E]/15 text-[#9C3B2E] rounded hover:bg-[#E3B4AD]"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -891,7 +891,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             ) : task.isSystemGenerated ? null : (
               <button
                 onClick={() => startEditing(task)}
-                className="p-1 text-ink-muted hover:text-[#A3711C] hover:bg-[#F3E8D2] rounded transition-all"
+                className="p-1 text-ink-muted hover:text-[#D97D54] hover:bg-[#F7E4DB] rounded transition-all"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
@@ -904,10 +904,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           children.map((child) => renderCostRow(child, level + 1))}
 
         {showLaborBreakdown === task.id && (
-          <tr className="bg-[#F3E8D2]/30">
-            <td colSpan={11} className="p-2 md:p-6 border-b border-[#F3E8D2]">
-              <div className="bg-surface rounded-2xl border border-[#F3E8D2] shadow-sm overflow-hidden">
-                <div className="bg-[#A3711C] px-4 py-2 flex justify-between items-center">
+          <tr className="bg-[#F7E4DB]/30">
+            <td colSpan={11} className="p-2 md:p-6 border-b border-[#F7E4DB]">
+              <div className="bg-surface rounded-2xl border border-[#F7E4DB] shadow-sm overflow-hidden">
+                <div className="bg-[#D97D54] px-4 py-2 flex justify-between items-center">
                   <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
                     Labor Deployment Breakdown
 
@@ -919,7 +919,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 <div className="overflow-x-auto scroller-hide">
                   <table className="w-full text-[9px] md:text-[10px] min-w-[600px]">
                     <thead>
-                      <tr className="bg-[#F3E8D2] text-[#8a5d16] font-bold uppercase tracking-wider">
+                      <tr className="bg-[#F7E4DB] text-[#B85F3B] font-bold uppercase tracking-wider">
                         <th className="p-2 text-left">Date</th>
                         <th className="p-2 text-left">Contractor</th>
                         <th className="p-2 text-left">Role</th>
@@ -934,14 +934,14 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       {entries
                         .filter((e) => (e.taskId === task.id || (!e.taskId && task.isSystemGenerated && task.name === "Project Overhead")) && e.category === "Labor" && e.type === "Actual" && !e.isAccrual)
                         .map((entry, idx) => (
-                          <tr key={`ce-${entry.id}`} className="border-t border-[#F3E8D2] hover:bg-[#F3E8D2]/50">
+                          <tr key={`ce-${entry.id}`} className="border-t border-[#F7E4DB] hover:bg-[#F7E4DB]/50">
                             <td className="p-2 font-medium">{new Date(entry.date).toLocaleDateString()}</td>
                             <td className="p-2 text-ink-muted font-bold">Direct Entry</td>
                             <td className="p-2 italic">{entry.description || "-"}</td>
                             <td className="p-2 text-right">-</td>
                             <td className="p-2 text-right">-</td>
                             <td className="p-2 text-right">-</td>
-                            <td className="p-2 text-right font-black text-[#A3711C]">
+                            <td className="p-2 text-right font-black text-[#D97D54]">
                               ₹{entry.amount?.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                             </td>
                           </tr>
@@ -954,14 +954,14 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           log.items
                             .filter((item) => item.taskId === task.id)
                             .map((item, idx) => (
-                              <tr key={`ll-${log.id}-${idx}`} className="border-t border-[#F3E8D2] hover:bg-[#F3E8D2]/50">
+                              <tr key={`ll-${log.id}-${idx}`} className="border-t border-[#F7E4DB] hover:bg-[#F7E4DB]/50">
                                 <td className="p-2 font-medium">{log.date}</td>
                                 <td className="p-2 text-ink-muted font-bold">{log.vendorName || "General"} (RA Bill)</td>
                                 <td className="p-2 italic">{item.role}</td>
                                 <td className="p-2 text-right">{item.headcount}</td>
                                 <td className="p-2 text-right">{item.shifts}</td>
                                 <td className="p-2 text-right">₹{item.rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
-                                <td className="p-2 text-right font-black text-[#A3711C]">
+                                <td className="p-2 text-right font-black text-[#D97D54]">
                                   ₹{item.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                                 </td>
                               </tr>
@@ -982,14 +982,14 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                               else if (log.workDate.seconds) displayDate = new Date(log.workDate.seconds * 1000).toISOString().split("T")[0];
                             }
                             return (
-                              <tr key={`dl-${log.id}-${idx}`} className="border-t border-[#F3E8D2] hover:bg-[#F3E8D2]/50">
+                              <tr key={`dl-${log.id}-${idx}`} className="border-t border-[#F7E4DB] hover:bg-[#F7E4DB]/50">
                                 <td className="p-2 font-medium">{displayDate}</td>
                                 <td className="p-2 text-ink-muted font-bold">Daily Log</td>
                                 <td className="p-2 italic">{rateCard?.role || "-"}</td>
                                 <td className="p-2 text-right">{l.headcount}</td>
                                 <td className="p-2 text-right">-</td>
                                 <td className="p-2 text-right">₹{rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
-                                <td className="p-2 text-right font-black text-[#A3711C]">
+                                <td className="p-2 text-right font-black text-[#D97D54]">
                                   ₹{subtotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                                 </td>
                               </tr>
@@ -1008,7 +1008,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           <tr className="bg-panel">
             <td colSpan={11} className="p-2 md:p-6 border-b border-divider">
               <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
-                <div className="bg-slate-800 px-4 py-2 flex justify-between items-center">
+                <div className="bg-[#3A4F5F] px-4 py-2 flex justify-between items-center">
                   <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest">
                     Material Consumption Breakdown
                   </span>
@@ -1193,7 +1193,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             onClick={handleExportPDF}
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-surface/30 text-ink-muted px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] hover:bg-surface/50 hover:text-ink shadow-sm apple-transition border border-divider/40"
           >
-            <Download className="w-3.5 h-3.5 text-amber-600" /> PDF
+            <Download className="w-3.5 h-3.5 text-[#C0653F]" /> PDF
           </button>
           <button
             onClick={() => {
@@ -1253,7 +1253,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       {stat.title}
                       {stat.title === "Labor Cost" && (
                         <span
-                          className="text-[8px] md:text-[9px] text-[#FF9500] bg-[#FF9500]/10 border border-[#FF9500]/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-widest whitespace-nowrap"
+                          className="text-[8px] md:text-[9px] text-[#C0653F] bg-[#C0653F]/10 border border-[#C0653F]/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-widest whitespace-nowrap"
                           title="Legacy source — pending labour-cost trigger"
                         >
                           (legacy source)
@@ -1263,8 +1263,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     <span
                       className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
                         isOver
-                          ? "bg-red-50 text-red-600 border border-red-200"
-                          : "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                          ? "bg-[#9C3B2E]/8 text-[#9C3B2E] border border-[#9C3B2E]/30"
+                          : "bg-[#87BCBF]/12 text-[#3E8388] border border-[#87BCBF]/40"
                       }`}
                     >
                       {isOver ? "Over Budget" : "On Track"}
@@ -1302,10 +1302,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <div
                         className={`h-full rounded-full transition-all duration-1000 ${
                           isOver
-                            ? "bg-red-500"
+                            ? "bg-[#9C3B2E]"
                             : percentage > 80
-                              ? "bg-amber-400"
-                              : "bg-emerald-500"
+                              ? "bg-[#E1946F]"
+                              : "bg-[#5FA3A7]"
                         }`}
                         style={{
                           width: `${Math.min(100, Math.max(0, percentage))}%`,
@@ -1319,7 +1319,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       </div>
                       <div
                         className={`text-sm font-bold ${
-                          isOver ? "text-red-500" : "text-emerald-500"
+                          isOver ? "text-[#9C3B2E]" : "text-[#5FA3A7]"
                         }`}
                       >
                         {isOver ? "-" : "+"}₹
@@ -1347,7 +1347,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 </div>
                 <div className="flex gap-4 md:gap-6">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-[#34C759]" />
+                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-[#3E8388]" />
                     <span className="text-[11px] md:text-[13px] font-medium text-ink-muted">
                       Planned
                     </span>
@@ -1375,12 +1375,12 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       dataKey="name"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#8E8E93", fontWeight: 600, fontSize: 13 }}
+                      tick={{ fill: "#6E8CA0", fontWeight: 600, fontSize: 13 }}
                     />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#8E8E93", fontWeight: 600, fontSize: 13 }}
+                      tick={{ fill: "#6E8CA0", fontWeight: 600, fontSize: 13 }}
                       tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
                     />
                     <Tooltip
@@ -1406,13 +1406,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     />
                     <Bar
                       dataKey="Budget"
-                      fill="#34C759"
+                      fill="#3E8388"
                       radius={[8, 8, 0, 0]}
                       barSize={40}
                     />
                     <Bar
                       dataKey="Actual"
-                      fill="#A3711C"
+                      fill="#D97D54"
                       radius={[8, 8, 0, 0]}
                       barSize={40}
                     />
@@ -1451,7 +1451,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       </div>
                       <div className="text-right">
                         <div
-                          className={`text-[15px] font-bold font-mono tracking-tighter ${entry.type === "Actual" ? "text-primary" : "text-[#34C759]"}`}
+                          className={`text-[15px] font-bold font-mono tracking-tighter ${entry.type === "Actual" ? "text-primary" : "text-[#3E8388]"}`}
                         >
                           ₹
                           {entry.amount.toLocaleString("en-IN", {
@@ -1498,7 +1498,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 placeholder="Search WBS tasks..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-panel border rounded-lg text-xs md:text-sm outline-none focus:ring-2 focus:ring-[#A3711C]"
+                className="w-full pl-10 pr-4 py-2 bg-panel border rounded-lg text-xs md:text-sm outline-none focus:ring-2 focus:ring-[#D97D54]"
               />
             </div>
             <div className="flex items-center gap-2 bg-panel px-3 py-2 rounded-lg border">
@@ -1527,8 +1527,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm bg-[#A3711C]" />
-              <span className="text-[10px] font-bold text-[#A3711C] uppercase tracking-wider">
+              <div className="w-3 h-3 rounded-sm bg-[#D97D54]" />
+              <span className="text-[10px] font-bold text-[#D97D54] uppercase tracking-wider">
                 Actual (Spent)
               </span>
             </div>
@@ -1542,7 +1542,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-xs md:text-sm border-collapse">
                 <thead>
-                  <tr className="bg-slate-900 text-white text-[9px] md:text-[10px] font-bold uppercase tracking-widest">
+                  <tr className="bg-surface-dark text-white text-[9px] md:text-[10px] font-bold uppercase tracking-widest">
                     <th className="p-2 md:p-3 text-left min-w-[120px] md:min-w-[250px]">
                       WBS Task Hierarchy
                     </th>
@@ -1558,7 +1558,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     >
                       Labor Costs{" "}
                       <span
-                        className="text-[7px] text-[#FF9500] uppercase tracking-tighter"
+                        className="text-[7px] text-[#C0653F] uppercase tracking-tighter"
                         title="Legacy source — pending labour-cost trigger"
                       >
                         (legacy source)
@@ -1579,7 +1579,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     </th>
                     <th className="p-3 w-12 md:w-20"></th>
                   </tr>
-                  <tr className="bg-slate-800 text-white/50 text-[8px] font-black uppercase tracking-[0.2em] border-t border-white/5">
+                  <tr className="bg-[#3A4F5F] text-white/50 text-[8px] font-black uppercase tracking-[0.2em] border-t border-white/5">
                     <th className="p-1 px-3 text-left">Items</th>
                     <th className="p-1 text-center hidden md:table-cell border-l border-white/5">
                       Budget
@@ -1616,11 +1616,11 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           className="p-4 px-6 border-y border-divider"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-[#A3711C] text-white rounded-lg shadow-sm">
+                            <div className="p-2 bg-[#D97D54] text-white rounded-lg shadow-sm">
                               <Layers className="w-4 h-4" />
                             </div>
                             <div>
-                              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#A3711C] block leading-none mb-1">
+                              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#D97D54] block leading-none mb-1">
                                 Project Phase
                               </span>
                               <span className="text-sm font-black text-ink leading-none">
@@ -1638,7 +1638,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                               className="p-2 px-10 border-b border-divider"
                             >
                               <div className="flex items-center gap-2">
-                                <div className="p-1 bg-emerald-100 text-emerald-600 rounded">
+                                <div className="p-1 bg-[#87BCBF]/20 text-[#3E8388] rounded">
                                   <MapPin className="w-3 h-3" />
                                 </div>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
@@ -1730,7 +1730,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         </td>
                         <td className="p-4">
                           <span
-                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-emerald-100 text-emerald-700" : "bg-[#E3E8F0] text-[#4A6FA5]"}`}
+                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-[#87BCBF]/20 text-[#326B70]" : "bg-[#E2E8ED] text-[#56778E]"}`}
                           >
                             {entry.type}
                           </span>
@@ -1754,7 +1754,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             </button>
                             <button
                               onClick={() => setDeletingId(entry.id)}
-                              className="p-1 text-ink-muted hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                              className="p-1 text-ink-muted hover:text-[#9C3B2E] hover:bg-[#9C3B2E]/8 rounded transition-colors"
                               title="Delete record"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1783,7 +1783,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </p>
             </div>
             <div className="text-right">
-              <div className="text-sm font-bold text-[#A3711C] uppercase tracking-widest">
+              <div className="text-sm font-bold text-[#D97D54] uppercase tracking-widest">
                 BuildFlow Pro
               </div>
               <div className="text-[10px] opacity-50">
@@ -1808,7 +1808,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <div className="text-[9px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold text-emerald-600">
+                  <div className="text-xs font-bold text-[#3E8388]">
                     ₹
                     {stats.materialPlanned.toLocaleString("en-IN", {
                       maximumFractionDigits: 0,
@@ -1822,7 +1822,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               <div className="text-[10px] font-bold uppercase opacity-50 mb-2 flex justify-between items-center">
                 Labor{" "}
                 <span
-                  className="text-[7px] text-[#FF9500] normal-case bg-[#FF9500]/10 border border-[#FF9500]/20 px-1 py-0.5 rounded ml-2"
+                  className="text-[7px] text-[#C0653F] normal-case bg-[#C0653F]/10 border border-[#C0653F]/20 px-1 py-0.5 rounded ml-2"
                   title="Legacy source — pending labour-cost trigger"
                 >
                   (legacy source)
@@ -1839,7 +1839,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <div className="text-[9px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold text-emerald-600">
+                  <div className="text-xs font-bold text-[#3E8388]">
                     ₹
                     {stats.laborPlanned.toLocaleString("en-IN", {
                       maximumFractionDigits: 0,
@@ -1864,7 +1864,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <div className="text-[9px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold text-emerald-600">
+                  <div className="text-xs font-bold text-[#3E8388]">
                     ₹
                     {stats.otherPlanned.toLocaleString("en-IN", {
                       maximumFractionDigits: 0,
@@ -1879,7 +1879,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           <div className="overflow-x-auto w-full">
             <table className="w-full text-sm mb-12 min-w-[700px]">
               <thead>
-                <tr className="border-b-2 border-slate-900">
+                <tr className="border-b-2 border-surface-dark">
                   <th className="text-left py-4 font-black uppercase tracking-widest text-[10px]">
                     Task Description
                   </th>
@@ -1889,7 +1889,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
                     Labor (P/A){" "}
                     <span
-                      className="text-[7px] text-[#FF9500] block normal-case"
+                      className="text-[7px] text-[#C0653F] block normal-case"
                       title="Legacy source — pending labour-cost trigger"
                     >
                       (legacy source)
@@ -1921,11 +1921,11 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         className="p-4 px-6 border-y border-divider"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-[#A3711C] text-white rounded-lg shadow-sm">
+                          <div className="p-2 bg-[#D97D54] text-white rounded-lg shadow-sm">
                             <Layers className="w-4 h-4" />
                           </div>
                           <div>
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#A3711C] block leading-none mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#D97D54] block leading-none mb-1">
                               Project Phase
                             </span>
                             <span className="text-sm font-black text-ink leading-none">
@@ -1943,7 +1943,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             className="p-2 px-10 border-b border-divider"
                           >
                             <div className="flex items-center gap-2">
-                              <div className="p-1 bg-emerald-100 text-emerald-600 rounded">
+                              <div className="p-1 bg-[#87BCBF]/20 text-[#3E8388] rounded">
                                 <MapPin className="w-3 h-3" />
                               </div>
                               <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
@@ -1960,7 +1960,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-4 border-slate-900 bg-slate-900 text-white">
+                <tr className="border-t-4 border-surface-dark bg-surface-dark text-white">
                   <td className="p-4 font-black uppercase tracking-widest">
                     Project Totals
                   </td>
@@ -2031,13 +2031,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </table>
           </div>
 
-          <div className="bg-[#F3E8D2] p-5 rounded-2xl border border-[#F3E8D2] flex items-start gap-4">
-            <AlertCircle className="w-6 h-6 text-[#A3711C] shrink-0" />
+          <div className="bg-[#F7E4DB] p-5 rounded-2xl border border-[#F7E4DB] flex items-start gap-4">
+            <AlertCircle className="w-6 h-6 text-[#D97D54] shrink-0" />
             <div>
-              <h4 className="font-bold text-[#8a5d16] mb-1">
+              <h4 className="font-bold text-[#B85F3B] mb-1">
                 Executive Summary
               </h4>
-              <p className="text-sm text-[#8a5d16] leading-relaxed">
+              <p className="text-sm text-[#B85F3B] leading-relaxed">
                 The project is currently{" "}
                 {stats.totalBudgeted - stats.totalActual >= 0
                   ? "under"
@@ -2083,7 +2083,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <h3 className="text-xl font-bold">
                     {newEntry.id ? "Edit Transaction" : "Add Transaction"}
                   </h3>
-                  <p className="text-[#E5E5EA] text-xs font-medium uppercase tracking-widest mt-1">
+                  <p className="text-[#C8D1D3] text-xs font-medium uppercase tracking-widest mt-1">
                     Direct Cost Ledger
                   </p>
                 </div>
@@ -2116,7 +2116,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     <input
                       required
                       placeholder="e.g. Fuel for generator"
-                      className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-semibold outline-none"
+                      className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-semibold outline-none"
                       value={newEntry.description}
                       onChange={(e) =>
                         setNewEntry({
@@ -2135,7 +2135,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <input
                         type="number"
                         required
-                        className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-black text-primary outline-none"
+                        className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-black text-primary outline-none"
                         value={newEntry.amount || ""}
                         onChange={(e) =>
                           setNewEntry({
@@ -2150,7 +2150,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         Type
                       </label>
                       <select
-                        className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-semibold outline-none appearance-none"
+                        className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-semibold outline-none appearance-none"
                         value={newEntry.type}
                         onChange={(e) =>
                           setNewEntry({
@@ -2172,7 +2172,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       </label>
                       <select
                         required
-                        className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-semibold outline-none focus:ring-2 focus:ring-primary/20 apple-transition appearance-none"
+                        className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-semibold outline-none focus:ring-2 focus:ring-primary/20 apple-transition appearance-none"
                         value={newEntry.category}
                         onChange={(e) =>
                           setNewEntry({
@@ -2202,7 +2202,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <input
                         type="date"
                         required
-                        className="w-full bg-[#F2F2F7] p-4 rounded-2xl font-semibold outline-none"
+                        className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-semibold outline-none"
                         value={newEntry.date}
                         onChange={(e) =>
                           setNewEntry({ ...newEntry, date: e.target.value })
@@ -2234,8 +2234,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               className="bg-surface rounded-3xl w-full max-w-sm overflow-hidden"
             >
               <div className="p-6 text-center space-y-4">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Trash2 className="w-8 h-8 text-red-600" />
+                <div className="w-16 h-16 bg-[#9C3B2E]/15 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Trash2 className="w-8 h-8 text-[#9C3B2E]" />
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-ink">Delete Entry?</h3>
@@ -2256,7 +2256,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       const entry = entries.find((e) => e.id === deletingId);
                       if (entry) handleDeleteEntry(entry);
                     }}
-                    className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold transition-colors"
+                    className="flex-1 py-3.5 bg-[#9C3B2E] hover:bg-[#8A3428] text-white rounded-2xl font-bold transition-colors"
                   >
                     Delete
                   </button>

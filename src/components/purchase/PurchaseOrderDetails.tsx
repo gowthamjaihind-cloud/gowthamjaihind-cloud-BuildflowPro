@@ -2,7 +2,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { exportToCSV, exportToPDF } from "../../utils/exportUtils";
 import { motion, AnimatePresence } from "motion/react";
-import { X, CheckCircle, Download, FileText, Trash2, Loader2, PackagePlus } from "lucide-react";
+import {
+  X,
+  CheckCircle,
+  DownloadSimple as Download,
+  FileText,
+  Trash as Trash2,
+  CircleNotch as Loader2,
+  Package as PackagePlus,
+} from "@phosphor-icons/react";
 import { PurchaseOrder, GoodsReceiptNote } from "../../types";
 import { useAuthStore } from "../../store";
 import { doc, updateDoc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
@@ -115,11 +123,11 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
                title="Export CSV"
              >
-               <Download className="w-3.5 h-3.5 text-slate-700" /> CSV
+               <Download className="w-3.5 h-3.5 text-ink/80" /> CSV
              </button>
              <button
                onClick={handleExportPDF}
-               className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
+               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
                title="Export PDF"
              >
                <Download className="w-3.5 h-3.5" /> PDF
@@ -149,10 +157,10 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                <div>
                   <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">Status</p>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                     po.status === 'Draft' ? 'bg-gray-100 text-gray-600' :
-                     po.status === 'Approved' ? 'bg-[#E3E8F0] text-[#4A6FA5]' :
-                     po.status === 'Partially Received' ? 'bg-yellow-50 text-yellow-600' :
-                     'bg-green-50 text-green-600'
+                     po.status === 'Draft' ? 'bg-ice text-[#56778E]' :
+                     po.status === 'Approved' ? 'bg-[#E2E8ED] text-[#56778E]' :
+                     po.status === 'Partially Received' ? 'bg-[#D97D54]/10 text-[#C0653F]' :
+                     'bg-[#87BCBF]/12 text-[#3E8388]'
                   }`}>
                      {po.status}
                   </span>
@@ -177,24 +185,24 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                            <tr key={i} className="border-b border-divider/50 last:border-none">
                               <td className="p-4">{item.name}</td>
                               <td className="p-4 text-right font-mono">{item.orderedQty} {item.unit}</td>
-                              <td className="p-4 text-right font-mono text-green-600 font-bold">{item.receivedQty || 0} {item.unit}</td>
+                              <td className="p-4 text-right font-mono text-[#3E8388] font-bold">{item.receivedQty || 0} {item.unit}</td>
                               <td className="p-4 text-right font-mono">₹{item.rate.toLocaleString("en-IN")}</td>
                               <td className="p-4 text-right font-mono text-ink">₹{item.amount.toLocaleString("en-IN")}</td>
                            </tr>
                         ))}
                      </tbody>
-                     <tfoot className="bg-[#F3E8D2] border-t border-[#F3E8D2]">
+                     <tfoot className="bg-[#F7E4DB] border-t border-[#F7E4DB]">
                         <tr>
-                           <td colSpan={4} className="p-4 text-right text-[11px] font-black text-[#A3711C] uppercase tracking-widest">Total Amount</td>
-                           <td className="p-4 text-right text-lg font-black font-mono text-[#A3711C] tracking-tight">₹{po.totalAmount.toLocaleString("en-IN")}</td>
+                           <td colSpan={4} className="p-4 text-right text-[11px] font-black text-[#D97D54] uppercase tracking-widest">Total Amount</td>
+                           <td className="p-4 text-right text-lg font-black font-mono text-[#D97D54] tracking-tight">₹{po.totalAmount.toLocaleString("en-IN")}</td>
                         </tr>
                      </tfoot>
                   </table>
                </div>
                
                {po.notes && (
-                  <div className="mt-6 p-4 bg-yellow-50/50 border border-yellow-100 rounded-xl">
-                     <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1.5">Notes</p>
+                  <div className="mt-6 p-4 bg-yellow-50/50 border border-[#D97D54]/20 rounded-xl">
+                     <p className="text-[10px] font-black text-[#C0653F] uppercase tracking-widest mb-1.5">Notes</p>
                      <p className="text-sm font-medium text-ink/80">{po.notes}</p>
                   </div>
                )}
@@ -203,17 +211,17 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
 
          <div className="p-6 border-t border-divider bg-panel flex flex-wrap justify-end gap-4 shrink-0">
             {(po.status === "Approved" || po.status === "Partially Received") && (
-               <button onClick={() => setShowGRNForm(true)} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(5,150,105,0.2)]">
+               <button onClick={() => setShowGRNForm(true)} className="px-6 py-3 bg-[#3E8388] hover:bg-[#326B70] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(5,150,105,0.2)]">
                  <PackagePlus className="w-4 h-4" /> Record Goods Receipt
                </button>
             )}
             {canEditOrDelete && (
-               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
+               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-[#9C3B2E]/8 hover:bg-[#9C3B2E]/15 text-[#9C3B2E] text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} {po.status === "Draft" ? "Delete Draft" : "Delete PO"}
                </button>
             )}
             {po.status === "Draft" && isAdminOrOwner && (
-               <button onClick={handleApprove} disabled={isApproving} className="px-6 py-3 bg-[#A3711C] hover:bg-[#8a5d16] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)]">
+               <button onClick={handleApprove} disabled={isApproving} className="px-6 py-3 bg-[#D97D54] hover:bg-[#B85F3B] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)]">
                  {isApproving ? <Loader2 className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4" />} Approve Order
                </button>
             )}

@@ -29,30 +29,30 @@ import {
 import {
   Truck,
   Plus,
-  Search,
-  IndianRupee,
-  Trash2,
-  Edit2,
+  MagnifyingGlass as Search,
+  CurrencyInr as IndianRupee,
+  Trash as Trash2,
+  PencilSimple as Edit2,
   X,
   FileText,
   ArrowUpRight,
   ArrowDownRight,
-  History,
-  CheckCircle2,
-  AlertCircle,
+  ClockCounterClockwise as History,
+  CheckCircle as CheckCircle2,
+  WarningCircle as AlertCircle,
   Calendar,
   Package,
-  ChevronRight,
-  Filter,
-  Download,
-  Save,
+  CaretRight as ChevronRight,
+  Funnel as Filter,
+  DownloadSimple as Download,
+  FloppyDisk as Save,
   Users,
   Phone,
-  Mail,
+  EnvelopeSimple as Mail,
   MapPin,
   HandCoins,
   Wallet,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import { useUIStore, useAuthStore } from "../store";
 import { useBreakpoint } from "../hooks/useBreakpoint";
@@ -690,7 +690,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           </div>
           <button
             onClick={() => setIsAddingVendor(true)}
-            className="w-full sm:w-auto bg-slate-900 text-white px-5 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-slate-800 apple-transition shadow-lg shadow-slate-200 text-[10px]"
+            className="w-full sm:w-auto bg-surface-dark text-white px-5 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-[#3A4F5F] apple-transition shadow-lg shadow-drab/10 text-[10px]"
           >
             <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />{" "}
             <span>Add Party</span>
@@ -704,14 +704,14 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 <p className="text-sm font-semibold text-ink-muted">
                   Total Payments Made
                 </p>
-                <h3 className="text-3xl font-black text-emerald-600 mt-1">
+                <h3 className="text-3xl font-black text-[#3E8388] mt-1">
                   ₹
                   {totalPayments.toLocaleString("en-IN", {
                     maximumFractionDigits: 0,
                   })}
                 </h3>
               </div>
-              <div className="bg-emerald-100 p-3 rounded-xl text-emerald-600">
+              <div className="bg-[#87BCBF]/20 p-3 rounded-xl text-[#3E8388]">
                 <HandCoins className="w-6 h-6" />
               </div>
             </div>
@@ -723,14 +723,14 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 <p className="text-sm font-semibold text-ink-muted">
                   Total Outstanding Balance
                 </p>
-                <h3 className="text-3xl font-black text-rose-600 mt-1">
+                <h3 className="text-3xl font-black text-[#9C3B2E] mt-1">
                   ₹
                   {totalOutstanding.toLocaleString("en-IN", {
                     maximumFractionDigits: 0,
                   })}
                 </h3>
               </div>
-              <div className="bg-rose-100 p-3 rounded-xl text-rose-600">
+              <div className="bg-[#9C3B2E]/15 p-3 rounded-xl text-[#9C3B2E]">
                 <Wallet className="w-6 h-6" />
               </div>
             </div>
@@ -742,11 +742,11 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             <motion.div
               layout
               key={vendor.id}
-              className="bg-surface p-5 md:p-6 rounded-2xl border border-slate-50 shadow-sm hover:shadow-xl apple-transition group relative overflow-hidden"
+              className="bg-surface p-5 md:p-6 rounded-2xl border border-divider/40 shadow-sm hover:shadow-xl apple-transition group relative overflow-hidden"
             >
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-6 md:mb-10">
-                  <div className="bg-slate-900 p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-lg shadow-slate-100 group-hover:bg-[#A3711C] apple-transition">
+                  <div className="bg-surface-dark p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-lg shadow-drab/5 group-hover:bg-[#D97D54] apple-transition">
                     {vendor.type === "Labor" ? (
                       <Users className="w-4 h-4 md:w-6 md:h-6 text-white/90" />
                     ) : (
@@ -770,13 +770,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           setIsEditingVendor(true);
                           setIsAddingVendor(true);
                         }}
-                        className="p-1.5 md:p-2 text-ink-muted hover:text-[#A3711C] apple-transition"
+                        className="p-1.5 md:p-2 text-ink-muted hover:text-[#D97D54] apple-transition"
                       >
                         <Edit2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
                       </button>
                       <button
                         onClick={() => setIsDeletingVendor(vendor.id)}
-                        className="p-1.5 md:p-2 text-ink-muted hover:text-red-500 apple-transition"
+                        className="p-1.5 md:p-2 text-ink-muted hover:text-[#9C3B2E] apple-transition"
                       >
                         <Trash2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
                       </button>
@@ -786,7 +786,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         Outstanding
                       </p>
                       <p
-                        className={`text-lg md:text-xl font-black tracking-tighter ${getVendorBalance(vendor.id) > 0 ? "text-red-500" : "text-emerald-500"}`}
+                        className={`text-lg md:text-xl font-black tracking-tighter ${getVendorBalance(vendor.id) > 0 ? "text-[#9C3B2E]" : "text-[#5FA3A7]"}`}
                       >
                         ₹
                         {getVendorBalance(vendor.id).toLocaleString("en-IN", {
@@ -797,7 +797,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         <p className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-ink-muted">
                           Payments Made
                         </p>
-                        <p className="text-sm md:text-base font-bold text-emerald-600">
+                        <p className="text-sm md:text-base font-bold text-[#3E8388]">
                           ₹
                           {ledger
                             .filter(
@@ -814,7 +814,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 mb-1">
-                  <h3 className="text-base md:text-xl font-black text-ink tracking-tight group-hover:text-[#A3711C] apple-transition truncate">
+                  <h3 className="text-base md:text-xl font-black text-ink tracking-tight group-hover:text-[#D97D54] apple-transition truncate">
                     {vendor.name}
                   </h3>
                 </div>
@@ -849,7 +849,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         });
                         setIsAddingPayment(true);
                       }}
-                      className="flex-[1.5] bg-slate-900 text-white py-2.5 md:py-3.5 rounded-lg md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-slate-800 apple-transition shadow-md shadow-slate-100"
+                      className="flex-[1.5] bg-surface-dark text-white py-2.5 md:py-3.5 rounded-lg md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#3A4F5F] apple-transition shadow-md shadow-drab/5"
                     >
                       Payment
                     </button>
@@ -906,12 +906,12 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         </button>
       </div>
 
-      <div className="bg-surface rounded-2xl shadow-sm border border-slate-50 overflow-hidden">
+      <div className="bg-surface rounded-2xl shadow-sm border border-divider/40 overflow-hidden">
         {breakpoint === "desktop" ? (
           <div className="overflow-x-auto scrollbar-hide">
             <table className="w-full text-left min-w-[700px] md:min-w-[800px]">
               <thead>
-                <tr className="bg-slate-900 text-white/40 border-b border-white/5">
+                <tr className="bg-surface-dark text-white/40 border-b border-white/5">
                   <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
                     Timeline
                   </th>
@@ -934,7 +934,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-divider/40">
                 {receipts.map((receipt) => (
                   <tr
                     key={receipt.id}
@@ -948,28 +948,28 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         {receipt.supplierName}
                       </div>
                       {receipt.poNumber && (
-                        <div className="text-[8px] md:text-[10px] font-black text-[#A3711C] uppercase tracking-widest mt-1">
+                        <div className="text-[8px] md:text-[10px] font-black text-[#D97D54] uppercase tracking-widest mt-1">
                           PO: {receipt.poNumber}
                         </div>
                       )}
                     </td>
                     <td className="px-6 md:px-10 py-5 md:py-8">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[9px] md:text-[10px] font-bold text-[#A3711C] bg-[#F3E8D2]/50 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-[#F3E8D2]/50 shadow-sm">
+                        <span className="font-mono text-[9px] md:text-[10px] font-bold text-[#D97D54] bg-[#F7E4DB]/50 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-[#F7E4DB]/50 shadow-sm">
                           {receipt.invoiceNumber}
                         </span>
                         {receipt.matchStatus === "Fully Matched" && (
-                          <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                          <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-[#3E8388] bg-[#87BCBF]/12 px-2 py-1 rounded-full">
                             Matched
                           </span>
                         )}
                         {receipt.matchStatus === "Has Discrepancies" && (
-                          <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-200">
+                          <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-[#C0653F] bg-[#D97D54]/10 px-2 py-1 rounded-full border border-[#D97D54]/30">
                             Discrepancy
                           </span>
                         )}
                         {receipt.matchStatus === "Unlinked" && (
-                          <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-slate-500 bg-slate-50 px-2 py-1 rounded-full">
+                          <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-ink-muted bg-page px-2 py-1 rounded-full">
                             Unlinked
                           </span>
                         )}
@@ -1008,13 +1008,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                               setIsEditingReceipt(true);
                               setIsAddingReceipt(true);
                             }}
-                            className="p-2.5 md:p-3 bg-[#F3E8D2] border border-[#E3D5B8] shadow-sm rounded-xl text-primary hover:bg-[#EADFC5] hover:text-primary active:scale-90 apple-transition"
+                            className="p-2.5 md:p-3 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition"
                           >
                             <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           </button>
                           <button
                             onClick={() => setIsDeletingReceipt(receipt.id)}
-                            className="p-2.5 md:p-3 bg-red-50 border border-red-100 shadow-sm rounded-xl text-red-600 hover:bg-red-100 hover:text-red-700 active:scale-90 apple-transition"
+                            className="p-2.5 md:p-3 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-xl text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition"
                           >
                             <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           </button>
@@ -1029,31 +1029,31 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         ) : (
           <div className="flex flex-col gap-2 p-4 bg-panel/30">
             {receipts.map((receipt) => (
-              <div key={receipt.id} className="bg-surface p-4 rounded-2xl border border-slate-50 shadow-sm flex flex-col">
+              <div key={receipt.id} className="bg-surface p-4 rounded-2xl border border-divider/40 shadow-sm flex flex-col">
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <div className="font-bold text-ink text-sm tracking-tight leading-none mb-1">
                       {receipt.supplierName}
                     </div>
                     {receipt.poNumber && (
-                      <div className="text-[10px] font-black text-[#A3711C] uppercase tracking-widest mt-1">
+                      <div className="text-[10px] font-black text-[#D97D54] uppercase tracking-widest mt-1">
                         PO: {receipt.poNumber}
                       </div>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     {receipt.matchStatus === "Fully Matched" && (
-                      <span className="font-bold text-[9px] uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                      <span className="font-bold text-[9px] uppercase tracking-widest text-[#3E8388] bg-[#87BCBF]/12 px-2 py-1 rounded-full">
                         Matched
                       </span>
                     )}
                     {receipt.matchStatus === "Has Discrepancies" && (
-                      <span className="font-bold text-[9px] uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-200">
+                      <span className="font-bold text-[9px] uppercase tracking-widest text-[#C0653F] bg-[#D97D54]/10 px-2 py-1 rounded-full border border-[#D97D54]/30">
                         Discrepancy
                       </span>
                     )}
                     {receipt.matchStatus === "Unlinked" && (
-                      <span className="font-bold text-[9px] uppercase tracking-widest text-slate-500 bg-slate-50 px-2 py-1 rounded-full">
+                      <span className="font-bold text-[9px] uppercase tracking-widest text-ink-muted bg-page px-2 py-1 rounded-full">
                         Unlinked
                       </span>
                     )}
@@ -1069,7 +1069,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       {receipt.receiptDate}
                     </div>
                     <div className="mt-1">
-                      <span className="font-mono text-[10px] font-bold text-[#A3711C] bg-[#F3E8D2]/50 px-2 py-1 rounded-full border border-[#F3E8D2]/50 shadow-sm">
+                      <span className="font-mono text-[10px] font-bold text-[#D97D54] bg-[#F7E4DB]/50 px-2 py-1 rounded-full border border-[#F7E4DB]/50 shadow-sm">
                         {receipt.invoiceNumber}
                       </span>
                     </div>
@@ -1112,13 +1112,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         setIsEditingReceipt(true);
                         setIsAddingReceipt(true);
                       }}
-                      className="flex-1 py-2 bg-[#F3E8D2] border border-[#E3D5B8] shadow-sm rounded-xl text-primary hover:bg-[#EADFC5] hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                      className="flex-1 py-2 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                     >
                       <Edit2 className="w-4 h-4 mr-1.5" /> Edit
                     </button>
                     <button
                       onClick={() => setIsDeletingReceipt(receipt.id)}
-                      className="flex-1 py-2 bg-red-50 border border-red-100 shadow-sm rounded-full text-red-600 hover:bg-red-100 hover:text-red-700 active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                      className="flex-1 py-2 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-full text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                     >
                       <Trash2 className="w-4 h-4 mr-1.5" /> Delete
                     </button>
@@ -1167,7 +1167,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               Vendor Ledger
             </h2>
             {selectedVendor && (
-              <div className="flex items-center gap-3 md:gap-4 bg-slate-900 text-white px-4 md:px-6 py-1.5 md:py-2 rounded-xl md:rounded-2xl text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">
+              <div className="flex items-center gap-3 md:gap-4 bg-surface-dark text-white px-4 md:px-6 py-1.5 md:py-2 rounded-xl md:rounded-2xl text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">
                 <Users className="w-3.5 h-3.5 md:w-4 md:h-4 opacity-50" />
                 <span className="truncate max-w-[100px] md:max-w-none">
                   {selectedVendor.name}
@@ -1183,12 +1183,12 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           </div>
         </div>
 
-        <div className="bg-surface rounded-2xl shadow-sm border border-slate-50 overflow-hidden">
+        <div className="bg-surface rounded-2xl shadow-sm border border-divider/40 overflow-hidden">
           {breakpoint === "desktop" ? (
             <div className="overflow-x-auto scrollbar-hide">
               <table className="w-full text-left min-w-[700px] md:min-w-[800px]">
                 <thead>
-                  <tr className="bg-slate-900 text-white/40 border-b border-white/5">
+                  <tr className="bg-surface-dark text-white/40 border-b border-white/5">
                     <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
                       Timeline
                     </th>
@@ -1211,7 +1211,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     )}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-divider/40">
                   <tr className="bg-slate-50/50">
                     <td className="px-6 md:px-10 py-5 md:py-8 font-mono text-[9px] md:text-[10px] font-bold text-ink-muted">
                       -
@@ -1227,7 +1227,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         ? `₹${openingBalance.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                         : "-"}
                     </td>
-                    <td className="px-6 md:px-10 py-5 md:py-8 text-right font-bold text-[#A3711C] text-base md:text-lg font-mono">
+                    <td className="px-6 md:px-10 py-5 md:py-8 text-right font-bold text-[#D97D54] text-base md:text-lg font-mono">
                       {openingBalance < 0
                         ? `₹${Math.abs(openingBalance).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                         : "-"}
@@ -1249,7 +1249,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           {vendors.find((v) => v.id === entry.vendorId)?.name ||
                             "Unknown Partner"}
                         </div>
-                        <div className="text-[8px] md:text-[10px] font-black text-[#A3711C]/50 uppercase tracking-widest">
+                        <div className="text-[8px] md:text-[10px] font-black text-[#D97D54]/50 uppercase tracking-widest">
                           {entry.referenceType === "GRN"
                             ? "MATERIAL INVOICE"
                             : entry.referenceType || "OFS"}
@@ -1260,7 +1260,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           {entry.description}
                         </div>
                         {entry.overrideReason && (
-                          <div className="text-[8px] md:text-[9px] font-bold text-amber-600 mt-1 uppercase tracking-widest border border-amber-200/50 bg-amber-50 px-1.5 py-0.5 rounded-full inline-block">
+                          <div className="text-[8px] md:text-[9px] font-bold text-[#C0653F] mt-1 uppercase tracking-widest border border-amber-200/50 bg-[#D97D54]/10 px-1.5 py-0.5 rounded-full inline-block">
                             ⚠️ Override: {entry.overrideReason}
                           </div>
                         )}
@@ -1270,7 +1270,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           ? `₹${entry.amount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                           : "-"}
                       </td>
-                      <td className="px-6 md:px-10 py-5 md:py-8 text-right font-bold text-[#A3711C] text-base md:text-lg font-mono tracking-tighter">
+                      <td className="px-6 md:px-10 py-5 md:py-8 text-right font-bold text-[#D97D54] text-base md:text-lg font-mono tracking-tighter">
                         {entry.type === "DEBIT"
                           ? `₹${entry.amount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                           : "-"}
@@ -1292,13 +1292,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                                   setEditingPaymentId(entry.id);
                                   setIsAddingPayment(true);
                                 }}
-                                className="p-2.5 md:p-3 bg-[#F3E8D2] border border-[#E3D5B8] shadow-sm rounded-xl text-primary hover:bg-[#EADFC5] hover:text-primary active:scale-90 apple-transition"
+                                className="p-2.5 md:p-3 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition"
                               >
                                 <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                               </button>
                               <button
                                 onClick={() => handleDeleteLedgerEntry(entry.id)}
-                                className="p-2.5 md:p-3 bg-red-50 border border-red-100 shadow-sm rounded-xl text-red-600 hover:bg-red-100 hover:text-red-700 active:scale-90 apple-transition"
+                                className="p-2.5 md:p-3 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-xl text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition"
                               >
                                 <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                               </button>
@@ -1317,7 +1317,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                                     setIsAddingReceipt(true);
                                   }
                                 }}
-                                className="p-2.5 md:p-3 bg-[#F3E8D2] border border-[#E3D5B8] shadow-sm rounded-xl text-primary hover:bg-[#EADFC5] hover:text-primary active:scale-90 apple-transition"
+                                className="p-2.5 md:p-3 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition"
                               >
                                 <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                               </button>
@@ -1325,7 +1325,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                                 onClick={() =>
                                   setIsDeletingReceipt(entry.referenceId || null)
                                 }
-                                className="p-2.5 md:p-3 bg-red-50 border border-red-100 shadow-sm rounded-xl text-red-600 hover:bg-red-100 hover:text-red-700 active:scale-90 apple-transition"
+                                className="p-2.5 md:p-3 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-xl text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition"
                               >
                                 <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                               </button>
@@ -1334,7 +1334,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                             <div className="flex justify-end gap-1.5 md:gap-2">
                               <button
                                 onClick={() => handleDeleteLedgerEntry(entry.id)}
-                                className="p-2.5 md:p-3 bg-red-50 border border-red-100 shadow-sm rounded-xl text-red-600 hover:bg-red-100 hover:text-red-700 active:scale-90 apple-transition"
+                                className="p-2.5 md:p-3 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-xl text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition"
                               >
                                 <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                               </button>
@@ -1345,7 +1345,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-slate-900 border-t border-white/5">
+                <tfoot className="bg-surface-dark border-t border-white/5">
                   <tr className="font-black text-sm">
                     <td
                       colSpan={3}
@@ -1368,7 +1368,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             </div>
           ) : (
             <div className="flex flex-col gap-2 p-4 bg-panel/30">
-              <div className="bg-slate-900 p-4 rounded-2xl shadow-sm flex flex-col mb-2">
+              <div className="bg-surface-dark p-4 rounded-2xl shadow-sm flex flex-col mb-2">
                 <div className="flex justify-between items-start mb-3">
                   <div className="font-bold text-white text-sm tracking-tight leading-none mb-1">
                     {selectedVendor ? selectedVendor.name : "All Vendors"}
@@ -1382,7 +1382,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1 tracking-[0.1em]">
                       CR (+)
                     </div>
-                    <div className="text-lg font-bold text-emerald-400 tracking-tighter font-mono leading-none">
+                    <div className="text-lg font-bold text-[#87BCBF] tracking-tighter font-mono leading-none">
                       {openingBalance >= 0
                         ? `₹${openingBalance.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                         : "-"}
@@ -1392,7 +1392,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1 tracking-[0.1em]">
                       DR (-)
                     </div>
-                    <div className="text-lg font-bold text-[#A3711C] tracking-tighter font-mono leading-none">
+                    <div className="text-lg font-bold text-[#D97D54] tracking-tighter font-mono leading-none">
                       {openingBalance < 0
                         ? `₹${Math.abs(openingBalance).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                         : "-"}
@@ -1402,13 +1402,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               </div>
 
               {sortedLedger.map((entry) => (
-                <div key={entry.id} className="bg-surface p-4 rounded-2xl border border-slate-50 shadow-sm flex flex-col">
+                <div key={entry.id} className="bg-surface p-4 rounded-2xl border border-divider/40 shadow-sm flex flex-col">
                   <div className="flex justify-between items-start mb-3 pb-3 border-b border-divider/60">
                     <div>
                       <div className="font-bold text-ink text-sm tracking-tight leading-none mb-1">
                         {vendors.find((v) => v.id === entry.vendorId)?.name || "Unknown Partner"}
                       </div>
-                      <div className="text-[10px] font-black text-[#A3711C] uppercase tracking-widest mt-1">
+                      <div className="text-[10px] font-black text-[#D97D54] uppercase tracking-widest mt-1">
                         {entry.referenceType === "GRN" ? "MATERIAL INVOICE" : entry.referenceType || "OFS"}
                       </div>
                     </div>
@@ -1422,7 +1422,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       {entry.description}
                     </div>
                     {entry.overrideReason && (
-                      <div className="text-[9px] font-bold text-amber-600 mt-2 uppercase tracking-widest border border-amber-200/50 bg-amber-50 px-2 py-1 rounded-full inline-block">
+                      <div className="text-[9px] font-bold text-[#C0653F] mt-2 uppercase tracking-widest border border-amber-200/50 bg-[#D97D54]/10 px-2 py-1 rounded-full inline-block">
                         ⚠️ Override: {entry.overrideReason}
                       </div>
                     )}
@@ -1443,7 +1443,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       <div className="text-[8px] font-bold text-ink-muted uppercase tracking-widest mb-1 tracking-[0.1em]">
                         DR (-)
                       </div>
-                      <div className="text-base font-bold text-[#A3711C] tracking-tighter font-mono leading-none">
+                      <div className="text-base font-bold text-[#D97D54] tracking-tighter font-mono leading-none">
                         {entry.type === "DEBIT"
                           ? `₹${entry.amount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                           : "-"}
@@ -1468,13 +1468,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                               setEditingPaymentId(entry.id);
                               setIsAddingPayment(true);
                             }}
-                            className="flex-1 py-2 bg-[#F3E8D2] border border-[#E3D5B8] shadow-sm rounded-xl text-primary hover:bg-[#EADFC5] hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                            className="flex-1 py-2 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
                             <Edit2 className="w-4 h-4 mr-1.5" /> Edit
                           </button>
                           <button
                             onClick={() => handleDeleteLedgerEntry(entry.id)}
-                            className="flex-1 py-2 bg-red-50 border border-red-100 shadow-sm rounded-full text-red-600 hover:bg-red-100 hover:text-red-700 active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                            className="flex-1 py-2 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-full text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
                             <Trash2 className="w-4 h-4 mr-1.5" /> Delete
                           </button>
@@ -1493,7 +1493,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                                 setIsAddingReceipt(true);
                               }
                             }}
-                            className="flex-1 py-2 bg-[#F3E8D2] border border-[#E3D5B8] shadow-sm rounded-xl text-primary hover:bg-[#EADFC5] hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                            className="flex-1 py-2 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
                             <Edit2 className="w-4 h-4 mr-1.5" /> Edit
                           </button>
@@ -1501,7 +1501,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                             onClick={() =>
                               setIsDeletingReceipt(entry.referenceId || null)
                             }
-                            className="flex-1 py-2 bg-red-50 border border-red-100 shadow-sm rounded-full text-red-600 hover:bg-red-100 hover:text-red-700 active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                            className="flex-1 py-2 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-full text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
                             <Trash2 className="w-4 h-4 mr-1.5" /> Delete
                           </button>
@@ -1509,7 +1509,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       ) : (
                         <button
                           onClick={() => handleDeleteLedgerEntry(entry.id)}
-                          className="w-full py-2 bg-red-50 border border-red-100 shadow-sm rounded-full text-red-600 hover:bg-red-100 hover:text-red-700 active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                          className="w-full py-2 bg-[#9C3B2E]/8 border border-[#9C3B2E]/20 shadow-sm rounded-full text-[#9C3B2E] hover:bg-[#9C3B2E]/15 hover:text-[#742C22] active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                         >
                           <Trash2 className="w-4 h-4 mr-1.5" /> Delete
                         </button>
@@ -1519,7 +1519,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </div>
               ))}
 
-              <div className="mt-2 bg-slate-900 p-4 rounded-2xl shadow-sm flex flex-col items-end justify-center">
+              <div className="mt-2 bg-surface-dark p-4 rounded-2xl shadow-sm flex flex-col items-end justify-center">
                 <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1 tracking-[0.2em]">
                   Outstanding Statement Balance
                 </div>
@@ -1553,7 +1553,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 md:flex-none px-4 md:px-8 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] md:tracking-[0.2em] apple-transition whitespace-nowrap ${activeTab === tab ? "bg-surface shadow-sm text-[#A3711C] ring-1 ring-slate-200" : "text-ink-muted hover:text-ink/80"}`}
+              className={`flex-1 md:flex-none px-4 md:px-8 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] md:tracking-[0.2em] apple-transition whitespace-nowrap ${activeTab === tab ? "bg-surface shadow-sm text-[#D97D54] ring-1 ring-divider" : "text-ink-muted hover:text-ink/80"}`}
             >
               {tab === "purchase_orders"
                 ? "Purchase Orders"
@@ -1569,9 +1569,9 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="hidden sm:flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 bg-[#F3E8D2] rounded-lg md:rounded-2xl">
-            <Users className="w-3.5 h-3.5 text-[#A3711C]" />
-            <span className="text-[9px] md:text-[10px] font-black text-[#A3711C] uppercase tracking-widest">
+          <div className="hidden sm:flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 bg-[#F7E4DB] rounded-lg md:rounded-2xl">
+            <Users className="w-3.5 h-3.5 text-[#D97D54]" />
+            <span className="text-[9px] md:text-[10px] font-black text-[#D97D54] uppercase tracking-widest">
               {vendors.length} Partners
             </span>
           </div>
@@ -1584,7 +1584,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           </button>
           <button
             onClick={handleExportPDF}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-amber-600 text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-amber-700 apple-transition shadow-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#C0653F] text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#A0522F] apple-transition shadow-sm"
           >
             <Download className="w-3.5 h-3.5" /> Export PDF
           </button>
@@ -1621,7 +1621,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-2xl w-full max-w-lg overflow-hidden"
             >
-              <div className="bg-slate-900 p-5 md:p-6 text-white flex justify-between items-center">
+              <div className="bg-surface-dark p-5 md:p-6 text-white flex justify-between items-center">
                 <div>
                   <h3 className="text-xl font-black">
                     {isEditingVendor ? "Edit Party" : "Add Party"}
@@ -1663,7 +1663,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     <input
                       required
                       placeholder="E.g. United Steel Corp"
-                      className="w-full bg-panel p-4 rounded-xl font-bold border-2 border-transparent focus:border-[#A3711C] outline-none"
+                      className="w-full bg-panel p-4 rounded-xl font-bold border-2 border-transparent focus:border-[#D97D54] outline-none"
                       value={newVendor.name}
                       onChange={(e) =>
                         setNewVendor({ ...newVendor, name: e.target.value })
@@ -1675,7 +1675,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       Vendor Category
                     </label>
                     <select
-                      className="w-full bg-panel p-4 rounded-xl font-bold appearance-none border-2 border-transparent focus:border-[#A3711C] outline-none"
+                      className="w-full bg-panel p-4 rounded-xl font-bold appearance-none border-2 border-transparent focus:border-[#D97D54] outline-none"
                       value={newVendor.type}
                       onChange={(e) =>
                         setNewVendor({
@@ -1695,7 +1695,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     </label>
                     <input
                       placeholder="Name"
-                      className="w-full bg-panel p-4 rounded-xl font-bold border-2 border-transparent focus:border-[#A3711C] outline-none"
+                      className="w-full bg-panel p-4 rounded-xl font-bold border-2 border-transparent focus:border-[#D97D54] outline-none"
                       value={newVendor.contactPerson}
                       onChange={(e) =>
                         setNewVendor({
@@ -1712,7 +1712,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     <input
                       type="email"
                       placeholder="vendor@info.com"
-                      className="w-full bg-panel p-4 rounded-xl font-bold border-2 border-transparent focus:border-[#A3711C] outline-none"
+                      className="w-full bg-panel p-4 rounded-xl font-bold border-2 border-transparent focus:border-[#D97D54] outline-none"
                       value={newVendor.email}
                       onChange={(e) =>
                         setNewVendor({ ...newVendor, email: e.target.value })
@@ -1725,7 +1725,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     </label>
                     <input
                       placeholder="+91 00000 00000"
-                      className="w-full bg-panel p-4 rounded-xl font-bold border-2 border-transparent focus:border-[#A3711C] outline-none"
+                      className="w-full bg-panel p-4 rounded-xl font-bold border-2 border-transparent focus:border-[#D97D54] outline-none"
                       value={newVendor.phone}
                       onChange={(e) =>
                         setNewVendor({ ...newVendor, phone: e.target.value })
@@ -1739,7 +1739,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     <textarea
                       rows={3}
                       placeholder="Full address"
-                      className="w-full bg-panel p-4 rounded-xl font-bold border-2 border-transparent focus:border-[#A3711C] outline-none resize-none"
+                      className="w-full bg-panel p-4 rounded-xl font-bold border-2 border-transparent focus:border-[#D97D54] outline-none resize-none"
                       value={newVendor.address}
                       onChange={(e) =>
                         setNewVendor({ ...newVendor, address: e.target.value })
@@ -1749,7 +1749,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-[#A3711C] text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-[#F3E8D2] hover:bg-[#8a5d16] apple-transition mt-4"
+                  className="w-full bg-[#D97D54] text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-[#F7E4DB] hover:bg-[#B85F3B] apple-transition mt-4"
                 >
                   {isEditingVendor ? "Update Profile" : "Register Party"}
                 </button>
@@ -1766,8 +1766,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               className="bg-surface rounded-2xl w-full max-w-sm overflow-hidden"
             >
               <div className="p-6 text-center space-y-4">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-                  <Trash2 className="w-6 h-6 text-red-600" />
+                <div className="w-12 h-12 bg-[#9C3B2E]/15 rounded-full flex items-center justify-center mx-auto">
+                  <Trash2 className="w-6 h-6 text-[#9C3B2E]" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-ink">Delete Party?</h3>
@@ -1786,7 +1786,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   <button
                     onClick={() => handleDeleteVendor(isDeletingVendor)}
                     disabled={isDeleting}
-                    className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors disabled:opacity-50"
+                    className="flex-1 py-3 bg-[#9C3B2E] hover:bg-[#8A3428] text-white rounded-xl font-bold transition-colors disabled:opacity-50"
                   >
                     {isDeleting ? "Deleting..." : "Delete"}
                   </button>
@@ -1804,8 +1804,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               className="bg-surface rounded-2xl w-full max-w-sm overflow-hidden"
             >
               <div className="p-6 text-center space-y-4">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-                  <Trash2 className="w-6 h-6 text-red-600" />
+                <div className="w-12 h-12 bg-[#9C3B2E]/15 rounded-full flex items-center justify-center mx-auto">
+                  <Trash2 className="w-6 h-6 text-[#9C3B2E]" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-ink">
@@ -1827,7 +1827,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   <button
                     onClick={() => handleDeleteReceipt(isDeletingReceipt)}
                     disabled={isDeleting}
-                    className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors disabled:opacity-50"
+                    className="flex-1 py-3 bg-[#9C3B2E] hover:bg-[#8A3428] text-white rounded-xl font-bold transition-colors disabled:opacity-50"
                   >
                     {isDeleting ? "Deleting..." : "Delete"}
                   </button>
@@ -1844,7 +1844,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden"
             >
-              <div className="bg-emerald-600 p-5 md:p-6 text-white flex justify-between items-center">
+              <div className="bg-[#3E8388] p-5 md:p-6 text-white flex justify-between items-center">
                 <h3 className="text-xl font-black">
                   {editingPaymentId ? "Edit Payment" : "Record Payment"}
                 </h3>
@@ -1894,7 +1894,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     type="number"
                     required
                     placeholder="Amount (₹)"
-                    className="w-full bg-panel p-4 rounded-xl font-black text-xl text-emerald-600"
+                    className="w-full bg-panel p-4 rounded-xl font-black text-xl text-[#3E8388]"
                     value={newPayment.amount || ""}
                     onChange={(e) =>
                       setNewPayment({
@@ -1958,14 +1958,14 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     selectedRcpt.matchStatus === "Has Discrepancies"
                   ) {
                     return (
-                      <div className="space-y-1 bg-amber-50 p-4 rounded-xl border border-amber-200">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-amber-700 ml-1">
+                      <div className="space-y-1 bg-[#D97D54]/10 p-4 rounded-xl border border-[#D97D54]/30">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#A0522F] ml-1">
                           Discrepancy Override Reason
                         </label>
                         <input
                           required
                           placeholder="Why are we paying this despite the discrepancy?"
-                          className="w-full bg-white p-3 rounded-xl font-bold border border-amber-300 placeholder:text-amber-300"
+                          className="w-full bg-white p-3 rounded-xl font-bold border border-[#D97D54]/40 placeholder:text-[#F0C6B2]"
                           value={newPayment.overrideReason}
                           onChange={(e) =>
                             setNewPayment({
@@ -1998,7 +1998,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-emerald-600 text-white py-4 rounded-xl font-black uppercase tracking-widest"
+                  className="w-full bg-[#3E8388] text-white py-4 rounded-xl font-black uppercase tracking-widest"
                 >
                   {editingPaymentId ? "Update Payment" : "Post Payment"}
                 </button>

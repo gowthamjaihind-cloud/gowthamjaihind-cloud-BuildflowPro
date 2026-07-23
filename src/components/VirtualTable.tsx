@@ -1,6 +1,9 @@
 import React, { useRef, useState, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import {
+  CaretUp as ChevronUp,
+  CaretDown as ChevronDown,
+} from "@phosphor-icons/react";
 
 export interface ColumnDef<T> {
   key: string;
@@ -71,29 +74,29 @@ export function VirtualTable<T>({
   return (
     <div
       ref={parentRef}
-      className={`relative w-full overflow-auto bg-white border border-gray-200 rounded-lg shadow-sm ${className}`}
+      className={`relative w-full overflow-auto bg-white border border-divider rounded-lg shadow-sm ${className}`}
       style={{
         maxHeight: "600px", // Can be overridden by className, e.g. h-[600px]
       }}
     >
       <div className="min-w-[800px]">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 shadow-sm">
+        <div className="sticky top-0 z-10 bg-page border-b border-divider shadow-sm">
           <div
-            className="grid px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+            className="grid px-6 py-3 text-xs font-medium tracking-wider text-left text-ink-muted uppercase"
             style={{ gridTemplateColumns }}
           >
             {columns.map((col) => (
               <div
                 key={col.key}
                 className={`flex items-center space-x-1 ${
-                  col.sortable ? "cursor-pointer hover:text-gray-700" : ""
+                  col.sortable ? "cursor-pointer hover:text-ink/80" : ""
                 }`}
                 onClick={() => handleSort(col.key)}
               >
                 <span>{col.header}</span>
                 {col.sortable && sortKey === col.key && (
-                  <span className="text-gray-400">
+                  <span className="text-ink-muted/80">
                     {sortDir === "asc" ? (
                       <ChevronUp className="w-4 h-4" />
                     ) : (
@@ -119,14 +122,14 @@ export function VirtualTable<T>({
             return (
               <div
                 key={keyExtractor(item)}
-                className="absolute top-0 left-0 w-full hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                className="absolute top-0 left-0 w-full hover:bg-page border-b border-divider/60 last:border-b-0 transition-colors"
                 style={{
                   height: `${virtualRow.size}px`,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
                 <div
-                  className="grid h-full px-6 items-center text-sm text-gray-900"
+                  className="grid h-full px-6 items-center text-sm text-ink"
                   style={{ gridTemplateColumns }}
                 >
                   {columns.map((col) => (
@@ -140,7 +143,7 @@ export function VirtualTable<T>({
           })}
         </div>
         {sortedData.length === 0 && (
-          <div className="p-8 text-center text-gray-500">No records found.</div>
+          <div className="p-8 text-center text-ink-muted">No records found.</div>
         )}
       </div>
     </div>

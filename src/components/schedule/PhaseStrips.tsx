@@ -47,7 +47,7 @@ export const PhaseStrips: React.FC<Props> = ({ phases, onNavigate }) => {
 
               <div className="flex items-center justify-between pt-0.5">
                 <span className="text-[11px] text-ink-muted font-bold uppercase tracking-widest">{phase.unitsLabel}</span>
-                <span className={`text-[11px] font-bold ${phase.scheduleHealth === 'behind' ? 'text-red-500' : 'text-primary'}`}>
+                <span className={`text-[11px] font-bold ${phase.scheduleHealth === 'behind' ? 'text-[#9C3B2E]' : 'text-primary'}`}>
                   {phase.healthLabel}
                 </span>
               </div>

@@ -7,10 +7,8 @@ import "./index.css";
 import { registerSW } from "virtual:pwa-register";
 
 // Apply initial theme settings from local storage
-const savedTheme = localStorage.getItem("colorScheme");
-if (savedTheme && savedTheme !== "default") {
-  document.documentElement.setAttribute("data-theme", savedTheme);
-}
+localStorage.removeItem("colorScheme");
+document.documentElement.removeAttribute("data-theme");
 const savedDarkMode = localStorage.getItem("darkMode");
 if (savedDarkMode === "true") {
   document.documentElement.classList.add("dark");

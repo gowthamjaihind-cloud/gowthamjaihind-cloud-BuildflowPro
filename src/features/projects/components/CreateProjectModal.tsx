@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Image as ImageIcon, Trash2 } from "lucide-react";
+import {
+  X,
+  Image as ImageIcon,
+  Trash as Trash2,
+} from "@phosphor-icons/react";
 import { projectService } from "../../../services/projectService";
 import { useProjectsQuery } from "../../../hooks/queries";
 import { UserProfile } from "../../../types";
@@ -103,7 +107,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/20 backdrop-blur-3xl z-[100] flex items-center justify-center p-6"
+          className="fixed inset-0 bg-onyx/20 backdrop-blur-3xl z-[100] flex items-center justify-center p-6"
         >
           <motion.form
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -178,7 +182,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       onClick={() =>
                         setNewProject({ ...newProject, imageUrl: "" })
                       }
-                      className="p-3 text-[#FF3B30] hover:bg-[#FF3B30]/10 rounded-xl app-transition flex-shrink-0"
+                      className="p-3 text-[#9C3B2E] hover:bg-[#9C3B2E]/10 rounded-xl app-transition flex-shrink-0"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -259,7 +263,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </button>
               <button
                 type="submit"
-                className="bg-surface-dark text-white px-10 py-4 rounded-3xl font-bold text-[17px] shadow-xl hover:bg-black apple-transition"
+                className="bg-surface-dark text-white px-10 py-4 rounded-3xl font-bold text-[17px] shadow-xl hover:bg-onyx apple-transition"
               >
                 Initialize Project
               </button>

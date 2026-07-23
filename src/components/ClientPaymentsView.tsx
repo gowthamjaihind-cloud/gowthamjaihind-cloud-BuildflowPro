@@ -3,13 +3,13 @@ import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import {
   Plus,
   X,
-  IndianRupee,
+  CurrencyInr as IndianRupee,
   HandCoins,
-  Building2,
+  Buildings as Building2,
   ArrowDownRight,
   ArrowUpRight,
-  Download,
-} from "lucide-react";
+  DownloadSimple as Download,
+} from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { ClientPayment, VendorLedgerEntry, Vendor, CostEntry } from "../types";
 import { db, handleFirestoreError, OperationType } from "../firebase";
@@ -241,14 +241,14 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               <p className="text-sm font-semibold text-ink-muted">
                 Total Client Received
               </p>
-              <h3 className="text-3xl font-black text-emerald-600 mt-1">
+              <h3 className="text-3xl font-black text-[#3E8388] mt-1">
                 ₹
                 {totalClientReceived.toLocaleString("en-IN", {
                   maximumFractionDigits: 0,
                 })}
               </h3>
             </div>
-            <div className="bg-emerald-100 p-3 rounded-xl text-emerald-600">
+            <div className="bg-[#87BCBF]/20 p-3 rounded-xl text-[#3E8388]">
               <Building2 className="w-6 h-6" />
             </div>
           </div>
@@ -260,14 +260,14 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               <p className="text-sm font-semibold text-ink-muted">
                 Total Vendor Paid
               </p>
-              <h3 className="text-3xl font-black text-rose-600 mt-1">
+              <h3 className="text-3xl font-black text-[#9C3B2E] mt-1">
                 ₹
                 {totalVendorPaid.toLocaleString("en-IN", {
                   maximumFractionDigits: 0,
                 })}
               </h3>
             </div>
-            <div className="bg-rose-100 p-3 rounded-xl text-rose-600">
+            <div className="bg-[#9C3B2E]/15 p-3 rounded-xl text-[#9C3B2E]">
               <HandCoins className="w-6 h-6" />
             </div>
           </div>
@@ -280,7 +280,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                 Cash on Hand
               </p>
               <h3
-                className={`text-3xl font-black mt-1 ${netCashFlow >= 0 ? "text-[#A3711C]" : "text-amber-600"}`}
+                className={`text-3xl font-black mt-1 ${netCashFlow >= 0 ? "text-[#D97D54]" : "text-[#C0653F]"}`}
               >
                 ₹
                 {netCashFlow.toLocaleString("en-IN", {
@@ -289,7 +289,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               </h3>
             </div>
             <div
-              className={`p-3 rounded-xl ${netCashFlow >= 0 ? "bg-[#F3E8D2] text-[#A3711C]" : "bg-amber-100 text-amber-600"}`}
+              className={`p-3 rounded-xl ${netCashFlow >= 0 ? "bg-[#F7E4DB] text-[#D97D54]" : "bg-[#D97D54]/15 text-[#C0653F]"}`}
             >
               <IndianRupee className="w-6 h-6" />
             </div>
@@ -307,12 +307,12 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               onClick={handleExportCSV}
               className="flex items-center gap-1.5 px-3 py-2 bg-panel hover:bg-divider border border-divider rounded-xl text-xs font-bold uppercase tracking-wider text-ink transition cursor-pointer"
             >
-              <Download className="w-4 h-4 text-slate-700" />
+              <Download className="w-4 h-4 text-ink/80" />
               CSV
             </button>
             <button
               onClick={handleExportPDF}
-              className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
             >
               <Download className="w-4 h-4" />
               PDF
@@ -363,15 +363,15 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         {entry.type === "CLIENT" ? (
-                          <ArrowDownRight className="w-4 h-4 text-emerald-500" />
+                          <ArrowDownRight className="w-4 h-4 text-[#5FA3A7]" />
                         ) : (
-                          <ArrowUpRight className="w-4 h-4 text-rose-500" />
+                          <ArrowUpRight className="w-4 h-4 text-[#9C3B2E]" />
                         )}
                         <span
                           className={
                             entry.type === "CLIENT"
-                              ? "text-emerald-700 font-semibold"
-                              : "text-rose-700"
+                              ? "text-[#326B70] font-semibold"
+                              : "text-[#742C22]"
                           }
                         >
                           {entry.description}
@@ -392,7 +392,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     </td>
                     <td className="p-4 text-right">
                       {entry.inward > 0 ? (
-                        <span className="font-bold text-emerald-600">
+                        <span className="font-bold text-[#3E8388]">
                           {entry.inward.toLocaleString("en-IN", {
                             maximumFractionDigits: 0,
                           })}
@@ -403,7 +403,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     </td>
                     <td className="p-4 text-right">
                       {entry.outward > 0 ? (
-                        <span className="font-bold text-rose-600">
+                        <span className="font-bold text-[#9C3B2E]">
                           {entry.outward.toLocaleString("en-IN", {
                             maximumFractionDigits: 0,
                           })}
@@ -423,7 +423,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                           onClick={() =>
                             handleDelete(entry.originalId, entry.type)
                           }
-                          className="p-1 text-ink-muted hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                          className="p-1 text-ink-muted hover:text-[#9C3B2E] hover:bg-[#9C3B2E]/8 rounded transition-colors"
                           title="Delete record"
                         >
                           <X className="w-4 h-4" />
@@ -562,7 +562,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md transition-colors"
+                    className="flex-1 px-4 py-3 bg-[#3E8388] hover:bg-[#326B70] text-white rounded-xl font-bold shadow-md transition-colors"
                   >
                     Save Payment
                   </button>

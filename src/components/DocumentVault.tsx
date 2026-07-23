@@ -23,10 +23,10 @@ import { compressImage } from "../utils/imageCompressor";
 import { useAuthStore } from "../store";
 import {
   FileText,
-  Upload,
-  Search,
-  Filter,
-  ExternalLink,
+  UploadSimple as Upload,
+  MagnifyingGlass as Search,
+  Funnel as Filter,
+  ArrowSquareOut as ExternalLink,
   Shield,
   Link as LinkIcon,
   X,
@@ -35,10 +35,10 @@ import {
   Camera,
   CheckSquare,
   Square,
-  Trash2,
-  Download,
+  Trash as Trash2,
+  DownloadSimple as Download,
   ShieldCheck,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 
 interface DocumentVaultProps {
   projectId: string;
@@ -307,13 +307,13 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-surface/50 backdrop-blur-xl p-5 md:p-6 rounded-2xl border border-white shadow-sm gap-6">
         <h2 className="text-xl md:text-2xl font-black flex items-center gap-3 md:gap-4 text-ink tracking-tight">
-          <div className="p-2.5 md:p-3 bg-primary text-white rounded-2xl shadow-lg shadow-[#F3E8D2]">
+          <div className="p-2.5 md:p-3 bg-primary text-white rounded-2xl shadow-lg shadow-[#F7E4DB]">
             <FileText className="w-5 h-5 md:w-6 md:h-6" />
           </div>
           Digital Project Vault
         </h2>
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="bg-[#8E8E93]/10 p-1 rounded-xl flex flex-1 md:flex-none">
+          <div className="bg-[#6E8CA0]/10 p-1 rounded-xl flex flex-1 md:flex-none">
             <button
               onClick={() => setViewMode("List")}
               className={`flex-1 md:px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === "List" ? "bg-surface text-primary shadow-sm" : "text-ink-muted"}`}
@@ -337,9 +337,9 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
       </div>
 
       {selectedDocIds.length > 0 && (
-        <div className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] md:bottom-10 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white rounded-3xl p-4 md:p-6 shadow-2xl flex flex-col md:flex-row items-center gap-6 animate-in slide-in-from-bottom-10 w-[90%] md:w-auto">
+        <div className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] md:bottom-10 left-1/2 -translate-x-1/2 z-50 bg-surface-dark text-white rounded-3xl p-4 md:p-6 shadow-2xl flex flex-col md:flex-row items-center gap-6 animate-in slide-in-from-bottom-10 w-[90%] md:w-auto">
           <div className="flex items-center gap-4">
-            <div className="bg-[#F3E8D2]0 text-white w-10 h-10 rounded-2xl flex items-center justify-center font-black">
+            <div className="bg-[#D97D54] text-white w-10 h-10 rounded-2xl flex items-center justify-center font-black">
               {selectedDocIds.length}
             </div>
             <div>
@@ -352,12 +352,12 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
             </div>
           </div>
 
-          <div className="h-px md:h-10 w-full md:w-px bg-slate-800" />
+          <div className="h-px md:h-10 w-full md:w-px bg-[#3A4F5F]" />
 
           <div className="flex items-center gap-2">
             <button
               onClick={handleBulkDownload}
-              className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#3A4F5F] hover:bg-[#465D6E] rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors"
             >
               <Download size={14} /> Download Set
             </button>
@@ -365,21 +365,21 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               <>
                 <button
                   onClick={handleBulkDelete}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-red-900/40 hover:bg-red-900/60 text-red-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-red-900/40 hover:bg-red-900/60 text-[#D28E84] rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors"
                 >
                   <Trash2 size={14} /> Delete
                 </button>
                 <div className="relative group">
-                  <button className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors">
+                  <button className="flex items-center gap-2 px-4 py-2.5 bg-[#3A4F5F] hover:bg-[#465D6E] rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors">
                     <ShieldCheck size={14} /> Access Level
                   </button>
-                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-slate-800 rounded-2xl p-2 border border-slate-700 shadow-2xl min-w-[160px]">
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-[#3A4F5F] rounded-2xl p-2 border border-[#465D6E] shadow-2xl min-w-[160px]">
                     {(["Public", "Internal", "Confidential"] as const).map(
                       (level) => (
                         <button
                           key={level}
                           onClick={() => handleBulkUpdateAccess(level)}
-                          className="w-full text-left px-4 py-2 hover:bg-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest text-ink-muted hover:text-white transition-colors"
+                          className="w-full text-left px-4 py-2 hover:bg-[#465D6E] rounded-xl text-[9px] font-black uppercase tracking-widest text-ink-muted hover:text-white transition-colors"
                         >
                           Set to {level}
                         </button>
@@ -478,12 +478,12 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 onClick={() => fileInputRef.current?.click()}
                 className={`border-4 border-dashed rounded-2xl p-5 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 ${
                   selectedFile
-                    ? "border-emerald-200 bg-emerald-50/30"
-                    : "border-divider hover:border-[#F3E8D2] hover:bg-panel"
+                    ? "border-[#87BCBF]/40 bg-emerald-50/30"
+                    : "border-divider hover:border-[#F7E4DB] hover:bg-panel"
                 }`}
               >
                 <div
-                  className={`p-4 rounded-3xl ${selectedFile ? "bg-emerald-100 text-emerald-600" : "bg-[#F3E8D2] text-[#F3E8D2]0"}`}
+                  className={`p-4 rounded-3xl ${selectedFile ? "bg-[#87BCBF]/20 text-[#3E8388]" : "bg-[#F7E4DB] text-[#D97D54]"}`}
                 >
                   {selectedFile ? (
                     <File className="w-8 h-8" />
@@ -517,7 +517,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 Category & Organisation
               </label>
               <select
-                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-bold text-ink"
+                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#D97D54] outline-none font-bold text-ink"
                 value={newDoc.category}
                 onChange={(e) =>
                   setNewDoc({ ...newDoc, category: e.target.value })
@@ -541,7 +541,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               </label>
               <input
                 required
-                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-bold text-ink/80"
+                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#D97D54] outline-none font-bold text-ink/80"
                 value={newDoc.name}
                 placeholder="Financial Audit 2024"
                 onChange={(e) => setNewDoc({ ...newDoc, name: e.target.value })}
@@ -553,7 +553,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 Related WBS Task
               </label>
               <select
-                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-bold text-ink"
+                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#D97D54] outline-none font-bold text-ink"
                 value={newDoc.taskId}
                 onChange={(e) =>
                   setNewDoc({ ...newDoc, taskId: e.target.value })
@@ -573,7 +573,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 Document Type
               </label>
               <select
-                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-bold text-ink"
+                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#D97D54] outline-none font-bold text-ink"
                 value={newDoc.type}
                 onChange={(e) => setNewDoc({ ...newDoc, type: e.target.value })}
               >
@@ -589,7 +589,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 Access Level
               </label>
               <select
-                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-bold text-ink"
+                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#D97D54] outline-none font-bold text-ink"
                 value={newDoc.accessLevel}
                 onChange={(e) =>
                   setNewDoc({ ...newDoc, accessLevel: e.target.value as any })
@@ -608,7 +608,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 <div className="relative">
                   <Paperclip className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                   <input
-                    className="w-full pl-11 pr-4 py-3 border-2 border-divider rounded-2xl focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-mono text-xs text-ink-muted"
+                    className="w-full pl-11 pr-4 py-3 border-2 border-divider rounded-2xl focus:ring-2 focus:ring-[#D97D54] outline-none font-mono text-xs text-ink-muted"
                     placeholder="https://storage.google.com/..."
                     value={newDoc.url}
                     onChange={(e) =>
@@ -623,7 +623,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 Search Tags (Comma separated)
               </label>
               <input
-                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#F3E8D2]0 outline-none font-bold text-ink"
+                className="w-full border-2 border-divider rounded-2xl p-3 focus:ring-2 focus:ring-[#D97D54] outline-none font-bold text-ink"
                 value={tagInput}
                 placeholder="Team, Lunch, Safety, VIP Visit"
                 onChange={(e) => {
@@ -654,7 +654,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               <button
                 type="submit"
                 disabled={isUploadingFile}
-                className="bg-[#A3711C] text-white px-12 py-4 rounded-2xl hover:bg-[#8a5d16] shadow-xl shadow-[#F3E8D2] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#D97D54] text-white px-12 py-4 rounded-2xl hover:bg-[#B85F3B] shadow-xl shadow-[#F7E4DB] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isUploadingFile ? (
                   <span className="flex items-center gap-2">
@@ -680,11 +680,11 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 <th className="px-8 py-5 w-12">
                   <button
                     onClick={toggleSelectAll}
-                    className="text-ink-muted hover:text-[#A3711C] transition-colors"
+                    className="text-ink-muted hover:text-[#D97D54] transition-colors"
                   >
                     {selectedDocIds.length === filteredDocs.length &&
                     filteredDocs.length > 0 ? (
-                      <CheckSquare className="w-5 h-5 text-[#A3711C]" />
+                      <CheckSquare className="w-5 h-5 text-[#D97D54]" />
                     ) : (
                       <Square className="w-5 h-5" />
                     )}
@@ -710,19 +710,19 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-divider/60">
               {filteredDocs.map((docItem) => {
                 const task = tasks.find((t) => t.id === docItem.taskId);
                 const isSelected = selectedDocIds.includes(docItem.id);
                 return (
                   <tr
                     key={docItem.id}
-                    className={`hover:bg-panel transition-colors group ${isSelected ? "bg-[#F3E8D2]/50" : ""}`}
+                    className={`hover:bg-panel transition-colors group ${isSelected ? "bg-[#F7E4DB]/50" : ""}`}
                   >
                     <td className="px-8 py-6">
                       <button
                         onClick={() => toggleSelect(docItem.id)}
-                        className={`transition-colors ${isSelected ? "text-[#A3711C]" : "text-ink-muted group-hover:text-ink-muted"}`}
+                        className={`transition-colors ${isSelected ? "text-[#D97D54]" : "text-ink-muted group-hover:text-ink-muted"}`}
                       >
                         {isSelected ? (
                           <CheckSquare className="w-5 h-5" />
@@ -733,7 +733,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
-                        <div className="p-3 bg-[#F3E8D2] text-[#A3711C] rounded-2xl group-hover:bg-[#F3E8D2] transition-colors">
+                        <div className="p-3 bg-[#F7E4DB] text-[#D97D54] rounded-2xl group-hover:bg-[#F7E4DB] transition-colors">
                           <FileText className="w-5 h-5" />
                         </div>
                         <div>
@@ -749,10 +749,10 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-2">
                         <LinkIcon
-                          className={`w-3.5 h-3.5 ${task ? "text-[#F3E8D2]0" : "text-ink-muted"}`}
+                          className={`w-3.5 h-3.5 ${task ? "text-[#D97D54]" : "text-ink-muted"}`}
                         />
                         <select
-                          className="bg-transparent border-none text-xs font-bold text-ink focus:ring-0 cursor-pointer hover:text-[#A3711C]"
+                          className="bg-transparent border-none text-xs font-bold text-ink focus:ring-0 cursor-pointer hover:text-[#D97D54]"
                           value={docItem.taskId || ""}
                           onChange={(e) =>
                             handleUpdateTaskLink(docItem.id, e.target.value)
@@ -777,10 +777,10 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         <Shield
                           className={`w-4 h-4 ${
                             docItem.accessLevel === "Confidential"
-                              ? "text-rose-500"
+                              ? "text-[#9C3B2E]"
                               : docItem.accessLevel === "Internal"
-                                ? "text-amber-500"
-                                : "text-emerald-500"
+                                ? "text-[#D97D54]"
+                                : "text-[#5FA3A7]"
                           }`}
                         />
                         <span className="text-ink-muted">
@@ -798,7 +798,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         href={docItem.url || "#"}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#A3711C] transition-all"
+                        className="inline-flex items-center gap-2 bg-surface-dark text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#D97D54] transition-all"
                       >
                         View File <ExternalLink className="w-3 h-3" />
                       </a>
@@ -829,8 +829,8 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   key={photo.id}
                   className={`group relative aspect-square rounded-2xl overflow-hidden border transition-all cursor-pointer ${
                     isSelected
-                      ? "border-[#F3E8D2]0 shadow-xl ring-4 ring-[#A3711C]/10"
-                      : "border-divider bg-panel shadow-sm hover:shadow-xl hover:shadow-[#F3E8D2]"
+                      ? "border-[#D97D54] shadow-xl ring-4 ring-[#D97D54]/10"
+                      : "border-divider bg-panel shadow-sm hover:shadow-xl hover:shadow-[#F7E4DB]"
                   }`}
                   onClick={(e) => {
                     if (e.metaKey || e.ctrlKey) {
@@ -856,8 +856,8 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                       }}
                       className={`p-2 rounded-xl backdrop-blur-md shadow-lg transition-all ${
                         isSelected
-                          ? "bg-[#A3711C] text-white"
-                          : "bg-surface/90 text-ink-muted hover:text-[#A3711C]"
+                          ? "bg-[#D97D54] text-white"
+                          : "bg-surface/90 text-ink-muted hover:text-[#D97D54]"
                       }`}
                     >
                       {isSelected ? (
@@ -881,7 +881,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         {photo.tags.map((tag, i) => (
                           <span
                             key={i}
-                            className="text-[7px] px-1.5 py-0.5 bg-[#F3E8D2]0 text-white rounded font-bold uppercase tracking-tighter"
+                            className="text-[7px] px-1.5 py-0.5 bg-[#D97D54] text-white rounded font-bold uppercase tracking-tighter"
                           >
                             #{tag}
                           </span>

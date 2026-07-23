@@ -3,20 +3,20 @@ import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { useProjectDataQuery, useTasksQuery } from "../hooks/queries";
 import { useProjectDailyLogsQuery } from "../hooks/useDailyLogs";
 import {
-  Download,
+  DownloadSimple as Download,
   Package,
-  Activity,
-  Loader2,
+  Pulse as Activity,
+  CircleNotch as Loader2,
   Calendar,
   FileText,
-  Search,
+  MagnifyingGlass as Search,
   SlidersHorizontal,
-  RotateCcw,
-  TrendingUp,
-  Layers,
-  ArrowUpDown,
-  Filter,
-} from "lucide-react";
+  ArrowCounterClockwise as RotateCcw,
+  TrendUp as TrendingUp,
+  Stack as Layers,
+  ArrowsDownUp as ArrowUpDown,
+  Funnel as Filter,
+} from "@phosphor-icons/react";
 
 interface MaterialConsumptionViewProps {
   projectId: string;
@@ -270,7 +270,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center p-24 text-ink-muted gap-3" id="loading-container">
-        <Loader2 className="w-10 h-10 animate-spin text-[#A3711C]" />
+        <Loader2 className="w-10 h-10 animate-spin text-[#D97D54]" />
         <p className="text-xs font-bold uppercase tracking-widest animate-pulse">Syncing consumption databases...</p>
       </div>
     );
@@ -297,14 +297,14 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               disabled={activeTab === "advanced-filter" ? advancedFilteredRecords.length === 0 : activeMaterialRecords.length === 0}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-panel hover:bg-divider border border-divider rounded-xl text-xs font-bold uppercase tracking-wider text-ink transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
-              <Download className="w-4 h-4 text-[#A3711C]" />
+              <Download className="w-4 h-4 text-[#D97D54]" />
               Export CSV
             </button>
             <button
               id="export-current-pdf-btn"
               onClick={() => handleExportPDF(activeTab === "advanced-filter" ? advancedFilteredRecords : activeMaterialRecords)}
               disabled={activeTab === "advanced-filter" ? advancedFilteredRecords.length === 0 : activeMaterialRecords.length === 0}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <Download className="w-4 h-4" />
               Export PDF
@@ -339,13 +339,13 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                     onClick={() => handleTabChange(materialName)}
                     className={`px-4 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
                       isActive
-                        ? "bg-surface border-[#A3711C] text-[#A3711C] shadow-md shadow-[#A3711C]/5"
+                        ? "bg-surface border-[#D97D54] text-[#D97D54] shadow-md shadow-[#D97D54]/5"
                         : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
                     }`}
                   >
-                    <Package className={`w-3.5 h-3.5 ${isActive ? "text-[#A3711C]" : "text-ink-muted"}`} />
+                    <Package className={`w-3.5 h-3.5 ${isActive ? "text-[#D97D54]" : "text-ink-muted"}`} />
                     <span>{materialName}</span>
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black ${isActive ? "bg-[#A3711C]/10 text-[#A3711C]" : "bg-surface text-ink-muted"}`}>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black ${isActive ? "bg-[#D97D54]/10 text-[#D97D54]" : "bg-surface text-ink-muted"}`}>
                       {countOfMaterialLogs}
                     </span>
                   </button>
@@ -357,7 +357,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                 onClick={() => handleTabChange("advanced-filter")}
                 className={`px-4 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
                   activeTab === "advanced-filter"
-                    ? "bg-[#A3711C] border-[#A3711C] text-white shadow-md shadow-[#A3711C]/10"
+                    ? "bg-[#D97D54] border-[#D97D54] text-white shadow-md shadow-[#D97D54]/10"
                     : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
                 }`}
               >
@@ -383,7 +383,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       <span className="text-xs font-normal text-ink-muted">{materialInsights.unit}</span>
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center border border-green-100">
+                  <div className="w-10 h-10 rounded-xl bg-[#87BCBF]/12 text-[#3E8388] flex items-center justify-center border border-[#87BCBF]/30">
                     <TrendingUp className="w-5 h-5" />
                   </div>
                 </div>
@@ -393,7 +393,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Logging Events</p>
                     <p className="text-2xl font-black text-ink font-mono">{materialInsights.count}</p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                  <div className="w-10 h-10 rounded-xl bg-[#6E8CA0]/10 text-[#56778E] flex items-center justify-center border border-[#6E8CA0]/20">
                     <FileText className="w-5 h-5" />
                   </div>
                 </div>
@@ -406,7 +406,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       <span className="text-xs font-normal text-ink-muted">{materialInsights.unit}</span>
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+                  <div className="w-10 h-10 rounded-xl bg-[#D97D54]/10 text-[#C0653F] flex items-center justify-center border border-[#D97D54]/20">
                     <Activity className="w-5 h-5" />
                   </div>
                 </div>
@@ -494,8 +494,8 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                               <span
                                 className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                                   record.source === "Material Issue"
-                                    ? "bg-amber-50 text-[#A3711C] border border-[#A3711C]/20"
-                                    : "bg-blue-50 text-blue-700 border border-blue-100"
+                                    ? "bg-[#D97D54]/10 text-[#D97D54] border border-[#D97D54]/20"
+                                    : "bg-[#6E8CA0]/10 text-[#46617C] border border-[#6E8CA0]/20"
                                 }`}
                               >
                                 {record.source}
@@ -518,7 +518,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
             <div className="space-y-6" id="advanced-search-engine-panel">
               <div className="bg-surface border border-divider rounded-2xl p-6 shadow-sm space-y-6" id="advanced-filters-block">
                 <div className="flex items-center gap-2 pb-3 border-b border-divider">
-                  <Filter className="w-4 h-4 text-[#A3711C]" />
+                  <Filter className="w-4 h-4 text-[#D97D54]" />
                   <h3 className="text-xs font-black uppercase tracking-wider text-ink">Multi-Parameter Search Filters</h3>
                 </div>
 
@@ -530,7 +530,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       id="filter-material"
                       value={advMaterial}
                       onChange={(e) => setAdvMaterial(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#A3711C] outline-none"
+                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
                     >
                       <option value="">All Materials</option>
                       {distinctMaterials.map((mat) => (
@@ -546,7 +546,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       id="filter-task"
                       value={advTask}
                       onChange={(e) => setAdvTask(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#A3711C] outline-none"
+                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
                     >
                       <option value="">All Tasks</option>
                       {distinctTasks.map((t) => (
@@ -562,7 +562,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       id="filter-source"
                       value={advSource}
                       onChange={(e) => setAdvSource(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#A3711C] outline-none"
+                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
                     >
                       <option value="">All Sources</option>
                       <option value="Material Issue">Material Issue Documents</option>
@@ -578,7 +578,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       type="date"
                       value={advStartDate}
                       onChange={(e) => setAdvStartDate(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#A3711C] outline-none"
+                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
                     />
                   </div>
 
@@ -590,7 +590,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       type="date"
                       value={advEndDate}
                       onChange={(e) => setAdvEndDate(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#A3711C] outline-none"
+                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
                     />
                   </div>
 
@@ -603,7 +603,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       placeholder="e.g. 5"
                       value={advMinQty}
                       onChange={(e) => setAdvMinQty(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#A3711C] outline-none placeholder:text-ink-muted/30 font-mono"
+                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#D97D54] outline-none placeholder:text-ink-muted/30 font-mono"
                     />
                   </div>
 
@@ -616,7 +616,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       placeholder="e.g. 100"
                       value={advMaxQty}
                       onChange={(e) => setAdvMaxQty(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#A3711C] outline-none placeholder:text-ink-muted/30 font-mono"
+                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#D97D54] outline-none placeholder:text-ink-muted/30 font-mono"
                     />
                   </div>
 
@@ -656,7 +656,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                         setSortOrder("desc");
                       }
                     }}
-                    className={`uppercase tracking-wider text-[10px] ${sortField === "date" ? "text-[#A3711C] font-black" : "text-ink-muted hover:text-ink"}`}
+                    className={`uppercase tracking-wider text-[10px] ${sortField === "date" ? "text-[#D97D54] font-black" : "text-ink-muted hover:text-ink"}`}
                   >
                     Date {sortField === "date" && (sortOrder === "asc" ? "▲" : "▼")}
                   </button>
@@ -670,7 +670,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                         setSortOrder("desc");
                       }
                     }}
-                    className={`uppercase tracking-wider text-[10px] ${sortField === "quantity" ? "text-[#A3711C] font-black" : "text-ink-muted hover:text-ink"}`}
+                    className={`uppercase tracking-wider text-[10px] ${sortField === "quantity" ? "text-[#D97D54] font-black" : "text-ink-muted hover:text-ink"}`}
                   >
                     Quantity {sortField === "quantity" && (sortOrder === "asc" ? "▲" : "▼")}
                   </button>
@@ -699,7 +699,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                             <button
                               id="reset-filter-link"
                               onClick={handleResetAdvancedFilters}
-                              className="mt-3 text-xs text-[#A3711C] font-bold hover:underline uppercase tracking-widest"
+                              className="mt-3 text-xs text-[#D97D54] font-bold hover:underline uppercase tracking-widest"
                             >
                               Reset filters & view all
                             </button>
@@ -722,8 +722,8 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                               <span
                                 className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                                   record.source === "Material Issue"
-                                    ? "bg-amber-50 text-[#A3711C] border border-[#A3711C]/20"
-                                    : "bg-blue-50 text-blue-700 border border-blue-100"
+                                    ? "bg-[#D97D54]/10 text-[#D97D54] border border-[#D97D54]/20"
+                                    : "bg-[#6E8CA0]/10 text-[#46617C] border border-[#6E8CA0]/20"
                                 }`}
                               >
                                 {record.source}

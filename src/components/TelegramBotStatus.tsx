@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Send } from "lucide-react";
+import {
+  PaperPlaneTilt as Send,
+} from "@phosphor-icons/react";
 
 export const TelegramBotStatus: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
@@ -45,11 +47,11 @@ export const TelegramBotStatus: React.FC = () => {
     return (
       <div
         id="telegram-bot-status-indicator"
-        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-rose-500/10 text-rose-600 rounded-full text-[11px] font-bold tracking-wide border border-rose-500/20 shadow-sm"
+        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-rose-500/10 text-[#9C3B2E] rounded-full text-[11px] font-bold tracking-wide border border-rose-500/20 shadow-sm"
         title="Telegram Bot Disconnected / Offline"
       >
         <span className="relative flex h-2.5 w-2.5">
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#9C3B2E]" />
         </span>
         <span className="text-[11px] font-bold">Bot Offline</span>
       </div>
@@ -59,12 +61,12 @@ export const TelegramBotStatus: React.FC = () => {
   return (
     <div
       id="telegram-bot-status-indicator"
-      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-[#0088cc]/10 text-[#0088cc] rounded-full text-[11px] font-bold tracking-wide border border-[#0088cc]/20 shadow-sm"
+      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-[#56778E]/10 text-[#56778E] rounded-full text-[11px] font-bold tracking-wide border border-[#56778E]/20 shadow-sm"
       title={botName ? `Telegram Bot Connected (${botName})` : "Telegram Bot Connected & Active"}
     >
       <span className="relative flex h-2.5 w-2.5">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#34C759] opacity-75" />
-        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#34C759]" />
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3E8388] opacity-75" />
+        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#3E8388]" />
       </span>
       <span className="text-[11px] font-bold">Bot Online</span>
     </div>
