@@ -325,7 +325,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-surface/70 backdrop-blur-xl p-5 md:p-6 rounded-2xl border border-white/20 shadow-sm gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-panel p-5 md:p-6 rounded-2xl border border-divider shadow-sm gap-6">
         <div>
           <h2 className="text-2xl font-black text-ink tracking-tight leading-none mb-1">
             Progress Reports

@@ -279,7 +279,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   return (
     <div className="space-y-8 pb-32" id="consumption-view-container">
       {/* HEADER BAR */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-surface/80 backdrop-blur-xl p-6 md:p-8 rounded-[24px] border border-divider shadow-sm" id="header-bar">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-panel p-6 md:p-8 rounded-[24px] border border-divider shadow-sm" id="header-bar">
         <div>
           <h2 className="text-2xl md:text-3xl font-black text-ink tracking-tight mb-2">
             Material Consumption

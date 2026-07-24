@@ -538,7 +538,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       </div>
 
       {/* Controls Section */}
-      <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-surface backdrop-blur-xl p-3 md:p-4 rounded-2xl border border-divider shadow-sm">
+      <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-panel p-3 md:p-4 rounded-2xl border border-divider shadow-sm">
         <div className="flex flex-col md:flex-row gap-3 w-full lg:w-auto items-center">
           <div className="flex bg-panel p-1 rounded-xl w-full md:w-auto border border-divider overflow-x-auto scrollbar-hide">
             <button
@@ -1286,7 +1286,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       {/* Modals */}
       <AnimatePresence>
         {itemToDelete && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1322,7 +1322,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         )}
 
         {(isAdding || editingItem) && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

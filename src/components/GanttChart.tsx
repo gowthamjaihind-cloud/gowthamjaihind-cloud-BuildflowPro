@@ -792,7 +792,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className={`fixed z-50 w-64 bg-slate-900/95 backdrop-blur-md text-white rounded-xl shadow-2xl border border-slate-700/50 p-4 ${breakpoint === "mobile" ? "pointer-events-auto" : "pointer-events-none"}`}
+            className={`fixed z-50 w-64 bg-onyx/95 backdrop-blur-md text-white rounded-xl shadow-2xl border border-divider p-4 ${breakpoint === "mobile" ? "pointer-events-auto" : "pointer-events-none"}`}
             style={{
               left: hoveredTask.x + 15,
               top: hoveredTask.y + 15,

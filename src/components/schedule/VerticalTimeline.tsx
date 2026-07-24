@@ -104,7 +104,7 @@ export const VerticalTimeline: React.FC<Props> = ({ tasks }) => {
                          <div className={`w-[12px] h-[12px] rounded-full ${getStatusColor(task.status)}`} />
                        </div>
                        
-                       <div className="flex-1 bg-[var(--glass)] border border-[var(--edge)] rounded-[18px] p-4 backdrop-blur-md">
+                       <div className="flex-1 bg-[var(--glass)] border border-[var(--edge)] rounded-[18px] p-4">
                          <h4 className="font-bold text-[var(--ink)] text-sm mb-1">{task.title}</h4>
                          <p className="text-[11px] text-[var(--muted)] mb-2">{task.phaseId} · {task.assigneeName || 'Unassigned'}</p>
                          

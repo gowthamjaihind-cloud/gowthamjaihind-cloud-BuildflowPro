@@ -65,7 +65,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-surface/70 backdrop-blur-xl p-6 rounded-[32px] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.03)] gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-panel p-6 rounded-[32px] border border-divider shadow-[0_10px_40px_rgba(0,0,0,0.03)] gap-6">
         <div>
           <h2 className="text-2xl font-black text-ink tracking-tight leading-none mb-1">
             Daily Progress

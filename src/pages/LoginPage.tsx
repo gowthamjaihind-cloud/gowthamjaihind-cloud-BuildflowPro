@@ -39,7 +39,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         <button
           onClick={onLogin}
           disabled={isLoggingIn}
-          className={`w-full bg-surface-dark text-white py-6 rounded-3xl font-bold flex items-center justify-center gap-4 hover:bg-onyx apple-transition active:scale-[0.98] shadow-2xl shadow-drab/10 group text-[17px] ${isLoggingIn ? "opacity-50 cursor-not-allowed" : ""}`}
+          className={`w-full bg-onyx text-white py-6 rounded-3xl font-bold flex items-center justify-center gap-4 hover:bg-onyx/80 apple-transition active:scale-[0.98] shadow-2xl shadow-drab/10 group text-[17px] ${isLoggingIn ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           {isLoggingIn ? (
             <>

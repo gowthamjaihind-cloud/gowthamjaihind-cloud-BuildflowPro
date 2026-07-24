@@ -37,6 +37,20 @@
   --risk: #EF4444;
 }
 
+.dark .schedule-theme {
+  --bg: #242F39;
+  --glass: #1B1C20;
+  --edge: #3A4A58;
+  --ink: #F0F3F4;
+  --muted: #8FA6B8;
+  --faint: #6E8CA0;
+  --acc: #E29677;
+  --acc2: #87BCBF;
+  --ok: #34D399;
+  --warn: #E29677;
+  --risk: #F87171;
+}
+
 @theme {
   --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Oswald", sans-serif;
@@ -206,7 +220,7 @@
 
   /* --- Site Mode Global Overrides --- */
   .site-mode body {
-    background: white !important;
+    background: var(--page) !important;
   }
   .site-mode body::before {
     display: none !important;

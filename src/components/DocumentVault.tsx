@@ -305,7 +305,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-surface/50 backdrop-blur-xl p-5 md:p-6 rounded-2xl border border-white shadow-sm gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-panel p-5 md:p-6 rounded-2xl border border-divider shadow-sm gap-6">
         <h2 className="text-xl md:text-2xl font-black flex items-center gap-3 md:gap-4 text-ink tracking-tight">
           <div className="p-2.5 md:p-3 bg-primary text-white rounded-2xl shadow-lg shadow-[#F7E4DB]">
             <FileText className="w-5 h-5 md:w-6 md:h-6" />
@@ -442,7 +442,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
       </div>
 
       {isUploading && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-onyx/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <form
             onSubmit={handleUpload}
             className="bg-surface w-full max-w-2xl p-5 md:p-6 rounded-2xl border shadow-2xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 relative my-auto max-h-[95vh] overflow-y-auto custom-scrollbar"

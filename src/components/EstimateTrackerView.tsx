@@ -436,7 +436,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSelectedEstimateId(null)}
-              className="p-2 bg-surface border border-white/20 rounded-xl hover:bg-panel transition-colors"
+              className="p-2 bg-surface border border-divider rounded-xl hover:bg-panel transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-ink" />
             </button>
@@ -481,7 +481,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            <div className="bg-surface border border-white/20 rounded-2xl p-6 shadow-sm">
+            <div className="bg-surface border border-divider rounded-2xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-ink">Line Items</h3>
                 <div className="flex gap-2">
@@ -682,7 +682,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
           </div>
 
           <div className="space-y-4">
-            <div className="bg-surface border border-white/20 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="bg-surface border border-divider rounded-2xl p-6 shadow-sm space-y-4">
               <h3 className="font-bold text-ink text-left">
                 Contract Position
               </h3>
@@ -759,7 +759,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
             )}
 
             {/* Forecast Panel */}
-            <div className="bg-surface border border-white/20 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="bg-surface border border-divider rounded-2xl p-6 shadow-sm space-y-4">
               <h3 className="font-bold text-ink text-left">Forecast at Completion</h3>
               <div className="space-y-3 pt-2 text-sm">
                 {forecast?.status === "ok" ? (
@@ -837,7 +837,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
             </div>
 
             {/* Committed Cost Panel */}
-            <div className="bg-surface border border-white/20 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="bg-surface border border-divider rounded-2xl p-6 shadow-sm space-y-4">
               <h3 className="font-bold text-ink text-left">Open Commitments</h3>
               <div className="space-y-3 pt-2 text-sm">
                 <div className="text-ink font-medium">
@@ -856,7 +856,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
               </div>
             </div>
 
-            <div className="bg-surface border border-white/20 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="bg-surface border border-divider rounded-2xl p-6 shadow-sm space-y-4">
               <h3 className="font-bold text-ink text-left">Quote Summary</h3>
               <div className="space-y-3 pt-2">
                 <div className="flex justify-between items-center text-sm">
@@ -955,7 +955,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
               </div>
             </div>
 
-            <div className="bg-surface border border-white/20 rounded-2xl p-6 shadow-sm">
+            <div className="bg-surface border border-divider rounded-2xl p-6 shadow-sm">
               <label className="text-xs font-bold text-ink-muted uppercase tracking-wider mb-2 block">
                 Client Notes
               </label>
@@ -974,7 +974,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
         {/* Sync Modal */}
         {isSyncModalOpen && (
           <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <div className="bg-surface w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden border border-white/20 flex flex-col max-h-[80vh]">
+            <div className="bg-surface w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden border border-divider flex flex-col max-h-[80vh]">
               <div className="bg-panel px-6 py-4 flex justify-between items-center border-b border-white/10 shrink-0">
                 <h3 className="text-[17px] font-bold text-ink flex items-center gap-2">
                   <Link className="w-5 h-5 text-secondary" /> Sync Tasks to
@@ -1207,7 +1207,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
 
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-surface w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-white/20">
+          <div className="bg-surface w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-divider">
             <div className="bg-panel px-6 py-4 flex justify-between items-center border-b border-white/10">
               <h3 className="text-[17px] font-bold text-ink flex items-center gap-2">
                 <FileText className="w-5 h-5" /> New Client Estimate

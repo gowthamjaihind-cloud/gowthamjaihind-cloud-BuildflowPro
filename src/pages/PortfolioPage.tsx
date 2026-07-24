@@ -150,7 +150,7 @@ export const PortfolioPage: React.FC = () => {
             </button>
             <button
               onClick={() => setIsCreatingProject(true)}
-              className="flex-1 sm:flex-none justify-center bg-surface-dark text-white px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 rounded-[16px] sm:rounded-2xl md:rounded-3xl font-bold text-[15px] sm:text-[17px] flex items-center gap-2 sm:gap-4 shadow-lg shadow-drab/20 hover:bg-onyx apple-transition sm:hover:-translate-y-1 active:scale-95"
+              className="flex-1 sm:flex-none justify-center bg-onyx text-white px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 rounded-[16px] sm:rounded-2xl md:rounded-3xl font-bold text-[15px] sm:text-[17px] flex items-center gap-2 sm:gap-4 shadow-lg shadow-drab/20 hover:bg-onyx/80 apple-transition sm:hover:-translate-y-1 active:scale-95"
             >
               <Plus
                 weight="bold"

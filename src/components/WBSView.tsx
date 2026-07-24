@@ -1068,7 +1068,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
             </motion.div>
           )}
 
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-surface/70 backdrop-blur-xl p-6 rounded-[32px] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.03)] gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-panel p-6 rounded-[32px] border border-divider shadow-[0_10px_40px_rgba(0,0,0,0.03)] gap-6">
             <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
               <div className="bg-[#F7E4DB] p-3 rounded-2xl">
                 <ListTree className="w-6 h-6 text-[#D97D54]" />
@@ -1138,7 +1138,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
             >
               <button
                 onClick={() => setIsAdding("root")}
-                className="w-full md:w-auto bg-surface-dark text-white px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 hover:bg-onyx apple-transition shadow-2xl shadow-drab/10 font-bold text-sm"
+                className="w-full md:w-auto bg-onyx text-white px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 hover:bg-onyx/80 apple-transition shadow-2xl shadow-drab/10 font-bold text-sm"
               >
                 <Plus className="w-5 h-5" /> <span>Add Task</span>
               </button>
@@ -1346,7 +1346,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
       {/* Modals for Add/Edit/Delete */}
       <AnimatePresence>
         {phaseToDelete && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1386,7 +1386,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
         )}
 
         {taskToDelete && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1429,7 +1429,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
             className={
               breakpoint !== "desktop"
                 ? "fixed inset-0 bg-surface z-50 flex flex-col"
-                : "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                : "fixed inset-0 bg-onyx/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             }
           >
             <motion.div
@@ -3040,7 +3040,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                   <div className="relative">
                                     <input
                                       type="number"
-                                      className="w-full bg-onyx/40 border border-white/20 rounded-xl md:rounded-2xl px-4 md:px-5 py-2.5 md:py-3 font-black text-[#D97D54] focus:bg-white/10 outline-none transition-all placeholder:text-white/30 text-sm"
+                                      className="w-full bg-onyx/40 border border-divider rounded-xl md:rounded-2xl px-4 md:px-5 py-2.5 md:py-3 font-black text-[#D97D54] focus:bg-white/10 outline-none transition-all placeholder:text-white/30 text-sm"
                                       placeholder="Additional Budget..."
                                       value={
                                         editingTask

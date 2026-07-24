@@ -133,7 +133,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 </label>
                 <input
                   required
-                  className="w-full bg-surface/50 border border-white/20 rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition font-bold text-lg md:text-xl"
+                  className="w-full bg-surface/50 border border-divider rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition font-bold text-lg md:text-xl"
                   placeholder="Project Horizon"
                   value={editedProject.name || ""}
                   onChange={(e) =>
@@ -155,12 +155,12 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                       />
                     </div>
                   ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-surface/50 border border-white/20 flex flex-shrink-0 items-center justify-center">
+                    <div className="w-16 h-16 rounded-2xl bg-surface/50 border border-divider flex flex-shrink-0 items-center justify-center">
                       <ImageIcon className="w-6 h-6 text-ink-muted" />
                     </div>
                   )}
                   <div className="flex flex-col gap-2">
-                    <label className="bg-surface border border-white/20 hover:bg-white/40 cursor-pointer apple-transition px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
+                    <label className="bg-surface border border-divider hover:bg-white/40 cursor-pointer apple-transition px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
                       <ImageIcon className="w-4 h-4" />
                       Upload Cover
                       <input
@@ -190,7 +190,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 </label>
                 <textarea
                   required
-                  className="w-full bg-surface/50 border border-white/20 rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition min-h-[120px] resize-none"
+                  className="w-full bg-surface/50 border border-divider rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition min-h-[120px] resize-none"
                   placeholder="Brief overview of the project scope and objectives..."
                   value={editedProject.description || ""}
                   onChange={(e) =>
@@ -209,7 +209,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 <input
                   required
                   type="date"
-                  className="w-full bg-surface/50 border border-white/20 rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition"
+                  className="w-full bg-surface/50 border border-divider rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition"
                   value={editedProject.startDate || ""}
                   onChange={(e) =>
                     setEditedProject({
@@ -227,7 +227,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 <input
                   required
                   type="date"
-                  className="w-full bg-surface/50 border border-white/20 rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition"
+                  className="w-full bg-surface/50 border border-divider rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition"
                   value={editedProject.endDate || ""}
                   onChange={(e) =>
                     setEditedProject({ ...editedProject, endDate: e.target.value })

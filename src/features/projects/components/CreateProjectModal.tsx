@@ -141,7 +141,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 </label>
                 <input
                   required
-                  className="w-full bg-surface/50 border border-white/20 rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition font-bold text-lg md:text-xl"
+                  className="w-full bg-surface/50 border border-divider rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition font-bold text-lg md:text-xl"
                   placeholder="Project Horizon"
                   value={newProject.name}
                   onChange={(e) =>
@@ -163,11 +163,11 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       />
                     </div>
                   ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-surface/50 border border-white/20 flex items-center justify-center flex-shrink-0">
+                    <div className="w-16 h-16 rounded-2xl bg-surface/50 border border-divider flex items-center justify-center flex-shrink-0">
                       <ImageIcon className="w-6 h-6 text-ink-muted" />
                     </div>
                   )}
-                  <label className="cursor-pointer bg-surface/50 border border-white/20 rounded-xl px-4 py-3 flex-1 flex items-center justify-center hover:bg-surface apple-transition text-sm font-bold text-ink">
+                  <label className="cursor-pointer bg-surface/50 border border-divider rounded-xl px-4 py-3 flex-1 flex items-center justify-center hover:bg-surface apple-transition text-sm font-bold text-ink">
                     <ImageIcon className="w-4 h-4 mr-2" /> Upload Icon
                     <input
                       type="file"
@@ -194,7 +194,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   Mission Profile
                 </label>
                 <textarea
-                  className="w-full bg-surface/50 border border-white/20 rounded-2xl p-5 focus:bg-surface outline-none apple-transition font-medium"
+                  className="w-full bg-surface/50 border border-divider rounded-2xl p-5 focus:bg-surface outline-none apple-transition font-medium"
                   rows={3}
                   placeholder="Project scope and primary objectives..."
                   value={newProject.description}
@@ -211,7 +211,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   Status
                 </label>
                 <select
-                  className="w-full bg-surface/50 border border-white/20 rounded-2xl p-5 focus:bg-surface outline-none apple-transition font-bold text-ink"
+                  className="w-full bg-surface/50 border border-divider rounded-2xl p-5 focus:bg-surface outline-none apple-transition font-bold text-ink"
                   value={newProject.status}
                   onChange={(e) =>
                     setNewProject({ ...newProject, status: e.target.value })
@@ -230,7 +230,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 <input
                   type="date"
                   required
-                  className="w-full bg-surface/50 border border-white/20 rounded-2xl p-5 focus:bg-surface outline-none apple-transition font-bold text-ink"
+                  className="w-full bg-surface/50 border border-divider rounded-2xl p-5 focus:bg-surface outline-none apple-transition font-bold text-ink"
                   value={newProject.startDate}
                   onChange={(e) =>
                     setNewProject({ ...newProject, startDate: e.target.value })
@@ -244,7 +244,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 <input
                   type="date"
                   required
-                  className="w-full bg-surface/50 border border-white/20 rounded-2xl p-5 focus:bg-surface outline-none apple-transition font-bold text-ink"
+                  className="w-full bg-surface/50 border border-divider rounded-2xl p-5 focus:bg-surface outline-none apple-transition font-bold text-ink"
                   value={newProject.endDate}
                   onChange={(e) =>
                     setNewProject({ ...newProject, endDate: e.target.value })
@@ -263,7 +263,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </button>
               <button
                 type="submit"
-                className="bg-surface-dark text-white px-10 py-4 rounded-3xl font-bold text-[17px] shadow-xl hover:bg-onyx apple-transition"
+                className="bg-onyx text-white px-10 py-4 rounded-3xl font-bold text-[17px] shadow-xl hover:bg-onyx/80 apple-transition"
               >
                 Initialize Project
               </button>

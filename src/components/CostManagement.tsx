@@ -1245,7 +1245,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               return (
                 <div
                   key={idx}
-                  className="bg-surface border border-white/20 p-6 rounded-3xl shadow-sm hover:shadow-md apple-transition"
+                  className="bg-surface border border-divider p-6 rounded-3xl shadow-sm hover:shadow-md apple-transition"
                 >
                   <div className="flex justify-between items-center mb-6">
                     <h4 className="text-[15px] font-bold text-ink flex items-center gap-2">
@@ -2071,7 +2071,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       {/* Modals */}
       <AnimatePresence>
         {isAdding && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -2226,7 +2226,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
       <AnimatePresence>
         {deletingId && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}

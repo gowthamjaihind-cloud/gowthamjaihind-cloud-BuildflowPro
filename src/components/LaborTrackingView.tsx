@@ -364,7 +364,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
 
     return (
       <div className="space-y-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-surface/70 backdrop-blur-xl p-6 md:p-8 rounded-[24px] md:rounded-[32px] border border-white shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-panel p-6 md:p-8 rounded-[24px] md:rounded-[32px] border border-divider shadow-sm">
           <div>
             <h2 className="text-2xl md:text-3xl font-black text-ink tracking-tight leading-none mb-2">
               Labor Matrix
@@ -952,7 +952,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
 
   return (
     <div className="space-y-6 md:space-y-12 pb-24 md:pb-32">
-      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 md:gap-8 bg-surface/70 backdrop-blur-xl p-4 md:p-6 rounded-[24px] md:rounded-[32px] border border-white shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 md:gap-8 bg-panel p-4 md:p-6 rounded-[24px] md:rounded-[32px] border border-divider shadow-sm">
         <div className="flex gap-2 bg-panel/50 p-1 md:p-1.5 rounded-xl md:rounded-2xl w-full md:w-fit overflow-x-auto scrollbar-hide ring-1 ring-slate-200/50 shadow-inner">
           {(["rates", "billing"] as Tab[]).map((tab) => (
             <button
@@ -997,7 +997,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
       {/* Modals */}
       <AnimatePresence>
         {isAddingRate && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1083,7 +1083,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-surface-dark text-white py-4 rounded-xl md:rounded-2xl text-xs md:text-sm font-black uppercase tracking-widest hover:bg-onyx transition-all shadow-xl shadow-drab/5"
+                  className="w-full bg-onyx text-white py-4 rounded-xl md:rounded-2xl text-xs md:text-sm font-black uppercase tracking-widest hover:bg-onyx/80 transition-all shadow-xl shadow-drab/5"
                 >
                   Save Index Entry
                 </button>
@@ -1093,7 +1093,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         )}
 
         {isDeletingRate && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}

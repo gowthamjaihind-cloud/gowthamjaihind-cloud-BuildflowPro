@@ -153,11 +153,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div
-      className={`h-[100dvh] bg-panel sm:min-h-screen flex text-ink font-sans relative overflow-hidden sm:p-4 md:p-6 gap-0 sm:gap-4 lg:gap-6 ${uiMode === "site" ? "!p-0 !gap-0 !bg-white" : ""}`}
+      className={`h-[100dvh] bg-panel sm:min-h-screen flex text-ink font-sans relative overflow-hidden sm:p-4 md:p-6 gap-0 sm:gap-4 lg:gap-6 ${uiMode === "site" ? "!p-0 !gap-0 !bg-page" : ""}`}
     >
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden md:flex soft-card rounded-[32px] transition-all duration-700 ease-[cubic-bezier(0.2,0,0,1)] flex-col relative z-20 ${isSidebarOpen ? "w-[280px] xl:w-80" : "w-24 overflow-hidden"} ${uiMode === "site" ? "!rounded-none !shadow-none border-r border-[#C8D1D3] !bg-surface" : ""}`}
+        className={`hidden md:flex soft-card rounded-[32px] transition-all duration-700 ease-[cubic-bezier(0.2,0,0,1)] flex-col relative z-20 ${isSidebarOpen ? "w-[280px] xl:w-80" : "w-24 overflow-hidden"} ${uiMode === "site" ? "!rounded-none !shadow-none border-r border-divider !bg-surface" : ""}`}
       >
         <SidebarContent showLabels={isSidebarOpen} />
       </aside>
@@ -172,7 +172,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Mobile Drawer (Only for More menu) */}
       <aside
-        className={`fixed inset-y-0 left-0 w-72 bg-page/95 backdrop-blur-2xl z-[101] flex flex-col shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.2,0,0,1)] transform md:hidden ${
+        className={`fixed inset-y-0 left-0 w-72 bg-panel z-[101] flex flex-col shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.2,0,0,1)] transform md:hidden ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -185,7 +185,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         {/* Top Bar Navigation */}
         <header
-          className={`soft-card rounded-none sm:rounded-[24px] px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 flex items-center justify-between z-20 shrink-0 ${uiMode === "site" ? "!rounded-none !bg-white !border-b !border-[#C8D1D3] !py-3" : ""}`}
+          className={`soft-card rounded-none sm:rounded-[24px] px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 flex items-center justify-between z-20 shrink-0 ${uiMode === "site" ? "!rounded-none !bg-panel !border-b !border-divider !py-3" : ""}`}
         >
           <div className="flex items-center gap-3 sm:gap-5">
             <button
@@ -199,7 +199,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
             </button>
             <div
-              className={`hidden sm:block h-6 w-px bg-surface/30 mx-1 lg:mx-2 ${uiMode === "site" ? "!bg-[#C8D1D3]" : ""}`}
+              className={`hidden sm:block h-6 w-px bg-surface/30 mx-1 lg:mx-2 ${uiMode === "site" ? "!bg-divider" : ""}`}
             />
             <div className="min-w-0 flex items-center gap-3 sm:gap-4">
               <div>
@@ -219,7 +219,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     onChange={(e) =>
                       updateProjectStatus(activeProject.id, e.target.value)
                     }
-                    className="text-[11px] sm:text-xs font-bold bg-surface/50 border border-white/20 text-ink rounded-md sm:rounded-lg px-2 py-1 sm:px-3 sm:py-1.5 outline-none apple-transition hover:bg-surface focus:bg-surface"
+                    className="text-[11px] sm:text-xs font-bold bg-surface/50 border border-divider text-ink rounded-md sm:rounded-lg px-2 py-1 sm:px-3 sm:py-1.5 outline-none apple-transition hover:bg-surface focus:bg-surface"
                   >
                     <option value="Planning">Planning</option>
                     <option value="Active">Active</option>
@@ -261,7 +261,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Mobile Bottom Navigation */}
         <nav
-          className={`fixed md:hidden bottom-0 left-0 right-0 bg-surface/90 backdrop-blur-xl border-t border-onyx/5 pb-[env(safe-area-inset-bottom)] pt-2 px-2 z-[60] flex justify-around items-center ${uiMode === "site" ? "!bg-white !border-[#C8D1D3]" : ""}`}
+          className={`fixed md:hidden bottom-0 left-0 right-0 bg-panel border-t border-divider pb-[env(safe-area-inset-bottom)] pt-2 px-2 z-[60] flex justify-around items-center ${uiMode === "site" ? "!bg-panel !border-divider" : ""}`}
         >
           {bottomNavItems.map((item) => (
             <button
@@ -304,7 +304,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     setActiveTab("dailylogs");
                     setIsFabOpen(false);
                   }}
-                  className="bg-white border shadow-lg rounded-full px-4 py-3 flex items-center gap-3 text-sm font-bold text-ink"
+                  className="bg-panel border border-divider shadow-lg rounded-full px-4 py-3 flex items-center gap-3 text-sm font-bold text-ink"
                 >
                   <ClipboardCheck className="w-5 h-5 text-primary" />
                   New DPR Entry
