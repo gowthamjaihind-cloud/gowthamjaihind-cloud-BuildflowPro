@@ -16,6 +16,9 @@ import {
   Stack as Layers,
   ArrowsDownUp as ArrowUpDown,
   Funnel as Filter,
+  Users,
+  CurrencyInr as IndianRupee,
+  HardHat,
 } from "@phosphor-icons/react";
 
 interface MaterialConsumptionViewProps {
@@ -43,6 +46,16 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   const [sortField, setSortField] = useState<"date" | "quantity">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
+  // Material group filter
+  const [materialGroupFilter, setMaterialGroupFilter] = useState("");
+
+  // Labor tab filter state
+  const [laborTask, setLaborTask] = useState("");
+  const [laborRole, setLaborRole] = useState("");
+  const [laborVendor, setLaborVendor] = useState("");
+  const [laborStartDate, setLaborStartDate] = useState("");
+  const [laborEndDate, setLaborEndDate] = useState("");
+
   // Fetch from Firebase via React Query hooks
   const { data: allIssues = [], isLoading: isIssuesLoading } =
     useProjectDataQuery<any>(projectId, "material_issues");
@@ -50,6 +63,23 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
     useProjectDailyLogsQuery(projectId);
   const { data: tasks = [], isLoading: isTasksLoading } =
     useTasksQuery(projectId);
+  const { data: inventory = [] } =
+    useProjectDataQuery<any>(projectId, "inventory");
+  const { data: rateCards = [] } =
+    useProjectDataQuery<any>(projectId, "labor_rate_cards");
+  const { data: suppliers = [] } =
+    useProjectDataQuery<any>(projectId, "suppliers");
+  const { data: legacyLaborLogs = [] } =
+    useProjectDataQuery<any>(projectId, "labor_logs");
+
+  // material name -> group (inventory category), for grouping the material tabs
+  const materialGroupMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    inventory.forEach((item: any) => {
+      if (item.name) map[item.name] = item.category || "Ungrouped";
+    });
+    return map;
+  }, [inventory]);
 
   // Derive all consumption records from issues and logs
   const allRecords = useMemo(() => {
@@ -121,13 +151,117 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
     return uniq.sort();
   }, [allRecords]);
 
+  // Distinct material groups (from the materials actually consumed)
+  const distinctGroups = useMemo(() => {
+    const uniq = Array.from(
+      new Set(distinctMaterials.map((m) => materialGroupMap[m] || "Ungrouped")),
+    ).filter(Boolean);
+    return uniq.sort();
+  }, [distinctMaterials, materialGroupMap]);
+
+  // Materials shown as tabs, narrowed by the selected group
+  const visibleMaterials = useMemo(() => {
+    if (!materialGroupFilter) return distinctMaterials;
+    return distinctMaterials.filter(
+      (m) => (materialGroupMap[m] || "Ungrouped") === materialGroupFilter,
+    );
+  }, [distinctMaterials, materialGroupFilter, materialGroupMap]);
+
+  // ---- LABOR CONSUMPTION records (mirrors LaborTrackingView derivation) ----
+  const laborRecords = useMemo(() => {
+    const records: any[] = [];
+
+    // 1. Legacy labor_logs documents (already have per-task line items)
+    (legacyLaborLogs || []).forEach((logDoc: any) => {
+      (logDoc.items || []).forEach((it: any) => {
+        records.push({
+          id: `${logDoc.id}-${it.taskId}-${it.role}`,
+          date: logDoc.date || "",
+          taskName: it.taskName || tasks.find((t) => t.id === it.taskId)?.name || "Unknown Task",
+          role: it.role || "Labour",
+          vendorName: logDoc.vendorName || suppliers.find((v: any) => v.id === logDoc.vendorId)?.name || "—",
+          headcount: it.headcount || 0,
+          shifts: it.shifts || 1,
+          cost: it.cost || 0,
+          source: "Labor Log",
+        });
+      });
+    });
+
+    // 2. Labour entries embedded in daily logs (resolve role/rate/vendor via rate cards)
+    (allLogs || []).forEach((log: any) => {
+      const taskName = tasks.find((t) => t.id === log.taskId)?.name || `Task ${log.taskId}`;
+      (log.labour || []).forEach((li: any) => {
+        const rateCard = rateCards.find((r: any) => r.id === li.roleId);
+        const vendor = rateCard ? suppliers.find((v: any) => v.id === rateCard.vendorId) : null;
+        const headcount = li.headcount || 0;
+        const rate = rateCard?.rate || 0;
+        records.push({
+          id: `${log.id}-${li.roleId || li.roleName || Math.random()}`,
+          date: log.workDate || "",
+          taskName,
+          role: rateCard?.role || li.roleName || "Labour",
+          vendorName: vendor?.name || "—",
+          headcount,
+          shifts: 1,
+          cost: headcount * rate,
+          source: "Daily Log",
+        });
+      });
+    });
+
+    return records.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  }, [legacyLaborLogs, allLogs, tasks, rateCards, suppliers]);
+
+  const distinctLaborTasks = useMemo(
+    () => Array.from(new Set(laborRecords.map((r) => r.taskName))).filter(Boolean).sort(),
+    [laborRecords],
+  );
+  const distinctLaborRoles = useMemo(
+    () => Array.from(new Set(laborRecords.map((r) => r.role))).filter(Boolean).sort(),
+    [laborRecords],
+  );
+  const distinctLaborVendors = useMemo(
+    () => Array.from(new Set(laborRecords.map((r) => r.vendorName))).filter(Boolean).sort(),
+    [laborRecords],
+  );
+
+  // Filtered labor records + per-task rollup + totals
+  const filteredLaborRecords = useMemo(() => {
+    return laborRecords.filter((r) => {
+      if (laborTask && r.taskName !== laborTask) return false;
+      if (laborRole && r.role !== laborRole) return false;
+      if (laborVendor && r.vendorName !== laborVendor) return false;
+      if (laborStartDate && r.date < laborStartDate) return false;
+      if (laborEndDate && r.date > laborEndDate) return false;
+      return true;
+    });
+  }, [laborRecords, laborTask, laborRole, laborVendor, laborStartDate, laborEndDate]);
+
+  const laborTotals = useMemo(() => {
+    const headcount = filteredLaborRecords.reduce((s, r) => s + (r.headcount || 0), 0);
+    const cost = filteredLaborRecords.reduce((s, r) => s + (r.cost || 0), 0);
+    const byTask: Record<string, { headcount: number; cost: number; entries: number }> = {};
+    filteredLaborRecords.forEach((r) => {
+      const key = r.taskName || "Unknown Task";
+      if (!byTask[key]) byTask[key] = { headcount: 0, cost: 0, entries: 0 };
+      byTask[key].headcount += r.headcount || 0;
+      byTask[key].cost += r.cost || 0;
+      byTask[key].entries += 1;
+    });
+    const perTask = Object.entries(byTask)
+      .map(([taskName, v]) => ({ taskName, ...v }))
+      .sort((a, b) => b.cost - a.cost);
+    return { headcount, cost, entries: filteredLaborRecords.length, perTask };
+  }, [filteredLaborRecords]);
+
   // Tab State
   const defaultTab = useMemo(() => {
-    if (distinctMaterials.length > 0) {
-      return distinctMaterials[0];
+    if (visibleMaterials.length > 0) {
+      return visibleMaterials[0];
     }
     return "advanced-filter";
-  }, [distinctMaterials]);
+  }, [visibleMaterials]);
 
   const [selectedTab, setSelectedTab] = useState<string | null>(null);
   const activeTab = selectedTab || defaultTab;
@@ -314,7 +448,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
       </div>
 
       {/* NO RECORDS GENERAL STATE */}
-      {allRecords.length === 0 ? (
+      {allRecords.length === 0 && laborRecords.length === 0 ? (
         <div className="bg-surface rounded-2xl border border-divider p-20 text-center" id="empty-state-container">
           <div className="w-20 h-20 bg-panel rounded-full flex items-center justify-center mx-auto mb-6 border border-divider">
             <Package className="text-ink-muted w-10 h-10" />
@@ -326,10 +460,33 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
         </div>
       ) : (
         <div className="space-y-6" id="consumption-analytics-content">
+          {/* MATERIAL GROUP FILTER */}
+          {activeTab !== "labor" && distinctGroups.length > 0 && (
+            <div className="flex items-center gap-3 flex-wrap" id="material-group-filter">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                <Layers className="w-3.5 h-3.5 text-[#D97D54]" />
+                Material Group
+              </div>
+              <select
+                value={materialGroupFilter}
+                onChange={(e) => {
+                  setMaterialGroupFilter(e.target.value);
+                  setSelectedTab(null);
+                }}
+                className="bg-surface border border-divider rounded-xl px-3 py-2 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
+              >
+                <option value="">All Groups ({distinctMaterials.length})</option>
+                {distinctGroups.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* TAB BAR */}
           <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between" id="navigation-tabs-section">
             <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide flex-1" id="tab-pill-list">
-              {distinctMaterials.map((materialName) => {
+              {visibleMaterials.map((materialName) => {
                 const countOfMaterialLogs = allRecords.filter((r) => r.materialName === materialName).length;
                 const isActive = activeTab === materialName;
                 return (
@@ -367,11 +524,157 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   {allRecords.length}
                 </span>
               </button>
+
+              <button
+                id="tab-labor"
+                onClick={() => setSelectedTab("labor")}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
+                  activeTab === "labor"
+                    ? "bg-[#324755] border-[#324755] text-white shadow-md shadow-[#324755]/10"
+                    : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
+                }`}
+              >
+                <HardHat className="w-3.5 h-3.5" />
+                <span>Labor Consumption</span>
+                <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black ${activeTab === "labor" ? "bg-white/20 text-white" : "bg-surface text-ink-muted"}`}>
+                  {laborRecords.length}
+                </span>
+              </button>
             </div>
           </div>
 
           {/* ACTIVE CONTENT GRID */}
-          {activeTab !== "advanced-filter" ? (
+          {activeTab === "labor" ? (
+            <div className="space-y-6" id="labor-tab-panel">
+              {/* LABOR FILTERS */}
+              <div className="bg-panel p-4 rounded-2xl border border-divider grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3" id="labor-filters">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Task</label>
+                  <select value={laborTask} onChange={(e) => setLaborTask(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#324755] outline-none">
+                    <option value="">All Tasks</option>
+                    {distinctLaborTasks.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Role / Trade</label>
+                  <select value={laborRole} onChange={(e) => setLaborRole(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#324755] outline-none">
+                    <option value="">All Roles</option>
+                    {distinctLaborRoles.map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Vendor</label>
+                  <select value={laborVendor} onChange={(e) => setLaborVendor(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#324755] outline-none">
+                    <option value="">All Vendors</option>
+                    {distinctLaborVendors.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">From</label>
+                  <input type="date" value={laborStartDate} onChange={(e) => setLaborStartDate(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#324755] outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">To</label>
+                  <input type="date" value={laborEndDate} onChange={(e) => setLaborEndDate(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#324755] outline-none" />
+                </div>
+              </div>
+
+              {(laborTask || laborRole || laborVendor || laborStartDate || laborEndDate) && (
+                <button onClick={() => { setLaborTask(""); setLaborRole(""); setLaborVendor(""); setLaborStartDate(""); setLaborEndDate(""); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface text-ink-muted text-[10px] font-black uppercase tracking-wider hover:text-ink border border-divider transition cursor-pointer">
+                  <RotateCcw className="w-3.5 h-3.5" /> Reset Labor Filters
+                </button>
+              )}
+
+              {/* LABOR TOTALS */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Total Manpower</p>
+                    <p className="text-2xl font-black text-ink font-mono">{laborTotals.headcount.toLocaleString("en-IN")} <span className="text-xs font-normal text-ink-muted">head-shifts</span></p>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-[#324755]/10 text-[#324755] flex items-center justify-center border border-[#324755]/20"><Users className="w-5 h-5" /></div>
+                </div>
+                <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Total Labor Cost</p>
+                    <p className="text-2xl font-black text-ink font-mono">₹{laborTotals.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-[#34D399]/12 text-[#059669] flex items-center justify-center border border-[#34D399]/30"><IndianRupee className="w-5 h-5" /></div>
+                </div>
+                <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Deployment Entries</p>
+                    <p className="text-2xl font-black text-ink font-mono">{laborTotals.entries}</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-[#6E8CA0]/10 text-[#56778E] flex items-center justify-center border border-[#6E8CA0]/20"><FileText className="w-5 h-5" /></div>
+                </div>
+              </div>
+
+              {/* PER-TASK ROLLUP */}
+              <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-divider flex items-center gap-2">
+                  <HardHat className="w-4 h-4 text-[#324755]" />
+                  <h3 className="text-xs font-black uppercase tracking-wider text-ink">Labor Consumption per Task</h3>
+                </div>
+                <div className="overflow-x-auto scrollbar-hide">
+                  <table className="w-full text-left min-w-[600px]">
+                    <thead>
+                      <tr className="bg-panel border-b border-divider">
+                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Task</th>
+                        <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Entries</th>
+                        <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Manpower</th>
+                        <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-divider/40">
+                      {laborTotals.perTask.length === 0 ? (
+                        <tr><td colSpan={4} className="p-16 text-center"><HardHat className="text-ink-muted/50 w-8 h-8 mx-auto mb-3" /><p className="text-ink-muted text-xs font-bold uppercase tracking-wider">No labor consumption found</p></td></tr>
+                      ) : laborTotals.perTask.map((t) => (
+                        <tr key={t.taskName} className="hover:bg-panel/30 transition duration-150">
+                          <td className="px-6 py-4 font-bold text-xs text-ink">{t.taskName}</td>
+                          <td className="px-6 py-4 text-right font-mono text-xs text-ink-muted">{t.entries}</td>
+                          <td className="px-6 py-4 text-right font-mono text-xs font-bold text-ink">{t.headcount.toLocaleString("en-IN")}</td>
+                          <td className="px-6 py-4 text-right font-mono text-xs font-bold text-[#059669]">₹{t.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* DETAIL LEDGER */}
+              <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
+                <div className="overflow-x-auto scrollbar-hide">
+                  <table className="w-full text-left min-w-[760px]">
+                    <thead>
+                      <tr className="bg-panel border-b border-divider">
+                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Date</th>
+                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Task</th>
+                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Role</th>
+                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Vendor</th>
+                        <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Manpower</th>
+                        <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-divider/40">
+                      {filteredLaborRecords.length === 0 ? (
+                        <tr><td colSpan={6} className="p-16 text-center"><FileText className="text-ink-muted/50 w-8 h-8 mx-auto mb-3" /><p className="text-ink-muted text-xs font-bold uppercase tracking-wider">No matching labor logs</p></td></tr>
+                      ) : filteredLaborRecords.map((r) => (
+                        <tr key={r.id} className="hover:bg-panel/30 transition duration-150">
+                          <td className="px-6 py-4 font-mono text-xs text-ink-muted whitespace-nowrap">{r.date}</td>
+                          <td className="px-6 py-4 font-bold text-xs text-ink">{r.taskName}</td>
+                          <td className="px-6 py-4 text-xs text-ink">{r.role}</td>
+                          <td className="px-6 py-4 text-xs text-ink-muted">{r.vendorName}</td>
+                          <td className="px-6 py-4 text-right font-mono text-xs font-bold text-ink">{(r.headcount || 0).toLocaleString("en-IN")}</td>
+                          <td className="px-6 py-4 text-right font-mono text-xs font-bold text-[#059669]">₹{(r.cost || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ) : activeTab !== "advanced-filter" ? (
             <div className="space-y-6" id="material-tab-panel">
               {/* INSIGHTS METRICS BAR */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" id="material-insights-grid">

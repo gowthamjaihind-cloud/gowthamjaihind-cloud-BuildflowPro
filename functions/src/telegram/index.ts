@@ -232,6 +232,10 @@ async function handleUpdate(tg, update) {
         await log.startLog(tg, chatId, session);
         return;
     }
+    if (text === "/today") {
+        await log.showToday(tg, chatId, session);
+        return;
+    }
     if (text === "/projects") {
         await projects.showProjects(tg, chatId, session);
         return;

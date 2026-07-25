@@ -11,6 +11,7 @@ exports.pickLabourRole = pickLabourRole;
 exports.askHeadcount = askHeadcount;
 exports.handlePhoto = handlePhoto;
 exports.saveLog = saveLog;
+exports.showToday = showToday;
 const admin = require("firebase-admin");
 const crypto = require("crypto");
 const session_1 = require("../session");
@@ -298,5 +299,48 @@ async function saveLog(tg, chatId, messageId, session) {
     if ((d.labour || []).length)
         summary += `\n👷 ${d.labour.length} labour`;
     await tg.editMessage(chatId, messageId, summary);
+}
+async function showToday(tg, chatId, session) {
+    if (!session.activeProjectId) {
+        await tg.sendMessage(chatId, "No active project. Send /projects to pick one.");
+        return;
+    }
+    const base = projPath(session.orgId, session.activeProjectId);
+    const today = todayISO();
+    const snap = await db_1.db.collection(`${base}/dailyLogs`)
+        .where("workDate", "==", today)
+        .get();
+    if (snap.empty) {
+        await tg.sendMessage(chatId, `<b>Today · ${fmtDate(today)}</b>\n\nNothing logged yet. Send /log to add today's progress.`);
+        return;
+    }
+    const logs = snap.docs.map((d) => d.data());
+    // Resolve task names (deduped) — logs store taskId, not the name.
+    const taskIds = Array.from(new Set(logs.map((l) => l.taskId).filter(Boolean)));
+    const taskNames = new Map();
+    await Promise.all(taskIds.map(async (tid) => {
+        const t = await db_1.db.doc(`${base}/tasks/${tid}`).get();
+        if (t.exists)
+            taskNames.set(tid, t.data().name || "Task");
+    }));
+    let text = `<b>Today · ${fmtDate(today)}</b>\n${logs.length} update${logs.length > 1 ? "s" : ""}\n`;
+    for (const l of logs) {
+        const name = taskNames.get(l.taskId) || "Task";
+        text += `\n• <b>${name}</b> — ${l.progressPercent ?? 0}%`;
+        const extras = [];
+        if ((l.materials || []).length)
+            extras.push(`📦 ${l.materials.length}`);
+        if ((l.labour || []).length)
+            extras.push(`👷 ${l.labour.length}`);
+        if ((l.photoUrls || []).length)
+            extras.push(`📷 ${l.photoUrls.length}`);
+        if (extras.length)
+            text += `  ${extras.join("  ")}`;
+        if (l.note)
+            text += `\n  📝 ${l.note}`;
+        if (l.createdByName)
+            text += `\n  <i>by ${l.createdByName}</i>`;
+    }
+    await tg.sendMessage(chatId, text);
 }
 //# sourceMappingURL=log.js.map
