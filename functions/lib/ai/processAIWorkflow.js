@@ -4,6 +4,7 @@ exports.processCostAnalysisData = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const logEvent_1 = require("../audit/logEvent");
+const db_1 = require("../db");
 exports.processCostAnalysisData = (0, https_1.onCall)({ timeoutSeconds: 300 }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
@@ -12,8 +13,7 @@ exports.processCostAnalysisData = (0, https_1.onCall)({ timeoutSeconds: 300 }, a
     if (!projectId) {
         throw new https_1.HttpsError("invalid-argument", "Missing projectId.");
     }
-    const db = admin.firestore();
-    const projectDoc = await db.collection("projects").doc(projectId).get();
+    const projectDoc = await db_1.db.collection("projects").doc(projectId).get();
     if (!projectDoc.exists) {
         throw new https_1.HttpsError("not-found", "Project not found.");
     }
@@ -24,7 +24,7 @@ exports.processCostAnalysisData = (0, https_1.onCall)({ timeoutSeconds: 300 }, a
         // Using mock data for architecture demonstration
         const mockInsight = "Cost variance detected in Material allocations. Labor efficiencies are nominal.";
         // 4. Save result
-        await db.collection("projects").doc(projectId).collection("analytics").doc("latestInsights").set({
+        await db_1.db.collection("projects").doc(projectId).collection("analytics").doc("latestInsights").set({
             insights: mockInsight,
             generatedAt: admin.firestore.FieldValue.serverTimestamp(),
             generatedBy: request.auth.uid

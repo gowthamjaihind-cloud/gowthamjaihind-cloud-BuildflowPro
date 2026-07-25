@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { logAuditEvent } from "../audit/logEvent";
+import { db } from "../db";
 
 export const processApproval = onCall(async (request) => {
   if (!request.auth) {
@@ -12,7 +13,6 @@ export const processApproval = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Valid approvalId and action (APPROVED/REJECTED) are required.");
   }
 
-  const db = admin.firestore();
   
   try {
     const result = await db.runTransaction(async (transaction) => {

@@ -45,6 +45,10 @@ export class TelegramApi {
     return this.call("getFile", { file_id: fileId }).then((j) => j?.result?.file_path || null);
   }
 
+  getMe(): Promise<any> {
+    return this.call("getMe", {});
+  }
+
   get botToken(): string {
     return this.token;
   }

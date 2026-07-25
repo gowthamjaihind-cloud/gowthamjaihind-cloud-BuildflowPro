@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import { db } from "../db";
 
 interface AuditEvent {
   action: string;
@@ -8,7 +9,6 @@ interface AuditEvent {
 }
 
 export const logAuditEvent = async (event: AuditEvent) => {
-  const db = admin.firestore();
   try {
     await db.collection("audit_logs").add({
       ...event,

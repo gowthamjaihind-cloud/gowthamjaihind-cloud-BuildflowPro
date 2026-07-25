@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.onOrgDailyLogWritten = exports.onProjectDailyLogWritten = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
-const db = admin.firestore();
+const db_1 = require("../db");
 async function deletePhotos(photoUrls) {
     if (!photoUrls || !Array.isArray(photoUrls) || photoUrls.length === 0)
         return;
@@ -27,7 +27,7 @@ async function deletePhotos(photoUrls) {
     }
 }
 async function handleDailyLogRollup(projectId, taskId, logsPath, taskRef) {
-    const allLogsSnap = await db.collection(logsPath).where("taskId", "==", taskId).get();
+    const allLogsSnap = await db_1.db.collection(logsPath).where("taskId", "==", taskId).get();
     const allLogs = allLogsSnap.docs.map((d) => d.data());
     if (allLogs.length === 0) {
         // If all logs deleted, we don't strictly have to reset, but let's be safe
@@ -116,7 +116,7 @@ async function handleInventoryRollup(logsPath, inventoryPath, beforeData, afterD
     }
     if (materialsToUpdate.size === 0)
         return;
-    const allLogsSnap = await db.collection(logsPath).get();
+    const allLogsSnap = await db_1.db.collection(logsPath).get();
     const consumptionByMaterial = new Map();
     for (const matId of materialsToUpdate) {
         consumptionByMaterial.set(matId, 0);
@@ -132,9 +132,9 @@ async function handleInventoryRollup(logsPath, inventoryPath, beforeData, afterD
             }
         }
     }
-    const batch = db.batch();
+    const batch = db_1.db.batch();
     for (const [matId, totalConsumed] of consumptionByMaterial.entries()) {
-        const invRef = db.doc(`${inventoryPath}/${matId}`);
+        const invRef = db_1.db.doc(`${inventoryPath}/${matId}`);
         batch.update(invRef, { consumed: totalConsumed });
     }
     await batch.commit().catch(e => console.error("Error committing inventory updates", e));
@@ -153,7 +153,7 @@ exports.onProjectDailyLogWritten = (0, firestore_1.onDocumentWritten)("projects/
     const logsPath = `projects/${projectId}/dailyLogs`;
     const inventoryPath = `projects/${projectId}/inventory`;
     if (logData.taskId) {
-        const taskRef = db.doc(`projects/${projectId}/tasks/${logData.taskId}`);
+        const taskRef = db_1.db.doc(`projects/${projectId}/tasks/${logData.taskId}`);
         await handleDailyLogRollup(projectId, logData.taskId, logsPath, taskRef);
     }
     await handleInventoryRollup(logsPath, inventoryPath, beforeData, afterData);
@@ -172,7 +172,7 @@ exports.onOrgDailyLogWritten = (0, firestore_1.onDocumentWritten)("organizations
     const logsPath = `organizations/${orgId}/projects/${projectId}/dailyLogs`;
     const inventoryPath = `organizations/${orgId}/projects/${projectId}/inventory`;
     if (logData.taskId) {
-        const taskRef = db.doc(`organizations/${orgId}/projects/${projectId}/tasks/${logData.taskId}`);
+        const taskRef = db_1.db.doc(`organizations/${orgId}/projects/${projectId}/tasks/${logData.taskId}`);
         await handleDailyLogRollup(projectId, logData.taskId, logsPath, taskRef);
     }
     await handleInventoryRollup(logsPath, inventoryPath, beforeData, afterData);

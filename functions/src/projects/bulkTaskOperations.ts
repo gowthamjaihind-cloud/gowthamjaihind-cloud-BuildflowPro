@@ -1,6 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import * as admin from "firebase-admin";
 import { logAuditEvent } from "../audit/logEvent";
+import { db } from "../db";
 
 export const bulkUpdateTasks = onCall(async (request) => {
   if (!request.auth) {
@@ -17,7 +17,6 @@ export const bulkUpdateTasks = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Cannot update more than 500 tasks per request.");
   }
 
-  const db = admin.firestore();
 
   // Validate Project Access
   const projectDoc = await db.collection("projects").doc(projectId).get();

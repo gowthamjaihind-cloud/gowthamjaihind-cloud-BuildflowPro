@@ -1,13 +1,35 @@
-exports.onUserUnlinked = const admin = require("firebase-admin");
 import { onRequest } from "firebase-functions/v2/https";
+import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { defineSecret } from "firebase-functions/params";
 import { TelegramApi } from "./api";
-import { getSession, setSession, clearStep } from "./session";
+import { getSession, setSession, clearStep, clearSession } from "./session";
 import { checkRateLimit, redeemLinkCode, validateSession } from "./auth";
 import * as log from "./handlers/log";
-const projects_1 = require("./handlers/projects");
+import * as projects from "./handlers/projects";
+import { db } from "../db";
 const BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = defineSecret("TELEGRAM_WEBHOOK_SECRET");
+
+// Lightweight status endpoint for the web app's "Bot Online" badge.
+// Exposed to the frontend via a Firebase Hosting rewrite: /api/telegram-status
+export const telegramStatus = onRequest({
+    region: "asia-southeast1",
+    secrets: [BOT_TOKEN],
+    cors: true,
+}, async (_req, res) => {
+    try {
+        const tg = new TelegramApi(BOT_TOKEN.value());
+        const me = await tg.getMe();
+        if (me?.ok && me.result) {
+            res.json({ online: true, bot: me.result });
+        } else {
+            res.json({ online: false });
+        }
+    } catch (err) {
+        console.error("telegramStatus error:", err);
+        res.json({ online: false });
+    }
+});
 export const telegramWebhook = onRequest({
     region: "asia-southeast1",
     secrets: [BOT_TOKEN, WEBHOOK_SECRET],
@@ -25,7 +47,7 @@ export const telegramWebhook = onRequest({
     // Always 200 back to Telegram quickly, even if we fail internally —
     // otherwise Telegram retries the same update forever.
     res.status(200).send("OK");
-    const tg = new api_1.TelegramApi(BOT_TOKEN.value());
+    const tg = new TelegramApi(BOT_TOKEN.value());
     const update = req.body;
     try {
         await handleUpdate(tg, update);
@@ -75,7 +97,7 @@ async function handleUpdate(tg, update) {
             return;
         }
         if (data.startsWith("prj:")) {
-            await (0, projects_1.pickProject)(tg, chatId, messageId, session, data.slice(4));
+            await projects.pickProject(tg, chatId, messageId, session, data.slice(4));
             return;
         }
         if (data.startsWith("p:")) {
@@ -180,12 +202,12 @@ async function handleUpdate(tg, update) {
     }
     if (text === "/unlink") {
         if (session?.userId) {
-            await admin.firestore().collection("users").doc(session.userId).update({
+            await db.collection("users").doc(session.userId).update({
                 telegramChatId: null,
                 telegramLinkedAt: null
             });
             await tg.sendMessage(chatId, "Your Telegram account has been unlinked.");
-            await (0, session_1.clearSession)(chatId);
+            await clearSession(chatId);
         }
         else {
             await tg.sendMessage(chatId, "You are not currently linked.");
@@ -211,7 +233,7 @@ async function handleUpdate(tg, update) {
         return;
     }
     if (text === "/projects") {
-        await (0, projects_1.showProjects)(tg, chatId, session);
+        await projects.showProjects(tg, chatId, session);
         return;
     }
     const step = session.step;
@@ -266,8 +288,7 @@ async function handleUpdate(tg, update) {
     }
     await tg.sendMessage(chatId, "I didn't understand that. Send /help.");
 }
-const firestore_1 = require("firebase-functions/v2/firestore");
-exports.onUserUnlinked = (0, firestore_1.onDocumentUpdated)({
+export const onUserUnlinked = onDocumentUpdated({
     document: "users/{userId}",
     region: "asia-southeast1",
     secrets: [BOT_TOKEN],
@@ -277,7 +298,7 @@ exports.onUserUnlinked = (0, firestore_1.onDocumentUpdated)({
     const oldChatId = beforeData?.telegramChatId;
     const newChatId = afterData?.telegramChatId;
     if (oldChatId && !newChatId) {
-        const tg = new api_1.TelegramApi(BOT_TOKEN.value());
+        const tg = new TelegramApi(BOT_TOKEN.value());
         try {
             await tg.sendMessage(oldChatId, "Your Telegram account has been unlinked from BuildFlow.");
         }

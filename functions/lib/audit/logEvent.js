@@ -2,10 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.logAuditEvent = void 0;
 const admin = require("firebase-admin");
+const db_1 = require("../db");
 const logAuditEvent = async (event) => {
-    const db = admin.firestore();
     try {
-        await db.collection("audit_logs").add({
+        await db_1.db.collection("audit_logs").add({
             ...event,
             timestamp: admin.firestore.FieldValue.serverTimestamp()
         });

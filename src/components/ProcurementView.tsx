@@ -113,6 +113,11 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     outstandingBalance: 0,
   });
 
+  // Opening balance is not stored — it's whatever part of the vendor's outstanding
+  // balance the ledger doesn't explain. We edit it here and translate it back into
+  // outstandingBalance on save.
+  const [openingBalanceInput, setOpeningBalanceInput] = useState(0);
+
   const [newQuickMaterial, setNewQuickMaterial] = useState<
     Partial<InventoryItem>
   >({
@@ -618,24 +623,44 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     exportToPDF(title, `Project ID: ${projectId}`, headers, formattedRows, baseFileName);
   };
 
+  // Net of the vendor's ledger rows (credits - debits) — the same figure the
+  // ledger view subtracts from outstandingBalance to display opening balance.
+  const netStatementFor = (vendorId?: string) => {
+    if (!vendorId) return 0;
+    return ledger
+      .filter((e) => e.vendorId === vendorId)
+      .reduce(
+        (acc, e) => acc + (e.type === "CREDIT" ? e.amount : -e.amount),
+        0,
+      );
+  };
+
   const handleAddVendor = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (isEditingVendor && selectedVendor) {
+        // Store opening balance + what the ledger already accounts for, so the
+        // ledger view renders exactly the opening balance that was entered.
         await updateDoc(
           doc(db, `${basePath}/suppliers/${selectedVendor.id}`),
-          { ...newVendor },
+          {
+            ...newVendor,
+            outstandingBalance:
+              openingBalanceInput + netStatementFor(selectedVendor.id),
+          },
         );
       } else {
+        // A brand-new vendor has no ledger history, so it starts at its opening balance.
         await addDoc(collection(db, `${basePath}/suppliers`), {
           ...newVendor,
           projectId,
-          outstandingBalance: 0,
+          outstandingBalance: openingBalanceInput,
         });
       }
       setIsAddingVendor(false);
       setIsEditingVendor(false);
       setSelectedVendor(null);
+      setOpeningBalanceInput(0);
       setNewVendor({
         name: "",
         type: "Material",
@@ -689,7 +714,12 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             </p>
           </div>
           <button
-            onClick={() => setIsAddingVendor(true)}
+            onClick={() => {
+              setIsEditingVendor(false);
+              setSelectedVendor(null);
+              setOpeningBalanceInput(0);
+              setIsAddingVendor(true);
+            }}
             className="w-full sm:w-auto bg-surface-dark text-white px-5 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-[#3A4F5F] apple-transition shadow-lg shadow-drab/10 text-[10px]"
           >
             <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />{" "}
@@ -766,6 +796,10 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                             address: vendor.address || "",
                             outstandingBalance: vendor.outstandingBalance,
                           });
+                          setOpeningBalanceInput(
+                            (vendor.outstandingBalance || 0) -
+                              netStatementFor(vendor.id),
+                          );
                           setSelectedVendor(vendor);
                           setIsEditingVendor(true);
                           setIsAddingVendor(true);
@@ -1745,6 +1779,25 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         setNewVendor({ ...newVendor, address: e.target.value })
                       }
                     />
+                  </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-ink-muted ml-1">
+                      Opening Balance (₹)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="0"
+                      className="w-full bg-panel p-4 rounded-xl font-bold font-mono border-2 border-transparent focus:border-[#D97D54] outline-none"
+                      value={openingBalanceInput}
+                      onChange={(e) =>
+                        setOpeningBalanceInput(parseFloat(e.target.value) || 0)
+                      }
+                    />
+                    <p className="text-[11px] text-ink-muted ml-1 leading-relaxed">
+                      Balance carried forward before any receipts or payments
+                      recorded here. Positive means you owe the party.
+                    </p>
                   </div>
                 </div>
                 <button

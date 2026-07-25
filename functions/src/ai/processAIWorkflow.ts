@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { logAuditEvent } from "../audit/logEvent";
+import { db } from "../db";
 
 export const processCostAnalysisData = onCall({ timeoutSeconds: 300 }, async (request) => {
   if (!request.auth) {
@@ -12,7 +13,6 @@ export const processCostAnalysisData = onCall({ timeoutSeconds: 300 }, async (re
     throw new HttpsError("invalid-argument", "Missing projectId.");
   }
 
-  const db = admin.firestore();
   const projectDoc = await db.collection("projects").doc(projectId).get();
   if (!projectDoc.exists) {
     throw new HttpsError("not-found", "Project not found.");

@@ -1,16 +1,39 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onUserUnlinked = exports.telegramWebhook = void 0;
-const admin = require("firebase-admin");
+exports.onUserUnlinked = exports.telegramWebhook = exports.telegramStatus = void 0;
 const https_1 = require("firebase-functions/v2/https");
+const firestore_1 = require("firebase-functions/v2/firestore");
 const params_1 = require("firebase-functions/params");
 const api_1 = require("./api");
 const session_1 = require("./session");
 const auth_1 = require("./auth");
-const log_1 = require("./handlers/log");
-const projects_1 = require("./handlers/projects");
+const log = require("./handlers/log");
+const projects = require("./handlers/projects");
+const db_1 = require("../db");
 const BOT_TOKEN = (0, params_1.defineSecret)("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = (0, params_1.defineSecret)("TELEGRAM_WEBHOOK_SECRET");
+// Lightweight status endpoint for the web app's "Bot Online" badge.
+// Exposed to the frontend via a Firebase Hosting rewrite: /api/telegram-status
+exports.telegramStatus = (0, https_1.onRequest)({
+    region: "asia-southeast1",
+    secrets: [BOT_TOKEN],
+    cors: true,
+}, async (_req, res) => {
+    try {
+        const tg = new api_1.TelegramApi(BOT_TOKEN.value());
+        const me = await tg.getMe();
+        if (me?.ok && me.result) {
+            res.json({ online: true, bot: me.result });
+        }
+        else {
+            res.json({ online: false });
+        }
+    }
+    catch (err) {
+        console.error("telegramStatus error:", err);
+        res.json({ online: false });
+    }
+});
 exports.telegramWebhook = (0, https_1.onRequest)({
     region: "asia-southeast1",
     secrets: [BOT_TOKEN, WEBHOOK_SECRET],
@@ -50,6 +73,15 @@ async function handleUpdate(tg, update) {
             await tg.editMessage(chatId, messageId, "Session expired. Send /link to reconnect.");
             return;
         }
+        if (data === "dt") {
+            await log.showTaskPicker(tg, chatId, messageId, session);
+            return;
+        }
+        if (data.startsWith("ct:")) {
+            const taskId = data.substring(3);
+            await log.pickTask(tg, chatId, messageId, session, taskId);
+            return;
+        }
         if (data === "xx") {
             await (0, session_1.clearStep)(chatId);
             await tg.editMessage(chatId, messageId, "Cancelled.");
@@ -57,19 +89,19 @@ async function handleUpdate(tg, update) {
         }
         if (data === "bk") {
             const s = await (0, session_1.getSession)(chatId);
-            await (0, log_1.showMenu)(tg, chatId, messageId, s);
+            await log.showMenu(tg, chatId, messageId, s);
             return;
         }
         if (data.startsWith("br:")) {
-            await (0, log_1.browseTasks)(tg, chatId, messageId, session, Number(data.slice(3)));
+            await log.browseTasks(tg, chatId, messageId, session, Number(data.slice(3)));
             return;
         }
         if (data.startsWith("t:")) {
-            await (0, log_1.pickTask)(tg, chatId, messageId, session, data.slice(2));
+            await log.pickTask(tg, chatId, messageId, session, data.slice(2));
             return;
         }
         if (data.startsWith("prj:")) {
-            await (0, projects_1.pickProject)(tg, chatId, messageId, session, data.slice(4));
+            await projects.pickProject(tg, chatId, messageId, session, data.slice(4));
             return;
         }
         if (data.startsWith("p:")) {
@@ -77,23 +109,23 @@ async function handleUpdate(tg, update) {
                 draft: { ...(session.draft || {}), progressPercent: Number(data.slice(2)) },
             });
             const s = await (0, session_1.getSession)(chatId);
-            await (0, log_1.showMenu)(tg, chatId, messageId, s);
+            await log.showMenu(tg, chatId, messageId, s);
             return;
         }
         if (data === "m") {
-            await (0, log_1.pickMaterial)(tg, chatId, messageId, session);
+            await log.pickMaterial(tg, chatId, messageId, session);
             return;
         }
         if (data.startsWith("mi:")) {
-            await (0, log_1.askMaterialQty)(tg, chatId, messageId, session, data.slice(3));
+            await log.askMaterialQty(tg, chatId, messageId, session, data.slice(3));
             return;
         }
         if (data === "l") {
-            await (0, log_1.pickLabourRole)(tg, chatId, messageId, session);
+            await log.pickLabourRole(tg, chatId, messageId, session);
             return;
         }
         if (data.startsWith("lr:")) {
-            await (0, log_1.askHeadcount)(tg, chatId, messageId, session, data.slice(3));
+            await log.askHeadcount(tg, chatId, messageId, session, data.slice(3));
             return;
         }
         if (data === "ph") {
@@ -107,7 +139,7 @@ async function handleUpdate(tg, update) {
             return;
         }
         if (data === "sv") {
-            await (0, log_1.saveLog)(tg, chatId, messageId, session);
+            await log.saveLog(tg, chatId, messageId, session);
             return;
         }
         return;
@@ -124,7 +156,7 @@ async function handleUpdate(tg, update) {
             await tg.sendMessage(chatId, "Tap '+ Photo' in /log first, then send the photo.");
             return;
         }
-        await (0, log_1.handlePhoto)(tg, chatId, session, msg.photo);
+        await log.handlePhoto(tg, chatId, session, msg.photo);
         return;
     }
     if (!msg?.text)
@@ -174,7 +206,7 @@ async function handleUpdate(tg, update) {
     }
     if (text === "/unlink") {
         if (session?.userId) {
-            await admin.firestore().collection("users").doc(session.userId).update({
+            await db_1.db.collection("users").doc(session.userId).update({
                 telegramChatId: null,
                 telegramLinkedAt: null
             });
@@ -201,11 +233,11 @@ async function handleUpdate(tg, update) {
         return;
     }
     if (text === "/log") {
-        await (0, log_1.startLog)(tg, chatId, session);
+        await log.startLog(tg, chatId, session);
         return;
     }
     if (text === "/projects") {
-        await (0, projects_1.showProjects)(tg, chatId, session);
+        await projects.showProjects(tg, chatId, session);
         return;
     }
     const step = session.step;
@@ -219,7 +251,7 @@ async function handleUpdate(tg, update) {
             draft: { ...(session.draft || {}), progressPercent: pct },
         });
         const s = await (0, session_1.getSession)(chatId);
-        await (0, log_1.showMenu)(tg, chatId, null, s);
+        await log.showMenu(tg, chatId, null, s);
         return;
     }
     if (step === "log:material_qty") {
@@ -234,7 +266,7 @@ async function handleUpdate(tg, update) {
         delete rest.pendingMaterial;
         await (0, session_1.setSession)(chatId, { draft: { ...rest, materials } });
         const s = await (0, session_1.getSession)(chatId);
-        await (0, log_1.showMenu)(tg, chatId, null, s);
+        await log.showMenu(tg, chatId, null, s);
         return;
     }
     if (step === "log:labour_count") {
@@ -249,18 +281,17 @@ async function handleUpdate(tg, update) {
         delete rest.pendingLabour;
         await (0, session_1.setSession)(chatId, { draft: { ...rest, labour } });
         const s = await (0, session_1.getSession)(chatId);
-        await (0, log_1.showMenu)(tg, chatId, null, s);
+        await log.showMenu(tg, chatId, null, s);
         return;
     }
     if (step === "log:note") {
         await (0, session_1.setSession)(chatId, { draft: { ...(session.draft || {}), note: text } });
         const s = await (0, session_1.getSession)(chatId);
-        await (0, log_1.showMenu)(tg, chatId, null, s);
+        await log.showMenu(tg, chatId, null, s);
         return;
     }
     await tg.sendMessage(chatId, "I didn't understand that. Send /help.");
 }
-const firestore_1 = require("firebase-functions/v2/firestore");
 exports.onUserUnlinked = (0, firestore_1.onDocumentUpdated)({
     document: "users/{userId}",
     region: "asia-southeast1",

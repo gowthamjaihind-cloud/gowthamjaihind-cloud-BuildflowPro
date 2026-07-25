@@ -4,17 +4,20 @@ exports.showProjects = showProjects;
 exports.pickProject = pickProject;
 const admin = require("firebase-admin");
 const session_1 = require("../session");
-const db = admin.firestore();
+const db_1 = require("../../db");
 async function showProjects(tg, chatId, session) {
-    let projectsQuery = db.collection("projects");
-    if (session.orgId) {
-        projectsQuery = db.collection(`organizations/${session.orgId}/projects`);
-    }
-    const snap = await projectsQuery.where("status", "in", ["Active", "Planning"]).get();
+    const path = session.orgId
+        ? `organizations/${session.orgId}/projects`
+        : "projects";
+    const snap = await db_1.db
+        .collection(path)
+        .where("status", "in", ["Active", "Planning"])
+        .get();
     const buttons = [];
-    // To avoid too many buttons, let's limit to 10 for now.
-    snap.docs.slice(0, 10).forEach(doc => {
-        buttons.push([{ text: doc.data().name || "Unnamed Project", callback_data: `prj:${doc.id}` }]);
+    snap.docs.slice(0, 10).forEach((doc) => {
+        buttons.push([
+            { text: doc.data().name || "Unnamed Project", callback_data: `prj:${doc.id}` },
+        ]);
     });
     if (buttons.length === 0) {
         await tg.sendMessage(chatId, "No active projects found.");
@@ -24,10 +27,16 @@ async function showProjects(tg, chatId, session) {
     await tg.sendMessage(chatId, "<b>Select an active project:</b>", buttons);
 }
 async function pickProject(tg, chatId, messageId, session, projectId) {
-    await (0, session_1.setSession)(chatId, { activeProjectId: projectId, step: null, draft: admin.firestore.FieldValue.delete() });
+    await (0, session_1.setSession)(chatId, {
+        activeProjectId: projectId,
+        step: null,
+        draft: admin.firestore.FieldValue.delete(),
+    });
     let projectName = "Selected project";
-    const projectPath = session.orgId ? `organizations/${session.orgId}/projects/${projectId}` : `projects/${projectId}`;
-    const snap = await db.doc(projectPath).get();
+    const projectPath = session.orgId
+        ? `organizations/${session.orgId}/projects/${projectId}`
+        : `projects/${projectId}`;
+    const snap = await db_1.db.doc(projectPath).get();
     if (snap.exists) {
         projectName = snap.data().name || projectName;
     }

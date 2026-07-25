@@ -16,6 +16,8 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const admin = require("firebase-admin");
 admin.initializeApp();
+// Firestore access goes through ./db, which binds to the app's named database
+// and applies its own settings. Never call admin.firestore() directly.
 __exportStar(require("./projects"), exports);
 __exportStar(require("./approvals"), exports);
 __exportStar(require("./notifications"), exports);

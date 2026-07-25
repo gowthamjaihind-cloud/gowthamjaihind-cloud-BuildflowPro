@@ -1,6 +1,5 @@
 import * as admin from "firebase-admin";
-
-const db = admin.firestore();
+import { db } from "../db";
 
 export interface BotSession {
   chatId: number;
@@ -35,4 +34,8 @@ export const clearStep = async (chatId: number) => {
     } as any,
     { merge: true }
   );
+};
+
+export const clearSession = async (chatId: number) => {
+  await db.collection("bot_sessions").doc(String(chatId)).delete();
 };

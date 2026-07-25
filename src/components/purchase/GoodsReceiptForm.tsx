@@ -121,6 +121,34 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
           inventoryItemDocs[matId] = await transaction.get(itemRef);
         }
         
+        // Guard against duplicate / over-receipt.
+        // poData is read inside the transaction, so a double-click or a repeat
+        // submission of the same GRN sees the already-received quantities and fails.
+        if (poData) {
+          const overReceipts: string[] = [];
+          validLineItems.forEach((grnItem) => {
+            const poItem = poData.lineItems?.find(
+              (i: any) => i.itemId === grnItem.poLineRef,
+            );
+            if (!poItem) return;
+            const ordered = poItem.orderedQty || 0;
+            const alreadyReceived = poItem.receivedQty || 0;
+            const remaining = ordered - alreadyReceived;
+            if ((grnItem.acceptedQty || 0) > remaining) {
+              overReceipts.push(
+                `• ${grnItem.name || poItem.name || "Item"}: accepting ${grnItem.acceptedQty} ${grnItem.unit || ""} but only ${remaining} of ${ordered} remain (${alreadyReceived} already received)`,
+              );
+            }
+          });
+          if (overReceipts.length > 0) {
+            const err: any = new Error(
+              `This receipt exceeds what's still outstanding on ${po.poNumber}. It may already have been recorded.\n\n${overReceipts.join("\n")}`,
+            );
+            err.isValidation = true;
+            throw err;
+          }
+        }
+
         // Calculate Total Cost of this GRN
         let totalAmount = 0;
         if (poData) {
@@ -277,8 +305,14 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
       onClose();
     } catch (e: any) {
       console.error(e);
+      // Validation failures are already human-readable — show them as-is.
+      if (e?.isValidation) {
+        setError(e.message);
+        setIsSubmitting(false);
+        return;
+      }
       let errorMsg = "Failed to save Receipt";
-      try { handleFirestoreError(e, OperationType.CREATE, "goodsReceiptNotes"); } 
+      try { handleFirestoreError(e, OperationType.CREATE, "goodsReceiptNotes"); }
       catch (handledError: any) { errorMsg = handledError.message; }
       setError(errorMsg);
       setIsSubmitting(false);

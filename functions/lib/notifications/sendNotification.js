@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.onApprovalCreated = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
+const db_1 = require("../db");
 // Example of a background trigger function for notifications
 exports.onApprovalCreated = (0, firestore_1.onDocumentCreated)("approvals/{approvalId}", async (event) => {
     const snapshot = event.data;
@@ -12,9 +13,8 @@ exports.onApprovalCreated = (0, firestore_1.onDocumentCreated)("approvals/{appro
     const approverId = approvalData.approverId;
     if (!approverId)
         return;
-    const db = admin.firestore();
     // Here we would lookup the user's FCM tokens
-    const userDoc = await db.collection("users").doc(approverId).get();
+    const userDoc = await db_1.db.collection("users").doc(approverId).get();
     const fcmTokens = userDoc.data()?.fcmTokens;
     if (fcmTokens && Array.isArray(fcmTokens) && fcmTokens.length > 0) {
         const payload = {
@@ -39,7 +39,7 @@ exports.onApprovalCreated = (0, firestore_1.onDocumentCreated)("approvals/{appro
         }
     }
     // Also create in-app notification doc
-    await db.collection("notifications").add({
+    await db_1.db.collection("notifications").add({
         userId: approverId,
         title: "New Approval Required",
         message: `You have a new pending approval.`,

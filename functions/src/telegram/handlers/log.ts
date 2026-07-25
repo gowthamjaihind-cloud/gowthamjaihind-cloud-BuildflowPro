@@ -1,18 +1,7 @@
-export { startLog };
-export { browseTasks };
-export { pickTask };
-export { showMenu };
-export { pickMaterial };
-export { askMaterialQty };
-export { pickLabourRole };
-export { askHeadcount };
-export { handlePhoto };
-export { saveLog };
-export { showTaskPicker };
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 import { getSession, setSession, clearStep } from "../session";
-const db = admin.firestore();
+import { db } from "../../db";
 const projPath = (orgId, projectId) => orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
 const todayISO = () => {
     const now = new Date(Date.now() + 5.5 * 60 * 60 * 1000); // Asia/Kolkata

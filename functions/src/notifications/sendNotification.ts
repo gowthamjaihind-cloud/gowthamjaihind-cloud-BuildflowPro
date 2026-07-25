@@ -1,5 +1,6 @@
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
+import { db } from "../db";
 
 // Example of a background trigger function for notifications
 export const onApprovalCreated = onDocumentCreated("approvals/{approvalId}", async (event) => {
@@ -11,7 +12,6 @@ export const onApprovalCreated = onDocumentCreated("approvals/{approvalId}", asy
   
   if (!approverId) return;
 
-  const db = admin.firestore();
   // Here we would lookup the user's FCM tokens
   const userDoc = await db.collection("users").doc(approverId).get();
   const fcmTokens = userDoc.data()?.fcmTokens;

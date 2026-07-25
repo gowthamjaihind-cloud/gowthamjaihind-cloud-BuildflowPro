@@ -1,6 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import * as admin from "firebase-admin";
 import { logAuditEvent } from "../audit/logEvent";
+import { db } from "../db";
 
 export const deleteProject = onCall(async (request) => {
   if (!request.auth) {
@@ -12,7 +12,6 @@ export const deleteProject = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Missing projectId.");
   }
 
-  const db = admin.firestore();
   
   // RBAC Validation
   const projectRef = db.collection("projects").doc(projectId);

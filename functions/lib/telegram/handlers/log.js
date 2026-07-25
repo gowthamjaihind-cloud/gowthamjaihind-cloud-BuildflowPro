@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTaskPicker = showTaskPicker;
 exports.startLog = startLog;
 exports.browseTasks = browseTasks;
 exports.pickTask = pickTask;
@@ -13,7 +14,7 @@ exports.saveLog = saveLog;
 const admin = require("firebase-admin");
 const crypto = require("crypto");
 const session_1 = require("../session");
-const db = admin.firestore();
+const db_1 = require("../../db");
 const projPath = (orgId, projectId) => orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
 const todayISO = () => {
     const now = new Date(Date.now() + 5.5 * 60 * 60 * 1000); // Asia/Kolkata
@@ -23,16 +24,12 @@ const fmtDate = (iso) => {
     const d = new Date(iso + "T00:00:00Z");
     return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 };
-async function startLog(tg, chatId, session) {
-    if (!session.activeProjectId) {
-        await tg.sendMessage(chatId, "No active project. Send /projects to pick one.");
-        return;
-    }
+async function showTaskPicker(tg, chatId, messageId, session) {
     const base = projPath(session.orgId, session.activeProjectId);
     const recent = session.recentTaskIds || [];
     const buttons = [];
     for (const tid of recent.slice(0, 3)) {
-        const snap = await db.doc(`${base}/tasks/${tid}`).get();
+        const snap = await db_1.db.doc(`${base}/tasks/${tid}`).get();
         if (!snap.exists)
             continue;
         buttons.push([{ text: snap.data().name, callback_data: `t:${tid}` }]);
@@ -40,11 +37,55 @@ async function startLog(tg, chatId, session) {
     buttons.push([{ text: "🔍 Browse all tasks", callback_data: "br:0" }]);
     buttons.push([{ text: "✖ Cancel", callback_data: "xx" }]);
     await (0, session_1.setSession)(chatId, { step: "log:task", draft: {} });
-    await tg.sendMessage(chatId, recent.length ? "<b>What did you work on today?</b>" : "<b>Pick a task</b>", buttons);
+    const text = recent.length ? "<b>What did you work on today?</b>" : "<b>Pick a task</b>";
+    if (messageId) {
+        await tg.editMessage(chatId, messageId, text, buttons);
+    }
+    else {
+        await tg.sendMessage(chatId, text, buttons);
+    }
+}
+async function startLog(tg, chatId, session) {
+    if (!session.activeProjectId) {
+        await tg.sendMessage(chatId, "No active project. Send /projects to pick one.");
+        return;
+    }
+    const base = projPath(session.orgId, session.activeProjectId);
+    try {
+        const lastLogSnap = await db_1.db.collection(`${base}/dailyLogs`)
+            .orderBy("workDate", "desc")
+            .limit(1)
+            .get();
+        if (!lastLogSnap.empty) {
+            const lastLog = lastLogSnap.docs[0].data();
+            const taskId = lastLog.taskId;
+            const taskSnap = await db_1.db.doc(`${base}/tasks/${taskId}`).get();
+            if (taskSnap.exists) {
+                const taskName = taskSnap.data().name;
+                const formattedDate = fmtDate(todayISO());
+                const msgText = `<b>Log progress</b>
+<i>Today, ${formattedDate}</i>
+
+Continue with your last task?`;
+                const buttons = [
+                    [{ text: `✅ Continue — ${taskName}`, callback_data: `ct:${taskId}` }],
+                    [{ text: "🔁 Different task", callback_data: "dt" }],
+                    [{ text: "✖ Cancel", callback_data: "xx" }]
+                ];
+                await (0, session_1.setSession)(chatId, { step: "log:task", draft: {} });
+                await tg.sendMessage(chatId, msgText, buttons);
+                return;
+            }
+        }
+    }
+    catch (e) {
+        // Fall back to normal picker if index is missing or other errors occur
+    }
+    await showTaskPicker(tg, chatId, null, session);
 }
 async function browseTasks(tg, chatId, messageId, session, page) {
     const base = projPath(session.orgId, session.activeProjectId);
-    const snap = await db.collection(`${base}/tasks`).orderBy("name").get();
+    const snap = await db_1.db.collection(`${base}/tasks`).orderBy("name").get();
     const tasks = snap.docs.map((d) => ({ id: d.id, name: d.data().name }));
     const PER = 8;
     const slice = tasks.slice(page * PER, page * PER + PER);
@@ -63,14 +104,14 @@ async function browseTasks(tg, chatId, messageId, session, page) {
 }
 async function pickTask(tg, chatId, messageId, session, taskId) {
     const base = projPath(session.orgId, session.activeProjectId);
-    const snap = await db.doc(`${base}/tasks/${taskId}`).get();
+    const snap = await db_1.db.doc(`${base}/tasks/${taskId}`).get();
     if (!snap.exists) {
         await tg.editMessage(chatId, messageId, "That task no longer exists.");
         return;
     }
     const t = snap.data();
     const current = t.progress || 0;
-    const logId = db.collection(`${base}/dailyLogs`).doc().id;
+    const logId = db_1.db.collection(`${base}/dailyLogs`).doc().id;
     await (0, session_1.setSession)(chatId, {
         step: "log:progress",
         draft: {
@@ -125,7 +166,7 @@ async function showMenu(tg, chatId, messageId, session) {
 }
 async function pickMaterial(tg, chatId, messageId, session) {
     const base = projPath(session.orgId, session.activeProjectId);
-    const snap = await db.collection(`${base}/inventory`).orderBy("name").limit(20).get();
+    const snap = await db_1.db.collection(`${base}/inventory`).orderBy("name").limit(20).get();
     if (snap.empty) {
         await tg.editMessage(chatId, messageId, "No inventory items found for this project.");
         return;
@@ -139,7 +180,7 @@ async function pickMaterial(tg, chatId, messageId, session) {
 }
 async function askMaterialQty(tg, chatId, messageId, session, invId) {
     const base = projPath(session.orgId, session.activeProjectId);
-    const snap = await db.doc(`${base}/inventory/${invId}`).get();
+    const snap = await db_1.db.doc(`${base}/inventory/${invId}`).get();
     if (!snap.exists)
         return;
     const item = snap.data();
@@ -154,7 +195,7 @@ async function askMaterialQty(tg, chatId, messageId, session, invId) {
 }
 async function pickLabourRole(tg, chatId, messageId, session) {
     const base = projPath(session.orgId, session.activeProjectId);
-    const snap = await db.collection(`${base}/labor_rate_cards`).limit(20).get();
+    const snap = await db_1.db.collection(`${base}/labor_rate_cards`).limit(20).get();
     if (snap.empty) {
         await tg.editMessage(chatId, messageId, "No labour roles set up. Add them in the web app.");
         return;
@@ -169,7 +210,7 @@ async function pickLabourRole(tg, chatId, messageId, session) {
 }
 async function askHeadcount(tg, chatId, messageId, session, roleId) {
     const base = projPath(session.orgId, session.activeProjectId);
-    const snap = await db.doc(`${base}/labor_rate_cards/${roleId}`).get();
+    const snap = await db_1.db.doc(`${base}/labor_rate_cards/${roleId}`).get();
     if (!snap.exists)
         return;
     const r = snap.data();
@@ -230,7 +271,7 @@ async function saveLog(tg, chatId, messageId, session) {
     const base = projPath(session.orgId, session.activeProjectId);
     // Same payload shape as the web app, so the existing dailyLogs Cloud Function
     // handles task progress and inventory rollups automatically.
-    await db.collection(`${base}/dailyLogs`).doc(d.logId).set({
+    await db_1.db.collection(`${base}/dailyLogs`).doc(d.logId).set({
         taskId: d.taskId,
         projectId: session.activeProjectId,
         workDate: d.workDate,

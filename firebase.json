@@ -3,7 +3,13 @@
     "site": "jewel-ledger",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    "rewrites": [
+      {
+        "source": "/api/telegram-status",
+        "function": { "functionId": "telegramStatus", "region": "asia-southeast1" }
+      },
+      { "source": "**", "destination": "/index.html" }
+    ]
   },
   "storage": {
     "rules": "storage.rules"

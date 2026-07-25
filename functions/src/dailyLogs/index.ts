@@ -1,7 +1,7 @@
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
+import { db } from "../db";
 
-const db = admin.firestore();
 
 async function deletePhotos(photoUrls: string[]) {
   if (!photoUrls || !Array.isArray(photoUrls) || photoUrls.length === 0) return;

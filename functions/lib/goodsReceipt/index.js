@@ -3,18 +3,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.onOrgGRNWritten = exports.onProjectGRNWritten = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
-const db = admin.firestore();
+const db_1 = require("../db");
 async function handleGRNWritten(tenantPath, beforeData, afterData) {
     const data = afterData || beforeData;
     if (!data || !data.poId)
         return;
-    const poRef = db.doc(`${tenantPath}/purchase_orders/${data.poId}`);
+    const poRef = db_1.db.doc(`${tenantPath}/purchase_orders/${data.poId}`);
     const poDoc = await poRef.get();
     if (!poDoc.exists)
         return;
     const poData = poDoc.data();
     // 1. Recompute PO line item receivedQty
-    const allGRNsSnap = await db.collection(`${tenantPath}/goodsReceiptNotes`)
+    const allGRNsSnap = await db_1.db.collection(`${tenantPath}/goodsReceiptNotes`)
         .where("poId", "==", data.poId)
         .get();
     const receivedQtyByPOLineRef = new Map();
@@ -63,7 +63,7 @@ async function handleGRNWritten(tenantPath, beforeData, afterData) {
             newStatus = "Approved"; // if GRNs were deleted
         }
     }
-    const batch = db.batch();
+    const batch = db_1.db.batch();
     batch.update(poRef, {
         lineItems: updatedLineItems,
         status: newStatus,
@@ -95,7 +95,7 @@ async function handleGRNWritten(tenantPath, beforeData, afterData) {
         const grnDocsByItem = new Map();
         // Fetch scope GRNs individually for each affected material id.
         for (const itemId of itemsToUpdate) {
-            const grnSnap = await db.collection(`${tenantPath}/goodsReceiptNotes`)
+            const grnSnap = await db_1.db.collection(`${tenantPath}/goodsReceiptNotes`)
                 .where("materialIds", "array-contains", itemId)
                 .get();
             const grnDocs = grnSnap.docs.map(d => d.data());
@@ -109,7 +109,7 @@ async function handleGRNWritten(tenantPath, beforeData, afterData) {
         if (poIdsToFetch.size > 0) {
             // Fetch only the POs referenced by these GRNs
             await Promise.all(Array.from(poIdsToFetch).map(async (poId) => {
-                const pSnap = await db.doc(`${tenantPath}/purchase_orders/${poId}`).get();
+                const pSnap = await db_1.db.doc(`${tenantPath}/purchase_orders/${poId}`).get();
                 if (pSnap.exists) {
                     const pData = pSnap.data();
                     if (pData.lineItems) {
@@ -142,7 +142,7 @@ async function handleGRNWritten(tenantPath, beforeData, afterData) {
             spendByItem.set(itemId, sumSpend);
         }
         for (const itemId of itemsToUpdate) {
-            const invRef = db.doc(`${tenantPath}/inventory/${itemId}`);
+            const invRef = db_1.db.doc(`${tenantPath}/inventory/${itemId}`);
             const sumQty = qtyByItem.get(itemId) || 0;
             const sumSpend = spendByItem.get(itemId) || 0;
             const wac = sumQty > 0 ? (sumSpend / sumQty) : 0;

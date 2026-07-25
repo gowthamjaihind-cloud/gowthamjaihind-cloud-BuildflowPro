@@ -36,62 +36,82 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
     try {
       await runTransaction(db, async (transaction) => {
         const materialIds = Array.from(new Set((grn.lineItems || []).map(i => i.poLineRef).filter(Boolean))) as string[];
+
+        // ---- ALL READS FIRST ----
         const inventoryItemDocs: { [id: string]: any } = {};
         for (const matId of materialIds) {
           const itemRef = doc(db, `${tenantPath}/inventory`, matId);
           inventoryItemDocs[matId] = await transaction.get(itemRef);
         }
 
-        let poData: any = null;
-        let vendorDoc: any = null;
-
-        if (grn.poId) {
-          const poRef = doc(db, `${tenantPath}/purchase_orders`, grn.poId);
-          const poDoc = await transaction.get(poRef);
-          
-          if (poDoc.exists()) {
-             poData = poDoc.data() as PurchaseOrder;
-             const vendorRef = doc(db, `${tenantPath}/suppliers`, poData.vendorId);
-             vendorDoc = await transaction.get(vendorRef);
-             const updatedLineItems = (poData.lineItems || []).map(item => {
-                const grnItem = (grn.lineItems || []).find(i => i.poLineRef === item.itemId);
-                if (grnItem) {
-                   return { ...item, receivedQty: Math.max(0, (item.receivedQty || 0) - (grnItem.acceptedQty || 0)) };
-                }
-                return item;
-             });
-             
-             const isFullyReceived = updatedLineItems.every(i => (i.receivedQty || 0) >= i.orderedQty);
-             
-             transaction.update(poRef, { 
-               lineItems: updatedLineItems,
-               status: isFullyReceived ? "Completed" : "Approved"
-             });
-          }
+        // The ledger entry records the exact amount that was added to the vendor
+        // balance when this GRN was created. Reversing that same figure keeps the
+        // balance and the statement in step — any mismatch silently reappears as
+        // "opening balance", since opening balance is derived, not stored.
+        let ledgerDoc: any = null;
+        if (grn.ledgerId) {
+          ledgerDoc = await transaction.get(doc(db, `${tenantPath}/ledger`, grn.ledgerId));
         }
-        
-        // Reverse Vendor Balance if applicable
-        if (poData && vendorDoc && vendorDoc.exists()) {
-            let totalAmount = 0;
-            (grn.lineItems || []).forEach(grnItem => {
-                const poItem = poData.lineItems?.find((i: any) => i.itemId === grnItem.poLineRef);
-                if (poItem) {
-                    totalAmount += grnItem.acceptedQty * poItem.rate;
-                }
-            });
-            transaction.update(vendorDoc.ref, {
-                outstandingBalance: Math.max(0, (vendorDoc.data().outstandingBalance || 0) - totalAmount)
-            });
+
+        // Read the vendor from the GRN itself, so the balance is still reversed
+        // even when the purchase order has since been deleted.
+        let vendorDoc: any = null;
+        if (grn.vendorId) {
+          vendorDoc = await transaction.get(doc(db, `${tenantPath}/suppliers`, grn.vendorId));
+        }
+
+        let poDoc: any = null;
+        let poData: any = null;
+        if (grn.poId) {
+          poDoc = await transaction.get(doc(db, `${tenantPath}/purchase_orders`, grn.poId));
+          if (poDoc.exists()) poData = poDoc.data() as PurchaseOrder;
+        }
+
+        // ---- COMPUTE REVERSAL ----
+        let reversalAmount = 0;
+        if (ledgerDoc && ledgerDoc.exists()) {
+          reversalAmount = ledgerDoc.data().amount || 0;
+        } else if (poData) {
+          // Fallback only for legacy GRNs saved without a ledger reference.
+          (grn.lineItems || []).forEach(grnItem => {
+            const poItem = poData.lineItems?.find((i: any) => i.itemId === grnItem.poLineRef);
+            if (poItem) reversalAmount += (grnItem.acceptedQty || 0) * (poItem.rate || 0);
+          });
+        }
+
+        // ---- WRITES ----
+        if (poDoc && poData) {
+          const updatedLineItems = (poData.lineItems || []).map(item => {
+            const grnItem = (grn.lineItems || []).find(i => i.poLineRef === item.itemId);
+            if (grnItem) {
+              return { ...item, receivedQty: Math.max(0, (item.receivedQty || 0) - (grnItem.acceptedQty || 0)) };
+            }
+            return item;
+          });
+
+          const isFullyReceived = updatedLineItems.every(i => (i.receivedQty || 0) >= i.orderedQty);
+
+          transaction.update(poDoc.ref, {
+            lineItems: updatedLineItems,
+            status: isFullyReceived ? "Completed" : "Approved"
+          });
+        }
+
+        if (vendorDoc && vendorDoc.exists() && reversalAmount !== 0) {
+          // Deliberately not clamped at 0: clamping is what left the balance and
+          // the statement out of step and surfaced the remainder as opening balance.
+          transaction.update(vendorDoc.ref, {
+            outstandingBalance: (vendorDoc.data().outstandingBalance || 0) - reversalAmount
+          });
         }
 
         // Delete Ledger and Cost Entries
-        if (grn.ledgerId) {
-            const ledgerRef = doc(db, `${tenantPath}/ledger`, grn.ledgerId);
-            transaction.delete(ledgerRef);
+        if (ledgerDoc && ledgerDoc.exists()) {
+          transaction.delete(ledgerDoc.ref);
         }
         if (grn.costEntryId) {
-            const costRef = doc(db, `${tenantPath}/costs`, grn.costEntryId);
-            transaction.delete(costRef);
+          const costRef = doc(db, `${tenantPath}/costs`, grn.costEntryId);
+          transaction.delete(costRef);
         }
 
         for (const matId of materialIds) {

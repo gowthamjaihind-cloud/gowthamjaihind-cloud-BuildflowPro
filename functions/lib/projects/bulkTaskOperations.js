@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.bulkUpdateTasks = void 0;
 const https_1 = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
 const logEvent_1 = require("../audit/logEvent");
+const db_1 = require("../db");
 exports.bulkUpdateTasks = (0, https_1.onCall)(async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
@@ -16,15 +16,14 @@ exports.bulkUpdateTasks = (0, https_1.onCall)(async (request) => {
     if (taskIds.length > 500) {
         throw new https_1.HttpsError("invalid-argument", "Cannot update more than 500 tasks per request.");
     }
-    const db = admin.firestore();
     // Validate Project Access
-    const projectDoc = await db.collection("projects").doc(projectId).get();
+    const projectDoc = await db_1.db.collection("projects").doc(projectId).get();
     if (!projectDoc.exists) {
         throw new https_1.HttpsError("not-found", "Project not found.");
     }
-    const batch = db.batch();
+    const batch = db_1.db.batch();
     for (const taskId of taskIds) {
-        const taskRef = db.collection("projects").doc(projectId).collection("tasks").doc(taskId);
+        const taskRef = db_1.db.collection("projects").doc(projectId).collection("tasks").doc(taskId);
         batch.update(taskRef, updates);
     }
     try {

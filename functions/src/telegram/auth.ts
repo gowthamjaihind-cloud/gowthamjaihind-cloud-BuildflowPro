@@ -1,7 +1,6 @@
-import * as admin from "firebase-admin";
 import { BotSession } from "./session";
+import { db } from "../db";
 
-const db = admin.firestore();
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 60 * 60 * 1000;
 
@@ -21,7 +20,7 @@ export const checkRateLimit = async (chatId: number): Promise<boolean> => {
   });
 };
 
-export interface RedeemResult { ok: boolean; email?: string; userId?: string; }
+export interface RedeemResult { ok: boolean; email?: string; userId?: string; orgId?: string; }
 
 export const redeemLinkCode = async (code: string, chatId: number): Promise<RedeemResult> => {
   const ref = db.collection("bot_link_codes").doc(code);
@@ -36,7 +35,7 @@ export const redeemLinkCode = async (code: string, chatId: number): Promise<Rede
       telegramChatId: chatId,
       telegramLinkedAt: Date.now(),
     });
-    return { ok: true, email: data.email, userId: data.userId };
+    return { ok: true, email: data.email, userId: data.userId, orgId: data.orgId };
   });
 };
 
