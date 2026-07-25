@@ -23,8 +23,8 @@ export default defineConfig(({mode}) => {
           type: 'module',
         },
         manifest: {
-          name: 'BuildFlow',
-          short_name: 'BuildFlow',
+          name: 'Sitetru',
+          short_name: 'Sitetru',
           theme_color: '#324755',
           background_color: '#F0F3F4',
           display: 'standalone',

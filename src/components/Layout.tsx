@@ -79,7 +79,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
         {showLabels && (
           <span className="font-display font-bold text-2xl md:text-3xl tracking-tighter text-ink truncate shrink-0">
-            BuildFlow
+            Sitetru
           </span>
         )}
       </div>

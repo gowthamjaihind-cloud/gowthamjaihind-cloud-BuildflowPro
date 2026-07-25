@@ -19,7 +19,7 @@ export const useUIStore = create<UIState>((set) => ({
   activeTab: "dashboard",
   isCreatingProject: false,
   viewingSettings: false,
-  companyName: localStorage.getItem("companyName") || "BuildFlow Pro",
+  companyName: localStorage.getItem("companyName") || "Sitetru",
   darkMode: localStorage.getItem("darkMode") === "true",
   uiMode: (localStorage.getItem("uiMode") as "executive" | "site") || "executive",
   setActiveTab: (tab) => set({ activeTab: tab }),

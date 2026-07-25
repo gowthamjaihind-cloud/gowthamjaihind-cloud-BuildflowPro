@@ -1784,7 +1784,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </div>
             <div className="text-right">
               <div className="text-sm font-bold text-[#D97D54] uppercase tracking-widest">
-                BuildFlow Pro
+                Sitetru
               </div>
               <div className="text-[10px] opacity-50">
                 Enterprise Construction Management

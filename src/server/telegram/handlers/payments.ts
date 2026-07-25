@@ -17,7 +17,7 @@ const projPath = (orgId: string | undefined, projectId: string) =>
   orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
 
 /**
- * Checks if the Telegram user linked to this session is an Admin or Owner in BuildFlow.
+ * Checks if the Telegram user linked to this session is an Admin or Owner in Sitetru.
  */
 export async function isUserAdminOrOwner(session: BotSession | null): Promise<boolean> {
   if (!session?.userId) return false;

@@ -30,7 +30,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           <Construction className="w-12 h-12 text-white" />
         </div>
         <h1 className="text-[48px] font-bold text-ink mb-6 tracking-tight leading-none">
-          BuildFlow
+          Sitetru
         </h1>
         <p className="text-[17px] text-ink-muted mb-12 leading-relaxed font-medium">
           Precision Infrastructure Orchestration for modern enterprises.

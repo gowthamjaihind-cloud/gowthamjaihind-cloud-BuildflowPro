@@ -224,7 +224,7 @@ async function handleUpdate(tg, update) {
         return;
     }
     if (text === "/help" || text === "/start") {
-        await tg.sendMessage(chatId, `<b>BuildFlow Bot</b>\n\n` +
+        await tg.sendMessage(chatId, `<b>Sitetru Bot</b>\n\n` +
             `/log — log today's site progress\n` +
             `/today — see what's already logged today\n` +
             `/projects — switch active project\n` +
@@ -308,7 +308,7 @@ exports.onUserUnlinked = (0, firestore_1.onDocumentUpdated)({
     if (oldChatId && !newChatId) {
         const tg = new api_1.TelegramApi(BOT_TOKEN.value());
         try {
-            await tg.sendMessage(oldChatId, "Your Telegram account has been unlinked from BuildFlow.");
+            await tg.sendMessage(oldChatId, "Your Telegram account has been unlinked from Sitetru.");
         }
         catch (err) {
             console.error("Failed to send unlink message:", err);

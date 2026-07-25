@@ -1,6 +1,6 @@
-# BuildFlow Bot & Dashboard 🏗️
+# Sitetru Bot & Dashboard 🏗️
 
-Welcome to BuildFlow, a construction project management dashboard with a built-in Telegram bot for workers and managers to log progress and material consumption on the go.
+Welcome to Sitetru, a construction project management dashboard with a built-in Telegram bot for workers and managers to log progress and material consumption on the go.
 
 ## 🚀 Telegram Bot Setup
 

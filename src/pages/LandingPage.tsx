@@ -100,7 +100,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <div className="bg-surface-dark w-9 h-9 rounded-xl flex items-center justify-center">
               <Construction weight="duotone" className="w-5 h-5 text-white" />
             </div>
-            <span className="font-display font-bold text-xl tracking-tight">BuildFlow</span>
+            <span className="font-display font-bold text-xl tracking-tight">Sitetru</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-ink-muted">
@@ -212,7 +212,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       <section id="features" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Everything a project needs, in one workspace</h2>
-          <p className="text-ink-muted font-medium">Stop stitching together spreadsheets, WhatsApp groups and paper diaries. BuildFlow connects the whole site.</p>
+          <p className="text-ink-muted font-medium">Stop stitching together spreadsheets, WhatsApp groups and paper diaries. Sitetru connects the whole site.</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {features.map((f) => (
@@ -332,9 +332,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <div className="bg-surface-dark w-8 h-8 rounded-lg flex items-center justify-center">
               <Construction weight="duotone" className="w-4 h-4 text-white" />
             </div>
-            <span className="font-display font-bold tracking-tight">BuildFlow</span>
+            <span className="font-display font-bold tracking-tight">Sitetru</span>
           </div>
-          <p className="text-xs text-ink-muted">© {new Date().getFullYear()} BuildFlow · Construction management, simplified.</p>
+          <p className="text-xs text-ink-muted">© {new Date().getFullYear()} Sitetru · Truth, reported from site.</p>
         </div>
       </footer>
     </div>

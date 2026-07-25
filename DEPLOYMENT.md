@@ -1,4 +1,4 @@
-# Deployment Guide: BuildFlow Pro
+# Deployment Guide: Sitetru
 
 This application is built with a React frontend (Vite) and an optional Express backend (if configured). It uses Firebase for its database and authentication.
 
@@ -61,4 +61,4 @@ For professional deployment, consider using GitHub Actions:
 3.  **Deploy**: Use the Firebase Hosting Action or a Cloud Run Deploy Action.
 
 ---
-*Note: BuildFlow Pro is designed as a secure, full-stack application. Always ensure your Firebase rules are strictly validated to protect user data.*
+*Note: Sitetru is designed as a secure, full-stack application. Always ensure your Firebase rules are strictly validated to protect user data.*

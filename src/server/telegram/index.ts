@@ -94,7 +94,7 @@ export async function showMainMenu(tg: any, chatId: number, messageId: number | 
     const proj = await payments.getProjectDetails(session);
     const projName = proj ? proj.name : "None Selected";
 
-    let text = `<b>🏗️ BuildFlow Command Center</b>\n\n` +
+    let text = `<b>🏗️ Sitetru Command Center</b>\n\n` +
         `📌 <b>Active Project:</b> ${projName}\n`;
     if (session.email) {
         text += `👤 <b>User:</b> ${session.email}\n`;
@@ -128,7 +128,7 @@ export async function showMainMenu(tg: any, chatId: number, messageId: number | 
 
 async function showHelpMessage(tg: any, chatId: number, messageId: number | null, session: any) {
     const isAdminOrOwner = await payments.isUserAdminOrOwner(session);
-    let text = `<b>🤖 BuildFlow Telegram Bot Help</b>\n\n` +
+    let text = `<b>🤖 Sitetru Telegram Bot Help</b>\n\n` +
         `Tap any button in the main menu or use commands:\n\n` +
         `<b>Site Logging:</b>\n` +
         `• /log — Record task progress, materials & labour\n` +
