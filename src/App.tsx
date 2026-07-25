@@ -62,7 +62,7 @@ import { useAuthInit } from "./hooks/useAuth";
 import { useProjectsQuery } from "./hooks/queries";
 import { useAuthStore, useProjectStore, useUIStore } from "./store";
 
-import { LoginPage } from "./pages/LoginPage";
+import { LandingPage } from "./pages/LandingPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { ProjectDashboard } from "./pages/ProjectDashboard";
 
@@ -192,7 +192,7 @@ function AppContent() {
   }
 
   if (!user) {
-    return <LoginPage isLoggingIn={isLoggingIn} onLogin={login} loginError={loginError} />;
+    return <LandingPage isLoggingIn={isLoggingIn} onLogin={login} loginError={loginError} />;
   }
 
   if (!activeProject) {
