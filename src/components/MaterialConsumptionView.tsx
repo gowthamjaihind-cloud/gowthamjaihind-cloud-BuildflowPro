@@ -34,6 +34,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   const [localEndDate, setLocalEndDate] = useState("");
 
   // Advanced Filter state
+  const [advGroupCode, setAdvGroupCode] = useState("");
   const [advMaterial, setAdvMaterial] = useState("");
   const [advTask, setAdvTask] = useState("");
   const [advStartDate, setAdvStartDate] = useState("");
@@ -45,9 +46,6 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   // Advanced Filter sorting
   const [sortField, setSortField] = useState<"date" | "quantity">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-
-  // Material group filter
-  const [materialGroupFilter, setMaterialGroupFilter] = useState("");
 
   // Labor tab filter state
   const [laborTask, setLaborTask] = useState("");
@@ -72,11 +70,11 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   const { data: legacyLaborLogs = [] } =
     useProjectDataQuery<any>(projectId, "labor_logs");
 
-  // material name -> group (inventory category), for grouping the material tabs
-  const materialGroupMap = useMemo(() => {
+  // material name -> group code (from inventory), for the advanced group-code filter
+  const materialGroupCodeMap = useMemo(() => {
     const map: Record<string, string> = {};
     inventory.forEach((item: any) => {
-      if (item.name) map[item.name] = item.category || "Ungrouped";
+      if (item.name) map[item.name] = item.groupCode || "Ungrouped";
     });
     return map;
   }, [inventory]);
@@ -151,21 +149,13 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
     return uniq.sort();
   }, [allRecords]);
 
-  // Distinct material groups (from the materials actually consumed)
-  const distinctGroups = useMemo(() => {
+  // Distinct group codes (from the materials actually consumed) for the advanced filter
+  const distinctGroupCodes = useMemo(() => {
     const uniq = Array.from(
-      new Set(distinctMaterials.map((m) => materialGroupMap[m] || "Ungrouped")),
+      new Set(distinctMaterials.map((m) => materialGroupCodeMap[m] || "Ungrouped")),
     ).filter(Boolean);
     return uniq.sort();
-  }, [distinctMaterials, materialGroupMap]);
-
-  // Materials shown as tabs, narrowed by the selected group
-  const visibleMaterials = useMemo(() => {
-    if (!materialGroupFilter) return distinctMaterials;
-    return distinctMaterials.filter(
-      (m) => (materialGroupMap[m] || "Ungrouped") === materialGroupFilter,
-    );
-  }, [distinctMaterials, materialGroupFilter, materialGroupMap]);
+  }, [distinctMaterials, materialGroupCodeMap]);
 
   // ---- LABOR CONSUMPTION records (mirrors LaborTrackingView derivation) ----
   const laborRecords = useMemo(() => {
@@ -256,12 +246,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   }, [filteredLaborRecords]);
 
   // Tab State
-  const defaultTab = useMemo(() => {
-    if (visibleMaterials.length > 0) {
-      return visibleMaterials[0];
-    }
-    return "advanced-filter";
-  }, [visibleMaterials]);
+  const defaultTab = "material";
 
   const [selectedTab, setSelectedTab] = useState<string | null>(null);
   const activeTab = selectedTab || defaultTab;
@@ -308,6 +293,11 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   const advancedFilteredRecords = useMemo(() => {
     let result = [...allRecords];
 
+    if (advGroupCode) {
+      result = result.filter(
+        (r) => (materialGroupCodeMap[r.materialName] || "Ungrouped") === advGroupCode,
+      );
+    }
     if (advMaterial) {
       result = result.filter((r) => r.materialName === advMaterial);
     }
@@ -350,6 +340,8 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
     return result;
   }, [
     allRecords,
+    advGroupCode,
+    materialGroupCodeMap,
     advMaterial,
     advTask,
     advStartDate,
@@ -388,6 +380,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   };
 
   const handleResetAdvancedFilters = () => {
+    setAdvGroupCode("");
     setAdvMaterial("");
     setAdvTask("");
     setAdvStartDate("");
@@ -416,19 +409,19 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-panel p-6 md:p-8 rounded-[24px] border border-divider shadow-sm" id="header-bar">
         <div>
           <h2 className="text-2xl md:text-3xl font-black text-ink tracking-tight mb-2">
-            Material Consumption
+            Consumption History
           </h2>
           <p className="text-ink-muted font-bold text-[10px] md:text-xs uppercase tracking-[0.15em]">
-            Aggregated and analyzed logs from site daily diaries and material dispatch receipts.
+            Material and labor consumption aggregated from daily diaries, material issues and labor logs.
           </p>
         </div>
         
-        {allRecords.length > 0 && (
+        {allRecords.length > 0 && activeTab !== "labor" && (
           <div className="flex items-center gap-2">
             <button
               id="export-current-csv-btn"
-              onClick={() => handleExportCSV(activeTab === "advanced-filter" ? advancedFilteredRecords : activeMaterialRecords)}
-              disabled={activeTab === "advanced-filter" ? advancedFilteredRecords.length === 0 : activeMaterialRecords.length === 0}
+              onClick={() => handleExportCSV(advancedFilteredRecords)}
+              disabled={advancedFilteredRecords.length === 0}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-panel hover:bg-divider border border-divider rounded-xl text-xs font-bold uppercase tracking-wider text-ink transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <Download className="w-4 h-4 text-[#D97D54]" />
@@ -436,8 +429,8 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
             </button>
             <button
               id="export-current-pdf-btn"
-              onClick={() => handleExportPDF(activeTab === "advanced-filter" ? advancedFilteredRecords : activeMaterialRecords)}
-              disabled={activeTab === "advanced-filter" ? advancedFilteredRecords.length === 0 : activeMaterialRecords.length === 0}
+              onClick={() => handleExportPDF(advancedFilteredRecords)}
+              disabled={advancedFilteredRecords.length === 0}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <Download className="w-4 h-4" />
@@ -460,87 +453,39 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
         </div>
       ) : (
         <div className="space-y-6" id="consumption-analytics-content">
-          {/* MATERIAL GROUP FILTER */}
-          {activeTab !== "labor" && distinctGroups.length > 0 && (
-            <div className="flex items-center gap-3 flex-wrap" id="material-group-filter">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                <Layers className="w-3.5 h-3.5 text-[#D97D54]" />
-                Material Group
-              </div>
-              <select
-                value={materialGroupFilter}
-                onChange={(e) => {
-                  setMaterialGroupFilter(e.target.value);
-                  setSelectedTab(null);
-                }}
-                className="bg-surface border border-divider rounded-xl px-3 py-2 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
-              >
-                <option value="">All Groups ({distinctMaterials.length})</option>
-                {distinctGroups.map((g) => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* TAB BAR — two top-level tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide" id="navigation-tabs-section">
+            <button
+              id="tab-material"
+              onClick={() => setSelectedTab("material")}
+              className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
+                activeTab !== "labor"
+                  ? "bg-[#D97D54] border-[#D97D54] text-white shadow-md shadow-[#D97D54]/10"
+                  : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
+              }`}
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>Material Consumption</span>
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black ${activeTab !== "labor" ? "bg-white/20 text-white" : "bg-surface text-ink-muted"}`}>
+                {allRecords.length}
+              </span>
+            </button>
 
-          {/* TAB BAR */}
-          <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between" id="navigation-tabs-section">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide flex-1" id="tab-pill-list">
-              {visibleMaterials.map((materialName) => {
-                const countOfMaterialLogs = allRecords.filter((r) => r.materialName === materialName).length;
-                const isActive = activeTab === materialName;
-                return (
-                  <button
-                    key={materialName}
-                    id={`tab-material-${materialName.replace(/\s+/g, "-")}`}
-                    onClick={() => handleTabChange(materialName)}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
-                      isActive
-                        ? "bg-surface border-[#D97D54] text-[#D97D54] shadow-md shadow-[#D97D54]/5"
-                        : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
-                    }`}
-                  >
-                    <Package className={`w-3.5 h-3.5 ${isActive ? "text-[#D97D54]" : "text-ink-muted"}`} />
-                    <span>{materialName}</span>
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black ${isActive ? "bg-[#D97D54]/10 text-[#D97D54]" : "bg-surface text-ink-muted"}`}>
-                      {countOfMaterialLogs}
-                    </span>
-                  </button>
-                );
-              })}
-
-              <button
-                id="tab-advanced-filter"
-                onClick={() => handleTabChange("advanced-filter")}
-                className={`px-4 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
-                  activeTab === "advanced-filter"
-                    ? "bg-[#D97D54] border-[#D97D54] text-white shadow-md shadow-[#D97D54]/10"
-                    : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
-                }`}
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>Advanced Search Engine</span>
-                <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black ${activeTab === "advanced-filter" ? "bg-white/20 text-white" : "bg-surface text-ink-muted"}`}>
-                  {allRecords.length}
-                </span>
-              </button>
-
-              <button
-                id="tab-labor"
-                onClick={() => setSelectedTab("labor")}
-                className={`px-4 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
-                  activeTab === "labor"
-                    ? "bg-[#324755] border-[#324755] text-white shadow-md shadow-[#324755]/10"
-                    : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
-                }`}
-              >
-                <HardHat className="w-3.5 h-3.5" />
-                <span>Labor Consumption</span>
-                <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black ${activeTab === "labor" ? "bg-white/20 text-white" : "bg-surface text-ink-muted"}`}>
-                  {laborRecords.length}
-                </span>
-              </button>
-            </div>
+            <button
+              id="tab-labor"
+              onClick={() => setSelectedTab("labor")}
+              className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
+                activeTab === "labor"
+                  ? "bg-[#324755] border-[#324755] text-white shadow-md shadow-[#324755]/10"
+                  : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
+              }`}
+            >
+              <HardHat className="w-3.5 h-3.5" />
+              <span>Labor Consumption</span>
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black ${activeTab === "labor" ? "bg-white/20 text-white" : "bg-surface text-ink-muted"}`}>
+                {laborRecords.length}
+              </span>
+            </button>
           </div>
 
           {/* ACTIVE CONTENT GRID */}
@@ -674,148 +619,6 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                 </div>
               </div>
             </div>
-          ) : activeTab !== "advanced-filter" ? (
-            <div className="space-y-6" id="material-tab-panel">
-              {/* INSIGHTS METRICS BAR */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" id="material-insights-grid">
-                <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between" id="card-total-consumed">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Total Consumed</p>
-                    <p className="text-2xl font-black text-ink font-mono">
-                      {materialInsights.total.toLocaleString("en-IN")}{" "}
-                      <span className="text-xs font-normal text-ink-muted">{materialInsights.unit}</span>
-                    </p>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#34D399]/12 text-[#059669] flex items-center justify-center border border-[#34D399]/30">
-                    <TrendingUp className="w-5 h-5" />
-                  </div>
-                </div>
-
-                <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between" id="card-total-logs">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Logging Events</p>
-                    <p className="text-2xl font-black text-ink font-mono">{materialInsights.count}</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#6E8CA0]/10 text-[#56778E] flex items-center justify-center border border-[#6E8CA0]/20">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                </div>
-
-                <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between" id="card-avg-consumption">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Avg. Consumption per Log</p>
-                    <p className="text-2xl font-black text-ink font-mono">
-                      {materialInsights.avg.toLocaleString("en-IN", { maximumFractionDigits: 1 })}{" "}
-                      <span className="text-xs font-normal text-ink-muted">{materialInsights.unit}</span>
-                    </p>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#D97D54]/10 text-[#C0653F] flex items-center justify-center border border-[#D97D54]/20">
-                    <Activity className="w-5 h-5" />
-                  </div>
-                </div>
-              </div>
-
-              {/* LOCAL FILTER MODULE FOR SPECIFIC MATERIAL */}
-              <div className="bg-panel p-4 rounded-2xl border border-divider flex flex-col md:flex-row items-stretch md:items-center gap-4 justify-between" id="local-filter-module">
-                <div className="flex flex-wrap items-center gap-3 flex-1">
-                  <div className="flex items-center gap-2 bg-surface px-3 py-2 border border-divider rounded-xl flex-1 md:flex-none">
-                    <Search className="w-4 h-4 text-ink-muted" />
-                    <input
-                      type="text"
-                      placeholder="Filter by Task..."
-                      value={localTaskSearch}
-                      onChange={(e) => setLocalTaskSearch(e.target.value)}
-                      className="bg-transparent border-none outline-none font-bold text-ink text-xs w-full sm:w-44 placeholder:text-ink-muted/50"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-surface px-3 py-2 border border-divider rounded-xl text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <input
-                      type="date"
-                      value={localStartDate}
-                      onChange={(e) => setLocalStartDate(e.target.value)}
-                      className="bg-transparent border-none outline-none font-bold text-ink text-[10px]"
-                    />
-                    <span className="opacity-40">TO</span>
-                    <input
-                      type="date"
-                      value={localEndDate}
-                      onChange={(e) => setLocalEndDate(e.target.value)}
-                      className="bg-transparent border-none outline-none font-bold text-ink text-[10px]"
-                    />
-                  </div>
-                </div>
-
-                {(localTaskSearch || localStartDate || localEndDate) && (
-                  <button
-                    id="clear-local-filter-btn"
-                    onClick={() => {
-                      setLocalTaskSearch("");
-                      setLocalStartDate("");
-                      setLocalEndDate("");
-                    }}
-                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface text-ink-muted text-[10px] font-black uppercase tracking-wider hover:text-ink border border-divider transition cursor-pointer"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    Reset Filters
-                  </button>
-                )}
-              </div>
-
-              {/* MATERIAL SPECIFIC TABLE */}
-              <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden" id="material-logs-table-wrapper">
-                <div className="overflow-x-auto scrollbar-hide">
-                  <table className="w-full text-left min-w-[700px]">
-                    <thead>
-                      <tr className="bg-panel border-b border-divider">
-                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Date</th>
-                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Task Description</th>
-                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Source Channel</th>
-                        <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Quantity Consumed</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-divider/40">
-                      {activeMaterialRecords.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="p-16 text-center">
-                            <FileText className="text-ink-muted/50 w-8 h-8 mx-auto mb-3" />
-                            <p className="text-ink-muted text-xs font-bold uppercase tracking-wider">No matching logs found</p>
-                          </td>
-                        </tr>
-                      ) : (
-                        activeMaterialRecords.map((record) => (
-                          <tr key={record.id} className="hover:bg-panel/30 transition duration-150">
-                            <td className="px-6 py-5 font-mono text-xs text-ink-muted whitespace-nowrap">{record.date}</td>
-                            <td className="px-6 py-5">
-                              <div className="font-bold text-xs tracking-tight text-ink">{record.taskName}</div>
-                              <div className="text-[10px] text-ink-muted italic mt-0.5 line-clamp-1" title={record.note}>
-                                {record.note}
-                              </div>
-                            </td>
-                            <td className="px-6 py-5">
-                              <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                                  record.source === "Material Issue"
-                                    ? "bg-[#D97D54]/10 text-[#D97D54] border border-[#D97D54]/20"
-                                    : "bg-[#6E8CA0]/10 text-[#46617C] border border-[#6E8CA0]/20"
-                                }`}
-                              >
-                                {record.source}
-                              </span>
-                            </td>
-                            <td className="px-6 py-5 text-right font-mono text-xs font-bold text-ink">
-                              {record.quantity.toLocaleString("en-IN")}{" "}
-                              <span className="text-[9px] text-ink-muted font-normal">{record.unit}</span>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
           ) : (
             /* ADVANCED FILTER PANEL */
             <div className="space-y-6" id="advanced-search-engine-panel">
@@ -826,6 +629,22 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Group Code Selector */}
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Material Group Code</label>
+                    <select
+                      id="filter-group-code"
+                      value={advGroupCode}
+                      onChange={(e) => setAdvGroupCode(e.target.value)}
+                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
+                    >
+                      <option value="">All Group Codes</option>
+                      {distinctGroupCodes.map((g) => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   {/* Material Selector */}
                   <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Material Name</label>
@@ -836,9 +655,11 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
                     >
                       <option value="">All Materials</option>
-                      {distinctMaterials.map((mat) => (
-                        <option key={mat} value={mat}>{mat}</option>
-                      ))}
+                      {distinctMaterials
+                        .filter((mat) => !advGroupCode || (materialGroupCodeMap[mat] || "Ungrouped") === advGroupCode)
+                        .map((mat) => (
+                          <option key={mat} value={mat}>{mat}</option>
+                        ))}
                     </select>
                   </div>
 
