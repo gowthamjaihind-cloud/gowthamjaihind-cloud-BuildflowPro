@@ -353,6 +353,16 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
     sortOrder,
   ]);
 
+  // Totals for the current material (advanced-filter) view — restored insights bar.
+  const advancedInsights = useMemo(() => {
+    const total = advancedFilteredRecords.reduce((sum, r) => sum + (r.quantity || 0), 0);
+    const count = advancedFilteredRecords.length;
+    const avg = count > 0 ? total / count : 0;
+    const units = Array.from(new Set(advancedFilteredRecords.map((r) => r.unit).filter(Boolean)));
+    const unit = units.length === 1 ? units[0] : units.length === 0 ? "" : "mixed";
+    return { total, count, avg, unit };
+  }, [advancedFilteredRecords]);
+
   const getExportData = (recordsToExport: any[]) => {
     const headers = ["Date", "Material Name", "Consumed In Task", "Quantity", "Unit", "Source Type", "Log Note"];
     const rows = recordsToExport.map((r) => [
@@ -622,6 +632,43 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
           ) : (
             /* ADVANCED FILTER PANEL */
             <div className="space-y-6" id="advanced-search-engine-panel">
+              {/* INSIGHTS METRICS BAR — totals for the current filtered view */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" id="material-insights-grid">
+                <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between" id="card-total-consumed">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Total Consumed</p>
+                    <p className="text-2xl font-black text-ink font-mono">
+                      {advancedInsights.total.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
+                      <span className="text-xs font-normal text-ink-muted">{advancedInsights.unit}</span>
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-[#34D399]/12 text-[#059669] flex items-center justify-center border border-[#34D399]/30">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between" id="card-total-logs">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Logging Events</p>
+                    <p className="text-2xl font-black text-ink font-mono">{advancedInsights.count}</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-[#6E8CA0]/10 text-[#56778E] flex items-center justify-center border border-[#6E8CA0]/20">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between" id="card-avg-consumption">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Avg. Consumption per Log</p>
+                    <p className="text-2xl font-black text-ink font-mono">
+                      {advancedInsights.avg.toLocaleString("en-IN", { maximumFractionDigits: 1 })}{" "}
+                      <span className="text-xs font-normal text-ink-muted">{advancedInsights.unit}</span>
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-[#D97D54]/10 text-[#C0653F] flex items-center justify-center border border-[#D97D54]/20">
+                    <Activity className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-surface border border-divider rounded-2xl p-6 shadow-sm space-y-6" id="advanced-filters-block">
                 <div className="flex items-center gap-2 pb-3 border-b border-divider">
                   <Filter className="w-4 h-4 text-[#D97D54]" />
