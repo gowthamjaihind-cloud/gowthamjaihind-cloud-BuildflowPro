@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   Plus,
@@ -9,6 +9,8 @@ import {
   SignOut,
   Image as ImageIcon,
   PencilSimple,
+  HardHat,
+  Buildings,
 } from "@phosphor-icons/react";
 import { Project } from "../types";
 import { useAuthStore, useProjectStore, useUIStore } from "../store";
@@ -17,6 +19,40 @@ import { CreateProjectModal } from "../features/projects/components/CreateProjec
 import { EditProjectModal } from "../features/projects/components/EditProjectModal";
 import { SyncStatus } from "../components/SyncStatus";
 import { TelegramBotStatus } from "../components/TelegramBotStatus";
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Animated count that eases up from 0; falls back to the final value
+// under reduced-motion or Site Mode (low-distraction).
+const CountUp: React.FC<{ value: number; className?: string }> = ({
+  value,
+  className,
+}) => {
+  const uiMode = useUIStore((state) => state.uiMode);
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (uiMode === "site" || prefersReducedMotion()) {
+      setDisplay(value);
+      return;
+    }
+    let raf = 0;
+    const start = performance.now();
+    const duration = 700;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(Math.round(value * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, uiMode]);
+
+  return <span className={className}>{display}</span>;
+};
 
 const statusPillClasses = (status?: string) => {
   switch (status) {
@@ -47,6 +83,7 @@ export const PortfolioPage: React.FC = () => {
   );
   const setViewingSettings = useUIStore((state) => state.setViewingSettings);
   const companyName = useUIStore((state) => state.companyName);
+  const uiMode = useUIStore((state) => state.uiMode);
 
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
@@ -59,6 +96,30 @@ export const PortfolioPage: React.FC = () => {
     if (p.ownerId === user?.uid) return true;
     return false;
   });
+
+  const activeCount = visibleProjects.filter(
+    (p) => p.status === "Active",
+  ).length;
+  const onHoldCount = visibleProjects.filter(
+    (p) => p.status === "On Hold",
+  ).length;
+
+  // Pointer-follow tilt for project cards; disabled under Site Mode /
+  // reduced-motion (Site Mode also strips transforms via CSS !important).
+  const tiltEnabled = uiMode !== "site" && !prefersReducedMotion();
+  const handleCardMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!tiltEnabled) return;
+    const el = e.currentTarget;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    el.style.transform = `translateY(-4px) perspective(900px) rotateX(${(
+      -py * 5
+    ).toFixed(2)}deg) rotateY(${(px * 7).toFixed(2)}deg)`;
+  };
+  const handleCardLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.transform = "";
+  };
 
   const handleDeleteProjectClick = (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation();
@@ -117,49 +178,118 @@ export const PortfolioPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] p-4 sm:p-8 md:p-12 lg:p-24 overflow-x-hidden pt-8 sm:pt-8 bg-page">
+    <div className="min-h-[100dvh] p-4 sm:p-8 md:p-12 lg:p-24 overflow-x-hidden pt-4 sm:pt-8 bg-page">
       <div className="max-w-7xl mx-auto">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 sm:mb-12 md:mb-20 gap-4 sm:gap-6 md:gap-8">
-          <div>
-            <h1 className="text-4xl md:text-[64px] font-bold text-ink tracking-tight mb-1 sm:mb-2 md:mb-4">
-              {companyName}
-            </h1>
-            <p className="text-[15px] sm:text-[17px] text-ink-muted font-medium leading-relaxed max-w-md">
-              Construction Management App
-            </p>
+        <motion.header
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.2, 0, 0, 1] }}
+          className="relative overflow-hidden rounded-[28px] sm:rounded-[36px] md:rounded-[44px] bg-surface-dark text-white mb-8 sm:mb-12 md:mb-16 px-6 py-8 sm:px-10 sm:py-12 md:px-16 md:py-14 shadow-xl shadow-drab/30"
+        >
+          {/* Ambient palette mesh (animated, motion-safe) */}
+          <div className="brand-mesh" aria-hidden="true" />
+          {/* Depth wash + floating decorative glyph */}
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-onyx/70 pointer-events-none"
+            aria-hidden="true"
+          />
+          <Buildings
+            weight="duotone"
+            aria-hidden="true"
+            className="float-y pointer-events-none absolute -top-6 -right-6 sm:-top-8 sm:-right-4 w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 text-white/[0.06]"
+          />
+
+          <div className="relative z-10">
+            {/* Top control row */}
+            <div className="flex items-center justify-between gap-3 mb-8 sm:mb-12 md:mb-16">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
+                  <HardHat
+                    weight="duotone"
+                    className="w-5 h-5 sm:w-6 sm:h-6 text-white"
+                  />
+                </div>
+                <span className="hidden sm:inline text-[13px] font-bold uppercase tracking-[0.22em] text-white/60">
+                  Portfolio
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+                <SyncStatus />
+                <TelegramBotStatus />
+                <button
+                  onClick={() => setViewingSettings(true)}
+                  className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white/90 transition-colors active:scale-95 shrink-0"
+                  title="Global Settings"
+                >
+                  <GearSix weight="duotone" className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => logout()}
+                  className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-[#EF4444]/25 text-white/90 hover:text-[#FCA5A5] transition-colors active:scale-95 shrink-0"
+                  title="Sign Out"
+                >
+                  <SignOut weight="duotone" className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Headline + CTA */}
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 lg:gap-12">
+              <div className="max-w-2xl">
+                <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-[80px] font-bold tracking-tight leading-[0.95] mb-3 sm:mb-4">
+                  {companyName}
+                </h1>
+                <p className="text-[15px] sm:text-[17px] md:text-lg text-white/70 font-medium leading-relaxed">
+                  Truth, reported from site.{" "}
+                  <span className="text-white/45">
+                    Every project, ledger, and daily log in one place.
+                  </span>
+                </p>
+
+                {/* Portfolio stats */}
+                <div className="flex flex-wrap gap-2.5 sm:gap-3 mt-6 sm:mt-8">
+                  <div className="flex items-center gap-2.5 rounded-2xl bg-white/[0.07] border border-white/10 px-4 py-2.5">
+                    <CountUp
+                      value={visibleProjects.length}
+                      className="font-display text-2xl font-bold leading-none tabular-nums"
+                    />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-white/55">
+                      Projects
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-2xl bg-white/[0.07] border border-white/10 px-4 py-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-sage shadow-[0_0_10px_#87BCBF]" />
+                    <CountUp
+                      value={activeCount}
+                      className="font-display text-2xl font-bold leading-none tabular-nums"
+                    />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-white/55">
+                      Active
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-2xl bg-white/[0.07] border border-white/10 px-4 py-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+                    <CountUp
+                      value={onHoldCount}
+                      className="font-display text-2xl font-bold leading-none tabular-nums"
+                    />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-white/55">
+                      On Hold
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsCreatingProject(true)}
+                className="cta-shine w-full lg:w-auto justify-center bg-primary text-white px-6 sm:px-8 md:px-10 py-4 md:py-5 rounded-2xl md:rounded-3xl font-bold text-[15px] sm:text-[17px] flex items-center gap-3 shadow-lg shadow-primary/30 hover:bg-primary/90 apple-transition sm:hover:-translate-y-1 active:scale-95 shrink-0"
+              >
+                <Plus weight="bold" className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
+                <span className="truncate">Initialize Workspace</span>
+              </button>
+            </div>
           </div>
-          <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 w-full md:w-auto items-center">
-            <SyncStatus />
-            <TelegramBotStatus />
-            <button
-              onClick={() => logout()}
-              className="soft-card text-[#EF4444] p-3 sm:p-4 md:p-5 rounded-[16px] sm:rounded-2xl md:rounded-3xl hover:bg-[#EF4444]/8 apple-transition active:scale-95 shrink-0"
-              title="Sign Out"
-            >
-              <SignOut weight="duotone" className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-            <button
-              onClick={() => setViewingSettings(true)}
-              className="soft-card text-ink p-3 sm:p-4 md:p-5 rounded-[16px] sm:rounded-2xl md:rounded-3xl hover:bg-page apple-transition active:scale-95 shrink-0"
-              title="Global Settings"
-            >
-              <GearSix
-                weight="duotone"
-                className="w-5 h-5 sm:w-6 sm:h-6 text-ink-muted hover:text-ink"
-              />
-            </button>
-            <button
-              onClick={() => setIsCreatingProject(true)}
-              className="flex-1 sm:flex-none justify-center bg-onyx text-white px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 rounded-[16px] sm:rounded-2xl md:rounded-3xl font-bold text-[15px] sm:text-[17px] flex items-center gap-2 sm:gap-4 shadow-lg shadow-drab/20 hover:bg-onyx/80 apple-transition sm:hover:-translate-y-1 active:scale-95"
-            >
-              <Plus
-                weight="bold"
-                className="w-5 h-5 sm:w-6 sm:h-6 shrink-0"
-              />{" "}
-              <span className="truncate">Initialize Workspace</span>
-            </button>
-          </div>
-        </header>
+        </motion.header>
 
         <CreateProjectModal
           isOpen={isCreatingProject}
@@ -181,7 +311,9 @@ export const PortfolioPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               onClick={() => setActiveProject(project)}
-              className="group soft-card-interactive p-6 sm:p-8 md:p-12 rounded-[24px] sm:squircle-24 relative overflow-hidden"
+              onMouseMove={handleCardMove}
+              onMouseLeave={handleCardLeave}
+              className="group soft-card-interactive p-6 sm:p-8 md:p-12 rounded-[24px] sm:squircle-24 relative overflow-hidden [transform-style:preserve-3d]"
             >
               <div className="flex justify-between items-start mb-6 md:mb-8 relative z-10">
                 <div className="relative bg-surface-dark text-white p-3 sm:p-4 md:p-5 rounded-[16px] sm:rounded-[20px] md:rounded-[24px] group-hover:bg-primary apple-transition shadow-lg shadow-drab/20 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 overflow-hidden shrink-0">

@@ -169,6 +169,70 @@
   }
 }
 
+/* --- Ambient brand mesh + motion (palette-driven) --- */
+.brand-mesh {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background-image:
+    radial-gradient(at 12% 8%, hsla(183, 30%, 64%, 0.30) 0px, transparent 40%),
+    radial-gradient(at 88% 4%, hsla(18, 63%, 59%, 0.24) 0px, transparent 38%),
+    radial-gradient(at 70% 30%, hsla(204, 25%, 40%, 0.12) 0px, transparent 42%),
+    radial-gradient(at 4% 40%, hsla(37, 22%, 68%, 0.18) 0px, transparent 42%);
+  filter: blur(6px);
+  animation: meshDrift 24s ease-in-out infinite alternate;
+}
+.dark .brand-mesh {
+  background-image:
+    radial-gradient(at 12% 8%, hsla(183, 30%, 64%, 0.14) 0px, transparent 40%),
+    radial-gradient(at 88% 4%, hsla(18, 63%, 59%, 0.13) 0px, transparent 38%),
+    radial-gradient(at 70% 30%, hsla(204, 25%, 55%, 0.10) 0px, transparent 42%),
+    radial-gradient(at 4% 40%, hsla(37, 22%, 68%, 0.09) 0px, transparent 42%);
+}
+@keyframes meshDrift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(-3%, 2%, 0) scale(1.08); }
+  100% { transform: translate3d(2%, -2%, 0) scale(1.04); }
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-9px); }
+}
+.float-y { animation: floatY 6s ease-in-out infinite; }
+
+/* Periodic light sweep across a primary CTA */
+.cta-shine { position: relative; overflow: hidden; }
+.cta-shine::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 38%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  transform: skewX(-18deg);
+  animation: ctaSweep 4.8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes ctaSweep {
+  0%, 18% { left: -60%; }
+  60%, 100% { left: 135%; }
+}
+.site-mode .cta-shine::after { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-mesh, .float-y { animation: none; }
+  .cta-shine::after { display: none; }
+}
+
 @layer components {
   /* Soft-solid elevated card — matches the brand style guide:
      solid Snow surface, Fossil hairline, soft layered shadow on Ice */
