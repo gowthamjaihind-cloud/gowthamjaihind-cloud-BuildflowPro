@@ -34,6 +34,7 @@ import {
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import { RoleGuard } from "./RoleGuard";
+import { CountUp } from "./motion";
 import { VirtualTable } from "./VirtualTable";
 import { useAuthStore } from "../store";
 import { useProjectData } from "../hooks/useProjectData";
@@ -483,10 +484,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             </p>
             <h3 className="text-lg md:text-3xl font-bold tracking-tight">
               ₹
-              {stats.totalValue.toLocaleString("en-IN", {
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 1,
-              })}
+              <CountUp
+                value={stats.totalValue}
+                format={(n) =>
+                  n.toLocaleString("en-IN", {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })
+                }
+              />
             </h3>
           </div>
         </div>
@@ -506,10 +512,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             </p>
             <h3 className="text-lg md:text-3xl font-bold text-ink tracking-tight">
               ₹
-              {stats.allocatedCost.toLocaleString("en-IN", {
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 1,
-              })}
+              <CountUp
+                value={stats.allocatedCost}
+                format={(n) =>
+                  n.toLocaleString("en-IN", {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })
+                }
+              />
             </h3>
           </div>
         </div>
@@ -528,7 +539,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               Low Stock
             </p>
             <h3 className="text-lg md:text-3xl font-bold text-ink tracking-tight">
-              {stats.lowStock}{" "}
+              <CountUp value={stats.lowStock} />{" "}
               <span className="text-[10px] md:text-xs font-bold text-ink-muted ml-1">
                 Units
               </span>

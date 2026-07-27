@@ -11,6 +11,7 @@ import {
   DownloadSimple as Download,
 } from "@phosphor-icons/react";
 import { format } from "date-fns";
+import { CountUp } from "./motion";
 import { ClientPayment, VendorLedgerEntry, Vendor, CostEntry } from "../types";
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { collection, doc, setDoc, deleteDoc } from "firebase/firestore";
@@ -243,9 +244,12 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               </p>
               <h3 className="text-3xl font-black text-[#059669] mt-1">
                 ₹
-                {totalClientReceived.toLocaleString("en-IN", {
-                  maximumFractionDigits: 0,
-                })}
+                <CountUp
+                  value={totalClientReceived}
+                  format={(n) =>
+                    n.toLocaleString("en-IN", { maximumFractionDigits: 0 })
+                  }
+                />
               </h3>
             </div>
             <div className="bg-[#34D399]/20 p-3 rounded-xl text-[#059669]">
@@ -262,9 +266,12 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               </p>
               <h3 className="text-3xl font-black text-[#EF4444] mt-1">
                 ₹
-                {totalVendorPaid.toLocaleString("en-IN", {
-                  maximumFractionDigits: 0,
-                })}
+                <CountUp
+                  value={totalVendorPaid}
+                  format={(n) =>
+                    n.toLocaleString("en-IN", { maximumFractionDigits: 0 })
+                  }
+                />
               </h3>
             </div>
             <div className="bg-[#EF4444]/15 p-3 rounded-xl text-[#EF4444]">
@@ -283,9 +290,12 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                 className={`text-3xl font-black mt-1 ${netCashFlow >= 0 ? "text-[#D97D54]" : "text-[#C0653F]"}`}
               >
                 ₹
-                {netCashFlow.toLocaleString("en-IN", {
-                  maximumFractionDigits: 0,
-                })}
+                <CountUp
+                  value={netCashFlow}
+                  format={(n) =>
+                    n.toLocaleString("en-IN", { maximumFractionDigits: 0 })
+                  }
+                />
               </h3>
             </div>
             <div

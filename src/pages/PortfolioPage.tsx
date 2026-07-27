@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
+import { CountUp, useCardTilt } from "../components/motion";
 import {
   Plus,
   ArrowsClockwise,
@@ -19,40 +20,6 @@ import { CreateProjectModal } from "../features/projects/components/CreateProjec
 import { EditProjectModal } from "../features/projects/components/EditProjectModal";
 import { SyncStatus } from "../components/SyncStatus";
 import { TelegramBotStatus } from "../components/TelegramBotStatus";
-
-const prefersReducedMotion = () =>
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-// Animated count that eases up from 0; falls back to the final value
-// under reduced-motion or Site Mode (low-distraction).
-const CountUp: React.FC<{ value: number; className?: string }> = ({
-  value,
-  className,
-}) => {
-  const uiMode = useUIStore((state) => state.uiMode);
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    if (uiMode === "site" || prefersReducedMotion()) {
-      setDisplay(value);
-      return;
-    }
-    let raf = 0;
-    const start = performance.now();
-    const duration = 700;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setDisplay(Math.round(value * eased));
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [value, uiMode]);
-
-  return <span className={className}>{display}</span>;
-};
 
 const statusPillClasses = (status?: string) => {
   switch (status) {
@@ -83,7 +50,6 @@ export const PortfolioPage: React.FC = () => {
   );
   const setViewingSettings = useUIStore((state) => state.setViewingSettings);
   const companyName = useUIStore((state) => state.companyName);
-  const uiMode = useUIStore((state) => state.uiMode);
 
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
@@ -104,22 +70,8 @@ export const PortfolioPage: React.FC = () => {
     (p) => p.status === "On Hold",
   ).length;
 
-  // Pointer-follow tilt for project cards; disabled under Site Mode /
-  // reduced-motion (Site Mode also strips transforms via CSS !important).
-  const tiltEnabled = uiMode !== "site" && !prefersReducedMotion();
-  const handleCardMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!tiltEnabled) return;
-    const el = e.currentTarget;
-    const r = el.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width - 0.5;
-    const py = (e.clientY - r.top) / r.height - 0.5;
-    el.style.transform = `translateY(-4px) perspective(900px) rotateX(${(
-      -py * 5
-    ).toFixed(2)}deg) rotateY(${(px * 7).toFixed(2)}deg)`;
-  };
-  const handleCardLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.currentTarget.style.transform = "";
-  };
+  // Pointer-follow tilt for project cards (shared; auto-off in Site Mode).
+  const cardTilt = useCardTilt();
 
   const handleDeleteProjectClick = (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation();
@@ -311,8 +263,7 @@ export const PortfolioPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               onClick={() => setActiveProject(project)}
-              onMouseMove={handleCardMove}
-              onMouseLeave={handleCardLeave}
+              {...cardTilt}
               className="group soft-card-interactive p-6 sm:p-8 md:p-12 rounded-[24px] sm:squircle-24 relative overflow-hidden [transform-style:preserve-3d]"
             >
               <div className="flex justify-between items-start mb-6 md:mb-8 relative z-10">

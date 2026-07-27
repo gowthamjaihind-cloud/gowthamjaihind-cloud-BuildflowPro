@@ -9,6 +9,7 @@ import {
   CheckCircle as CheckCircle2,
 } from "@phosphor-icons/react";
 import { WBSView } from "./WBSView";
+import { CountUp, PageHero } from "./motion";
 import { auth } from "../firebase";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTasksQuery } from "../hooks/queries";
@@ -95,14 +96,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-6 md:space-y-10">
-      <header className="mb-4 md:mb-8">
-        <h2 className="text-2xl md:text-[29px] font-bold tracking-tight text-ink mb-1 md:mb-2 leading-tight">
-          Project Intelligence
-        </h2>
-        <p className="text-xs md:text-[14px] text-ink-muted font-medium leading-relaxed max-w-2xl">
-          Real-time synchronization of project tasks and critical path analysis.
-        </p>
-      </header>
+      <PageHero
+        eyebrow="Project Dashboard"
+        title="Project Intelligence"
+        subtitle="Real-time synchronization of project tasks and critical path analysis."
+        icon={
+          <Construction
+            weight="duotone"
+            className="w-4 h-4 sm:w-5 sm:h-5 text-white"
+          />
+        }
+        glyph={
+          <Construction
+            weight="duotone"
+            className="w-40 h-40 sm:w-56 sm:h-56"
+          />
+        }
+        className="mb-6 md:mb-10"
+      />
 
       {/* Top Row: Compact Info Panels */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
@@ -130,9 +141,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </p>
             <div className="flex flex-wrap gap-2 xl:gap-4 mt-1">
               <div className="text-[10px] md:text-xs font-bold whitespace-nowrap">
-                <span className="text-primary mr-1">
-                  {legacyTasks.filter((t) => !t.isSystemGenerated).length}
-                </span>
+                <CountUp
+                  value={legacyTasks.filter((t) => !t.isSystemGenerated).length}
+                  className="text-primary mr-1"
+                />
                 Tasks
               </div>
               <div className="text-[10px] md:text-xs font-bold whitespace-nowrap">
@@ -149,7 +161,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Completion
             </h3>
             <span className="text-lg md:text-[20px] font-black text-primary tracking-tighter">
-              {completionPercentage}%
+              <CountUp value={completionPercentage} />%
             </span>
           </div>
           <div className="h-2 md:h-2.5 bg-surface/30 rounded-full overflow-hidden shadow-inner">
@@ -167,7 +179,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex justify-between items-center mb-2 md:mb-3 relative z-10">
             <h4 className="text-xs md:text-[15px] font-bold">Tasks at Risk</h4>
             <span className="text-[15px] md:text-[17px] font-mono font-bold">
-              {tasksAtRisk.count > 0 ? tasksAtRisk.count : "0"}
+              <CountUp value={tasksAtRisk.count} />
             </span>
           </div>
           <div className="relative z-10">

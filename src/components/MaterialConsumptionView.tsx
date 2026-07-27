@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { useProjectDataQuery, useTasksQuery } from "../hooks/queries";
 import { useProjectDailyLogsQuery } from "../hooks/useDailyLogs";
+import { CountUp } from "./motion";
 import {
   DownloadSimple as Download,
   Package,
@@ -638,7 +639,12 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Total Consumed</p>
                     <p className="text-2xl font-black text-ink font-mono">
-                      {advancedInsights.total.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
+                      <CountUp
+                        value={advancedInsights.total}
+                        format={(n) =>
+                          n.toLocaleString("en-IN", { maximumFractionDigits: 2 })
+                        }
+                      />{" "}
                       <span className="text-xs font-normal text-ink-muted">{advancedInsights.unit}</span>
                     </p>
                   </div>
@@ -649,7 +655,9 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                 <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between" id="card-total-logs">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Logging Events</p>
-                    <p className="text-2xl font-black text-ink font-mono">{advancedInsights.count}</p>
+                    <p className="text-2xl font-black text-ink font-mono">
+                      <CountUp value={advancedInsights.count} />
+                    </p>
                   </div>
                   <div className="w-10 h-10 rounded-xl bg-[#6E8CA0]/10 text-[#56778E] flex items-center justify-center border border-[#6E8CA0]/20">
                     <FileText className="w-5 h-5" />
@@ -659,7 +667,12 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Avg. Consumption per Log</p>
                     <p className="text-2xl font-black text-ink font-mono">
-                      {advancedInsights.avg.toLocaleString("en-IN", { maximumFractionDigits: 1 })}{" "}
+                      <CountUp
+                        value={advancedInsights.avg}
+                        format={(n) =>
+                          n.toLocaleString("en-IN", { maximumFractionDigits: 1 })
+                        }
+                      />{" "}
                       <span className="text-xs font-normal text-ink-muted">{advancedInsights.unit}</span>
                     </p>
                   </div>
