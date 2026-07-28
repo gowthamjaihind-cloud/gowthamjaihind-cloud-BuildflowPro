@@ -54,7 +54,7 @@ import {
   Image as ImageIcon,
   IconContext,
 } from "@phosphor-icons/react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, MotionConfig } from "motion/react";
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/react-query';
@@ -138,11 +138,13 @@ class ErrorBoundary extends React.Component<
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <IconContext.Provider value={{ weight: "duotone" }}>
-        <ErrorBoundary>
-          <AppContent />
-        </ErrorBoundary>
-      </IconContext.Provider>
+      <MotionConfig reducedMotion="user">
+        <IconContext.Provider value={{ weight: "duotone" }}>
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
+        </IconContext.Provider>
+      </MotionConfig>
     </QueryClientProvider>
   );
 }

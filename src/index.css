@@ -3,17 +3,19 @@
 
 :root {
   --primary: #D97D54; /* Rust */
+  --rust-strong: #A85433; /* Rust darkened for small text on light (≈5.3:1) */
   --page: #F0F3F4; /* Ice */
   --panel: #FFFFFF; /* Snow */
   --surface-dark: #324755; /* Drab */
   --surface: #FFFFFF; /* Snow */
   --ink: #1B1C20; /* Onyx */
-  --ink-muted: #6E8CA0; /* Slate */
+  --ink-muted: #56778E; /* Slate, darkened for AA body contrast (≈4.7:1 on white) */
   --divider: #C8D1D3; /* Fossil */
 }
 
 .dark {
   --primary: #E29677; /* Rust, lifted for dark bg */
+  --rust-strong: #E29677; /* lifted rust reads on dark surfaces */
   --page: #1B1C20; /* Onyx */
   --panel: #242F39; /* Drab, deepened */
   --surface-dark: #324755; /* Drab */
@@ -57,6 +59,7 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   --color-primary: var(--primary);
+  --color-rust-strong: var(--rust-strong);
   --color-page: var(--page);
   --color-panel: var(--panel);
   --color-surface-dark: var(--surface-dark);
@@ -167,6 +170,26 @@
   .squircle-12 {
     border-radius: 12px;
   }
+}
+
+/* Global keyboard focus safety net. Unlayered so it wins over Tailwind's
+   layered `outline-none`; :where() keeps specificity at 0 so an element's own
+   focus-visible ring (if any) still applies alongside it. Pointer clicks use
+   :focus-visible semantics, so this only shows for keyboard/AT users. */
+:where(
+  a[href],
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="link"],
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* --- Ambient brand mesh + motion (palette-driven) --- */

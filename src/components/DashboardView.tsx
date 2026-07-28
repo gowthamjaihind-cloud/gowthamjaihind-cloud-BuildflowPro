@@ -143,7 +143,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="text-[10px] md:text-xs font-bold whitespace-nowrap">
                 <CountUp
                   value={legacyTasks.filter((t) => !t.isSystemGenerated).length}
-                  className="text-primary mr-1"
+                  className="text-rust-strong mr-1"
                 />
                 Tasks
               </div>
