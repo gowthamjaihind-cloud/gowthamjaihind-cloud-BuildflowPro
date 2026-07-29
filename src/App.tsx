@@ -27,15 +27,6 @@ import {
   TaskDependency,
 } from "./types";
 import { Layout } from "./components/Layout";
-import { GanttChart } from "./components/GanttChart";
-import { WBSView } from "./components/WBSView";
-import { InventoryView } from "./components/InventoryView";
-import { ProcurementView } from "./components/ProcurementView";
-import MaterialConsumptionView from "./components/MaterialConsumptionView";
-import { LaborTrackingView } from "./components/LaborTrackingView";
-import { CostManagement } from "./components/CostManagement";
-import { DocumentVault } from "./components/DocumentVault";
-import { DashboardView } from "./components/DashboardView";
 import { SettingsView } from "./components/SettingsView";
 import { EnterpriseAuthView } from "./components/EnterpriseAuthView";
 import {

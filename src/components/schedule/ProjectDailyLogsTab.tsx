@@ -119,7 +119,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                   </span>
                   <button
                     onClick={() => setLogModalOpen(true)}
-                    className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline bg-[#F7E4DB] px-3 py-2 rounded-md"
+                    className="text-[10px] font-bold text-rust-strong uppercase tracking-widest hover:underline bg-[#F7E4DB] px-3 py-2 rounded-md"
                   >
                     Log Another
                   </button>

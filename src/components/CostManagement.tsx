@@ -747,7 +747,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           </td>
           <td className="p-3 text-right hidden sm:table-cell bg-panel/30">
             <div className="flex flex-col items-end">
-              <div className="text-[11px] font-black text-[#D97D54]">
+              <div className="text-[11px] font-black text-rust-strong">
                 ₹
                 {totals.actualMaterial.toLocaleString("en-IN", {
                   maximumFractionDigits: 0,
@@ -793,7 +793,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           </td>
           <td className="p-3 text-right hidden md:table-cell bg-panel/30">
             <div className="flex flex-col items-end">
-              <div className="text-[11px] font-black text-[#D97D54]">
+              <div className="text-[11px] font-black text-rust-strong">
                 ₹
                 {totals.actualLabor.toLocaleString("en-IN", {
                   maximumFractionDigits: 0,
@@ -806,7 +806,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       showLaborBreakdown === task.id ? null : task.id,
                     )
                   }
-                  className={`flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest mt-1 p-1 rounded hover:bg-[#F7E4DB] apple-transition ${showLaborBreakdown === task.id ? "text-[#D97D54] bg-[#F7E4DB]" : "text-ink-muted"}`}
+                  className={`flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest mt-1 p-1 rounded hover:bg-[#F7E4DB] apple-transition ${showLaborBreakdown === task.id ? "text-rust-strong bg-[#F7E4DB]" : "text-ink-muted"}`}
                 >
                   <Info className="w-2.5 h-2.5" /> Details
                 </button>
@@ -838,7 +838,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             )}
           </td>
           <td className="p-3 text-right hidden xl:table-cell bg-panel/30">
-            <div className="text-[11px] font-black text-[#D97D54]">
+            <div className="text-[11px] font-black text-rust-strong">
               ₹
               {totals.actualOther.toLocaleString("en-IN", {
                 maximumFractionDigits: 0,
@@ -891,7 +891,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             ) : task.isSystemGenerated ? null : (
               <button
                 onClick={() => startEditing(task)}
-                className="p-1 text-ink-muted hover:text-[#D97D54] hover:bg-[#F7E4DB] rounded transition-all"
+                className="p-1 text-ink-muted hover:text-rust-strong hover:bg-[#F7E4DB] rounded transition-all"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
@@ -941,7 +941,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             <td className="p-2 text-right">-</td>
                             <td className="p-2 text-right">-</td>
                             <td className="p-2 text-right">-</td>
-                            <td className="p-2 text-right font-black text-[#D97D54]">
+                            <td className="p-2 text-right font-black text-rust-strong">
                               ₹{entry.amount?.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                             </td>
                           </tr>
@@ -961,7 +961,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                                 <td className="p-2 text-right">{item.headcount}</td>
                                 <td className="p-2 text-right">{item.shifts}</td>
                                 <td className="p-2 text-right">₹{item.rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
-                                <td className="p-2 text-right font-black text-[#D97D54]">
+                                <td className="p-2 text-right font-black text-rust-strong">
                                   ₹{item.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                                 </td>
                               </tr>
@@ -989,7 +989,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                                 <td className="p-2 text-right">{l.headcount}</td>
                                 <td className="p-2 text-right">-</td>
                                 <td className="p-2 text-right">₹{rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
-                                <td className="p-2 text-right font-black text-[#D97D54]">
+                                <td className="p-2 text-right font-black text-rust-strong">
                                   ₹{subtotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                                 </td>
                               </tr>
@@ -1528,7 +1528,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-[#D97D54]" />
-              <span className="text-[10px] font-bold text-[#D97D54] uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-rust-strong uppercase tracking-wider">
                 Actual (Spent)
               </span>
             </div>
@@ -1620,7 +1620,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                               <Layers className="w-4 h-4" />
                             </div>
                             <div>
-                              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#D97D54] block leading-none mb-1">
+                              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-rust-strong block leading-none mb-1">
                                 Project Phase
                               </span>
                               <span className="text-sm font-black text-ink leading-none">
@@ -1783,7 +1783,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </p>
             </div>
             <div className="text-right">
-              <div className="text-sm font-bold text-[#D97D54] uppercase tracking-widest">
+              <div className="text-sm font-bold text-rust-strong uppercase tracking-widest">
                 Sitetru
               </div>
               <div className="text-[10px] opacity-50">
@@ -1925,7 +1925,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             <Layers className="w-4 h-4" />
                           </div>
                           <div>
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#D97D54] block leading-none mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-rust-strong block leading-none mb-1">
                               Project Phase
                             </span>
                             <span className="text-sm font-black text-ink leading-none">
@@ -2032,7 +2032,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           </div>
 
           <div className="bg-[#F7E4DB] p-5 rounded-2xl border border-[#F7E4DB] flex items-start gap-4">
-            <AlertCircle className="w-6 h-6 text-[#D97D54] shrink-0" />
+            <AlertCircle className="w-6 h-6 text-rust-strong shrink-0" />
             <div>
               <h4 className="font-bold text-[#B85F3B] mb-1">
                 Executive Summary

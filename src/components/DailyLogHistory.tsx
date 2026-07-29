@@ -147,7 +147,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
 
           {log.note && (
             <div className="mt-4 bg-amber-50/50 p-3 rounded-xl border border-[#D97D54]/20 flex gap-2 items-start text-[#5E2F1B]">
-              <MessageSquare className="w-4 h-4 shrink-0 mt-0.5 text-[#D97D54] opacity-60" />
+              <MessageSquare className="w-4 h-4 shrink-0 mt-0.5 text-rust-strong opacity-60" />
               <p className="text-[11px] font-medium leading-relaxed italic">
                 {log.note}
               </p>

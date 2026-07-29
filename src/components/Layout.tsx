@@ -208,7 +208,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 >
                   {activeProject?.name || "Portfolio"}
                 </h1>
-                <div className="hidden sm:block text-[10px] font-black text-primary uppercase tracking-widest mt-0.5">
+                <div className="hidden sm:block text-[10px] font-black text-rust-strong uppercase tracking-widest mt-0.5">
                   {uiMode === "site" ? "Site Mode Live" : "Control Center"}
                 </div>
               </div>
