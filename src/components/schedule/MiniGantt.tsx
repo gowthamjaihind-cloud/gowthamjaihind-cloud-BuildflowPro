@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { ScheduleTask } from '../../hooks/useScheduleData';
 import { addDays, eachDayOfInterval, format, differenceInDays, startOfDay, isBefore, isAfter, isToday } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 
 interface Props {
   tasks: ScheduleTask[];
@@ -113,13 +113,13 @@ export const MiniGantt: React.FC<Props> = ({ tasks, onTaskClick }) => {
     <div className="flex flex-col w-full bg-[var(--bg)] overflow-hidden select-none h-full">
       <div className="flex items-center justify-between p-4 border-b border-[var(--edge)]">
         <button onClick={() => shiftWindow(-7)} className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--edge)] active:bg-[var(--glass)] text-[var(--ink)]">
-          <ChevronLeft className="w-5 h-5" />
+          <CaretLeft weight="bold" className="w-5 h-5" />
         </button>
         <span className="text-[13px] font-bold text-[var(--ink)]">
           {format(windowStart, 'MMM dd')} – {format(windowEnd, 'MMM dd')}
         </span>
         <button onClick={() => shiftWindow(7)} className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--edge)] active:bg-[var(--glass)] text-[var(--ink)]">
-          <ChevronRight className="w-5 h-5" />
+          <CaretRight weight="bold" className="w-5 h-5" />
         </button>
       </div>
 
