@@ -133,6 +133,15 @@
     @apply text-ink bg-page antialiased selection:bg-primary/20 selection:text-primary font-sans min-h-screen relative z-0;
     opacity: 1;
   }
+
+  /* Snappier taps: drop the legacy 300ms delay on interactive elements. */
+  button,
+  a,
+  [role="button"],
+  label,
+  summary {
+    touch-action: manipulation;
+  }
   
   body::before {
     content: '';
@@ -300,9 +309,10 @@
       0 16px 40px rgba(0, 0, 0, 0.4);
   }
 
-  /* Refined interaction */
+  /* Refined interaction — scoped to non-layout properties (transform/opacity/
+     color/shadow) and trimmed to a snappy 200ms hover feel (was 500ms). */
   .apple-transition {
-    @apply transition-all duration-500 ease-[cubic-bezier(0.2,0,0,1)];
+    @apply transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 ease-[cubic-bezier(0.2,0,0,1)];
   }
 
   /* --- Site Mode Global Overrides --- */

@@ -305,7 +305,7 @@ export const PortfolioPage: React.FC = () => {
                     {user?.role === "Admin" && (
                       <button
                         onClick={(e) => handleEditProjectClick(e, project)}
-                        className="p-1.5 md:p-2 text-ink-muted hover:text-primary apple-transition"
+                        className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-ink-muted hover:text-primary hover:bg-page apple-transition"
                         title="Edit Project"
                       >
                         <PencilSimple
@@ -316,7 +316,7 @@ export const PortfolioPage: React.FC = () => {
                     )}
                     <button
                       onClick={(e) => handleDeleteProjectClick(e, project.id)}
-                      className="p-1.5 md:p-2 text-ink-muted hover:text-[#EF4444] apple-transition"
+                      className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-ink-muted hover:text-[#EF4444] hover:bg-[#EF4444]/8 apple-transition"
                       title="Delete Project"
                     >
                       <Trash
