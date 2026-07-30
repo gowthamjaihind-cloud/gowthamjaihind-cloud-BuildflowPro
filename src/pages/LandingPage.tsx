@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
+import { BrandLogo } from "../components/BrandLogo";
 import {
-  Barricade as Construction,
   ArrowRight,
   CircleNotch as Loader2,
   WarningCircle as AlertCircle,
@@ -97,10 +97,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       <header className="sticky top-0 z-50 bg-page/80 backdrop-blur-md border-b border-divider/60">
         <nav className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="bg-surface-dark w-9 h-9 rounded-xl flex items-center justify-center">
-              <Construction weight="duotone" className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-display font-bold text-xl tracking-tight">Sitetru</span>
+            <BrandLogo className="w-9 h-9 rounded-xl" />
+            <span className="font-brand font-bold text-xl tracking-tight">Sitetru</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-ink-muted">
@@ -329,10 +327,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       <footer className="border-t border-divider/60">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="bg-surface-dark w-8 h-8 rounded-lg flex items-center justify-center">
-              <Construction weight="duotone" className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-display font-bold tracking-tight">Sitetru</span>
+            <BrandLogo className="w-8 h-8 rounded-lg" />
+            <span className="font-brand font-bold tracking-tight">Sitetru</span>
           </div>
           <p className="text-xs text-ink-muted">© {new Date().getFullYear()} Sitetru · Truth, reported from site.</p>
         </div>
