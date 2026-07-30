@@ -7,7 +7,6 @@ import {
   FileText,
   List as Menu,
   X,
-  Barricade as Construction,
   Users,
   Truck,
   ClipboardText as ClipboardCheck,
@@ -19,6 +18,7 @@ import {
   Calculator,
   CheckCircle as CheckCircle2,
 } from "@phosphor-icons/react";
+import { BrandLogo } from "./BrandLogo";
 import { SyncStatus } from "./SyncStatus";
 import { TelegramBotStatus } from "./TelegramBotStatus";
 import { useAuthStore, useUIStore, useProjectStore } from "../store";
@@ -71,14 +71,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div
         className={`flex items-center shrink-0 transition-all duration-500 overflow-hidden ${uiMode === "site" ? "hidden sm:flex" : ""} ${showLabels ? "p-6 md:p-10 gap-4" : "justify-center p-6 md:py-10 md:px-0"}`}
       >
-        <div className="bg-primary p-2 md:p-3 rounded-[12px] md:rounded-[16px] shadow-2xl shadow-[#D97D54]/30 flex items-center justify-center shrink-0">
-          <Construction
-            className="w-5 h-5 md:w-6 md:h-6 text-white"
-            strokeWidth={2}
-          />
-        </div>
+        <BrandLogo className="w-10 h-10 md:w-12 md:h-12 rounded-[14px] md:rounded-[16px] shadow-lg shadow-[#324755]/25 shrink-0" />
         {showLabels && (
-          <span className="font-display font-bold text-2xl md:text-3xl tracking-tighter text-ink truncate shrink-0">
+          <span className="font-brand font-bold text-2xl md:text-3xl tracking-tight text-ink truncate shrink-0">
             Sitetru
           </span>
         )}

@@ -1783,7 +1783,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </p>
             </div>
             <div className="text-right">
-              <div className="text-sm font-bold text-rust-strong uppercase tracking-widest">
+              <div className="font-brand text-sm font-bold text-rust-strong uppercase tracking-widest">
                 Sitetru
               </div>
               <div className="text-[10px] opacity-50">

@@ -1,12 +1,12 @@
 import React from "react";
 import { motion } from "motion/react";
 import {
-  Barricade as Construction,
   ArrowRight,
   CircleNotch as Loader2,
   ShieldCheck,
   WarningCircle as AlertCircle,
 } from "@phosphor-icons/react";
+import { BrandLogo } from "../components/BrandLogo";
 
 interface LoginPageProps {
   isLoggingIn: boolean;
@@ -26,10 +26,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full soft-card rounded-[48px] p-20 shadow-2xl relative z-10 text-center"
       >
-        <div className="bg-surface-dark w-24 h-24 rounded-[32px] flex items-center justify-center mx-auto mb-10 shadow-2xl shadow-primary/20 rotate-3">
-          <Construction className="w-12 h-12 text-white" />
-        </div>
-        <h1 className="text-[48px] font-bold text-ink mb-6 tracking-tight leading-none">
+        <BrandLogo className="w-24 h-24 rounded-[32px] mx-auto mb-10 shadow-2xl shadow-primary/20 rotate-3" />
+        <h1 className="font-brand text-[48px] font-bold text-ink mb-6 tracking-tight leading-none">
           Sitetru
         </h1>
         <p className="text-[17px] text-ink-muted mb-12 leading-relaxed font-medium">
