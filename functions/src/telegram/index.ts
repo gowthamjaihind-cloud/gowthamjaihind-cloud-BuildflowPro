@@ -1,4 +1,5 @@
 import { onRequest } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { defineSecret } from "firebase-functions/params";
 import { TelegramApi } from "./api";
@@ -30,14 +31,37 @@ export const telegramStatus = onRequest({
         res.json({ online: false });
     }
 });
+// Keeps the webhook instance warm without a paid minInstances: every 5 minutes
+// it pings the webhook with ?warmup=1 (a no-op that spins the instance up and
+// returns immediately), so a real message never waits on a cold start.
+const WEBHOOK_URL =
+    "https://asia-southeast1-jewel-ledger.cloudfunctions.net/telegramWebhook?warmup=1";
+export const keepTelegramWarm = onSchedule({
+    schedule: "every 5 minutes",
+    region: "asia-southeast1",
+    timeoutSeconds: 30,
+    retryCount: 0,
+}, async () => {
+    try {
+        const res = await fetch(WEBHOOK_URL, { method: "GET" });
+        console.log("keepTelegramWarm ping:", res.status);
+    } catch (err) {
+        console.warn("keepTelegramWarm ping failed:", err);
+    }
+});
+
 export const telegramWebhook = onRequest({
     region: "asia-southeast1",
     secrets: [BOT_TOKEN, WEBHOOK_SECRET],
     cors: false,
-    // Keep one instance warm so the bot replies immediately instead of paying
-    // a cold start (Node boot + init) on the first message after an idle spell.
-    minInstances: 1,
 }, async (req, res) => {
+    // ---- WARM-UP: a scheduled ping (see keepTelegramWarm) hits this with
+    // ?warmup=1 every few minutes to keep an instance hot without a paid
+    // minInstances. It does nothing sensitive, so it needs no secret. ----
+    if (req.query.warmup) {
+        res.status(200).send("warm");
+        return;
+    }
     // ---- AUTH: verify this really came from Telegram, before anything else ----
     const expected = WEBHOOK_SECRET.value();
     const received = req.get("X-Telegram-Bot-Api-Secret-Token");
