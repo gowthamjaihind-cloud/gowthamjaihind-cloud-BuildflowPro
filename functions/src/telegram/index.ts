@@ -34,6 +34,9 @@ export const telegramWebhook = onRequest({
     region: "asia-southeast1",
     secrets: [BOT_TOKEN, WEBHOOK_SECRET],
     cors: false,
+    // Keep one instance warm so the bot replies immediately instead of paying
+    // a cold start (Node boot + init) on the first message after an idle spell.
+    minInstances: 1,
 }, async (req, res) => {
     // ---- AUTH: verify this really came from Telegram, before anything else ----
     const expected = WEBHOOK_SECRET.value();

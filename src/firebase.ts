@@ -7,8 +7,8 @@ import {
 } from "firebase/auth";
 import {
   initializeFirestore,
-  memoryLocalCache,
   persistentLocalCache,
+  persistentMultipleTabManager,
   collection,
   doc,
   getDoc,
@@ -29,13 +29,20 @@ import firebaseConfig from "../firebase-applet-config.json";
 
 const app = initializeApp(firebaseConfig);
 
-// Use a more resilient configuration for restricted environments (like iframes)
 export const db = initializeFirestore(
   app,
   {
     ignoreUndefinedProperties: true,
-    localCache: memoryLocalCache(),
-    experimentalForceLongPolling: true,
+    // Persist the cache to IndexedDB so a reload paints instantly from local
+    // data and syncs in the background, instead of blocking on the network.
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+    }),
+    // Auto-detect the fastest transport: use WebSocket streaming when the
+    // network allows (low latency) and only fall back to long-polling when a
+    // proxy actually requires it. Forcing long-polling made every connection
+    // — and the first write/read after a reload — noticeably slower.
+    experimentalAutoDetectLongPolling: true,
   },
   firebaseConfig.firestoreDatabaseId,
 );
