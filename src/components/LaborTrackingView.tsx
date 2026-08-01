@@ -236,13 +236,14 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     gross: number,
     net: number,
     logIds: string[],
+    isChangeOrder: boolean = false,
   ) => {
     if (!isAdminOrOwner) return;
     if (isProcessing) return;
     setIsProcessing(true);
-    
+
     try {
-      const billNumber = `RA-${vendor.name.substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+      const billNumber = `RA-${isChangeOrder ? "CO-" : ""}${vendor.name.substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}`;
       
       await runTransaction(db, async (transaction) => {
         const vendorRef = doc(db, `${basePath}/suppliers/${vendor.id}`);
@@ -264,10 +265,11 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
           netAmount: net,
           status: "Certified",
           logIds: logIds,
+          isChangeOrder,
         };
-        
+
         transaction.set(billRef, billData);
-        
+
         transaction.set(ledgerRef, {
           projectId,
           vendorId: vendor.id,
@@ -276,7 +278,8 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
           amount: net,
           referenceType: "LABOR_DEPLOYMENT",
           referenceId: billRef.id,
-          description: `RA Bill - ${billNumber}`,
+          description: `RA Bill - ${billNumber}${isChangeOrder ? " (Change Order)" : ""}`,
+          isChangeOrder,
         });
         
         transaction.update(vendorRef, {
@@ -541,26 +544,78 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
   };
 
   const renderBilling = () => {
-    // RA Bill Logic - Calculate summary per vendor
-    const billedLogIds = new Set(raBills.flatMap((b) => b.logIds || []));
+    // RA Bill Logic — base-contract and change-order labor are certified on
+    // separate bills so a vendor can be paid for change-order work separately.
+    // A single labor log can hold both kinds of line items, so we split by the
+    // line item's task (task.isChangeOrder) and track "billed" per log + kind.
+    // Legacy bills (isChangeOrder === undefined, created before the split)
+    // covered a vendor's whole labor total, so they count as billed for BOTH
+    // categories — otherwise their change-order portion would look unbilled and
+    // could be double-billed. New bills set the flag explicitly to false/true.
+    const baseBilledLogIds = new Set(
+      raBills
+        .filter((b) => b.isChangeOrder !== true)
+        .flatMap((b) => b.logIds || []),
+    );
+    const coBilledLogIds = new Set(
+      raBills
+        .filter((b) => b.isChangeOrder !== false)
+        .flatMap((b) => b.logIds || []),
+    );
+    const taskIsChangeOrder = (taskId: string) =>
+      tasks.find((t) => t.id === taskId)?.isChangeOrder === true;
 
-    console.log("LaborLogs", laborLogs); console.log("Vendors", vendors); const raBillsSummary = vendors
-      .map((vendor) => {
-        const unbilledLogs = laborLogs.filter(
-          (l) => l.vendorId === vendor.id && !billedLogIds.has(l.id)
+    const raBillsSummary = vendors.flatMap((vendor) => {
+      const vendorLogs = laborLogs.filter((l) => l.vendorId === vendor.id);
+      const rows: {
+        vendor: Vendor;
+        isChangeOrder: boolean;
+        label: string;
+        grossAmount: number;
+        totalPaid: number;
+        netPayable: number;
+        logCount: number;
+        logIds: string[];
+      }[] = [];
+
+      const buildRow = (
+        changeOrder: boolean,
+        billedSet: Set<string>,
+        label: string,
+      ) => {
+        const logs = vendorLogs.filter(
+          (l) =>
+            !billedSet.has(l.id) &&
+            (l.items || []).some(
+              (i) => taskIsChangeOrder(i.taskId) === changeOrder,
+            ),
         );
-        const grossAmount = unbilledLogs.reduce((sum, l) => sum + l.totalCost, 0);
-        const netPayable = grossAmount;
-        return {
-          vendor,
-          grossAmount,
-          totalPaid: 0,
-          netPayable,
-          logCount: unbilledLogs.length,
-          logIds: unbilledLogs.map((l) => l.id),
-        };
-      })
-      .filter((bill) => bill.grossAmount > 0);
+        const gross = logs.reduce(
+          (sum, l) =>
+            sum +
+            (l.items || [])
+              .filter((i) => taskIsChangeOrder(i.taskId) === changeOrder)
+              .reduce((s, i) => s + i.cost, 0),
+          0,
+        );
+        if (gross > 0) {
+          rows.push({
+            vendor,
+            isChangeOrder: changeOrder,
+            label,
+            grossAmount: gross,
+            totalPaid: 0,
+            netPayable: gross,
+            logCount: logs.length,
+            logIds: logs.map((l) => l.id),
+          });
+        }
+      };
+
+      buildRow(false, baseBilledLogIds, "Base Contract");
+      buildRow(true, coBilledLogIds, "Change Orders");
+      return rows;
+    });
 
     return (
       <div className="space-y-12 md:space-y-20">
@@ -576,7 +631,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
           <div className="grid grid-cols-1 gap-6 md:gap-10">
             {raBillsSummary.map((bill) => (
               <div
-                key={bill.vendor.id}
+                key={`${bill.vendor.id}-${bill.isChangeOrder ? "co" : "base"}`}
                 className="bg-surface p-6 md:p-10 rounded-[32px] md:rounded-[48px] border border-divider/40 shadow-[0_10px_30px_rgba(0,0,0,0.02)] md:shadow-[0_20px_80px_rgba(0,0,0,0.03)] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8 md:gap-12 group hover:shadow-[0_40px_100px_rgba(0,0,0,0.06)] apple-transition relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-panel/50 rounded-full -mr-24 md:-mr-32 -mt-24 md:-mt-32 group-hover:scale-110 apple-transition" />
@@ -585,9 +640,20 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                     <Calculator className="w-6 h-6 md:w-10 md:h-10" />
                   </div>
                   <div>
-                    <h3 className="text-xl md:text-3xl font-black text-ink tracking-tighter leading-none mb-2 truncate max-w-[200px] md:max-w-none">
-                      {bill.vendor.name}
-                    </h3>
+                    <div className="flex items-center gap-2.5 mb-2 flex-wrap">
+                      <h3 className="text-xl md:text-3xl font-black text-ink tracking-tighter leading-none truncate max-w-[160px] md:max-w-none">
+                        {bill.vendor.name}
+                      </h3>
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.12em] ${
+                          bill.isChangeOrder
+                            ? "bg-[#D97D54]/15 text-rust-strong"
+                            : "bg-[#87BCBF]/20 text-[#3E8388]"
+                        }`}
+                      >
+                        {bill.label}
+                      </span>
+                    </div>
                     <p className="text-ink-muted font-bold uppercase tracking-[0.2em] text-[9px] md:text-[10px]">
                       {bill.logCount} Postings Certified
                     </p>
@@ -638,6 +704,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         bill.grossAmount,
                         bill.netPayable,
                         bill.logIds,
+                        bill.isChangeOrder,
                       )
                     }
                     disabled={isProcessing}
