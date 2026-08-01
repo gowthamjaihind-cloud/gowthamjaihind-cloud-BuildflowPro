@@ -130,6 +130,27 @@ export function useProjectQuery(projectId: string) {
 
 export function useTasksQuery(projectId: string) {
   const user = useAuthStore(state => state.user);
+  const queryClient = useQueryClient();
+
+  // Live subscription: keep the tasks cache in sync with Firestore in real
+  // time. This means adds/edits/deletes/drag-drops (from this client or any
+  // other) reflect immediately — the initial getDocs below just paints fast
+  // from cache on mount, then the snapshot takes over and never goes stale.
+  useEffect(() => {
+    if (!user || !projectId) return;
+    const tenantPath = getProjectSubCollectionPath(projectId, "tasks");
+    const unsubscribe = onSnapshot(
+      query(collection(db, tenantPath)),
+      (snapshot) => {
+        const tasks = snapshot.docs.map(
+          (d) => ({ id: d.id, ...d.data() }) as Task,
+        );
+        queryClient.setQueryData(queryKeys.tasks(projectId), tasks);
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, tenantPath),
+    );
+    return () => unsubscribe();
+  }, [user, projectId, queryClient]);
 
   return useQuery({
     queryKey: queryKeys.tasks(projectId),
