@@ -1283,10 +1283,20 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           {vendors.find((v) => v.id === entry.vendorId)?.name ||
                             "Unknown Partner"}
                         </div>
-                        <div className="text-[8px] md:text-[10px] font-black text-rust-strong/50 uppercase tracking-widest">
+                        <div
+                          className={`text-[8px] md:text-[10px] font-black uppercase tracking-widest ${
+                            entry.isChangeOrder
+                              ? "text-rust-strong"
+                              : "text-rust-strong/50"
+                          }`}
+                        >
                           {entry.referenceType === "GRN"
                             ? "MATERIAL INVOICE"
-                            : entry.referenceType || "OFS"}
+                            : entry.referenceType === "LABOR_DEPLOYMENT"
+                              ? entry.isChangeOrder
+                                ? "CHANGE ORDER LABOR"
+                                : "LABOR"
+                              : entry.referenceType || "OFS"}
                         </div>
                       </td>
                       <td className="px-6 md:px-10 py-5 md:py-8">
@@ -1443,7 +1453,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         {vendors.find((v) => v.id === entry.vendorId)?.name || "Unknown Partner"}
                       </div>
                       <div className="text-[10px] font-black text-rust-strong uppercase tracking-widest mt-1">
-                        {entry.referenceType === "GRN" ? "MATERIAL INVOICE" : entry.referenceType || "OFS"}
+                        {entry.referenceType === "GRN"
+                          ? "MATERIAL INVOICE"
+                          : entry.referenceType === "LABOR_DEPLOYMENT"
+                            ? entry.isChangeOrder
+                              ? "CHANGE ORDER LABOR"
+                              : "LABOR"
+                            : entry.referenceType || "OFS"}
                       </div>
                     </div>
                     <div className="font-mono text-[11px] font-bold text-ink-muted">

@@ -298,6 +298,9 @@ export interface VendorLedgerEntry {
   description: string;
   overriddenBy?: string;
   overrideReason?: string;
+  // Set on LABOR_DEPLOYMENT entries that come from a change-order RA bill, so
+  // the vendor ledger can show and total change-order labor separately.
+  isChangeOrder?: boolean;
 }
 
 export interface SupplierLedgerEntry extends VendorLedgerEntry {}
@@ -336,6 +339,9 @@ export interface RABill {
   netAmount: number;
   status: "Draft" | "Certified" | "Paid";
   logIds: string[];
+  // Change-order labor is certified on its own RA bill so the vendor can be
+  // paid for it separately from base-contract labor.
+  isChangeOrder?: boolean;
 }
 
 export interface CostEntry {
