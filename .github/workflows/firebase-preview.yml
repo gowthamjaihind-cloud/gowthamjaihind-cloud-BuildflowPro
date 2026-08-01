@@ -1,0 +1,53 @@
+name: Firebase Hosting Preview
+
+# Manually deploy any branch to a temporary Firebase Hosting preview channel
+# (a throwaway URL that expires) so changes can be tested before they go live.
+# Run it from the Actions tab → "Firebase Hosting Preview" → Run workflow, or
+# via the API, choosing the branch to preview.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or ref to preview
+        required: true
+        default: co-labor-tracking
+      channelId:
+        description: Preview channel name (temporary)
+        required: true
+        default: preview
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npx vite build
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Deploy to a preview channel
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: jewel-ledger
+          channelId: ${{ inputs.channelId }}
+          expires: 7d
