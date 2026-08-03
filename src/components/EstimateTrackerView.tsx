@@ -100,6 +100,9 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
     new Set(),
   );
+  const [estimateToDelete, setEstimateToDelete] =
+    useState<ClientEstimate | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleCreate = async () => {
     try {
@@ -159,6 +162,25 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
         return <FileCheck className="w-4 h-4" />;
       case "Rejected":
         return <FileX className="w-4 h-4" />;
+    }
+  };
+
+  const handleDeleteEstimate = async () => {
+    if (!estimateToDelete || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await deleteDoc(
+        doc(db, `${basePath}/estimates`, estimateToDelete.id),
+      );
+      if (selectedEstimateId === estimateToDelete.id) {
+        setSelectedEstimateId(null);
+      }
+      setEstimateToDelete(null);
+    } catch (err) {
+      console.error("Failed to delete estimate", err);
+      alert("Failed to delete estimate");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -432,6 +454,45 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
 
     return (
       <div className="space-y-6">
+        {estimateToDelete && (
+          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+            <div className="bg-panel rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-divider">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-11 h-11 rounded-2xl bg-[#EF4444]/10 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-5 h-5 text-[#B91C1C]" />
+                </div>
+                <h3 className="text-lg font-bold text-ink">Delete estimate?</h3>
+              </div>
+              <p className="text-sm text-ink-muted leading-relaxed mb-6">
+                Estimate{" "}
+                <span className="font-bold text-ink">
+                  {estimateToDelete.estimateNumber}
+                </span>
+                {estimateToDelete.clientName
+                  ? ` for ${estimateToDelete.clientName}`
+                  : ""}{" "}
+                and all its line items will be permanently deleted. This cannot
+                be undone.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setEstimateToDelete(null)}
+                  disabled={isDeleting}
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold text-ink bg-surface border border-divider hover:bg-divider transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteEstimate}
+                  disabled={isDeleting}
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#DC2626] hover:bg-[#B91C1C] transition-colors disabled:opacity-50"
+                >
+                  {isDeleting ? "Deleting…" : "Delete estimate"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <button
@@ -476,6 +537,16 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
               <Download className="w-4 h-4" />
               PDF
             </button>
+            {isAdminOrOwner && (
+              <button
+                onClick={() => setEstimateToDelete(selectedEstimate)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-[#EF4444]/10 hover:bg-[#EF4444]/20 text-[#B91C1C] border border-[#EF4444]/30 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                title="Delete this estimate"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            )}
           </div>
         </div>
 
