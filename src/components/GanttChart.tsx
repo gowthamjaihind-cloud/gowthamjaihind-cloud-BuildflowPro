@@ -23,7 +23,18 @@ import {
   Flag,
   Tag,
   Funnel as Filter,
+  Rows,
 } from "@phosphor-icons/react";
+
+type GroupBy = "hierarchy" | "phase" | "location" | "status" | "tag";
+
+const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
+  { value: "hierarchy", label: "Hierarchy" },
+  { value: "phase", label: "Phase" },
+  { value: "location", label: "Location" },
+  { value: "status", label: "Status" },
+  { value: "tag", label: "Tag" },
+];
 
 interface GanttChartProps {
   tasks: Task[];
@@ -47,6 +58,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>("day");
   const [showCriticalPath, setShowCriticalPath] = useState(false);
   const [filterTag, setFilterTag] = useState<string>("");
+  const [groupBy, setGroupBy] = useState<GroupBy>("hierarchy");
 
   // Dependency Linking State
   const [linkingFrom, setLinkingFrom] = useState<{
@@ -265,8 +277,70 @@ export const GanttChart: React.FC<GanttChartProps> = ({
   const nameColWidth =
     breakpoint === "mobile" ? 100 : breakpoint === "tablet" ? 200 : 250;
 
+  // Rows shown in the chart. In "hierarchy" mode each row is a task (the WBS
+  // parent→child order from filteredTasks). In any other mode the tasks are
+  // re-bucketed by the chosen key and each bucket gets a group-header row.
+  type Row =
+    | { kind: "task"; task: Task }
+    | { kind: "group"; key: string; label: string; count: number };
+
+  const rows = useMemo<Row[]>(() => {
+    if (groupBy === "hierarchy") {
+      return filteredTasks.map((task) => ({ kind: "task", task }));
+    }
+    const keyOf = (t: Task) => {
+      switch (groupBy) {
+        case "phase":
+          return t.phase || "Unassigned Phase";
+        case "location":
+          return t.location || "No Location";
+        case "status":
+          return t.status || "No Status";
+        case "tag":
+          return t.activityCodes?.[0] || "Untagged";
+        default:
+          return "";
+      }
+    };
+    const groups = new Map<string, Task[]>();
+    filteredTasks.forEach((t) => {
+      const k = keyOf(t);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k)!.push(t);
+    });
+    const result: Row[] = [];
+    Array.from(groups.keys())
+      .sort((a, b) => a.localeCompare(b))
+      .forEach((k) => {
+        const groupTasks = groups
+          .get(k)!
+          .sort(
+            (a, b) =>
+              new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+          );
+        result.push({
+          kind: "group",
+          key: k,
+          label: k,
+          count: groupTasks.length,
+        });
+        groupTasks.forEach((task) => result.push({ kind: "task", task }));
+      });
+    return result;
+  }, [filteredTasks, groupBy]);
+
+  // Row index of each task within `rows` — used to position bars and the
+  // dependency-arrow endpoints (every row, header or task, is 48px tall).
+  const taskRowIndex = useMemo(() => {
+    const m = new Map<string, number>();
+    rows.forEach((r, i) => {
+      if (r.kind === "task") m.set(r.task.id, i);
+    });
+    return m;
+  }, [rows]);
+
   const rowVirtualizer = useVirtualizer({
-    count: filteredTasks.length,
+    count: rows.length,
     getScrollElement: () => containerRef.current,
     estimateSize: () => 48,
     overscan: 10,
@@ -304,6 +378,21 @@ export const GanttChart: React.FC<GanttChartProps> = ({
               <Activity className="w-3.5 h-3.5" />
               <span className="truncate">Critical Path</span>
             </button>
+            <div className="flex-1 sm:flex-none flex items-center gap-2 bg-panel px-3 py-2 rounded-lg border">
+              <Rows className="w-3.5 h-3.5 text-ink-muted shrink-0" />
+              <select
+                className="bg-transparent text-[10px] sm:text-xs font-bold outline-none w-full"
+                value={groupBy}
+                onChange={(e) => setGroupBy(e.target.value as GroupBy)}
+                aria-label="Group tasks by"
+              >
+                {GROUP_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    Group: {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex-1 sm:flex-none flex items-center gap-2 bg-panel px-3 py-2 rounded-lg border">
               <Filter className="w-3.5 h-3.5 text-ink-muted shrink-0" />
               <select
@@ -419,7 +508,9 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   <path d="M0,0 L6,2 L0,4 Z" fill="#6E8CA0" />
                 </marker>
               </defs>
-              {filteredTasks.map((task, taskIndex) => {
+              {filteredTasks.map((task) => {
+                const taskIndex = taskRowIndex.get(task.id);
+                if (taskIndex === undefined) return null;
                 const deps =
                   task.advancedDependencies ||
                   (task.dependencies || []).map((id) => ({
@@ -431,8 +522,8 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 return deps.map((dep, depIdx) => {
                   const depTask = tasks.find((t) => t.id === dep.id);
                   if (!depTask) return null;
-                  const depIndex = filteredTasks.indexOf(depTask);
-                  if (depIndex === -1) return null;
+                  const depIndex = taskRowIndex.get(depTask.id);
+                  if (depIndex === undefined) return null;
 
                   const isCritical =
                     showCriticalPath && task.isCritical && depTask.isCritical;
@@ -523,7 +614,32 @@ export const GanttChart: React.FC<GanttChartProps> = ({
             </svg>
 
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const task = filteredTasks[virtualRow.index];
+              const row = rows[virtualRow.index];
+
+              if (row.kind === "group") {
+                return (
+                  <div
+                    key={`group-${row.key}`}
+                    className="absolute top-0 left-0 flex items-center border-b border-divider bg-panel w-full z-[15]"
+                    style={{
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    <div className="sticky left-0 flex items-center gap-2.5 px-3 sm:px-4 h-full">
+                      <Rows className="w-3.5 h-3.5 text-rust-strong shrink-0" />
+                      <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-ink truncate">
+                        {row.label}
+                      </span>
+                      <span className="text-[9px] font-bold text-ink-muted bg-surface border border-divider px-1.5 py-0.5 rounded-full shrink-0">
+                        {row.count}
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+
+              const task = row.task;
               const taskStart = new Date(task.startDate);
               const taskEnd = new Date(task.endDate);
               const scale =
