@@ -8,6 +8,27 @@ interface Props {
   onTaskClick?: (task: ScheduleTask) => void;
 }
 
+type MiniGroupBy = 'none' | 'phase' | 'location' | 'status' | 'tag';
+
+const MINI_GROUP_OPTIONS: { value: MiniGroupBy; label: string }[] = [
+  { value: 'none', label: 'None' },
+  { value: 'phase', label: 'Phase' },
+  { value: 'location', label: 'Location' },
+  { value: 'status', label: 'Status' },
+  { value: 'tag', label: 'Tag' },
+];
+
+const STATUS_LABEL: Record<string, string> = {
+  scheduled: 'Scheduled',
+  in_progress: 'In Progress',
+  blocked: 'Blocked',
+  done: 'Done',
+};
+
+type MiniRow =
+  | { kind: 'task'; task: ScheduleTask }
+  | { kind: 'group'; label: string; count: number };
+
 export const MiniGantt: React.FC<Props> = ({ tasks, onTaskClick }) => {
   const today = startOfDay(new Date());
   
@@ -33,6 +54,39 @@ export const MiniGantt: React.FC<Props> = ({ tasks, onTaskClick }) => {
       return !isAfter(taskStart, windowEnd) && !isBefore(taskEnd, windowStart);
     }).sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
   }, [tasks, windowStart, windowEnd]);
+
+  const [groupBy, setGroupBy] = useState<MiniGroupBy>('none');
+
+  // Rows shown in the chart: a flat task list (groupBy 'none') or tasks
+  // re-bucketed under group-header rows by the chosen key. Only groups with
+  // tasks in the current 14-day window appear.
+  const rows = useMemo<MiniRow[]>(() => {
+    if (groupBy === 'none') {
+      return visibleTasks.map(task => ({ kind: 'task', task }));
+    }
+    const keyOf = (t: ScheduleTask) => {
+      switch (groupBy) {
+        case 'phase': return t.phaseId || 'Unassigned Phase';
+        case 'location': return t.rawTask?.location || 'No Location';
+        case 'status': return STATUS_LABEL[t.status] || 'Scheduled';
+        case 'tag': return t.rawTask?.activityCodes?.[0] || 'Untagged';
+        default: return '';
+      }
+    };
+    const groups = new Map<string, ScheduleTask[]>();
+    visibleTasks.forEach(t => {
+      const k = keyOf(t);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k)!.push(t);
+    });
+    const result: MiniRow[] = [];
+    Array.from(groups.keys()).sort((a, b) => a.localeCompare(b)).forEach(k => {
+      const groupTasks = groups.get(k)!;
+      result.push({ kind: 'group', label: k, count: groupTasks.length });
+      groupTasks.forEach(task => result.push({ kind: 'task', task }));
+    });
+    return result;
+  }, [visibleTasks, groupBy]);
 
   const shiftWindow = (daysToAdd: number) => {
     setWindowStart(prev => addDays(prev, daysToAdd));
@@ -123,7 +177,25 @@ export const MiniGantt: React.FC<Props> = ({ tasks, onTaskClick }) => {
         </button>
       </div>
 
-      <div 
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--edge)] bg-[var(--glass)] shrink-0">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)] shrink-0">
+          Group
+        </span>
+        <select
+          value={groupBy}
+          onChange={(e) => setGroupBy(e.target.value as MiniGroupBy)}
+          aria-label="Group tasks by"
+          className="flex-1 bg-transparent text-[12px] font-bold text-[var(--ink)] outline-none"
+        >
+          {MINI_GROUP_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div
         className="flex-1 relative overflow-y-auto overflow-x-hidden"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -159,7 +231,23 @@ export const MiniGantt: React.FC<Props> = ({ tasks, onTaskClick }) => {
           </div>
 
           <div className="flex flex-col relative z-10 w-full pt-2 pb-32">
-            {visibleTasks.map(task => {
+            {rows.map((row) => {
+              if (row.kind === 'group') {
+                return (
+                  <div
+                    key={`group-${row.label}`}
+                    className="sticky left-0 z-20 flex items-center gap-2 w-full px-2 py-1.5 mt-2 first:mt-0 bg-[var(--glass)]/90 border-y border-[var(--edge)] backdrop-blur-sm"
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--ink)] truncate">
+                      {row.label}
+                    </span>
+                    <span className="text-[9px] font-bold text-[var(--muted)] bg-[var(--bg)] border border-[var(--edge)] px-1.5 py-0.5 rounded-full shrink-0">
+                      {row.count}
+                    </span>
+                  </div>
+                );
+              }
+              const task = row.task;
               const { style, bgClass, borderClass, textClass, clippedLeft, clippedRight } = getBarStyles(task);
               return (
                 <div key={task.id} className="relative flex h-[42px] items-center w-full group">
