@@ -349,7 +349,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row items-center justify-between bg-surface p-3 md:p-4 rounded-xl border shadow-sm gap-4">
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full md:w-auto">
           <div className="flex bg-panel p-1 rounded-lg w-full sm:w-auto">
             {(["day", "week", "month"] as ZoomLevel[]).map((level) => (
               <button
@@ -717,7 +717,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
 
                     {/* Task Bar */}
                     <div
-                      className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] text-white font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${isDraggingThis ? "opacity-70 ring-2 ring-[#D97D54] ring-offset-1" : ""} ${
+                      className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] text-white font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${task.type !== "Summary" ? "touch-none" : ""} ${isDraggingThis ? "opacity-70 ring-2 ring-[#D97D54] ring-offset-1" : ""} ${
                         task.type === "Milestone"
                           ? "bg-gradient-to-br from-[#E1946F] to-[#D97D54] w-7 !rounded-sm rotate-45 justify-center border-2 border-white cursor-pointer"
                           : task.type === "Summary"
@@ -738,6 +738,18 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                           taskId: task.id,
                           type: "move",
                           initialX: e.clientX,
+                          initialStartDate: task.startDate,
+                          initialEndDate: task.endDate,
+                          currentDeltaDays: 0,
+                        });
+                      }}
+                      onTouchStart={(e) => {
+                        if (task.type === "Summary") return;
+                        e.stopPropagation();
+                        setDragState({
+                          taskId: task.id,
+                          type: "move",
+                          initialX: e.touches[0].clientX,
                           initialStartDate: task.startDate,
                           initialEndDate: task.endDate,
                           currentDeltaDays: 0,
@@ -797,13 +809,24 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       {/* Resize Start Handle */}
                       {task.type !== "Milestone" && task.type !== "Summary" && (
                         <div
-                          className="absolute left-0 top-0 bottom-0 w-3 md:w-4 hover:bg-white/30 z-20 cursor-ew-resize transition-colors rounded-l-lg"
+                          className="absolute left-0 top-0 bottom-0 w-4 md:w-4 hover:bg-white/30 z-20 cursor-ew-resize transition-colors rounded-l-lg touch-none"
                           onMouseDown={(e) => {
                             e.stopPropagation();
                             setDragState({
                               taskId: task.id,
                               type: "resizeStart",
                               initialX: e.clientX,
+                              initialStartDate: task.startDate,
+                              initialEndDate: task.endDate,
+                              currentDeltaDays: 0,
+                            });
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            setDragState({
+                              taskId: task.id,
+                              type: "resizeStart",
+                              initialX: e.touches[0].clientX,
                               initialStartDate: task.startDate,
                               initialEndDate: task.endDate,
                               currentDeltaDays: 0,
@@ -852,13 +875,24 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       {/* Resize End Handle */}
                       {task.type !== "Milestone" && task.type !== "Summary" && (
                         <div
-                          className="absolute right-0 top-0 bottom-0 w-3 md:w-4 hover:bg-white/30 z-20 cursor-ew-resize transition-colors rounded-r-lg"
+                          className="absolute right-0 top-0 bottom-0 w-4 md:w-4 hover:bg-white/30 z-20 cursor-ew-resize transition-colors rounded-r-lg touch-none"
                           onMouseDown={(e) => {
                             e.stopPropagation();
                             setDragState({
                               taskId: task.id,
                               type: "resizeEnd",
                               initialX: e.clientX,
+                              initialStartDate: task.startDate,
+                              initialEndDate: task.endDate,
+                              currentDeltaDays: 0,
+                            });
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            setDragState({
+                              taskId: task.id,
+                              type: "resizeEnd",
+                              initialX: e.touches[0].clientX,
                               initialStartDate: task.startDate,
                               initialEndDate: task.endDate,
                               currentDeltaDays: 0,
