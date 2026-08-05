@@ -29,6 +29,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<Omit<POLineItem, "amount">[]>([{ itemId: "", materialId: "", name: "", orderedQty: 0, unit: "", rate: 0 }]);
+  const [charges, setCharges] = useState({ loading: 0, transport: 0, other: 0 });
 
   const { data: vendors = [] } = useProjectData<Vendor>(projectId, "suppliers");
   const { data: inventory = [] } = useProjectData<InventoryItem>(projectId, "inventory");
@@ -76,7 +77,12 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
     setItems(newItems);
   };
 
-  const totalAmount = items.reduce((sum, item) => sum + (item.orderedQty || 0) * (item.rate || 0), 0);
+  const materialTotal = items.reduce((sum, item) => sum + (item.orderedQty || 0) * (item.rate || 0), 0);
+  const chargesTotal =
+    (Number(charges.loading) || 0) +
+    (Number(charges.transport) || 0) +
+    (Number(charges.other) || 0);
+  const totalAmount = materialTotal + chargesTotal;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,7 +129,14 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
              orderDate,
              expectedDeliveryDate: expectedDeliveryDate || null,
              lineItems: validItems,
-             totalAmount: validItems.reduce((sum, item) => sum + item.amount, 0),
+             charges: {
+               loading: Number(charges.loading) || 0,
+               transport: Number(charges.transport) || 0,
+               other: Number(charges.other) || 0,
+             },
+             totalAmount:
+               validItems.reduce((sum, item) => sum + item.amount, 0) +
+               chargesTotal,
              notes,
              createdByUid: user.uid,
              createdByName: user.displayName || user.email || "Unknown",
@@ -279,8 +292,39 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                </div>
             </div>
 
-            <div className="mt-8 mb-4 p-6 bg-[#F7E4DB] border border-[#F7E4DB]/50 rounded-[20px]">
-               <div className="flex justify-between items-center">
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+               {([["loading", "Loading"], ["transport", "Transport"], ["other", "Other"]] as const).map(([key, label]) => (
+                  <div key={key}>
+                     <label className="block text-[10px] font-black text-ink-muted uppercase tracking-widest mb-1.5">
+                        {label} charges (₹)
+                     </label>
+                     <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={charges[key] || ""}
+                        onChange={(e) =>
+                           setCharges((c) => ({ ...c, [key]: parseFloat(e.target.value) || 0 }))
+                        }
+                        placeholder="0"
+                        className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium text-ink focus:ring-2 focus:ring-[#D97D54] transition-all"
+                     />
+                  </div>
+               ))}
+            </div>
+
+            <div className="mt-4 mb-4 p-6 bg-[#F7E4DB] border border-[#F7E4DB]/50 rounded-[20px] space-y-2">
+               <div className="flex justify-between text-xs font-bold text-[#B85F3B]/80">
+                  <span>Materials</span>
+                  <span className="font-mono">₹{materialTotal.toLocaleString("en-IN")}</span>
+               </div>
+               {chargesTotal > 0 && (
+                  <div className="flex justify-between text-xs font-bold text-[#B85F3B]/80">
+                     <span>Loading + Transport + Other</span>
+                     <span className="font-mono">₹{chargesTotal.toLocaleString("en-IN")}</span>
+                  </div>
+               )}
+               <div className="flex justify-between items-center pt-2 border-t border-[#D97D54]/20">
                   <span className="text-xs font-black text-[#D97D54] uppercase tracking-widest">Total Amount</span>
                   <span className="text-2xl font-black text-[#D97D54] tracking-tight font-mono">
                      ₹{totalAmount.toLocaleString("en-IN")}

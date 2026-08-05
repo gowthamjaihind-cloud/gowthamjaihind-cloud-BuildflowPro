@@ -192,6 +192,14 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                         ))}
                      </tbody>
                      <tfoot className="bg-[#F7E4DB] border-t border-[#F7E4DB]">
+                        {([["loading", "Loading charges"], ["transport", "Transport charges"], ["other", "Other charges"]] as const).map(([key, label]) =>
+                           po.charges?.[key] ? (
+                              <tr key={key}>
+                                 <td colSpan={4} className="px-4 py-1.5 text-right text-[11px] font-bold text-[#B85F3B]/80 uppercase tracking-widest">{label}</td>
+                                 <td className="px-4 py-1.5 text-right font-mono text-[#B85F3B]">₹{po.charges[key]!.toLocaleString("en-IN")}</td>
+                              </tr>
+                           ) : null,
+                        )}
                         <tr>
                            <td colSpan={4} className="p-4 text-right text-[11px] font-black text-[#D97D54] uppercase tracking-widest">Total Amount</td>
                            <td className="p-4 text-right text-lg font-black font-mono text-[#D97D54] tracking-tight">₹{po.totalAmount.toLocaleString("en-IN")}</td>

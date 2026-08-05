@@ -175,6 +175,13 @@ export interface POLineItem {
   receivedQty?: number;  // filled by GRN in Step 2; default 0
 }
 
+/** Flat extra charges on a PO beyond material line items (freight etc.). */
+export interface POCharges {
+  loading?: number;
+  transport?: number;
+  other?: number;
+}
+
 export interface PurchaseOrder {
   id: string;
   poNumber: string;          // human-friendly, auto-generated e.g. PO-2026-0001
@@ -185,7 +192,10 @@ export interface PurchaseOrder {
   orderDate: string;         // dd-mm-yyyy storage consistent with app
   expectedDeliveryDate?: string;
   lineItems: POLineItem[];
-  totalAmount: number;       // sum of line amounts
+  // Loading / transport / other charges. Added on top of the material lines;
+  // billed to the vendor ledger on the first goods receipt against this PO.
+  charges?: POCharges;
+  totalAmount: number;       // material line amounts + charges
   notes?: string;
   createdByUid: string;
   createdByName: string;
@@ -206,6 +216,9 @@ export interface GoodsReceiptNote {
   receiptDate: string;
   challanNumber?: string;
   lineItems: GRNLineItem[];
+  // PO loading/transport/other charges applied on this receipt (only the
+  // first receipt against a PO carries them, to avoid double-counting).
+  charges?: POCharges;
   ledgerId?: string;
   costEntryId?: string;
   materialIds?: string[];
