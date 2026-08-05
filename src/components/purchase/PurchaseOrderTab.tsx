@@ -22,6 +22,7 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
+  const [editingPO, setEditingPO] = useState<PurchaseOrder | null>(null);
 
   if (isLoading) {
     return <div className="p-8 text-center text-ink-muted">Loading purchase orders...</div>;
@@ -127,18 +128,20 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
         </div>
       </div>
 
-      {isFormOpen && (
-        <PurchaseOrderForm 
-           projectId={projectId} 
-           onClose={() => setIsFormOpen(false)} 
+      {(isFormOpen || editingPO) && (
+        <PurchaseOrderForm
+           projectId={projectId}
+           existingPO={editingPO}
+           onClose={() => { setIsFormOpen(false); setEditingPO(null); }}
         />
       )}
 
       {selectedPO && (
-        <PurchaseOrderDetails 
+        <PurchaseOrderDetails
            po={selectedPO}
            projectId={projectId}
            onClose={() => setSelectedPO(null)}
+           onEdit={(po) => { setSelectedPO(null); setEditingPO(po); }}
         />
       )}
     </div>

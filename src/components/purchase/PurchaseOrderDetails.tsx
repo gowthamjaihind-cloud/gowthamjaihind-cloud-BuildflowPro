@@ -6,6 +6,7 @@ import {
   X,
   CheckCircle,
   DownloadSimple as Download,
+  PencilSimple as Edit3,
   FileText,
   Trash as Trash2,
   CircleNotch as Loader2,
@@ -22,9 +23,10 @@ interface PurchaseOrderDetailsProps {
   po: PurchaseOrder;
   projectId: string;
   onClose: () => void;
+  onEdit?: (po: PurchaseOrder) => void;
 }
 
-export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, projectId, onClose }) => {
+export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, projectId, onClose, onEdit }) => {
   const user = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
   const [isApproving, setIsApproving] = useState(false);
@@ -118,6 +120,15 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
              <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">{po.status} • {po.vendorName}</p>
            </div>
            <div className="flex items-center gap-2">
+             {po.status === "Draft" && canEditOrDelete && onEdit && (
+               <button
+                 onClick={() => onEdit(po)}
+                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
+                 title="Edit draft PO"
+               >
+                 <Edit3 className="w-3.5 h-3.5 text-ink/80" /> Edit
+               </button>
+             )}
              <button
                onClick={handleExportCSV}
                className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"

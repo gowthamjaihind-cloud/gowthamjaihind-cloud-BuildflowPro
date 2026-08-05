@@ -10,26 +10,45 @@ import {
 } from "@phosphor-icons/react";
 import { useProjectData } from "../../hooks/useProjectData";
 import { useAuthStore } from "../../store";
-import { Vendor, InventoryItem, POLineItem, LaborRateCard } from "../../types";
-import { collection, doc, setDoc, runTransaction } from "firebase/firestore";
+import { Vendor, InventoryItem, POLineItem, LaborRateCard, PurchaseOrder } from "../../types";
+import { collection, doc, setDoc, updateDoc, runTransaction } from "firebase/firestore";
 import { db } from "../../firebase";
 
 interface PurchaseOrderFormProps {
   projectId: string;
   onClose: () => void;
+  /** When set, the form edits this existing (Draft) PO instead of creating one. */
+  existingPO?: PurchaseOrder | null;
 }
 
-export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId, onClose }) => {
+export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId, onClose, existingPO }) => {
   const user = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
+  const isEditing = !!existingPO;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [vendorId, setVendorId] = useState("");
-  const [orderDate, setOrderDate] = useState(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date()));
-  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
-  const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<Omit<POLineItem, "amount">[]>([{ itemId: "", materialId: "", name: "", orderedQty: 0, unit: "", rate: 0 }]);
-  const [charges, setCharges] = useState({ loading: 0, transport: 0, other: 0 });
+  const [vendorId, setVendorId] = useState(existingPO?.vendorId || "");
+  const [orderDate, setOrderDate] = useState(existingPO?.orderDate || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date()));
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(existingPO?.expectedDeliveryDate || "");
+  const [notes, setNotes] = useState(existingPO?.notes || "");
+  const [items, setItems] = useState<Omit<POLineItem, "amount">[]>(
+    existingPO?.lineItems?.length
+      ? existingPO.lineItems.map((i) => ({
+          itemId: i.itemId,
+          materialId: i.materialId,
+          name: i.name,
+          orderedQty: i.orderedQty,
+          unit: i.unit,
+          rate: i.rate,
+          receivedQty: i.receivedQty,
+        }))
+      : [{ itemId: "", materialId: "", name: "", orderedQty: 0, unit: "", rate: 0 }],
+  );
+  const [charges, setCharges] = useState({
+    loading: existingPO?.charges?.loading || 0,
+    transport: existingPO?.charges?.transport || 0,
+    other: existingPO?.charges?.other || 0,
+  });
 
   const { data: vendors = [] } = useProjectData<Vendor>(projectId, "suppliers");
   const { data: inventory = [] } = useProjectData<InventoryItem>(projectId, "inventory");
@@ -98,53 +117,75 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
     setIsSubmitting(true);
     try {
        const tenantPath = user.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
-       
-       await runTransaction(db, async (t) => {
-          // get PO counter
-          const counterRef = doc(db, `${tenantPath}/system/poCounter`);
-          const counterDoc = await t.get(counterRef);
-          let currentCount = 0;
-          if (counterDoc.exists()) {
-             currentCount = counterDoc.data()?.count || 0;
-          }
-          const nextCount = currentCount + 1;
-          
-          const year = orderDate.split('-')[0];
-          const poNumber = `PO-${year}-${String(nextCount).padStart(4, '0')}`;
-          
-          const validItems: POLineItem[] = items.filter(i => i.orderedQty > 0 && i.rate > 0 && i.itemId).map(i => ({
-             ...i,
-             amount: i.orderedQty * i.rate,
-             receivedQty: 0
-          }));
 
-          const poRef = doc(collection(db, `${tenantPath}/purchase_orders`));
-          t.set(poRef, {
-             id: poRef.id,
-             poNumber,
-             projectId,
+       const validItems: POLineItem[] = items
+          .filter(i => i.orderedQty > 0 && i.rate > 0 && i.itemId)
+          .map(i => ({
+             itemId: i.itemId,
+             materialId: i.materialId,
+             name: i.name,
+             orderedQty: i.orderedQty,
+             unit: i.unit,
+             rate: i.rate,
+             amount: i.orderedQty * i.rate,
+             receivedQty: (i as any).receivedQty || 0,
+          }));
+       const chargesObj = {
+          loading: Number(charges.loading) || 0,
+          transport: Number(charges.transport) || 0,
+          other: Number(charges.other) || 0,
+       };
+       const computedTotal =
+          validItems.reduce((sum, item) => sum + item.amount, 0) + chargesTotal;
+
+       if (isEditing && existingPO) {
+          // Edit an existing Draft PO in place — keep its number/status/history.
+          await updateDoc(doc(db, `${tenantPath}/purchase_orders/${existingPO.id}`), {
              vendorId: selectedVendor.id,
              vendorName: selectedVendor.name,
-             status: "Draft",
              orderDate,
              expectedDeliveryDate: expectedDeliveryDate || null,
              lineItems: validItems,
-             charges: {
-               loading: Number(charges.loading) || 0,
-               transport: Number(charges.transport) || 0,
-               other: Number(charges.other) || 0,
-             },
-             totalAmount:
-               validItems.reduce((sum, item) => sum + item.amount, 0) +
-               chargesTotal,
+             charges: chargesObj,
+             totalAmount: computedTotal,
              notes,
-             createdByUid: user.uid,
-             createdByName: user.displayName || user.email || "Unknown",
-             createdAt: new Date().toISOString()
           });
-          
-          t.set(counterRef, { count: nextCount }, { merge: true });
-       });
+       } else {
+          await runTransaction(db, async (t) => {
+             // get PO counter
+             const counterRef = doc(db, `${tenantPath}/system/poCounter`);
+             const counterDoc = await t.get(counterRef);
+             let currentCount = 0;
+             if (counterDoc.exists()) {
+                currentCount = counterDoc.data()?.count || 0;
+             }
+             const nextCount = currentCount + 1;
+
+             const year = orderDate.split('-')[0];
+             const poNumber = `PO-${year}-${String(nextCount).padStart(4, '0')}`;
+
+             const poRef = doc(collection(db, `${tenantPath}/purchase_orders`));
+             t.set(poRef, {
+                id: poRef.id,
+                poNumber,
+                projectId,
+                vendorId: selectedVendor.id,
+                vendorName: selectedVendor.name,
+                status: "Draft",
+                orderDate,
+                expectedDeliveryDate: expectedDeliveryDate || null,
+                lineItems: validItems,
+                charges: chargesObj,
+                totalAmount: computedTotal,
+                notes,
+                createdByUid: user.uid,
+                createdByName: user.displayName || user.email || "Unknown",
+                createdAt: new Date().toISOString()
+             });
+
+             t.set(counterRef, { count: nextCount }, { merge: true });
+          });
+       }
        queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'purchase_orders'] });
        onClose();
     } catch (e) {
@@ -166,7 +207,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
       >
          <div className="flex justify-between items-center p-6 border-b border-divider bg-panel sticky top-0 z-10">
            <div>
-             <h2 className="text-xl font-black text-ink tracking-tight mb-1">Create Purchase Order</h2>
+             <h2 className="text-xl font-black text-ink tracking-tight mb-1">{isEditing ? `Edit ${existingPO?.poNumber || "Purchase Order"}` : "Create Purchase Order"}</h2>
              <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Draft Order</p>
            </div>
            <button type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
@@ -339,9 +380,9 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                 className="w-full py-4 bg-[#D97D54] hover:bg-[#B85F3B] disabled:bg-fossil disabled:cursor-not-allowed text-white text-sm font-bold uppercase tracking-widest rounded-xl transition flex justify-center items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)]"
               >
                 {isSubmitting ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Saving PO...</>
+                  <><Loader2 className="w-5 h-5 animate-spin" /> {isEditing ? "Updating PO..." : "Saving PO..."}</>
                 ) : (
-                  <><Save className="w-5 h-5" /> Save Draft PO</>
+                  <><Save className="w-5 h-5" /> {isEditing ? "Update PO" : "Save Draft PO"}</>
                 )}
               </button>
             </div>
