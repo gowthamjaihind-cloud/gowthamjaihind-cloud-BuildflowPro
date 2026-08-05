@@ -151,6 +151,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
 
         // Calculate Total Cost of this GRN
         let totalAmount = 0;
+        let appliedCharges: any = undefined;
         if (poData) {
             validLineItems.forEach(grnItem => {
                 const poItem = poData.lineItems?.find((i: any) => i.itemId === grnItem.poLineRef);
@@ -158,6 +159,21 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                     totalAmount += grnItem.acceptedQty * poItem.rate;
                 }
             });
+            // Loading/transport/other are one-time PO charges — bill them on the
+            // first receipt against this PO so partial receipts don't each add
+            // freight again. "First" = nothing received on any line yet.
+            const isFirstReceipt = (poData.lineItems || []).every(
+                (i: any) => !(i.receivedQty),
+            );
+            const c = poData.charges;
+            if (isFirstReceipt && c) {
+                const chargesTotal =
+                    (c.loading || 0) + (c.transport || 0) + (c.other || 0);
+                if (chargesTotal > 0) {
+                    totalAmount += chargesTotal;
+                    appliedCharges = c;
+                }
+            }
         }
 
         const ledgerRef = doc(collection(db, `${tenantPath}/ledger`));
@@ -174,6 +190,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
           receiptDate,
           challanNumber: challanNumber || undefined,
           lineItems: validLineItems,
+          charges: appliedCharges,
           materialIds: materialIds.length > 0 ? materialIds : undefined,
           notes: notes || undefined,
           createdByUid: user.uid,
@@ -216,7 +233,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                amount: totalAmount,
                referenceType: "GRN",
                referenceId: actualId,
-               description: `Goods Receipt - ${generatedNumber} (PO: ${poData.poNumber})`
+               description: `Goods Receipt - ${generatedNumber} (PO: ${poData.poNumber})${appliedCharges ? " incl. loading/transport charges" : ""}`
            });
            
            // Create Cost Entry
