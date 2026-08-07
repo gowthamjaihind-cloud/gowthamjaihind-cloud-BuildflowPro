@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import QRCode from "qrcode";
 import {
   PaperPlaneTilt as Send,
   CheckCircle as CheckCircle2,
   Copy,
   ArrowsClockwise as RefreshCw,
   WarningCircle as AlertCircle,
+  TelegramLogo,
 } from "@phosphor-icons/react";
 import { UserProfile } from "../types";
 import { db, collection, query, where, getDocs, setDoc, doc } from "../firebase";
@@ -20,6 +22,41 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
   const [displayCode, setDisplayCode] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [botUsername, setBotUsername] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  // One-tap deep link: opens the bot and auto-sends "/start <code>", which the
+  // webhook redeems just like "/link CODE" — no copy-paste needed.
+  const deepLink =
+    botUsername && activeCode
+      ? `https://t.me/${botUsername.replace(/^@/, "")}?start=${activeCode}`
+      : null;
+
+  // Fetch the bot's username (for the deep link) from the same status endpoint
+  // the "Bot Online" badge uses.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/telegram-status")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && d?.bot?.username) setBotUsername(d.bot.username);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Render a QR of the deep link so a desktop user can scan it with their phone.
+  useEffect(() => {
+    if (!deepLink) {
+      setQrDataUrl(null);
+      return;
+    }
+    QRCode.toDataURL(deepLink, { margin: 1, width: 220 })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(null));
+  }, [deepLink]);
 
   // Check roles (Admin, Owner, Project Manager)
   const allowedRoles = ["Admin", "Owner", "Project Manager"];
@@ -192,11 +229,40 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
       {activeCode && (
         <div className="bg-blue-50/50 p-6 rounded-[20px] border border-[#6E8CA0]/20 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-[#6E8CA0]"></div>
-          <h4 className="font-bold text-[#27363F] mb-2">Your Link Code</h4>
+          <h4 className="font-bold text-[#27363F] mb-2">Connect your Telegram</h4>
           <p className="text-sm text-[#46617C] mb-4">
-            Send the following command to the Telegram bot to complete linking. This code expires in 15 minutes.
+            On this phone, tap <b>Connect Telegram</b>. On a computer, scan the QR
+            with your phone's camera. This link expires in 15 minutes.
           </p>
-          
+
+          {deepLink && (
+            <div className="flex flex-col sm:flex-row items-center gap-5 mb-5">
+              {qrDataUrl && (
+                <img
+                  src={qrDataUrl}
+                  alt="Scan to connect Telegram"
+                  className="w-32 h-32 rounded-xl bg-white p-1.5 border border-[#6E8CA0]/30 shrink-0"
+                />
+              )}
+              <div className="flex-1 w-full">
+                <a
+                  href={deepLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#229ED9] hover:bg-[#1c8dc4] text-white font-bold rounded-xl transition-colors"
+                >
+                  <TelegramLogo weight="fill" className="w-5 h-5" /> Connect Telegram
+                </a>
+                <p className="text-[11px] text-[#46617C] mt-2 text-center sm:text-left">
+                  Opens the bot and links your account automatically — no typing.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <p className="text-[10px] font-black text-[#46617C]/70 uppercase tracking-widest mb-2">
+            Or send this command to the bot
+          </p>
           <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-[#6E8CA0]/30">
             <code className="flex-1 font-mono text-lg font-bold text-ink text-center">
               /link {displayCode}
