@@ -51,9 +51,12 @@ export const telegramWebhook = onRequest({
         res.status(401).send("Unauthorized");
         return;
     }
-    // Always 200 back to Telegram quickly, even if we fail internally —
-    // otherwise Telegram retries the same update forever.
-    res.status(200).send("OK");
+    // IMPORTANT: do the work BEFORE responding. On Cloud Run (Functions v2) the
+    // CPU is throttled the instant the response is sent, so anything awaited
+    // after res.send() runs at a crawl — that was the ~2-minute delay before the
+    // bot replied. Telegram's webhook timeout is ~60s and this handler finishes
+    // in ~1-2s, so awaiting first is both correct and fast. If it ever throws we
+    // still 200 back so Telegram doesn't retry the same update forever.
     const tg = new TelegramApi(BOT_TOKEN.value());
     const update = req.body;
     try {
@@ -62,6 +65,7 @@ export const telegramWebhook = onRequest({
     catch (err) {
         console.error("Error handling update:", err);
     }
+    res.status(200).send("OK");
 });
 async function handleUpdate(tg, update) {
     const msg = update.message;
