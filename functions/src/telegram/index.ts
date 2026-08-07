@@ -38,9 +38,12 @@ export const telegramWebhook = onRequest({
     region: "asia-southeast1",
     secrets: [BOT_TOKEN, WEBHOOK_SECRET],
     cors: false,
-    // Keep one instance warm so the bot replies immediately instead of paying
-    // a cold start on the first message after an idle spell.
-    minInstances: 1,
+    // No warm instance kept here: the handler now does its work before
+    // responding (see below), so it finishes in ~1-2s once running. A cold
+    // start only adds ~3s to the very first message after a long idle spell,
+    // which isn't worth the always-on cost. telegramStatus stays warm because
+    // the app polls it every 15s for the "Bot Online" badge.
+    minInstances: 0,
 }, async (req, res) => {
     // ---- AUTH: verify this really came from Telegram, before anything else ----
     const expected = WEBHOOK_SECRET.value();
