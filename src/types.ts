@@ -452,6 +452,21 @@ export interface DailyLogEntry {
   markComplete: boolean;
   materials: { materialId: string; name: string; quantity: number; unit: string }[];
   labour: { roleId: string; roleName: string; headcount: number }[];
+  equipment?: {
+    equipmentId: string;
+    name: string;
+    ownership?: string; // "Owned" | "Rented" at time of logging
+    unit: "hours" | "days";
+    quantity: number;
+  }[];
   note?: string;
   photoUrls?: string[];
+}
+
+// Reusable equipment master, managed per project and picked from in daily logs.
+// Kept intentionally light; a rate can be added later for cost roll-up.
+export interface EquipmentItem {
+  id: string;
+  name: string;
+  ownership: "Owned" | "Rented";
 }

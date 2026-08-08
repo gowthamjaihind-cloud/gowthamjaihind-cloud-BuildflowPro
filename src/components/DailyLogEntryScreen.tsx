@@ -7,7 +7,7 @@ import {
   useUpdateDailyLog,
 } from "../hooks/useDailyLogs";
 import { useProjectData } from "../hooks/useProjectData";
-import { DailyLogEntry, InventoryItem, LaborRateCard, Task } from "../types";
+import { DailyLogEntry, EquipmentItem, InventoryItem, LaborRateCard, Task } from "../types";
 import {
   X,
   Calendar,
@@ -18,6 +18,7 @@ import {
   Camera,
   Image as ImageIcon,
   CircleNotch as Loader2,
+  Truck,
 } from "@phosphor-icons/react";
 import { useTasksQuery } from "../hooks/queries";
 import {
@@ -26,7 +27,7 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
-import { updateDoc, setDoc, doc } from "firebase/firestore";
+import { updateDoc, setDoc, doc, collection, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import { compressImage } from "../utils/imageCompressor";
@@ -66,6 +67,16 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
   const [labour, setLabour] = useState<DailyLogEntry["labour"]>(
     editLog?.labour || [],
   );
+  const [equipment, setEquipment] = useState<NonNullable<DailyLogEntry["equipment"]>>(
+    editLog?.equipment || [],
+  );
+  // Inline "+ New equipment" quick-add, so the first log isn't blocked by an
+  // empty master list.
+  const [showNewEquipment, setShowNewEquipment] = useState(false);
+  const [newEquipmentName, setNewEquipmentName] = useState("");
+  const [newEquipmentOwnership, setNewEquipmentOwnership] =
+    useState<EquipmentItem["ownership"]>("Owned");
+  const [savingEquipment, setSavingEquipment] = useState(false);
   const [note, setNote] = useState<string>(editLog?.note || "");
   // For edits, we'll just track new photos and existing photos separately
   const [existingPhotos, setExistingPhotos] = useState<string[]>(
@@ -179,6 +190,10 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
     projectId,
     "labor_rate_cards",
   );
+  const { data: equipmentMaster = [] } = useProjectData<EquipmentItem>(
+    projectId,
+    "equipment",
+  );
 
   const saveMutation = useSaveDailyLog(projectId);
   const updateMutation = useUpdateDailyLog(projectId);
@@ -232,6 +247,53 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
     setLabour(newItems);
   };
 
+  const handleAddEquipment = () => {
+    setEquipment([
+      ...equipment,
+      { equipmentId: "", name: "", unit: "hours", quantity: 0 },
+    ]);
+  };
+
+  const updateEquipment = (index: number, field: string, value: any) => {
+    const newItems = [...equipment];
+    if (field === "equipmentId") {
+      const item = equipmentMaster.find((e) => e.id === value);
+      newItems[index] = {
+        ...newItems[index],
+        equipmentId: value,
+        name: item?.name || "",
+        ownership: item?.ownership,
+      };
+    } else {
+      newItems[index] = { ...newItems[index], [field]: value };
+    }
+    setEquipment(newItems);
+  };
+
+  const saveNewEquipment = async () => {
+    const name = newEquipmentName.trim();
+    if (!name || !user) return;
+    try {
+      setSavingEquipment(true);
+      const equipmentPath = getTenantPath(user, projectId, "equipment");
+      if (!equipmentPath) return;
+      await addDoc(collection(db, equipmentPath), {
+        name,
+        ownership: newEquipmentOwnership,
+        createdAt: new Date().toISOString(),
+      });
+      // useProjectData is realtime, so the new item appears in the dropdowns.
+      setNewEquipmentName("");
+      setNewEquipmentOwnership("Owned");
+      setShowNewEquipment(false);
+    } catch (err) {
+      console.error("Failed to add equipment", err);
+      alert("Failed to add equipment.");
+    } finally {
+      setSavingEquipment(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTaskId) return;
@@ -245,6 +307,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
         markComplete,
         materials: materials.filter((m) => m.materialId && m.quantity > 0),
         labour: labour.filter((l) => l.roleId && l.headcount > 0),
+        equipment: equipment.filter((e) => e.equipmentId && e.quantity > 0),
         note,
       };
 
@@ -573,6 +636,129 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                   </button>
                 </div>
               ))}
+            </div>
+
+            {/* Equipment */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black text-ink-muted uppercase tracking-widest flex items-center gap-2">
+                  <Truck className="w-4 h-4" /> Equipment Used
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAddEquipment}
+                  className="text-rust-strong text-xs font-bold hover:underline flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3" /> Add Equipment
+                </button>
+              </div>
+              {equipment.map((eq, i) => (
+                <div key={i} className="flex gap-2">
+                  <select
+                    value={eq.equipmentId}
+                    onChange={(e) =>
+                      updateEquipment(i, "equipmentId", e.target.value)
+                    }
+                    className="flex-[2] min-w-0 bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none"
+                  >
+                    <option value="">Select Equipment...</option>
+                    {equipmentMaster.map((em) => (
+                      <option key={em.id} value={em.id}>
+                        {em.name} ({em.ownership})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    placeholder="Qty"
+                    min="0.5"
+                    step="0.5"
+                    value={eq.quantity || ""}
+                    onChange={(e) =>
+                      updateEquipment(i, "quantity", parseFloat(e.target.value))
+                    }
+                    className="flex-1 w-16 bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none font-mono"
+                  />
+                  <select
+                    value={eq.unit}
+                    onChange={(e) => updateEquipment(i, "unit", e.target.value)}
+                    className="w-20 shrink-0 bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none"
+                  >
+                    <option value="hours">hrs</option>
+                    <option value="days">days</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEquipment(equipment.filter((_, idx) => idx !== i))
+                    }
+                    className="p-3 text-[#EF4444] bg-[#EF4444]/8 rounded-lg shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+
+              {/* Inline quick-add for the equipment master */}
+              {showNewEquipment ? (
+                <div className="bg-panel/60 rounded-xl border border-divider p-3 space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Equipment name (e.g., Excavator)"
+                      value={newEquipmentName}
+                      onChange={(e) => setNewEquipmentName(e.target.value)}
+                      className="flex-[2] min-w-0 bg-surface p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none"
+                    />
+                    <select
+                      value={newEquipmentOwnership}
+                      onChange={(e) =>
+                        setNewEquipmentOwnership(
+                          e.target.value as EquipmentItem["ownership"],
+                        )
+                      }
+                      className="w-28 shrink-0 bg-surface p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none"
+                    >
+                      <option value="Owned">Owned</option>
+                      <option value="Rented">Rented</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewEquipment(false);
+                        setNewEquipmentName("");
+                      }}
+                      className="px-3 py-2 text-xs font-bold text-ink-muted hover:bg-divider rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveNewEquipment}
+                      disabled={!newEquipmentName.trim() || savingEquipment}
+                      className="px-3 py-2 text-xs font-bold text-white bg-[#D97D54] hover:bg-[#B85F3B] rounded-lg disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {savingEquipment ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Plus className="w-3.5 h-3.5" />
+                      )}
+                      Save to list
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowNewEquipment(true)}
+                  className="text-[11px] font-bold text-ink-muted hover:text-ink flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3" /> New equipment (add to reusable list)
+                </button>
+              )}
             </div>
 
             <div className="space-y-2 relative">
