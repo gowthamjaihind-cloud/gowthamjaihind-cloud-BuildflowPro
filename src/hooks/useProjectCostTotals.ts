@@ -52,6 +52,7 @@ export const useProjectCostTotals = (projectId: string) => {
   const { data: dailyLogs = [] } = useProjectDataQuery<any>(projectId, "dailyLogs");
   const { data: laborRates = [] } = useProjectDataQuery<any>(projectId, "labor_rate_cards");
   const { data: materialIssues = [] } = useProjectDataQuery<any>(projectId, "material_issues");
+  const { data: equipmentMaster = [] } = useProjectDataQuery<any>(projectId, "equipment");
 
   const taskTotalsMap = useMemo(() => {
     const totals: Record<
@@ -142,9 +143,29 @@ export const useProjectCostTotals = (projectId: string) => {
         }, 0);
         actualLabor = entryLab + logLab + dailyLogLab;
 
-        actualOther = actualEntries
+        const entryOther = actualEntries
           .filter((e) => e.category !== "Material" && e.category !== "Labor")
           .reduce((sum, e) => sum + e.amount, 0);
+        // Equipment usage cost from daily logs, recomputed live from the master
+        // rate that matches each line's unit (mirrors how labour is costed above).
+        // Folded into "Other / Direct Cost" so every downstream total stays
+        // internally consistent without introducing a new category column.
+        const dailyLogEquip = dailyLogs
+          .filter((log: any) => log.taskId === taskId)
+          .reduce((sum: number, log: any) => {
+            return (
+              sum +
+              (log.equipment || []).reduce((s: number, eq: any) => {
+                const master = equipmentMaster.find((m: any) => m.id === eq.equipmentId);
+                const rate =
+                  eq.unit === "days"
+                    ? master?.dailyRate ?? eq.rate ?? 0
+                    : master?.hourlyRate ?? eq.rate ?? 0;
+                return s + (eq.quantity || 0) * rate;
+              }, 0)
+            );
+          }, 0);
+        actualOther = entryOther + dailyLogEquip;
 
       if (children.length > 0) {
         children.forEach((child) => {
@@ -176,7 +197,7 @@ export const useProjectCostTotals = (projectId: string) => {
 
     tasks.forEach((t) => getTotals(t.id));
     return totals;
-  }, [tasks, entries, dailyLogs, laborLogs, inventory, materialIssues, laborRates]);
+  }, [tasks, entries, dailyLogs, laborLogs, inventory, materialIssues, laborRates, equipmentMaster]);
 
   const getTaskTotals = (task: Task) => {
     return (

@@ -155,11 +155,16 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
                         className="text-[11px] font-bold text-ink/80 flex justify-between"
                       >
                         <span className="truncate pr-2">{eq.name}</span>
-                        <span className="font-mono">
+                        <span className="font-mono whitespace-nowrap">
                           {eq.quantity}{" "}
                           <span className="text-[9px] text-ink-muted">
                             {eq.unit === "days" ? "days" : "hrs"}
                           </span>
+                          {eq.cost ? (
+                            <span className="text-ink-muted">
+                              {" "}· ₹{eq.cost.toLocaleString("en-IN")}
+                            </span>
+                          ) : null}
                         </span>
                       </li>
                     ))}

@@ -458,15 +458,20 @@ export interface DailyLogEntry {
     ownership?: string; // "Owned" | "Rented" at time of logging
     unit: "hours" | "days";
     quantity: number;
+    rate?: number; // snapshot of the applicable master rate at log time
+    cost?: number; // quantity * rate, snapshot for display
   }[];
   note?: string;
   photoUrls?: string[];
 }
 
 // Reusable equipment master, managed per project and picked from in daily logs.
-// Kept intentionally light; a rate can be added later for cost roll-up.
+// Rates are optional so an item can exist before its cost is known; usage is
+// costed by the rate that matches the logged unit (hours vs days).
 export interface EquipmentItem {
   id: string;
   name: string;
   ownership: "Owned" | "Rented";
+  hourlyRate?: number;
+  dailyRate?: number;
 }
