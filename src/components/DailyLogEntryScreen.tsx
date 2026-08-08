@@ -76,6 +76,8 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
   const [newEquipmentName, setNewEquipmentName] = useState("");
   const [newEquipmentOwnership, setNewEquipmentOwnership] =
     useState<EquipmentItem["ownership"]>("Owned");
+  const [newEquipmentHourly, setNewEquipmentHourly] = useState("");
+  const [newEquipmentDaily, setNewEquipmentDaily] = useState("");
   const [savingEquipment, setSavingEquipment] = useState(false);
   const [note, setNote] = useState<string>(editLog?.note || "");
   // For edits, we'll just track new photos and existing photos separately
@@ -267,8 +269,18 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
     } else {
       newItems[index] = { ...newItems[index], [field]: value };
     }
+    // Snapshot the applicable rate (by unit) and cost for display. The cost
+    // rollup recomputes independently from the master, so this is indicative.
+    const line = newItems[index];
+    const master = equipmentMaster.find((e) => e.id === line.equipmentId);
+    const rate =
+      line.unit === "days" ? master?.dailyRate ?? 0 : master?.hourlyRate ?? 0;
+    line.rate = rate;
+    line.cost = rate * (line.quantity || 0);
     setEquipment(newItems);
   };
+
+  const equipmentTotal = equipment.reduce((s, e) => s + (e.cost || 0), 0);
 
   const saveNewEquipment = async () => {
     const name = newEquipmentName.trim();
@@ -277,14 +289,20 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
       setSavingEquipment(true);
       const equipmentPath = getTenantPath(user, projectId, "equipment");
       if (!equipmentPath) return;
+      const hourly = parseFloat(newEquipmentHourly);
+      const daily = parseFloat(newEquipmentDaily);
       await addDoc(collection(db, equipmentPath), {
         name,
         ownership: newEquipmentOwnership,
+        ...(isNaN(hourly) ? {} : { hourlyRate: hourly }),
+        ...(isNaN(daily) ? {} : { dailyRate: daily }),
         createdAt: new Date().toISOString(),
       });
       // useProjectData is realtime, so the new item appears in the dropdowns.
       setNewEquipmentName("");
       setNewEquipmentOwnership("Owned");
+      setNewEquipmentHourly("");
+      setNewEquipmentDaily("");
       setShowNewEquipment(false);
     } catch (err) {
       console.error("Failed to add equipment", err);
@@ -699,6 +717,21 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 </div>
               ))}
 
+              {equipment.length > 0 && (
+                <div className="flex justify-between items-center px-1">
+                  {equipment.some((e) => e.equipmentId && !(e.cost && e.cost > 0)) ? (
+                    <span className="text-[10px] font-bold text-[#C0653F]">
+                      Set a rate on the equipment to cost its usage
+                    </span>
+                  ) : (
+                    <span />
+                  )}
+                  <span className="text-xs font-black text-ink font-mono">
+                    Equipment: ₹{equipmentTotal.toLocaleString("en-IN")}
+                  </span>
+                </div>
+              )}
+
               {/* Inline quick-add for the equipment master */}
               {showNewEquipment ? (
                 <div className="bg-panel/60 rounded-xl border border-divider p-3 space-y-3">
@@ -724,6 +757,30 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       <option value="Rented">Rented</option>
                     </select>
                   </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="₹ / hour (optional)"
+                      value={newEquipmentHourly}
+                      onChange={(e) => setNewEquipmentHourly(e.target.value)}
+                      className="flex-1 min-w-0 bg-surface p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none font-mono"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="₹ / day (optional)"
+                      value={newEquipmentDaily}
+                      onChange={(e) => setNewEquipmentDaily(e.target.value)}
+                      className="flex-1 min-w-0 bg-surface p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none font-mono"
+                    />
+                  </div>
+                  <p className="text-[10px] text-ink-muted font-bold">
+                    Set the rate matching how you log this machine (hours or
+                    days). Usage cost rolls into the project's Direct Cost.
+                  </p>
                   <div className="flex justify-end gap-2">
                     <button
                       type="button"
