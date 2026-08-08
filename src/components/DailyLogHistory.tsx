@@ -9,6 +9,7 @@ import {
   Clock,
   Cube as Box,
   Users,
+  Truck,
   ChatText as MessageSquare,
   PencilSimple as Edit2,
   Trash as Trash2,
@@ -99,7 +100,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
             </div>
           </div>
 
-          {(log.materials.length > 0 || log.labour.length > 0) && (
+          {(log.materials.length > 0 || log.labour.length > 0 || (log.equipment?.length ?? 0) > 0) && (
             <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-divider/50">
               {log.materials.length > 0 && (
                 <div>
@@ -137,6 +138,29 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
                       >
                         <span className="truncate pr-2">{l.roleName}</span>
                         <span className="font-mono">{l.headcount}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {(log.equipment?.length ?? 0) > 0 && (
+                <div>
+                  <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest flex flex-wrap items-center gap-1 mb-1.5 opacity-70">
+                    <Truck className="w-3 h-3" /> Equipment
+                  </span>
+                  <ul className="space-y-1">
+                    {log.equipment!.map((eq, i) => (
+                      <li
+                        key={i}
+                        className="text-[11px] font-bold text-ink/80 flex justify-between"
+                      >
+                        <span className="truncate pr-2">{eq.name}</span>
+                        <span className="font-mono">
+                          {eq.quantity}{" "}
+                          <span className="text-[9px] text-ink-muted">
+                            {eq.unit === "days" ? "days" : "hrs"}
+                          </span>
+                        </span>
                       </li>
                     ))}
                   </ul>
