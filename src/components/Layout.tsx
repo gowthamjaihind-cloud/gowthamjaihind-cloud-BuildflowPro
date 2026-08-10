@@ -17,6 +17,7 @@ import {
   TestTube,
   Calculator,
   CheckCircle as CheckCircle2,
+  Sparkle as Sparkles,
 } from "@phosphor-icons/react";
 import { BrandLogo } from "./BrandLogo";
 import { SyncStatus } from "./SyncStatus";
@@ -49,6 +50,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "insights", label: "AI Insights", icon: Sparkles },
     { id: "wbs", label: "WBS", icon: ListTree },
     { id: "dailylogs", label: "Daily Logs", icon: CheckCircle2 },
     { id: "labor", label: "Labor & Billing", icon: Users },
