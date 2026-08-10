@@ -64,6 +64,10 @@ export const useProjectCostTotals = (projectId: string) => {
         actualLabor: number;
         plannedOther: number;
         actualOther: number;
+        // Equipment is a breakdown that lives INSIDE actualOther/plannedOther;
+        // it is not added to the totals again (no double counting).
+        plannedEquipment: number;
+        actualEquipment: number;
         totalPlanned: number;
         totalActual: number;
       }
@@ -82,6 +86,8 @@ export const useProjectCostTotals = (projectId: string) => {
           actualLabor: 0,
           plannedOther: 0,
           actualOther: 0,
+          plannedEquipment: 0,
+          actualEquipment: 0,
           totalPlanned: 0,
           totalActual: 0,
         };
@@ -94,6 +100,8 @@ export const useProjectCostTotals = (projectId: string) => {
       let actualLabor = 0;
       let plannedOther = 0;
       let actualOther = 0;
+      let plannedEquipment = 0;
+      let actualEquipment = 0;
 
       const isOverhead = task.name === "Project Overhead" && task.isSystemGenerated;
         const budgetEntries = entries.filter((e) => (e.taskId === taskId || (isOverhead && !e.taskId)) && e.type === "Budget");
@@ -165,6 +173,10 @@ export const useProjectCostTotals = (projectId: string) => {
               }, 0)
             );
           }, 0);
+        actualEquipment = dailyLogEquip;
+        plannedEquipment = (task as any).plannedEquipmentCost || 0;
+        // actualOther keeps equipment inside it so the grand totals below stay
+        // correct; the equipment breakdown is surfaced separately for reporting.
         actualOther = entryOther + dailyLogEquip;
 
       if (children.length > 0) {
@@ -176,6 +188,8 @@ export const useProjectCostTotals = (projectId: string) => {
           actualLabor += childTotals.actualLabor;
           plannedOther += childTotals.plannedOther;
           actualOther += childTotals.actualOther;
+          plannedEquipment += childTotals.plannedEquipment;
+          actualEquipment += childTotals.actualEquipment;
         });
       }
 
@@ -189,6 +203,8 @@ export const useProjectCostTotals = (projectId: string) => {
         actualLabor,
         plannedOther,
         actualOther,
+        plannedEquipment,
+        actualEquipment,
         totalPlanned,
         totalActual,
       };
@@ -208,6 +224,8 @@ export const useProjectCostTotals = (projectId: string) => {
         actualLabor: 0,
         plannedOther: 0,
         actualOther: 0,
+        plannedEquipment: 0,
+        actualEquipment: 0,
         totalPlanned: 0,
         totalActual: 0,
       }
@@ -228,6 +246,8 @@ export const useProjectCostTotals = (projectId: string) => {
     let laborActual = 0;
     let otherPlanned = 0;
     let otherActual = 0;
+    let equipmentPlanned = 0;
+    let equipmentActual = 0;
 
     rootTasks.forEach((t) => {
       const totals = getTaskTotals(t);
@@ -239,15 +259,23 @@ export const useProjectCostTotals = (projectId: string) => {
       laborActual += totals.actualLabor;
       otherPlanned += totals.plannedOther;
       otherActual += totals.actualOther;
+      equipmentPlanned += totals.plannedEquipment;
+      equipmentActual += totals.actualEquipment;
     });
 
     const totalBudgeted = budgetedTasks;
     const totalActual = actualTasks;
 
+    // Equipment lives inside "other"; subtract it so the chart's Direct Cost bar
+    // and Equipment bar don't double-count.
+    const directPlanned = otherPlanned - equipmentPlanned;
+    const directActual = otherActual - equipmentActual;
+
     const chartData = [
       { name: "Material", Budget: materialPlanned, Actual: materialActual },
       { name: "Labor", Budget: laborPlanned, Actual: laborActual },
-      { name: "Direct Cost", Budget: otherPlanned, Actual: otherActual },
+      { name: "Equipment", Budget: equipmentPlanned, Actual: equipmentActual },
+      { name: "Direct Cost", Budget: directPlanned, Actual: directActual },
     ];
 
     return {
@@ -262,6 +290,8 @@ export const useProjectCostTotals = (projectId: string) => {
       laborActual,
       otherPlanned,
       otherActual,
+      equipmentPlanned,
+      equipmentActual,
     };
   }, [tasks, taskTotalsMap]);
 

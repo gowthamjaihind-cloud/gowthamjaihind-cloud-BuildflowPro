@@ -40,6 +40,7 @@ import {
   WarningCircle as AlertCircle,
   Trash as Trash2,
   Stack as Layers,
+  Truck,
   MapPin,
   MagnifyingGlass as Search,
   Info,
@@ -525,6 +526,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       "Actual Material",
       "Planned Labor",
       "Actual Labor",
+      "Planned Equipment",
+      "Actual Equipment",
       "Planned Other",
       "Actual Other",
       "Total Planned",
@@ -534,14 +537,19 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
     const rows = tasks.map((task) => {
       const totals = getTaskTotals(task);
+      // Equipment is carved out of "other" so the columns still sum to the total.
+      const plannedOtherPure = totals.plannedOther - totals.plannedEquipment;
+      const actualOtherPure = totals.actualOther - totals.actualEquipment;
       return [
         task.name,
         totals.plannedMaterial,
         totals.actualMaterial,
         totals.plannedLabor,
         totals.actualLabor,
-        totals.plannedOther,
-        totals.actualOther,
+        totals.plannedEquipment,
+        totals.actualEquipment,
+        plannedOtherPure,
+        actualOtherPure,
         totals.totalPlanned,
         totals.totalActual,
         totals.totalPlanned - totals.totalActual,
@@ -561,15 +569,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
     const { headers, rows } = getReportData();
     const formattedRows = rows.map((r) => [
       r[0],
-      `₹${Number(r[1]).toLocaleString("en-IN")}`,
-      `₹${Number(r[2]).toLocaleString("en-IN")}`,
-      `₹${Number(r[3]).toLocaleString("en-IN")}`,
-      `₹${Number(r[4]).toLocaleString("en-IN")}`,
-      `₹${Number(r[5]).toLocaleString("en-IN")}`,
-      `₹${Number(r[6]).toLocaleString("en-IN")}`,
-      `₹${Number(r[7]).toLocaleString("en-IN")}`,
-      `₹${Number(r[8]).toLocaleString("en-IN")}`,
-      `₹${Number(r[9]).toLocaleString("en-IN")}`,
+      ...r.slice(1).map((v) => `₹${Number(v).toLocaleString("en-IN")}`),
     ]);
     const dateStr = new Date().toISOString().split("T")[0];
     exportToPDF("Project Cost Management Report", `Project ID: ${projectId}`, headers, formattedRows, `Project_Cost_Report_${dateStr}`);
@@ -633,13 +633,27 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           <td className="py-4 text-right">
             <div className="text-xs">
               ₹
-              {totals.plannedOther.toLocaleString("en-IN", {
+              {totals.plannedEquipment.toLocaleString("en-IN", {
                 maximumFractionDigits: 0,
               })}
             </div>
             <div className="text-[10px] text-ink-muted">
               ₹
-              {totals.actualOther.toLocaleString("en-IN", {
+              {totals.actualEquipment.toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}
+            </div>
+          </td>
+          <td className="py-4 text-right">
+            <div className="text-xs">
+              ₹
+              {(totals.plannedOther - totals.plannedEquipment).toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}
+            </div>
+            <div className="text-[10px] text-ink-muted">
+              ₹
+              {(totals.actualOther - totals.actualEquipment).toLocaleString("en-IN", {
                 maximumFractionDigits: 0,
               })}
             </div>
@@ -1216,7 +1230,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
       {viewMode === "dashboard" && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {[
               {
                 title: "Total Cost",
@@ -1235,6 +1249,12 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 planned: stats.materialPlanned,
                 actual: stats.materialActual,
                 icon: Layers,
+              },
+              {
+                title: "Equipment Cost",
+                planned: stats.equipmentPlanned,
+                actual: stats.equipmentActual,
+                icon: Truck,
               },
             ].map((stat, idx) => {
               const variance = stat.planned - stat.actual;
@@ -1792,7 +1812,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
             <div className="bg-panel p-4 md:p-6 rounded-2xl border">
               <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
                 Material
@@ -1851,13 +1871,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </div>
             <div className="bg-panel p-4 md:p-6 rounded-2xl border">
               <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
-                Direct Cost
+                Equipment
               </div>
               <div className="flex justify-between items-end">
                 <div>
                   <div className="text-xl md:text-2xl font-bold">
                     ₹
-                    {stats.otherActual.toLocaleString("en-IN", {
+                    {stats.equipmentActual.toLocaleString("en-IN", {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -1866,7 +1886,32 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 <div className="text-right">
                   <div className="text-xs font-bold text-[#059669]">
                     ₹
-                    {stats.otherPlanned.toLocaleString("en-IN", {
+                    {stats.equipmentPlanned.toLocaleString("en-IN", {
+                      maximumFractionDigits: 0,
+                    })}
+                  </div>
+                  <div className="text-[9px] opacity-50">Planned</div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-panel p-4 md:p-6 rounded-2xl border">
+              <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
+                Direct Cost
+              </div>
+              <div className="flex justify-between items-end">
+                <div>
+                  <div className="text-xl md:text-2xl font-bold">
+                    ₹
+                    {(stats.otherActual - stats.equipmentActual).toLocaleString("en-IN", {
+                      maximumFractionDigits: 0,
+                    })}
+                  </div>
+                  <div className="text-[9px] opacity-50">Actual</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-bold text-[#059669]">
+                    ₹
+                    {(stats.otherPlanned - stats.equipmentPlanned).toLocaleString("en-IN", {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -1896,6 +1941,9 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     </span>
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
+                    Equipment (P/A)
+                  </th>
+                  <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
                     Direct Cost (P/A)
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
@@ -1917,7 +1965,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <React.Fragment key={phase}>
                     <tr className="bg-panel/30">
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         className="p-4 px-6 border-y border-divider"
                       >
                         <div className="flex items-center gap-3">
@@ -1939,7 +1987,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <React.Fragment key={`${phase}-${location}`}>
                         <tr className="bg-panel/50">
                           <td
-                            colSpan={8}
+                            colSpan={9}
                             className="p-2 px-10 border-b border-divider"
                           >
                             <div className="flex items-center gap-2">
@@ -1995,13 +2043,27 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <td className="p-4 text-right">
                     <div className="text-xs">
                       ₹
-                      {stats.otherPlanned.toLocaleString("en-IN", {
+                      {stats.equipmentPlanned.toLocaleString("en-IN", {
                         maximumFractionDigits: 0,
                       })}
                     </div>
                     <div className="text-[10px] text-white/70">
                       ₹
-                      {stats.otherActual.toLocaleString("en-IN", {
+                      {stats.equipmentActual.toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })}
+                    </div>
+                  </td>
+                  <td className="p-4 text-right">
+                    <div className="text-xs">
+                      ₹
+                      {(stats.otherPlanned - stats.equipmentPlanned).toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })}
+                    </div>
+                    <div className="text-[10px] text-white/70">
+                      ₹
+                      {(stats.otherActual - stats.equipmentActual).toLocaleString("en-IN", {
                         maximumFractionDigits: 0,
                       })}
                     </div>
@@ -2051,7 +2113,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   0}
                 % of the total expenditure. Labor costs are at{" "}
                 {Math.round((stats.laborActual / stats.totalActual) * 100) || 0}
-                % of actual spend.
+                % of actual spend, and equipment at{" "}
+                {Math.round((stats.equipmentActual / stats.totalActual) * 100) ||
+                  0}
+                %.
               </p>
             </div>
           </div>
