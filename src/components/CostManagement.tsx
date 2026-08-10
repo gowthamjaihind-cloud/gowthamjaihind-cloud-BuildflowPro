@@ -526,7 +526,6 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       "Actual Material",
       "Planned Labor",
       "Actual Labor",
-      "Planned Equipment",
       "Actual Equipment",
       "Planned Other",
       "Actual Other",
@@ -537,8 +536,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
     const rows = tasks.map((task) => {
       const totals = getTaskTotals(task);
-      // Equipment is carved out of "other" so the columns still sum to the total.
-      const plannedOtherPure = totals.plannedOther - totals.plannedEquipment;
+      // Equipment (actuals only) is carved out of "other" so the columns still
+      // sum to the totals. Planned has no equipment component.
       const actualOtherPure = totals.actualOther - totals.actualEquipment;
       return [
         task.name,
@@ -546,9 +545,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
         totals.actualMaterial,
         totals.plannedLabor,
         totals.actualLabor,
-        totals.plannedEquipment,
         totals.actualEquipment,
-        plannedOtherPure,
+        totals.plannedOther,
         actualOtherPure,
         totals.totalPlanned,
         totals.totalActual,
@@ -631,13 +629,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </div>
           </td>
           <td className="py-4 text-right">
-            <div className="text-xs">
-              ₹
-              {totals.plannedEquipment.toLocaleString("en-IN", {
-                maximumFractionDigits: 0,
-              })}
-            </div>
-            <div className="text-[10px] text-ink-muted">
+            <div className="text-xs font-semibold text-primary">
               ₹
               {totals.actualEquipment.toLocaleString("en-IN", {
                 maximumFractionDigits: 0,
@@ -647,7 +639,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           <td className="py-4 text-right">
             <div className="text-xs">
               ₹
-              {(totals.plannedOther - totals.plannedEquipment).toLocaleString("en-IN", {
+              {totals.plannedOther.toLocaleString("en-IN", {
                 maximumFractionDigits: 0,
               })}
             </div>
@@ -1257,8 +1249,11 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 icon: Truck,
               },
             ].map((stat, idx) => {
+              // Equipment is tracked actuals-only (no planned budget), so its
+              // card skips the planned/variance treatment.
+              const actualOnly = stat.title === "Equipment Cost";
               const variance = stat.planned - stat.actual;
-              const isOver = variance < 0;
+              const isOver = !actualOnly && variance < 0;
               const percentage =
                 stat.planned > 0 ? (stat.actual / stat.planned) * 100 : 0;
 
@@ -1280,74 +1275,99 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         </span>
                       )}
                     </h4>
-                    <span
-                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                        isOver
-                          ? "bg-[#EF4444]/8 text-[#EF4444] border border-[#EF4444]/30"
-                          : "bg-[#34D399]/12 text-[#059669] border border-[#34D399]/40"
-                      }`}
-                    >
-                      {isOver ? "Over Budget" : "On Track"}
-                    </span>
+                    {actualOnly ? (
+                      <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-ice text-[#56778E] border border-divider">
+                        Actuals
+                      </span>
+                    ) : (
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                          isOver
+                            ? "bg-[#EF4444]/8 text-[#EF4444] border border-[#EF4444]/30"
+                            : "bg-[#34D399]/12 text-[#059669] border border-[#34D399]/40"
+                        }`}
+                      >
+                        {isOver ? "Over Budget" : "On Track"}
+                      </span>
+                    )}
                   </div>
 
                   <div className="space-y-4">
-                    <div className="flex justify-between items-end">
+                    {actualOnly ? (
                       <div>
-                        <div className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-1">
-                          Planned
-                        </div>
-                        <div className="text-xl font-bold text-ink tracking-tight">
-                          ₹
-                          {stat.planned.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
-                        </div>
-                      </div>
-                      <div className="text-right">
                         <div className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-1">
                           Actual
                         </div>
-                        <div className="text-xl font-bold text-primary tracking-tight">
+                        <div className="text-2xl font-bold text-primary tracking-tight">
                           ₹
                           {stat.actual.toLocaleString("en-IN", {
                             maximumFractionDigits: 0,
                           })}
                         </div>
+                        <div className="text-[11px] text-ink-muted font-medium mt-1">
+                          From logged equipment usage
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <div className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-1">
+                              Planned
+                            </div>
+                            <div className="text-xl font-bold text-ink tracking-tight">
+                              ₹
+                              {stat.planned.toLocaleString("en-IN", {
+                                maximumFractionDigits: 0,
+                              })}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-1">
+                              Actual
+                            </div>
+                            <div className="text-xl font-bold text-primary tracking-tight">
+                              ₹
+                              {stat.actual.toLocaleString("en-IN", {
+                                maximumFractionDigits: 0,
+                              })}
+                            </div>
+                          </div>
+                        </div>
 
-                    {/* Progress Bar */}
-                    <div className="h-2 w-full bg-panel rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-1000 ${
-                          isOver
-                            ? "bg-[#EF4444]"
-                            : percentage > 80
-                              ? "bg-[#E1946F]"
-                              : "bg-[#10B981]"
-                        }`}
-                        style={{
-                          width: `${Math.min(100, Math.max(0, percentage))}%`,
-                        }}
-                      />
-                    </div>
+                        {/* Progress Bar */}
+                        <div className="h-2 w-full bg-panel rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-1000 ${
+                              isOver
+                                ? "bg-[#EF4444]"
+                                : percentage > 80
+                                  ? "bg-[#E1946F]"
+                                  : "bg-[#10B981]"
+                            }`}
+                            style={{
+                              width: `${Math.min(100, Math.max(0, percentage))}%`,
+                            }}
+                          />
+                        </div>
 
-                    <div className="flex justify-between items-center pt-2 border-t border-white/10">
-                      <div className="text-xs font-medium text-ink-muted">
-                        Variance
-                      </div>
-                      <div
-                        className={`text-sm font-bold ${
-                          isOver ? "text-[#EF4444]" : "text-[#10B981]"
-                        }`}
-                      >
-                        {isOver ? "-" : "+"}₹
-                        {Math.abs(variance).toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}
-                      </div>
-                    </div>
+                        <div className="flex justify-between items-center pt-2 border-t border-white/10">
+                          <div className="text-xs font-medium text-ink-muted">
+                            Variance
+                          </div>
+                          <div
+                            className={`text-sm font-bold ${
+                              isOver ? "text-[#EF4444]" : "text-[#10B981]"
+                            }`}
+                          >
+                            {isOver ? "-" : "+"}₹
+                            {Math.abs(variance).toLocaleString("en-IN", {
+                              maximumFractionDigits: 0,
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               );
@@ -1884,13 +1904,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <div className="text-[9px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold text-[#059669]">
-                    ₹
-                    {stats.equipmentPlanned.toLocaleString("en-IN", {
-                      maximumFractionDigits: 0,
-                    })}
-                  </div>
-                  <div className="text-[9px] opacity-50">Planned</div>
+                  <div className="text-[9px] opacity-50">Actuals only</div>
                 </div>
               </div>
             </div>
@@ -1911,7 +1925,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 <div className="text-right">
                   <div className="text-xs font-bold text-[#059669]">
                     ₹
-                    {(stats.otherPlanned - stats.equipmentPlanned).toLocaleString("en-IN", {
+                    {stats.otherPlanned.toLocaleString("en-IN", {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -1941,7 +1955,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     </span>
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
-                    Equipment (P/A)
+                    Equipment (Actual)
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
                     Direct Cost (P/A)
@@ -2041,13 +2055,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     </div>
                   </td>
                   <td className="p-4 text-right">
-                    <div className="text-xs">
-                      ₹
-                      {stats.equipmentPlanned.toLocaleString("en-IN", {
-                        maximumFractionDigits: 0,
-                      })}
-                    </div>
-                    <div className="text-[10px] text-white/70">
+                    <div className="text-[10px] text-white/70">Actual</div>
+                    <div className="text-sm font-bold">
                       ₹
                       {stats.equipmentActual.toLocaleString("en-IN", {
                         maximumFractionDigits: 0,
@@ -2057,7 +2066,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <td className="p-4 text-right">
                     <div className="text-xs">
                       ₹
-                      {(stats.otherPlanned - stats.equipmentPlanned).toLocaleString("en-IN", {
+                      {stats.otherPlanned.toLocaleString("en-IN", {
                         maximumFractionDigits: 0,
                       })}
                     </div>
