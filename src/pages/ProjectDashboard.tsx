@@ -25,6 +25,9 @@ const LaborTrackingView = lazy(() =>
 const CostManagement = lazy(() =>
   import("../components/CostManagement").then((m) => ({ default: m.CostManagement })),
 );
+const ProjectInsights = lazy(() =>
+  import("../components/ProjectInsights").then((m) => ({ default: m.ProjectInsights })),
+);
 const EstimateTrackerView = lazy(() =>
   import("../components/EstimateTrackerView").then((m) => ({ default: m.EstimateTrackerView })),
 );
@@ -93,6 +96,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                 handleAddDependency={handleAddDependency}
               />
             )}
+            {activeTab === "insights" && <ProjectInsights projectId={activeProject.id} />}
             {activeTab === "wbs" && <WBSView projectId={activeProject.id} />}
             {activeTab === "dailylogs" && <ProjectDailyLogsTab projectId={activeProject.id} />}
             {activeTab === "inventory" && (

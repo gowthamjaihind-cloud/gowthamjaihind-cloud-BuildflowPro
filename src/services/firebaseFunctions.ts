@@ -26,3 +26,24 @@ export const callProcessCostAnalysisData = async (projectId: string) => {
   const fn = httpsCallable<{ projectId: string }, { success: boolean, insights: string }>(getFunctionsInstance(), 'processCostAnalysisData');
   return fn({ projectId });
 };
+
+export interface ProjectInsightsResult {
+  insights: {
+    costVariance: string;
+    scheduleSlippage: string;
+    executiveDigest: string;
+    siteReport: string;
+  };
+  generatedAt: string;
+  model: string;
+}
+
+// Sends a compact, already-aggregated project brief to the server-side Gemini
+// call and returns the four insight sections. Keeping aggregation on the client
+// avoids re-deriving cost/schedule maths on the backend and keeps the API key
+// server-side.
+export const callGenerateProjectInsights = async (brief: any) => {
+  const fn = httpsCallable<{ brief: any }, ProjectInsightsResult>(getFunctionsInstance(), 'generateProjectInsights');
+  const res = await fn({ brief });
+  return res.data;
+};
