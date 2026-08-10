@@ -1,0 +1,71 @@
+name: Deploy Firebase Functions
+
+# Deploys Cloud Functions (project: jewel-ledger) WITHOUT needing a local machine.
+# Trigger it two ways:
+#   1. From the GitHub mobile app / web: Actions tab -> "Deploy Firebase
+#      Functions" -> Run workflow. (This is the "deploy from my phone" path.)
+#   2. Automatically on every push to main that changes anything under functions/.
+#
+# Requires one repository secret (the SAME name the hosting workflow uses):
+#   FIREBASE_SERVICE_ACCOUNT  – JSON key for a service account on jewel-ledger.
+#     NOTE: deploying functions needs MORE than Hosting Admin. The service
+#     account must also be able to deploy Cloud Functions v2 (Cloud Run),
+#     Cloud Scheduler, Secret Manager and Artifact Registry. If the first run
+#     fails with a permissions error, grant the service account these roles in
+#     the Google Cloud console (IAM): Cloud Functions Admin, Cloud Run Admin,
+#     Service Account User, Cloud Scheduler Admin, Secret Manager Admin,
+#     Artifact Registry Admin, Service Usage Consumer. (Or, simplest: the
+#     "Editor" role — broad but gets it working.)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "functions/**"
+      - ".github/workflows/firebase-functions-deploy.yml"
+
+# Never run two functions deploys at once.
+concurrency:
+  group: firebase-functions
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy_functions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install functions dependencies
+        run: npm ci
+        working-directory: functions
+
+      - name: Build functions (type-check + compile)
+        run: npm run build
+        working-directory: functions
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Deploy functions
+        # Application Default Credentials come from the auth step above
+        # (it exports GOOGLE_APPLICATION_CREDENTIALS for later steps).
+        run: npx firebase-tools@latest deploy --only functions --project jewel-ledger --non-interactive --force
+        env:
+          # The v2 backend loader needs longer than the 10s default to enumerate
+          # functions in CI, otherwise deploy fails with "Cannot determine
+          # backend specification. Timeout after 10000".
+          FUNCTIONS_DISCOVERY_TIMEOUT: "120"
