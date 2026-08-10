@@ -1,5 +1,6 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
 import { TelegramApi } from "./api";
 import { getSession, setSession, clearStep, clearSession } from "./session";
@@ -81,6 +82,11 @@ async function handleUpdate(tg, update) {
         const session = await getSession(chatId);
         if (!(await validateSession(chatId, session))) {
             await tg.editMessage(chatId, messageId, "Session expired. Send /link to reconnect.");
+            return;
+        }
+        // "Log now" button from the daily reminder — starts the normal log flow.
+        if (data === "log") {
+            await log.startLog(tg, chatId, session);
             return;
         }
                 if (data === "dt") {
@@ -329,4 +335,42 @@ export const onUserUnlinked = onDocumentUpdated({
             console.error("Failed to send unlink message:", err);
         }
     }
+});
+
+// Proactive daily reminder: instead of waiting for people to remember, the bot
+// pings every linked user at 5:00 PM IST, Mon–Sat, with a one-tap button that
+// starts the log flow. Runs once a day, so the scheduled cost is negligible.
+export const dailyLogReminder = onSchedule({
+    schedule: "0 17 * * 1-6", // 17:00 Mon–Sat (0=Sun) in the timezone below
+    timeZone: "Asia/Kolkata",
+    region: "asia-southeast1",
+    secrets: [BOT_TOKEN],
+}, async () => {
+    const tg = new TelegramApi(BOT_TOKEN.value());
+    // Small user base; fetch all and keep the ones who have linked Telegram.
+    const snap = await db.collection("users").get();
+    const targets = snap.docs
+        .map((d) => d.data())
+        .filter((u: any) => u.telegramChatId);
+
+    let sent = 0;
+    for (const u of targets) {
+        try {
+            await tg.sendMessage(
+                u.telegramChatId,
+                "🌇 <b>End-of-day check-in</b>\n\n" +
+                "Did you record today's site progress? Tap below to log it in under a minute.",
+                [
+                    [{ text: "📝 Log today's work", callback_data: "log" }],
+                    [{ text: "Not today", callback_data: "xx" }],
+                ]
+            );
+            sent++;
+        }
+        catch (err) {
+            // A user may have blocked the bot; skip and keep going.
+            console.error("Daily reminder failed for chat", u.telegramChatId, err);
+        }
+    }
+    console.log(`Daily log reminder sent to ${sent}/${targets.length} linked users.`);
 });
