@@ -21,7 +21,9 @@ export const useProjectCostTotals = (projectId: string) => {
         (grn.lineItems || []).forEach((grnLine: any) => {
           if (grnLine.poLineRef === item.id) {
             const poLine = (po.lineItems || []).find((pLine: any) => pLine.itemId === item.id);
-            const rate = poLine?.rate || 0;
+            // gst-itemized GRNs carry the ex-GST rate from the bill; value at that
+            // (so material cost stays ex-GST). Legacy GRNs fall back to PO rate.
+            const rate = grnLine.rate ?? poLine?.rate ?? 0;
             if (rate > 0 && grnLine.acceptedQty > 0) {
               totalQty += grnLine.acceptedQty;
               totalCost += grnLine.acceptedQty * rate;
