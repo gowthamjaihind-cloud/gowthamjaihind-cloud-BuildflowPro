@@ -21,6 +21,7 @@ import {
 import { Project, UserProfile } from "../types";
 import { EnterpriseAuthView } from "./EnterpriseAuthView";
 import { useUIStore } from "../store";
+import { useOrgSettings } from "../hooks/useOrgSettings";
 
 interface SettingsViewProps {
   onBack: () => void;
@@ -48,6 +49,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const setDarkMode = useUIStore((state) => state.setDarkMode);
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [draftCompanyName, setDraftCompanyName] = useState(companyName);
+  const { settings: orgSettings, save: saveOrgSettings } = useOrgSettings();
+  const [draftGstin, setDraftGstin] = useState("");
+  // Load the saved GSTIN once it arrives from Firestore.
+  React.useEffect(() => {
+    setDraftGstin(orgSettings.gstin || "");
+  }, [orgSettings.gstin]);
 
   return (
     <div className="min-h-screen p-8 md:p-12 lg:p-24 overflow-x-hidden relative">
@@ -159,13 +166,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-ink mb-2">
-                      Registration ID / GST
+                      Company GSTIN
                     </label>
                     <input
                       type="text"
-                      className="w-full bg-surface border border-[#C8D1D3] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink"
+                      value={draftGstin}
+                      onChange={(e) => setDraftGstin(e.target.value.toUpperCase())}
+                      maxLength={15}
+                      className="w-full bg-surface border border-[#C8D1D3] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink font-mono"
                       placeholder="e.g. 29ABCDE1234F1Z5"
                     />
+                    <p className="text-[11px] text-ink-muted mt-1.5">
+                      Used to validate vendor invoices and split CGST/SGST vs IGST.
+                      {draftGstin.length >= 2 && ` State code: ${draftGstin.slice(0, 2)}.`}
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-ink mb-2">
@@ -179,10 +193,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
                   <div className="pt-4 border-t border-surface-dark/5">
                     <button
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         const target = e.currentTarget;
                         const originalText = target.innerHTML;
-                        target.innerHTML = "Saved!";
+                        try {
+                          await saveOrgSettings({ gstin: draftGstin });
+                          target.innerHTML = "Saved!";
+                        } catch {
+                          target.innerHTML = "Save failed";
+                        }
                         setTimeout(() => {
                           target.innerHTML = originalText;
                         }, 2000);
