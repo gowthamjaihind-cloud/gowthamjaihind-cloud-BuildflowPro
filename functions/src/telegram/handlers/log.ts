@@ -112,6 +112,7 @@ export async function pickTask(tg: any, chatId: number, messageId, session, task
             currentProgress: current,
             materials: [],
             labour: [],
+            equipment: [],
             photoUrls: [],
         },
     });
@@ -132,12 +133,15 @@ export async function showMenu(tg: any, chatId: number, messageId, session) {
     const d = session.draft || {};
     const mats = (d.materials || []).length;
     const lab = (d.labour || []).length;
+    const equip = (d.equipment || []).length;
     const photos = (d.photoUrls || []).length;
     let text = `<b>${d.taskName}</b>\n${fmtDate(d.workDate)} · ${d.currentProgress}% → <b>${d.progressPercent}%</b>\n`;
     if (mats)
         text += `\n📦 ${mats} material${mats > 1 ? "s" : ""}`;
     if (lab)
         text += `\n👷 ${lab} labour`;
+    if (equip)
+        text += `\n🚜 ${equip} equipment`;
     if (photos)
         text += `\n📷 ${photos} photo${photos > 1 ? "s" : ""}`;
     if (d.note)
@@ -145,7 +149,8 @@ export async function showMenu(tg: any, chatId: number, messageId, session) {
     const rows = [
         [{ text: "✅ Save", callback_data: "sv" }],
         [{ text: "+ Materials", callback_data: "m" }, { text: "+ Labour", callback_data: "l" }],
-        [{ text: "+ Photo", callback_data: "ph" }, { text: "+ Note", callback_data: "nt" }],
+        [{ text: "+ Equipment", callback_data: "e" }, { text: "+ Photo", callback_data: "ph" }],
+        [{ text: "+ Note", callback_data: "nt" }],
         [{ text: "✖ Cancel", callback_data: "xx" }],
     ];
     await setSession(chatId, { step: "log:menu" });
@@ -210,6 +215,46 @@ export async function askHeadcount(tg: any, chatId: number, messageId, session, 
         draft: { ...(session.draft || {}), pendingLabour: { roleId, roleName } },
     });
     await tg.editMessage(chatId, messageId, `<b>${roleName}</b>\n\nHow many workers?\n<i>Type a number.</i>`);
+}
+export async function pickEquipment(tg: any, chatId: number, messageId, session) {
+    const base = projPath(session.orgId, session.activeProjectId);
+    const snap = await db.collection(`${base}/equipment`).limit(20).get();
+    if (snap.empty) {
+        await tg.editMessage(chatId, messageId, "No equipment set up. Add it in the web app.");
+        return;
+    }
+    const rows = snap.docs.map((d) => {
+        const e = d.data();
+        const label = e.ownership ? `${e.name} (${e.ownership})` : e.name;
+        return [{ text: label, callback_data: `ei:${d.id}` }];
+    });
+    rows.push([{ text: "◀ Back", callback_data: "bk" }]);
+    await setSession(chatId, { step: "log:equipment_pick" });
+    await tg.editMessage(chatId, messageId, "<b>Which equipment?</b>", rows);
+}
+export async function askEquipmentUnit(tg: any, chatId: number, messageId, session, equipmentId) {
+    const base = projPath(session.orgId, session.activeProjectId);
+    const snap = await db.doc(`${base}/equipment/${equipmentId}`).get();
+    if (!snap.exists)
+        return;
+    const e = snap.data();
+    await setSession(chatId, {
+        step: "log:equipment_unit",
+        draft: { ...(session.draft || {}), pendingEquipment: { equipmentId, name: e.name } },
+    });
+    await tg.editMessage(chatId, messageId, `<b>${e.name}</b>\n\nMeasured in?`, [
+        [{ text: "Hours", callback_data: "eu:hours" }, { text: "Days", callback_data: "eu:days" }],
+        [{ text: "◀ Back", callback_data: "bk" }],
+    ]);
+}
+export async function askEquipmentQty(tg: any, chatId: number, messageId, session, unit) {
+    const d = session.draft || {};
+    const pe = d.pendingEquipment || {};
+    await setSession(chatId, {
+        step: "log:equipment_qty",
+        draft: { ...d, pendingEquipment: { ...pe, unit } },
+    });
+    await tg.editMessage(chatId, messageId, `<b>${pe.name}</b>\n\nHow many ${unit}?\n<i>Type a number.</i>`);
 }
 export async function handlePhoto(tg: any, chatId: number, session, photoSizes) {
     const d = session.draft || {};

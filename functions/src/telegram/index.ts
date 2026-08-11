@@ -11,8 +11,6 @@ import * as agent from "./handlers/agent";
 import { db } from "../db";
 const BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = defineSecret("TELEGRAM_WEBHOOK_SECRET");
-// The Site Engineer agent parses free-text updates with Gemini (server-side).
-const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
 // Lightweight status endpoint for the web app's "Bot Online" badge.
 // Exposed to the frontend via a Firebase Hosting rewrite: /api/telegram-status
@@ -40,7 +38,7 @@ export const telegramStatus = onRequest({
 });
 export const telegramWebhook = onRequest({
     region: "asia-southeast1",
-    secrets: [BOT_TOKEN, WEBHOOK_SECRET, GEMINI_API_KEY],
+    secrets: [BOT_TOKEN, WEBHOOK_SECRET],
     cors: false,
     // No warm instance kept here: the handler now does its work before
     // responding (see below), so it finishes in ~1-2s once running. A cold
@@ -67,14 +65,14 @@ export const telegramWebhook = onRequest({
     const tg = new TelegramApi(BOT_TOKEN.value());
     const update = req.body;
     try {
-        await handleUpdate(tg, update, GEMINI_API_KEY.value());
+        await handleUpdate(tg, update);
     }
     catch (err) {
         console.error("Error handling update:", err);
     }
     res.status(200).send("OK");
 });
-async function handleUpdate(tg, update, geminiKey) {
+async function handleUpdate(tg, update) {
     const msg = update.message;
     const cb = update.callback_query;
     if (cb) {
@@ -93,19 +91,10 @@ async function handleUpdate(tg, update, geminiKey) {
             return;
         }
         // ---- Site Engineer agent ----
-        // Tapped a task from the agent's end-of-day worklist.
+        // Tapped a task from the agent's end-of-day worklist → drops into the
+        // normal button-driven log flow (pick from master lists, no free text).
         if (data.startsWith("alog:")) {
-            await agent.startTaskCapture(tg, chatId, messageId, session, data.slice(5));
-            return;
-        }
-        // Save the agent-parsed draft (reuses the normal log write path).
-        if (data === "asv") {
-            await log.saveLog(tg, chatId, messageId, session);
-            return;
-        }
-        // Re-describe: go back to free-text capture.
-        if (data === "aed") {
-            await agent.reDescribe(tg, chatId, messageId, session);
+            await log.pickTask(tg, chatId, messageId, session, data.slice(5));
             return;
         }
                 if (data === "dt") {
@@ -161,6 +150,18 @@ async function handleUpdate(tg, update, geminiKey) {
         }
         if (data.startsWith("lr:")) {
             await log.askHeadcount(tg, chatId, messageId, session, data.slice(3));
+            return;
+        }
+        if (data === "e") {
+            await log.pickEquipment(tg, chatId, messageId, session);
+            return;
+        }
+        if (data.startsWith("ei:")) {
+            await log.askEquipmentUnit(tg, chatId, messageId, session, data.slice(3));
+            return;
+        }
+        if (data.startsWith("eu:")) {
+            await log.askEquipmentQty(tg, chatId, messageId, session, data.slice(3));
             return;
         }
         if (data === "ph") {
@@ -285,11 +286,6 @@ async function handleUpdate(tg, update, geminiKey) {
         return;
     }
     const step = session.step;
-    // Site Engineer agent: the user described the day in free text.
-    if (step === "agent:capture") {
-        await agent.handleCaptureText(tg, chatId, session, text, geminiKey);
-        return;
-    }
     if (step === "log:progress") {
         const pct = parseInt(text, 10);
         if (isNaN(pct) || pct < 0 || pct > 100) {
@@ -314,6 +310,25 @@ async function handleUpdate(tg, update, geminiKey) {
         const rest = { ...d };
         delete rest.pendingMaterial;
         await setSession(chatId, { draft: { ...rest, materials } });
+        const s = await getSession(chatId);
+        await log.showMenu(tg, chatId, null, s);
+        return;
+    }
+    if (step === "log:equipment_qty") {
+        const qty = parseFloat(text);
+        if (isNaN(qty) || qty <= 0) {
+            await tg.sendMessage(chatId, "Enter a quantity greater than 0.");
+            return;
+        }
+        const d = session.draft || {};
+        const pe = d.pendingEquipment || {};
+        const equipment = [
+            ...(d.equipment || []),
+            { equipmentId: pe.equipmentId, name: pe.name, unit: pe.unit || "hours", quantity: qty },
+        ];
+        const rest = { ...d };
+        delete rest.pendingEquipment;
+        await setSession(chatId, { draft: { ...rest, equipment } });
         const s = await getSession(chatId);
         await log.showMenu(tg, chatId, null, s);
         return;
