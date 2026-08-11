@@ -9,6 +9,7 @@ export interface BotSession {
   activeProjectId?: string;
   step?: string | null;
   draft?: Record<string, any>;
+  planDraft?: Record<string, any> | null; // morning plan being assembled
   recentTaskIds?: string[];
   saving?: boolean;          // idempotency guard against double-tap on Save
   linkedAt?: number;

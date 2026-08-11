@@ -97,6 +97,15 @@ async function handleUpdate(tg, update) {
             await log.pickTask(tg, chatId, messageId, session, data.slice(5));
             return;
         }
+        // Morning plan: toggle a task in/out of today's plan, or save the plan.
+        if (data.startsWith("ptog:")) {
+            await agent.togglePlanTask(tg, chatId, messageId, session, data.slice(5));
+            return;
+        }
+        if (data === "psav") {
+            await agent.savePlan(tg, chatId, messageId, session);
+            return;
+        }
                 if (data === "dt") {
             await log.showTaskPicker(tg, chatId, messageId, session);
             return;
@@ -266,6 +275,7 @@ async function handleUpdate(tg, update) {
     }
     if (text === "/help" || text === "/start") {
         await tg.sendMessage(chatId, `<b>Sitetru Bot</b>\n\n` +
+            `/plan — plan today's tasks (morning)\n` +
             `/log — log today's site progress\n` +
             `/today — see what's already logged today\n` +
             `/projects — switch active project\n` +
@@ -279,6 +289,15 @@ async function handleUpdate(tg, update) {
     }
     if (text === "/today") {
         await log.showToday(tg, chatId, session);
+        return;
+    }
+    if (text === "/plan") {
+        if (!session.activeProjectId) {
+            await tg.sendMessage(chatId, "No active project. Send /projects to pick one.");
+            return;
+        }
+        const ok = await agent.sendPlanPrompt(tg, chatId, session);
+        if (!ok) await tg.sendMessage(chatId, "No plannable tasks found for this project.");
         return;
     }
     if (text === "/projects") {
@@ -416,4 +435,37 @@ export const dailyLogReminder = onSchedule({
         }
     }
     console.log(`Site Engineer agent nudged ${nudged}/${targets.length} linked users.`);
+});
+
+// Morning plan prompt at 10:00 AM IST, Mon–Sat. Asks each linked user (with an
+// active project) to tap the tasks they'll work on today. The 5 PM actuals
+// nudge then prioritises those tasks.
+export const dailyPlanReminder = onSchedule({
+    schedule: "0 10 * * 1-6", // 10:00 Mon–Sat in the timezone below
+    timeZone: "Asia/Kolkata",
+    region: "asia-southeast1",
+    secrets: [BOT_TOKEN],
+}, async () => {
+    const tg = new TelegramApi(BOT_TOKEN.value());
+    const snap = await db.collection("users").get();
+    const targets = snap.docs
+        .map((d) => d.data())
+        .filter((u: any) => u.telegramChatId);
+
+    let sent = 0;
+    for (const u of targets) {
+        try {
+            const session = await getSession(u.telegramChatId);
+            if (session?.activeProjectId) {
+                const ok = await agent.sendPlanPrompt(tg, u.telegramChatId, session);
+                if (ok) sent++;
+            }
+            // No active project → skip the morning prompt (the 5 PM nudge points
+            // them to /projects).
+        }
+        catch (err) {
+            console.error("Morning plan prompt failed for chat", u.telegramChatId, err);
+        }
+    }
+    console.log(`Morning plan prompt sent to ${sent}/${targets.length} linked users.`);
 });
