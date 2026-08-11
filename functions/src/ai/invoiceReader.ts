@@ -74,7 +74,18 @@ export async function readAndMatchInvoice(
   if (!po) flags.push("No matching open PO found — this reader is PO-backed; pick a PO or enter manually.");
 
   const sameState = !!(companyState && exGstin && companyState === exGstin.slice(0, 2));
-  const lineItems = (raw.lineItems || []).map((li: any) => {
+
+  // Map invoice lines to PO lines across differing nomenclature: try the AI
+  // semantic mapper first (bridges "TMT BAR 8MM" vs "8MM TMT Fe500"), then fall
+  // back to offline token matching if the AI call fails or leaves gaps.
+  const lineMap: Record<number, string> = {};
+  if (po) {
+    try {
+      Object.assign(lineMap, await matchInvoiceLinesToPO(raw.lineItems || [], po.lineItems || [], key));
+    } catch { /* fall back to token matching below */ }
+  }
+
+  const lineItems = (raw.lineItems || []).map((li: any, index: number) => {
     const taxable = round2(Number(li.taxableValue) || (Number(li.qty) || 0) * (Number(li.rate) || 0));
     const gstRate = Number(li.gstRate) || 0;
     const taxAmt = round2((taxable * gstRate) / 100);
@@ -83,10 +94,11 @@ export async function readAndMatchInvoice(
       if (sameState) { cgst = round2(taxAmt / 2); sgst = round2(taxAmt / 2); }
       else { igst = taxAmt; }
     }
-    const poLine = po && (po.lineItems || []).find((pl: any) => {
-      const n = norm(pl.name), e = norm(li.name);
-      return n === e || (e && (n.includes(e) || e.includes(n)));
-    });
+    const mappedId = lineMap[index];
+    const poLine = po && (
+      (mappedId && (po.lineItems || []).find((pl: any) => pl.itemId === mappedId)) ||
+      (po.lineItems || []).find((pl: any) => tokenMatch(pl.name, li.name))
+    );
     if (poLine) {
       const remaining = (Number(poLine.orderedQty) || 0) - (Number(poLine.receivedQty) || 0);
       if (Number(li.qty) > remaining + 0.001) flags.push(`"${li.name}": invoice qty ${li.qty} exceeds remaining ordered ${remaining}.`);
@@ -153,13 +165,89 @@ export async function readAndMatchInvoice(
 }
 
 function overlapScore(po: any, lines: any[]): number {
-  const names = (po.lineItems || []).map((l: any) => norm(l.name));
   let s = 0;
   for (const li of lines) {
-    const e = norm(li.name);
-    if (names.some((n: string) => n === e || (e && (n.includes(e) || e.includes(n))))) s++;
+    if ((po.lineItems || []).some((pl: any) => tokenMatch(pl.name, li.name))) s++;
   }
   return s;
+}
+
+// Offline fuzzy fallback: match on shared tokens, treating size/spec tokens
+// (8mm, 10mm, fe500, m20 …) as strong signals. Handles word-order and extra
+// descriptors ("TMT BAR 8MM" vs "8MM TMT Fe500") without an AI call.
+function tokenize(s: string): string[] {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(" ")
+    .filter(Boolean);
+}
+const isSpecToken = (t: string) => /\d/.test(t); // e.g. 8mm, 10, fe500, m20
+export function tokenMatch(a: string, b: string): boolean {
+  const A = new Set(tokenize(a));
+  const B = new Set(tokenize(b));
+  if (!A.size || !B.size) return false;
+  const shared = [...A].filter((t) => B.has(t));
+  if (shared.length === 0) return false;
+  // Every spec token present in BOTH names must agree (don't match 8mm with 10mm).
+  const specsA = [...A].filter(isSpecToken);
+  const specsB = [...B].filter(isSpecToken);
+  if (specsA.length && specsB.length) {
+    const specShared = specsA.filter((t) => B.has(t));
+    if (specShared.length === 0) return false; // sizes differ → not the same item
+  }
+  // Otherwise require a decent word overlap relative to the shorter name.
+  const ratio = shared.length / Math.min(A.size, B.size);
+  return ratio >= 0.5 || shared.some(isSpecToken);
+}
+
+// AI line matcher: maps invoice lines to PO lines by meaning (material + size),
+// bridging different firms' nomenclature. Text-only, so it's cheap/fast.
+async function matchInvoiceLinesToPO(
+  invLines: any[],
+  poLines: any[],
+  key: string,
+): Promise<Record<number, string>> {
+  if (!invLines.length || !poLines.length) return {};
+  const prompt = `Two lists of construction material line items: one from a vendor INVOICE, one from a purchase ORDER. Different firms name the same material differently (word order, extra words, abbreviations, brand vs spec). Map each INVOICE line to the ORDER line that is the SAME material — match on material type + size/grade (e.g. "8 mm", "Fe500"), ignoring wording. Only map when confident it's the same item; otherwise null. NEVER match different sizes (8mm vs 10mm).
+
+Return ONLY a JSON array, one entry per invoice line:
+[{ "invoiceIndex": number, "poItemId": string | null }]
+
+INVOICE lines: ${JSON.stringify(invLines.map((l, i) => ({ index: i, name: l.name, unit: l.unit })))}
+ORDER lines: ${JSON.stringify(poLines.map((p: any) => ({ id: p.itemId, name: p.name, unit: p.unit })))}`;
+
+  const parsed = await callGeminiJSON(prompt, key);
+  const arr = Array.isArray(parsed) ? parsed : parsed?.matches || [];
+  const out: Record<number, string> = {};
+  for (const e of arr) {
+    if (e && typeof e.invoiceIndex === "number" && e.poItemId) out[e.invoiceIndex] = String(e.poItemId);
+  }
+  return out;
+}
+
+async function callGeminiJSON(prompt: string, key: string): Promise<any> {
+  const body = {
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0, responseMimeType: "application/json" },
+  };
+  for (const model of MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+    let res: Response;
+    try {
+      res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    } catch { continue; }
+    if (res.status === 404) continue;
+    if (!res.ok) throw new Error(`gemini ${res.status}`);
+    const data: any = await res.json();
+    const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) continue;
+    try { return JSON.parse(text); } catch {
+      const m = text.match(/[[{][\s\S]*[\]}]/);
+      if (m) return JSON.parse(m[0]);
+    }
+  }
+  throw new Error("no model for line match");
 }
 
 const sum = (a: number[]) => a.reduce((x, y) => x + (y || 0), 0);
