@@ -47,3 +47,20 @@ export const callGenerateProjectInsights = async (brief: any) => {
   const res = await fn({ brief });
   return res.data;
 };
+
+export interface ExtractedInvoice {
+  bill: any;                 // draft VendorBill (see types.VendorBill)
+  flags: string[];           // discrepancy messages
+  confidence: number;
+  candidatePOs: { id: string; poNumber: string; vendorId: string }[];
+}
+
+// Sends a scanned GST invoice (image/PDF, base64) to the server-side Gemini
+// vision reader; returns a draft bill matched to a PO with discrepancy flags.
+export const callExtractVendorInvoice = async (args: {
+  orgId?: string; projectId: string; fileBase64: string; mimeType: string;
+}) => {
+  const fn = httpsCallable<typeof args, ExtractedInvoice>(getFunctionsInstance(), 'extractVendorInvoice');
+  const res = await fn(args);
+  return res.data;
+};
