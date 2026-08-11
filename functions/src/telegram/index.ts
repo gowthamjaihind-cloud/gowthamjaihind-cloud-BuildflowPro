@@ -8,9 +8,12 @@ import { checkRateLimit, redeemLinkCode, validateSession } from "./auth";
 import * as log from "./handlers/log";
 import * as projects from "./handlers/projects";
 import * as agent from "./handlers/agent";
+import * as invoice from "./handlers/invoice";
 import { db } from "../db";
 const BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = defineSecret("TELEGRAM_WEBHOOK_SECRET");
+// Used by the invoice-photo reader (Gemini vision) in the webhook.
+const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
 // Lightweight status endpoint for the web app's "Bot Online" badge.
 // Exposed to the frontend via a Firebase Hosting rewrite: /api/telegram-status
@@ -38,7 +41,7 @@ export const telegramStatus = onRequest({
 });
 export const telegramWebhook = onRequest({
     region: "asia-southeast1",
-    secrets: [BOT_TOKEN, WEBHOOK_SECRET],
+    secrets: [BOT_TOKEN, WEBHOOK_SECRET, GEMINI_API_KEY],
     cors: false,
     // No warm instance kept here: the handler now does its work before
     // responding (see below), so it finishes in ~1-2s once running. A cold
@@ -65,14 +68,14 @@ export const telegramWebhook = onRequest({
     const tg = new TelegramApi(BOT_TOKEN.value());
     const update = req.body;
     try {
-        await handleUpdate(tg, update);
+        await handleUpdate(tg, update, GEMINI_API_KEY.value());
     }
     catch (err) {
         console.error("Error handling update:", err);
     }
     res.status(200).send("OK");
 });
-async function handleUpdate(tg, update) {
+async function handleUpdate(tg, update, geminiKey) {
     const msg = update.message;
     const cb = update.callback_query;
     if (cb) {
@@ -197,11 +200,12 @@ async function handleUpdate(tg, update) {
             await tg.sendMessage(chatId, "You're not linked. Send /link to connect.");
             return;
         }
-        if (session.step !== "log:photo") {
-            await tg.sendMessage(chatId, "Tap '+ Photo' in /log first, then send the photo.");
-            return;
+        if (session.step === "log:photo") {
+            await log.handlePhoto(tg, chatId, session, msg.photo);
+        } else {
+            // Any other photo is treated as a vendor invoice to read + stage.
+            await invoice.handleInvoicePhoto(tg, chatId, session, msg.photo, geminiKey);
         }
-        await log.handlePhoto(tg, chatId, session, msg.photo);
         return;
     }
     if (!msg?.text)
