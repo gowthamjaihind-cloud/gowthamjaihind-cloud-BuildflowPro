@@ -327,6 +327,10 @@ export interface VendorBill {
   grandTotal: number;           // subtotalTaxable + taxes + charges ± roundOff
   taxMode: TaxMode;             // "gst-itemized" for reader-created bills
   matchStatus?: "Fully Matched" | "Has Discrepancies" | "Unlinked";
+  // "pending_review" = captured (e.g. via Telegram) but not yet posted;
+  // "posted" = GRN + ledger written. Absent is treated as posted (web flow).
+  status?: "pending_review" | "posted";
+  flags?: string[];             // discrepancy notes carried from extraction
   sourceFileUrl?: string;       // the scanned invoice image/PDF, for audit
   extractionConfidence?: number;
   ledgerId?: string;            // the vendor-ledger CREDIT this bill posted

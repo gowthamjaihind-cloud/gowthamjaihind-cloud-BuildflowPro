@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   X,
   UploadSimple as Upload,
@@ -8,21 +8,21 @@ import {
   Sparkle,
 } from "@phosphor-icons/react";
 import { useAuthStore } from "../../store";
-import { callExtractVendorInvoice, ExtractedInvoice } from "../../services/firebaseFunctions";
+import { useProjectData } from "../../hooks/useProjectData";
+import { callExtractVendorInvoice } from "../../services/firebaseFunctions";
 import { postInvoiceReceipt } from "../../services/invoiceReceiptService";
-import { VendorBill } from "../../types";
+import { PurchaseOrder, VendorBill } from "../../types";
 
 interface ScanInvoiceProps {
   projectId: string;
   onClose: () => void;
   onPosted?: () => void;
+  initialBill?: VendorBill; // when reviewing a pending draft (e.g. from Telegram)
 }
 
 const inr = (n: number) => `₹${(Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 const r2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
 
-// Re-derive a line's taxable value + tax split + total after a quantity edit,
-// keeping the invoice's original CGST/SGST-vs-IGST shape.
 function recalcLine(line: any) {
   const taxable = r2(line.qty * line.rate);
   const taxAmt = r2((taxable * (line.gstRate || 0)) / 100);
@@ -43,19 +43,29 @@ function totalsOf(lines: any[], charges: any) {
   return { subtotalTaxable, totalCGST, totalSGST, totalIGST, grandTotal };
 }
 
-export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, onPosted }) => {
+export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, onPosted, initialBill }) => {
   const user = useAuthStore((s) => s.user);
-  const [step, setStep] = useState<"upload" | "review" | "posting" | "done">("upload");
+  const { data: pos = [] } = useProjectData<PurchaseOrder>(projectId, "purchase_orders");
+  const [step, setStep] = useState<"upload" | "review" | "posting" | "done">(initialBill ? "review" : "upload");
   const [error, setError] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [extracted, setExtracted] = useState<ExtractedInvoice | null>(null);
-  const [bill, setBill] = useState<VendorBill | null>(null);
+  const [bill, setBill] = useState<VendorBill | null>(initialBill || null);
+  const [flags, setFlags] = useState<string[]>(initialBill?.flags || []);
+
+  // Open POs for the match selector (works for both scanned + draft review).
+  const candidatePOs = useMemo(
+    () =>
+      pos
+        .filter((p) => p.status === "Approved" || p.status === "Partially Received")
+        .map((p) => ({ id: p.id, poNumber: p.poNumber })),
+    [pos],
+  );
 
   const handleFile = async (f: File) => {
     setError(null);
     setFile(f);
-    setStep("review"); // shows a loading state while extracting
-    setExtracted(null);
+    setStep("review");
+    setBill(null);
     try {
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -69,8 +79,8 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
         fileBase64: base64,
         mimeType: f.type || "image/jpeg",
       });
-      setExtracted(res);
       setBill(res.bill as VendorBill);
+      setFlags(res.flags || []);
     } catch (e: any) {
       console.error(e);
       setError(e?.message || "Couldn't read the invoice. Try a clearer photo or PDF.");
@@ -80,7 +90,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
 
   const setPo = (poId: string) => {
     if (!bill) return;
-    const po = extracted?.candidatePOs.find((p) => p.id === poId);
+    const po = candidatePOs.find((p) => p.id === poId);
     setBill({ ...bill, poId, poNumber: po?.poNumber });
   };
 
@@ -96,7 +106,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
     setStep("posting");
     setError(null);
     try {
-      await postInvoiceReceipt({ user, projectId, bill, sourceFile: file });
+      await postInvoiceReceipt({ user, projectId, bill, sourceFile: file, draftBillId: initialBill?.id });
       setStep("done");
       onPosted?.();
     } catch (e: any) {
@@ -106,12 +116,15 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
     }
   };
 
+  const showReview = (step === "review" || step === "posting") && !!bill;
+  const showLoading = step === "review" && !bill;
+
   return (
     <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
       <div className="bg-surface w-full max-w-2xl rounded-3xl border border-divider shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
         <div className="flex justify-between items-center p-5 border-b border-divider shrink-0">
           <h2 className="font-black text-ink flex items-center gap-2">
-            <Sparkle weight="fill" className="w-5 h-5 text-[#6E8CA0]" /> Scan Vendor Invoice
+            <Sparkle weight="fill" className="w-5 h-5 text-[#6E8CA0]" /> {initialBill ? "Review Vendor Bill" : "Scan Vendor Invoice"}
           </h2>
           <button onClick={onClose} className="p-2 bg-panel hover:bg-divider rounded-full">
             <X className="w-5 h-5 text-ink-muted" />
@@ -140,20 +153,20 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
             </label>
           )}
 
-          {step === "review" && !extracted && (
+          {showLoading && (
             <div className="p-10 text-center text-ink-muted">
               <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
               Reading the invoice…
             </div>
           )}
 
-          {(step === "review" || step === "posting") && bill && extracted && (
+          {showReview && bill && (
             <div className="space-y-5">
-              {extracted.flags.length > 0 && (
+              {flags.length > 0 && (
                 <div className="p-3 bg-[#D97D54]/10 text-[#B85F3B] rounded-xl border border-[#D97D54]/30 text-sm">
                   <div className="font-bold mb-1 flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> Please check:</div>
                   <ul className="list-disc pl-5 space-y-0.5">
-                    {extracted.flags.map((f, i) => <li key={i}>{f}</li>)}
+                    {flags.map((f, i) => <li key={i}>{f}</li>)}
                   </ul>
                 </div>
               )}
@@ -170,7 +183,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
                     className="w-full bg-panel p-2 rounded-lg border border-divider text-sm font-bold text-ink"
                   >
                     <option value="">— Select PO —</option>
-                    {extracted.candidatePOs.map((p) => (
+                    {candidatePOs.map((p) => (
                       <option key={p.id} value={p.id}>{p.poNumber}</option>
                     ))}
                   </select>
@@ -242,7 +255,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
           )}
         </div>
 
-        {(step === "review" || step === "posting") && bill && extracted && (
+        {showReview && bill && (
           <div className="p-5 border-t border-divider shrink-0 flex gap-3">
             <button onClick={onClose} className="px-5 py-3 bg-panel text-ink font-bold rounded-xl hover:bg-divider">
               Cancel

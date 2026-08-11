@@ -26,6 +26,7 @@ import {
   InventoryItem,
   PurchaseOrder,
   GoodsReceiptNote,
+  VendorBill,
 } from "../types";
 import {
   Truck,
@@ -67,6 +68,7 @@ interface ProcurementViewProps {
 type Tab =
   | "purchase_orders"
   | "goods_receipt"
+  | "bills"
   | "receipts"
   | "ledger"
   | "vendors";
@@ -81,6 +83,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
 
   const [activeTab, setActiveTab] = useState<Tab>("purchase_orders");
   const [showScanInvoice, setShowScanInvoice] = useState(false);
+  const [bills, setBills] = useState<VendorBill[]>([]);
+  const [reviewBill, setReviewBill] = useState<VendorBill | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [receipts, setReceipts] = useState<MaterialReceipt[]>([]);
   const [ledger, setLedger] = useState<VendorLedgerEntry[]>([]);
@@ -221,6 +225,15 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       (error) => handleFirestoreError(error, OperationType.LIST, grnPath),
     );
 
+    const billsPath = `${basePath}/vendor_bills`;
+    const unsubBills = onSnapshot(
+      query(collection(db, billsPath)),
+      (snapshot) => {
+        setBills(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as VendorBill));
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, billsPath),
+    );
+
     return () => {
       unsubVendors();
       unsubReceipts();
@@ -228,6 +241,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       unsubInventory();
       unsubPOs();
       unsubGRNs();
+      unsubBills();
     };
   }, [projectId]);
 
@@ -694,6 +708,101 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   const getVendorBalance = (vId: string) => {
     const v = vendors.find((v) => v.id === vId);
     return v ? v.outstandingBalance || 0 : 0;
+  };
+
+  const renderBills = () => {
+    const posted = bills.filter((b) => b.status !== "pending_review");
+    const pending = bills.filter((b) => b.status === "pending_review");
+    const inr = (n: number) => `₹${(Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+    const inputGST = posted.reduce(
+      (a, b) => a + (b.totalCGST || 0) + (b.totalSGST || 0) + (b.totalIGST || 0),
+      0,
+    );
+    const totalPayable = posted.reduce((a, b) => a + (b.grandTotal || 0), 0);
+    const sorted = [...bills].sort((a, b) => (a.status === "pending_review" ? -1 : 1) - (b.status === "pending_review" ? -1 : 1));
+
+    const statusBadge = (b: VendorBill) => {
+      if (b.status === "pending_review")
+        return <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-[#D97D54]/15 text-[#B85F3B]">Pending review</span>;
+      return <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-[#34D399]/15 text-[#059669]">Posted</span>;
+    };
+    const matchBadge = (m?: string) => {
+      const map: any = {
+        "Fully Matched": "bg-[#34D399]/12 text-[#059669]",
+        "Has Discrepancies": "bg-[#D97D54]/12 text-[#C0653F]",
+        Unlinked: "bg-[#EF4444]/10 text-[#EF4444]",
+      };
+      return m ? <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${map[m] || "bg-panel text-ink-muted"}`}>{m}</span> : null;
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="soft-card p-5 squircle-24">
+            <div className="text-[10px] font-black uppercase tracking-widest text-ink-muted mb-1">Input GST (ITC)</div>
+            <div className="text-2xl font-black text-ink">{inr(inputGST)}</div>
+            <div className="text-[11px] text-ink-muted mt-1">Claimable credit across posted bills</div>
+          </div>
+          <div className="soft-card p-5 squircle-24">
+            <div className="text-[10px] font-black uppercase tracking-widest text-ink-muted mb-1">Billed (incl-GST)</div>
+            <div className="text-2xl font-black text-ink">{inr(totalPayable)}</div>
+            <div className="text-[11px] text-ink-muted mt-1">{posted.length} posted bill{posted.length === 1 ? "" : "s"}</div>
+          </div>
+          <div className="soft-card p-5 squircle-24">
+            <div className="text-[10px] font-black uppercase tracking-widest text-ink-muted mb-1">Pending review</div>
+            <div className="text-2xl font-black text-ink">{pending.length}</div>
+            <div className="text-[11px] text-ink-muted mt-1">Scanned, awaiting confirm</div>
+          </div>
+        </div>
+
+        <div className="bg-surface rounded-2xl border border-divider overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[720px]">
+              <thead>
+                <tr className="bg-panel border-b border-divider text-[10px] font-bold text-ink-muted uppercase tracking-widest">
+                  <th className="p-4">Invoice</th>
+                  <th className="p-4">Vendor</th>
+                  <th className="p-4">PO</th>
+                  <th className="p-4 text-right">Grand total</th>
+                  <th className="p-4">Match</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.length === 0 ? (
+                  <tr><td colSpan={7} className="p-8 text-center text-ink-muted text-sm">No vendor bills yet. Use <b>Scan Invoice</b> or send an invoice photo to the Telegram bot.</td></tr>
+                ) : sorted.map((b) => (
+                  <tr key={b.id} className="border-b border-divider/50">
+                    <td className="p-4">
+                      <div className="font-mono text-xs font-bold text-ink">{b.invoiceNumber || "—"}</div>
+                      <div className="text-[10px] text-ink-muted">{b.invoiceDate || ""}{b.createdVia === "telegram" ? " · via Telegram" : ""}</div>
+                    </td>
+                    <td className="p-4 text-sm font-semibold text-ink">{b.vendorName || "—"}</td>
+                    <td className="p-4 text-xs font-mono text-ink-muted">{b.poNumber || "—"}</td>
+                    <td className="p-4 text-right text-sm font-mono font-medium">{inr(b.grandTotal)}</td>
+                    <td className="p-4">{matchBadge(b.matchStatus)}</td>
+                    <td className="p-4">{statusBadge(b)}</td>
+                    <td className="p-4 text-right">
+                      {b.status === "pending_review" ? (
+                        <button
+                          onClick={() => setReviewBill(b)}
+                          className="px-3 py-1.5 bg-[#6E8CA0] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-[#5C7889]"
+                        >
+                          Review &amp; Post
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-ink-muted">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderVendors = () => {
@@ -1598,6 +1707,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             [
               "purchase_orders",
               "goods_receipt",
+              "bills",
               "receipts",
               "ledger",
               "vendors",
@@ -1612,11 +1722,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 ? "Purchase Orders"
                 : tab === "goods_receipt"
                   ? "Goods Receipt"
-                  : tab === "receipts"
-                    ? "Receipts"
-                    : tab === "ledger"
-                      ? "Ledger"
-                      : "Vendors"}
+                  : tab === "bills"
+                    ? "Bills"
+                    : tab === "receipts"
+                      ? "Receipts"
+                      : tab === "ledger"
+                        ? "Ledger"
+                        : "Vendors"}
             </button>
           ))}
         </div>
@@ -1665,6 +1777,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           {activeTab === "goods_receipt" && (
             <GoodsReceiptTab projectId={projectId} />
           )}
+          {activeTab === "bills" && renderBills()}
           {activeTab === "vendors" && renderVendors()}
           {activeTab === "receipts" && renderReceipts()}
           {activeTab === "ledger" && renderLedger()}
@@ -1675,6 +1788,15 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         <ScanInvoice
           projectId={projectId}
           onClose={() => setShowScanInvoice(false)}
+        />
+      )}
+
+      {reviewBill && (
+        <ScanInvoice
+          projectId={projectId}
+          initialBill={reviewBill}
+          onClose={() => setReviewBill(null)}
+          onPosted={() => setReviewBill(null)}
         />
       )}
 

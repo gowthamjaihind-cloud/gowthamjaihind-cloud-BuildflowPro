@@ -23,6 +23,8 @@ interface PostArgs {
   projectId: string;
   bill: VendorBill;          // reviewed draft (must have poId + gst-itemized lines)
   sourceFile?: File | null;  // scanned invoice, stored for audit
+  draftBillId?: string;      // when posting a pending draft (e.g. from Telegram),
+                             // reuse its doc id so the draft becomes the posted bill
 }
 
 // Posts a GST vendor invoice against its PO in one transaction:
@@ -33,13 +35,14 @@ interface PostArgs {
 //  • Inventory valued at the bill's ex-GST rate (cost stays ex-GST; GST is ITC)
 //  • PO received quantities + status
 // Returns { grnId, billId, grnNumber }.
-export async function postInvoiceReceipt({ user, projectId, bill, sourceFile }: PostArgs) {
+export async function postInvoiceReceipt({ user, projectId, bill, sourceFile, draftBillId }: PostArgs) {
   if (!user) throw new Error("Not signed in.");
   if (!bill.poId) throw new Error("A matching PO is required to post this invoice.");
 
   const tenantPath = tenantPathFor(user, projectId);
   const grnId = doc(collection(db, `${tenantPath}/goodsReceiptNotes`)).id;
-  const billId = doc(collection(db, `${tenantPath}/vendor_bills`)).id;
+  // Reuse the pending draft's id when posting one, so it becomes the posted bill.
+  const billId = draftBillId || doc(collection(db, `${tenantPath}/vendor_bills`)).id;
 
   let grnNumber = "";
 
@@ -142,9 +145,10 @@ export async function postInvoiceReceipt({ user, projectId, bill, sourceFile }: 
       ...bill,
       id: billId,
       projectId,
+      status: "posted",
       grnIds: [grnId],
       ledgerId: ledgerRef.id,
-      createdVia: "web",
+      createdVia: bill.createdVia || "web",
       createdByUid: user.uid,
       createdByName: user.displayName || user.email || "Unknown",
       createdAt: now,
