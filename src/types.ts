@@ -245,6 +245,10 @@ export interface GRNLineItem {
   acceptedQty: number;
   rejectedQty: number;
   unit: string;
+  // Ex-GST unit rate captured from the vendor bill (gst-itemized GRNs only).
+  // Inventory is valued at this rate when present; legacy/manual GRNs omit it
+  // and fall back to the PO rate.
+  rate?: number;
 }
 
 export interface ReceiptLineItem {

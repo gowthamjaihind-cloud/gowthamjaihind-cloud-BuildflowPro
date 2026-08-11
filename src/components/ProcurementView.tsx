@@ -3,6 +3,7 @@ import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { PurchaseOrderTab } from "./purchase/PurchaseOrderTab";
 import { GoodsReceiptTab } from "./purchase/GoodsReceiptTab";
 import { MaterialReceiptForm } from "./purchase/MaterialReceiptForm";
+import { ScanInvoice } from "./purchase/ScanInvoice";
 import {
   db,
   collection,
@@ -45,6 +46,7 @@ import {
   CaretRight as ChevronRight,
   Funnel as Filter,
   DownloadSimple as Download,
+  Sparkle,
   FloppyDisk as Save,
   Users,
   Phone,
@@ -78,6 +80,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   const breakpoint = useBreakpoint();
 
   const [activeTab, setActiveTab] = useState<Tab>("purchase_orders");
+  const [showScanInvoice, setShowScanInvoice] = useState(false);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [receipts, setReceipts] = useState<MaterialReceipt[]>([]);
   const [ledger, setLedger] = useState<VendorLedgerEntry[]>([]);
@@ -1627,6 +1630,12 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
           <button
+            onClick={() => setShowScanInvoice(true)}
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#6E8CA0] text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#5C7889] apple-transition shadow-sm"
+          >
+            <Sparkle weight="fill" className="w-3.5 h-3.5" /> Scan Invoice
+          </button>
+          <button
             onClick={handleExportCSV}
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-panel text-ink px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-divider apple-transition border border-divider"
           >
@@ -1661,6 +1670,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           {activeTab === "ledger" && renderLedger()}
         </motion.div>
       </AnimatePresence>
+
+      {showScanInvoice && (
+        <ScanInvoice
+          projectId={projectId}
+          onClose={() => setShowScanInvoice(false)}
+        />
+      )}
 
       {/* Modals with responsive widths */}
       <AnimatePresence>
