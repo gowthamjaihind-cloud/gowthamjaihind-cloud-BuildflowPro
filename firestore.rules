@@ -1,242 +1,300 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------------
+    // Role helpers (unchanged semantics): a caller has a role if either their
+    // auth-token custom claim OR their users/{uid} profile carries that role.
+    // ---------------------------------------------------------------------
+    function hasAnyRole(roles) {
+      return request.auth != null && (
+        request.auth.token.role in roles ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in roles
+      );
+    }
     function isAdminOrManager() {
-      return request.auth != null && (request.auth.token.role in ['Admin', 'Project Manager', 'Project Director', 'Owner'] || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Project Manager', 'Project Director', 'Owner']);
+      return hasAnyRole(['Admin', 'Project Manager', 'Project Director', 'Owner']);
     }
     function isSiteEngineer() {
-      return request.auth != null && (request.auth.token.role == 'Site Engineer' || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Site Engineer');
+      return hasAnyRole(['Site Engineer']);
     }
-    function isWorkDateKolkataToday(workDate) {
-      return true;
+
+    // ---------------------------------------------------------------------
+    // Multi-tenant isolation.
+    //
+    // Membership lives as a map on the org document: members: { <uid>: <role> }.
+    // A caller may only touch an org's data if their uid is a key in that map.
+    // This is the wall between customers — without it, any signed-in user could
+    // read or write ANY organization's data.
+    //
+    // Bootstrapping: an org with no members yet may be "claimed" once — the
+    // claimer writes ONLY themselves in as 'Owner'. After that, only members can
+    // change membership (via an admin-member settings write). This lets the
+    // first owner seed themselves without a console edit and without leaving the
+    // org open to a stranger claiming an already-owned org.
+    // ---------------------------------------------------------------------
+    function orgMembersById(orgId) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)).data.get('members', {});
     }
-    
-    match /projects/{projectId} {
-      allow read, write: if request.auth != null;
-      match /{collection}/{docId} {
-        allow read, write: if request.auth != null && collection != 'dailyLogs' && collection != 'purchase_orders' && collection != 'goodsReceiptNotes' && collection != 'system' && collection != 'ledger' && collection != 'ra_bills' && collection != 'labor_rate_cards' && collection != 'client_payments' && collection != 'documents' && collection != 'estimates';
+    function isOrgMember(orgId) {
+      return request.auth != null && (request.auth.uid in orgMembersById(orgId));
+    }
+    // Variants that read the org doc currently in scope (rules ON the org doc
+    // itself) so we don't pay for an extra get().
+    function thisOrgMembers() {
+      return resource.data.get('members', {});
+    }
+    function isMemberOfThisOrg() {
+      return request.auth != null && (request.auth.uid in thisOrgMembers());
+    }
+    function thisOrgUnclaimed() {
+      return thisOrgMembers().size() == 0;
+    }
+    function isValidClaim() {
+      return request.auth != null
+        && thisOrgUnclaimed()
+        && request.resource.data.get('members', {}).keys().hasOnly([request.auth.uid])
+        && (request.auth.uid in request.resource.data.get('members', {}))
+        && request.resource.data.members[request.auth.uid] == 'Owner';
+    }
+
+    // =====================================================================
+    // Organizations (multi-tenant tree)
+    // =====================================================================
+    match /organizations/{orgId} {
+      // Members read their org. An UNCLAIMED org is readable by any signed-in
+      // user so the claim UI can detect it and offer the claim.
+      allow read: if isMemberOfThisOrg() || (request.auth != null && thisOrgUnclaimed());
+      // Brand-new org (future self-serve onboarding): the creator must seed
+      // themselves as Owner.
+      allow create: if request.auth != null
+        && (request.auth.uid in request.resource.data.get('members', {}))
+        && request.resource.data.members[request.auth.uid] == 'Owner';
+      // A one-time claim, or an existing admin-member editing org settings
+      // (company name, GSTIN, membership changes).
+      allow update: if isValidClaim() || (isMemberOfThisOrg() && isAdminOrManager());
+      allow delete: if false;
+
+      match /projects/{projectId} {
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && isAdminOrManager();
+
+        // Generic project sub-collections (tasks, inventory, suppliers, costs,
+        // materials, equipment, dailyPlans, vendor_bills, …). The financial /
+        // audited collections below are matched explicitly and excluded here.
+        match /{collection}/{docId} {
+          allow read, write: if isOrgMember(orgId)
+            && collection != 'dailyLogs' && collection != 'purchase_orders'
+            && collection != 'goodsReceiptNotes' && collection != 'system'
+            && collection != 'ledger' && collection != 'ra_bills'
+            && collection != 'labor_rate_cards' && collection != 'client_payments'
+            && collection != 'documents' && collection != 'estimates'
+            && collection != 'audit_logs';
+        }
+        match /estimates/{estimateId} {
+          allow read, create: if isOrgMember(orgId);
+          allow update: if isOrgMember(orgId) && (
+            request.resource.data.status == resource.data.status || isAdminOrManager()
+          );
+          allow delete: if isOrgMember(orgId) && isAdminOrManager();
+        }
+        match /audit_logs/{auditId} {
+          allow read: if isOrgMember(orgId) && isAdminOrManager();
+          allow create: if isOrgMember(orgId);
+          allow update, delete: if false;
+        }
+        match /documents/{docId} {
+          allow read, create: if isOrgMember(orgId);
+          allow update, delete: if isOrgMember(orgId) && isAdminOrManager();
+        }
+        match /client_payments/{paymentId} {
+          allow read: if isOrgMember(orgId);
+          allow write: if isOrgMember(orgId) && isAdminOrManager();
+        }
+        match /ra_bills/{billId} {
+          allow read: if isOrgMember(orgId);
+          allow write: if isOrgMember(orgId) && isAdminOrManager();
+        }
+        match /labor_rate_cards/{cardId} {
+          allow read: if isOrgMember(orgId);
+          allow write: if isOrgMember(orgId) && isAdminOrManager();
+        }
+        match /ledger/{ledgerId} {
+          allow read: if isOrgMember(orgId);
+          allow create: if isOrgMember(orgId) && (
+            request.resource.data.referenceType != 'PAYMENT' || isAdminOrManager()
+          );
+          allow update, delete: if isOrgMember(orgId) && isAdminOrManager();
+        }
+        match /system/{docId} {
+          allow read, write: if isOrgMember(orgId);
+        }
+        match /goodsReceiptNotes/{grnId} {
+          allow read: if isOrgMember(orgId);
+          allow create: if isOrgMember(orgId);
+          allow update, delete: if isOrgMember(orgId) && (
+            isAdminOrManager() || isSiteEngineer() ||
+            resource.data.createdByUid == request.auth.uid
+          );
+        }
+        match /purchase_orders/{poId} {
+          allow read: if isOrgMember(orgId);
+          allow create: if isOrgMember(orgId)
+            && request.resource.data.status == 'Draft'
+            && request.resource.data.createdByUid == request.auth.uid;
+          allow update: if isOrgMember(orgId) && (
+            isAdminOrManager() || isSiteEngineer() ||
+            resource.data.createdByUid == request.auth.uid
+          );
+          allow delete: if isOrgMember(orgId) && (
+            isAdminOrManager() ||
+            (resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft')
+          );
+        }
+        match /dailyLogs/{logId} {
+          allow read: if isOrgMember(orgId);
+          allow create: if isOrgMember(orgId) && (isSiteEngineer() || isAdminOrManager());
+          allow update: if isOrgMember(orgId) && (
+            isAdminOrManager() ||
+            (isSiteEngineer() && resource.data.createdByUid == request.auth.uid)
+          );
+          allow delete: if isOrgMember(orgId) && (
+            isAdminOrManager() ||
+            (isSiteEngineer() && resource.data.createdByUid == request.auth.uid)
+          );
+        }
       }
     }
 
+    // =====================================================================
+    // Legacy single-tenant tree (/projects/*), for data written before the
+    // org path existed. Auth-gated exactly as before — modeled explicitly here
+    // so the recursive `{path=**}` fallbacks (which would have OR-ed open the
+    // org tree above and defeated tenant isolation) can be removed entirely.
+    // =====================================================================
+    match /projects/{projectId} {
+      allow read, write: if request.auth != null;
+      match /{collection}/{docId} {
+        allow read, write: if request.auth != null
+          && collection != 'dailyLogs' && collection != 'purchase_orders'
+          && collection != 'goodsReceiptNotes' && collection != 'system'
+          && collection != 'ledger' && collection != 'ra_bills'
+          && collection != 'labor_rate_cards' && collection != 'client_payments'
+          && collection != 'documents' && collection != 'estimates'
+          && collection != 'audit_logs';
+      }
+      match /estimates/{estimateId} {
+        allow read, create: if request.auth != null;
+        allow update: if request.auth != null && (
+          request.resource.data.status == resource.data.status || isAdminOrManager()
+        );
+        allow delete: if request.auth != null && isAdminOrManager();
+      }
+      match /audit_logs/{auditId} {
+        allow read: if request.auth != null && isAdminOrManager();
+        allow create: if request.auth != null;
+        allow update, delete: if false;
+      }
+      match /documents/{docId} {
+        allow read, create: if request.auth != null;
+        allow update, delete: if request.auth != null && isAdminOrManager();
+      }
+      match /client_payments/{paymentId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && isAdminOrManager();
+      }
+      match /ra_bills/{billId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && isAdminOrManager();
+      }
+      match /labor_rate_cards/{cardId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && isAdminOrManager();
+      }
+      match /ledger/{ledgerId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null && (
+          request.resource.data.referenceType != 'PAYMENT' || isAdminOrManager()
+        );
+        allow update, delete: if request.auth != null && isAdminOrManager();
+      }
+      match /system/{docId} {
+        allow read, write: if request.auth != null;
+      }
+      match /goodsReceiptNotes/{grnId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth != null && (
+          isAdminOrManager() || isSiteEngineer() ||
+          resource.data.createdByUid == request.auth.uid
+        );
+      }
+      match /purchase_orders/{poId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && request.resource.data.status == 'Draft'
+          && request.resource.data.createdByUid == request.auth.uid;
+        allow update: if request.auth != null && (
+          isAdminOrManager() || isSiteEngineer() ||
+          resource.data.createdByUid == request.auth.uid
+        );
+        allow delete: if request.auth != null && (
+          isAdminOrManager() ||
+          (resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft')
+        );
+      }
+      match /dailyLogs/{logId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null && (isSiteEngineer() || isAdminOrManager());
+        allow update: if request.auth != null && (
+          isAdminOrManager() ||
+          (isSiteEngineer() && resource.data.createdByUid == request.auth.uid)
+        );
+        allow delete: if request.auth != null && (
+          isAdminOrManager() ||
+          (isSiteEngineer() && resource.data.createdByUid == request.auth.uid)
+        );
+      }
+    }
+
+    // =====================================================================
+    // Top-level collections
+    // =====================================================================
     match /errorLogs/{logId} {
       allow create: if request.auth != null;
     }
 
     match /users/{userId} {
-      // Was `if true`: every user profile (email, role) was readable by anyone,
-      // even without logging in. Now requires an authenticated caller.
+      // Authenticated read only (was world-readable).
       allow read: if request.auth != null;
       allow write: if request.auth != null && (request.auth.uid == userId || isAdminOrManager());
       // Self-service telegram (un)link: a signed-in user may touch only their own
-      // two telegram fields. Admins linking/unlinking other users are covered by
-      // the write rule above. Previously this rule had no auth or self check, so
-      // anyone could flip telegram fields on any user document.
+      // two telegram fields.
       allow update: if request.auth != null
         && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['telegramChatId', 'telegramLinkedAt']);
     }
 
-    // Link codes are created client-side (a user generates one for themselves, or
-    // an admin generates one for another user). The Telegram webhook redeems them
-    // via the Admin SDK, which bypasses these rules — so clients never need to
-    // update or delete them. Was `if true` (world read + write).
+    // Link codes: created client-side; redeemed by the Telegram webhook via the
+    // Admin SDK (which bypasses these rules).
     match /bot_link_codes/{code} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
         && (request.resource.data.userId == request.auth.uid || isAdminOrManager());
       allow update, delete: if request.auth != null && isAdminOrManager();
     }
-    // Only the Cloud Functions (Admin SDK, which bypasses rules) ever touch these.
-    // No client should read or write them, so deny all client access. Was `if true`.
+    // Only the Cloud Functions (Admin SDK) ever touch these — deny all clients.
     match /bot_rate_limits/{chatId} {
       allow read, write: if false;
     }
     match /bot_sessions/{sessionId} {
       allow read, write: if false;
     }
-    match /organizations/{orgId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && isAdminOrManager();
-      
-      match /projects/{projectId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null && isAdminOrManager();
-        
-        match /{collection}/{docId} {
-          allow read, write: if request.auth != null && collection != 'dailyLogs' && collection != 'purchase_orders' && collection != 'goodsReceiptNotes' && collection != 'system' && collection != 'ledger' && collection != 'ra_bills' && collection != 'labor_rate_cards' && collection != 'client_payments' && collection != 'documents' && collection != 'estimates';
-        }
-        match /estimates/{estimateId} {
-          allow read, create: if request.auth != null;
-          allow update: if request.auth != null && (
-            (request.resource.data.status == resource.data.status) || isAdminOrManager()
-          );
-          allow delete: if request.auth != null && isAdminOrManager();
-        }
-        match /audit_logs/{auditId} {
-          allow read: if request.auth != null && isAdminOrManager();
-          allow create: if request.auth != null;
-          allow update, delete: if false;
-        }
-        match /documents/{docId} {
-          allow read, create: if request.auth != null;
-          allow update, delete: if request.auth != null && isAdminOrManager();
-        }
-        match /client_payments/{paymentId} {
-          allow read: if request.auth != null;
-          allow write: if request.auth != null && isAdminOrManager();
-        }
-        match /ra_bills/{billId} {
-          allow read: if request.auth != null;
-          allow write: if request.auth != null && isAdminOrManager();
-        }
-        match /labor_rate_cards/{cardId} {
-          allow read: if request.auth != null;
-          allow write: if request.auth != null && isAdminOrManager();
-        }
-        match /ledger/{ledgerId} {
-          allow read: if request.auth != null;
-          allow create: if request.auth != null && (
-            request.resource.data.referenceType != 'PAYMENT' || isAdminOrManager()
-          );
-          allow update, delete: if request.auth != null && isAdminOrManager();
-        }
-        match /system/poCounter {
-          allow read: if request.auth != null;
-          allow write: if request.auth != null;
-        }
-        match /system/grnCounter {
-          allow read: if request.auth != null;
-          allow write: if request.auth != null;
-        }
-        match /system/estimateCounter {
-          allow read: if request.auth != null;
-          allow write: if request.auth != null;
-        }
-        match /goodsReceiptNotes/{grnId} {
-          allow read: if request.auth != null;
-          allow create: if request.auth != null;
-          allow update, delete: if request.auth != null && (
-            isAdminOrManager() || 
-            isSiteEngineer() ||
-            (resource.data.createdByUid == request.auth.uid)
-          );
-        }
-        match /purchase_orders/{poId} {
-          allow read: if request.auth != null;
-          allow create: if request.auth != null 
-            && request.resource.data.status == 'Draft'
-            && request.resource.data.createdByUid == request.auth.uid;
-          allow update: if request.auth != null && (
-            isAdminOrManager() || 
-            (isSiteEngineer()) ||
-            (resource.data.createdByUid == request.auth.uid)
-          );
-          allow delete: if request.auth != null && (
-            isAdminOrManager() || 
-            (resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft')
-          );
-        }
-        match /dailyLogs/{logId} {
-          allow read: if request.auth != null;
-          allow create: if request.auth != null && (isSiteEngineer() || isAdminOrManager());
-          allow update: if request.auth != null && (
-             isAdminOrManager() || 
-             (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && isWorkDateKolkataToday(resource.data.workDate) && isWorkDateKolkataToday(request.resource.data.workDate))
-          );
-          allow delete: if request.auth != null && (
-             isAdminOrManager() || 
-             (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && isWorkDateKolkataToday(resource.data.workDate))
-          );
-        }
-      }
-    }
-    
-    // Fallback for everything else missing explicitly
-    match /{path=**}/system/poCounter {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-    match /{path=**}/system/grnCounter {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-    match /{path=**}/system/estimateCounter {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-    match /{path=**}/goodsReceiptNotes/{grnId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && (
-        isAdminOrManager() || 
-        isSiteEngineer() ||
-        (resource.data.createdByUid == request.auth.uid)
-      );
-    }
-    match /{path=**}/purchase_orders/{poId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null 
-        && request.resource.data.status == 'Draft'
-        && request.resource.data.createdByUid == request.auth.uid;
-      allow update: if request.auth != null && (
-         isAdminOrManager() || 
-         (isSiteEngineer()) ||
-         (resource.data.createdByUid == request.auth.uid)
-      );
-      allow delete: if request.auth != null && (
-         isAdminOrManager() || 
-         (resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft')
-      );
-    }
-    match /{path=**}/dailyLogs/{logId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && (isSiteEngineer() || isAdminOrManager());
-      allow update: if request.auth != null && (
-         isAdminOrManager() || 
-         (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && isWorkDateKolkataToday(resource.data.workDate) && isWorkDateKolkataToday(request.resource.data.workDate))
-      );
-      allow delete: if request.auth != null && (
-         isAdminOrManager() || 
-         (isSiteEngineer() && resource.data.createdByUid == request.auth.uid && isWorkDateKolkataToday(resource.data.workDate))
-      );
-    }
-    match /{path=**}/ra_bills/{billId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && isAdminOrManager();
-    }
-    match /{path=**}/labor_rate_cards/{cardId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && isAdminOrManager();
-    }
-    match /{path=**}/client_payments/{paymentId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && isAdminOrManager();
-    }
-    match /{path=**}/audit_logs/{auditId} {
-      allow read: if request.auth != null && isAdminOrManager();
-      allow create: if request.auth != null;
-      allow update, delete: if false;
-    }
-    match /{path=**}/documents/{docId} {
-      allow read, create: if request.auth != null;
-      allow update, delete: if request.auth != null && isAdminOrManager();
-    }
-    match /{path=**}/estimates/{estimateId} {
-      allow read, create: if request.auth != null;
-      allow update: if request.auth != null && (
-        (request.resource.data.status == resource.data.status) || isAdminOrManager()
-      );
-      allow delete: if request.auth != null && isAdminOrManager();
-    }
-    match /{path=**}/ledger/{ledgerId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && (
-        request.resource.data.referenceType != 'PAYMENT' || isAdminOrManager()
-      );
-      allow update, delete: if request.auth != null && isAdminOrManager();
-    }
-    
-    // We intentionally removed the global wildcard to enforce the dailyLogs permissions securely.
-    // In production, all collections must be explicitly modeled.
+
+    // NOTE: the recursive `/{path=**}/…` fallback rules were intentionally
+    // removed. Because Firestore grants access if ANY matching rule allows it,
+    // those auth-only fallbacks matched org-nested paths too and would have
+    // bypassed the membership checks above. Every collection is now modeled
+    // explicitly under its tenant tree.
   }
 }

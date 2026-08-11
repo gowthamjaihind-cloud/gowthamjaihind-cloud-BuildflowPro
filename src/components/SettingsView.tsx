@@ -49,8 +49,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const setDarkMode = useUIStore((state) => state.setDarkMode);
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [draftCompanyName, setDraftCompanyName] = useState(companyName);
-  const { settings: orgSettings, save: saveOrgSettings } = useOrgSettings();
+  const { settings: orgSettings, save: saveOrgSettings, orgId, isClaimed, isMember, claim } = useOrgSettings();
   const [draftGstin, setDraftGstin] = useState("");
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
   // Load the saved GSTIN once it arrives from Firestore.
   React.useEffect(() => {
     setDraftGstin(orgSettings.gstin || "");
@@ -123,6 +125,52 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <h3 className="text-xl font-bold text-ink mb-6">
                   Default Organization
                 </h3>
+
+                {orgId && !isClaimed && (
+                  <div className="mb-6 p-5 rounded-2xl border border-[#D97D54]/40 bg-[#D97D54]/10">
+                    <div className="flex items-start gap-3">
+                      <Shield className="w-5 h-5 text-[#B85F3B] shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="font-bold text-ink">Secure this organization</div>
+                        <p className="text-sm text-ink-muted mt-1">
+                          Claim ownership so only your team can access this organization's
+                          data. Do this once, then deploy the updated security rules.
+                        </p>
+                        {claimError && (
+                          <p className="text-sm text-[#B91C1C] mt-2">{claimError}</p>
+                        )}
+                        <button
+                          onClick={async () => {
+                            setClaiming(true);
+                            setClaimError(null);
+                            try {
+                              await claim();
+                            } catch (e: any) {
+                              setClaimError(e?.message || "Couldn't claim the organization.");
+                            } finally {
+                              setClaiming(false);
+                            }
+                          }}
+                          disabled={claiming}
+                          className="mt-3 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50"
+                        >
+                          {claiming ? "Claiming…" : "Claim organization"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {orgId && isClaimed && (
+                  <div className="mb-6 p-4 rounded-2xl border border-[#059669]/30 bg-[#059669]/10 flex items-center gap-3">
+                    <Shield className="w-5 h-5 text-[#059669] shrink-0" />
+                    <span className="text-sm font-semibold text-ink">
+                      {isMember
+                        ? "Organization secured — access is limited to its members."
+                        : "This organization is owned by another account."}
+                    </span>
+                  </div>
+                )}
+
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-semibold text-ink mb-2">

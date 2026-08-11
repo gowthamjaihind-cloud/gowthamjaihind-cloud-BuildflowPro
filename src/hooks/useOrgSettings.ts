@@ -11,9 +11,10 @@ export function useOrgSettings() {
   const user = useAuthStore((s) => s.user);
   const orgId = user?.currentOrgId;
   const [settings, setSettings] = useState<OrgSettings>({});
+  const [members, setMembers] = useState<Record<string, string> | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
     if (!orgId) return;
     let cancelled = false;
     setLoading(true);
@@ -22,6 +23,7 @@ export function useOrgSettings() {
         if (cancelled) return;
         const d: any = snap.exists() ? snap.data() : {};
         setSettings({ companyName: d.companyName, gstin: d.gstin, stateCode: d.stateCode });
+        setMembers(d.members || {});
       })
       .catch(() => {})
       .finally(() => {
@@ -30,7 +32,28 @@ export function useOrgSettings() {
     return () => {
       cancelled = true;
     };
-  }, [orgId]);
+  };
+
+  useEffect(load, [orgId]);
+
+  // Membership state (see firestore.rules): an org is "claimed" once it has any
+  // members; the signed-in user is a member if their uid is a key in the map.
+  const isClaimed = !!members && Object.keys(members).length > 0;
+  const isMember = !!(members && user && members[user.uid]);
+
+  // One-time claim: the first person to claim an unclaimed org becomes its Owner.
+  // Rules only permit this while the org has no members and only lets you add
+  // yourself as Owner — so it can't be used to seize an org that's already owned.
+  const claim = async () => {
+    if (!orgId) throw new Error("No organization selected.");
+    if (!user) throw new Error("Not signed in.");
+    await setDoc(
+      doc(db, "organizations", orgId),
+      { members: { [user.uid]: "Owner" } },
+      { merge: true },
+    );
+    setMembers((m) => ({ ...(m || {}), [user.uid]: "Owner" }));
+  };
 
   const save = async (patch: Partial<OrgSettings>) => {
     if (!orgId) throw new Error("No organization selected.");
@@ -44,5 +67,5 @@ export function useOrgSettings() {
     setSettings((s) => ({ ...s, ...next }));
   };
 
-  return { settings, loading, save, orgId };
+  return { settings, loading, save, orgId, members, isClaimed, isMember, claim };
 }
