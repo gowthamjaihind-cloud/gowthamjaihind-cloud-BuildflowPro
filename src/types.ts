@@ -224,6 +224,13 @@ export interface GoodsReceiptNote {
   materialIds?: string[];
   photoUrls?: string[];
   notes?: string;
+  // Set when this GRN was created alongside a GST vendor bill (invoice reader).
+  // When present, the Bill posts the vendor payable — the GRN does not post its
+  // own rate×qty credit, to avoid double-counting.
+  billId?: string;
+  // "legacy-inclusive" = pre-GST-switchover rows whose rates already include tax
+  // (never re-valued). "gst-itemized" = new rows costed ex-GST with input credit.
+  taxMode?: TaxMode;
   createdByUid: string;
   createdByName: string;
   createdAt: string;
@@ -269,6 +276,71 @@ export interface MaterialReceipt {
   matchStatus?: "Fully Matched" | "Has Discrepancies" | "Unlinked";
 }
 
+// Costing convention for a receipt/bill.
+//  - "legacy-inclusive": pre-switchover rows entered with tax-inclusive rates;
+//    cost = rate × qty (includes GST). Never re-valued.
+//  - "gst-itemized": new GST bills; material cost = taxable value (ex-GST),
+//    input GST tracked separately, vendor payable = tax-inclusive total.
+export type TaxMode = "legacy-inclusive" | "gst-itemized";
+
+// A single GST invoice line, as read from the vendor's bill.
+export interface VendorBillLineItem {
+  poLineRef?: string;     // matched PO line (POLineItem.itemId), if any
+  materialId?: string;    // matched inventory item, if any
+  name: string;
+  hsn?: string;           // HSN/SAC code
+  qty: number;
+  unit: string;
+  rate: number;           // per-unit taxable rate (ex-GST)
+  taxableValue: number;   // qty × rate (ex-GST)
+  gstRate: number;        // e.g. 5, 12, 18, 28
+  cgst: number;
+  sgst: number;
+  igst: number;
+  lineTotal: number;      // taxableValue + cgst + sgst + igst
+}
+
+// A GST vendor invoice/bill — the financial document, matched to a PO/GRN. The
+// GRN records physical quantities; the Bill records money + tax.
+export interface VendorBill {
+  id: string;
+  projectId: string;
+  vendorId: string;
+  vendorName: string;
+  vendorGSTIN?: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  poId?: string;
+  poNumber?: string;
+  grnIds?: string[];
+  lineItems: VendorBillLineItem[];
+  charges?: POCharges;          // freight/loading/other from the invoice
+  subtotalTaxable: number;      // Σ taxableValue
+  totalCGST: number;
+  totalSGST: number;
+  totalIGST: number;
+  roundOff?: number;
+  grandTotal: number;           // subtotalTaxable + taxes + charges ± roundOff
+  taxMode: TaxMode;             // "gst-itemized" for reader-created bills
+  matchStatus?: "Fully Matched" | "Has Discrepancies" | "Unlinked";
+  sourceFileUrl?: string;       // the scanned invoice image/PDF, for audit
+  extractionConfidence?: number;
+  ledgerId?: string;            // the vendor-ledger CREDIT this bill posted
+  createdVia?: "web" | "telegram";
+  createdByUid: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+// Company/tax identity, stored on the organization doc so both the web app and
+// server-side functions can read it (drives GSTIN validation and the
+// CGST/SGST-vs-IGST split by comparing state codes).
+export interface OrgSettings {
+  companyName?: string;
+  gstin?: string;
+  stateCode?: string; // GST state code, e.g. "29" (Karnataka)
+}
+
 export interface LaborLogLineItem {
   taskId: string;
   taskName?: string;
@@ -302,6 +374,7 @@ export interface VendorLedgerEntry {
   amount: number;
   referenceType:
     | "GRN"
+    | "BILL"
     | "PAYMENT"
     | "RETURN"
     | "LABOR_DEPLOYMENT"
