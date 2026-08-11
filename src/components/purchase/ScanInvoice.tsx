@@ -11,7 +11,7 @@ import { useAuthStore } from "../../store";
 import { useProjectData } from "../../hooks/useProjectData";
 import { callExtractVendorInvoice } from "../../services/firebaseFunctions";
 import { postInvoiceReceipt } from "../../services/invoiceReceiptService";
-import { PurchaseOrder, VendorBill } from "../../types";
+import { PurchaseOrder, VendorBill, InventoryItem } from "../../types";
 
 interface ScanInvoiceProps {
   projectId: string;
@@ -46,6 +46,16 @@ function totalsOf(lines: any[], charges: any) {
 export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, onPosted, initialBill }) => {
   const user = useAuthStore((s) => s.user);
   const { data: pos = [] } = useProjectData<PurchaseOrder>(projectId, "purchase_orders");
+  const { data: inventory = [] } = useProjectData<InventoryItem>(projectId, "inventory");
+
+  // Inventory is keyed by its own doc id, which equals a matched line's
+  // poLineRef — so we can show the already-defined material (name + group code)
+  // each invoice line links to, and confirm that's where its qty will land.
+  const invById = useMemo(() => {
+    const m: Record<string, InventoryItem> = {};
+    inventory.forEach((i) => { m[i.id] = i; });
+    return m;
+  }, [inventory]);
   const [step, setStep] = useState<"upload" | "review" | "posting" | "done">(initialBill ? "review" : "upload");
   const [error, setError] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -202,11 +212,20 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
                     </tr>
                   </thead>
                   <tbody>
-                    {bill.lineItems.map((l, i) => (
-                      <tr key={i} className="border-t border-divider/50">
+                    {bill.lineItems.map((l, i) => {
+                      const inv = l.poLineRef ? invById[l.poLineRef] : undefined;
+                      const code = inv?.groupCode || inv?.code || inv?.materialId || l.materialId;
+                      return (
+                      <tr key={i} className="border-t border-divider/50 align-top">
                         <td className="p-2">
                           {l.name}
-                          {!l.poLineRef && <span className="text-[#D97D54]" title="Not on PO"> ⚠️</span>}
+                          {l.poLineRef ? (
+                            <div className="text-[10px] font-semibold text-[#059669] mt-0.5">
+                              ↳ {inv?.name || "matched to PO"}{code ? ` · ${code}` : ""}
+                            </div>
+                          ) : (
+                            <span className="text-[#D97D54] text-[10px] font-semibold" title="Not on PO"> ⚠️ not on PO</span>
+                          )}
                         </td>
                         <td className="p-2 text-right">
                           <input
@@ -222,7 +241,8 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
                         <td className="p-2 text-right font-mono">{l.gstRate || 0}%</td>
                         <td className="p-2 text-right font-mono">{inr(l.lineTotal)}</td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
