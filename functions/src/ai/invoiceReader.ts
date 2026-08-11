@@ -102,14 +102,18 @@ export async function readAndMatchInvoice(
     if (poLine) {
       const remaining = (Number(poLine.orderedQty) || 0) - (Number(poLine.receivedQty) || 0);
       if (Number(li.qty) > remaining + 0.001) flags.push(`"${li.name}": invoice qty ${li.qty} exceeds remaining ordered ${remaining}.`);
-      if (poLine.rate && Math.abs(Number(li.rate) - poLine.rate) / poLine.rate > 0.05)
-        flags.push(`"${li.name}": rate ₹${li.rate} differs from PO rate ₹${poLine.rate}.`);
+      if (poLine.rate && Math.abs(Number(li.rate) - poLine.rate) / poLine.rate > 0.05) {
+        const dir = Number(li.rate) < poLine.rate ? "below" : "above";
+        flags.push(`"${li.name}": invoice rate ₹${li.rate} is ${dir} PO rate ₹${poLine.rate}.`);
+      }
     } else if (po) {
       flags.push(`"${li.name}" is not on the PO.`);
     }
     return {
+      // Matched to a defined PO/inventory line: carry the group material code so
+      // the goods receipt + inventory update tie to the already-defined material.
       poLineRef: poLine ? poLine.itemId : undefined,
-      materialId: poLine ? poLine.materialId : undefined,
+      materialId: poLine ? (poLine.materialId || poLine.itemId) : undefined,
       name: String(li.name || "Item"),
       hsn: li.hsn ? String(li.hsn) : undefined,
       qty: Number(li.qty) || 0,
