@@ -7,9 +7,12 @@ import { getSession, setSession, clearStep, clearSession } from "./session";
 import { checkRateLimit, redeemLinkCode, validateSession } from "./auth";
 import * as log from "./handlers/log";
 import * as projects from "./handlers/projects";
+import * as agent from "./handlers/agent";
 import { db } from "../db";
 const BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = defineSecret("TELEGRAM_WEBHOOK_SECRET");
+// The Site Engineer agent parses free-text updates with Gemini (server-side).
+const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
 // Lightweight status endpoint for the web app's "Bot Online" badge.
 // Exposed to the frontend via a Firebase Hosting rewrite: /api/telegram-status
@@ -37,7 +40,7 @@ export const telegramStatus = onRequest({
 });
 export const telegramWebhook = onRequest({
     region: "asia-southeast1",
-    secrets: [BOT_TOKEN, WEBHOOK_SECRET],
+    secrets: [BOT_TOKEN, WEBHOOK_SECRET, GEMINI_API_KEY],
     cors: false,
     // No warm instance kept here: the handler now does its work before
     // responding (see below), so it finishes in ~1-2s once running. A cold
@@ -64,14 +67,14 @@ export const telegramWebhook = onRequest({
     const tg = new TelegramApi(BOT_TOKEN.value());
     const update = req.body;
     try {
-        await handleUpdate(tg, update);
+        await handleUpdate(tg, update, GEMINI_API_KEY.value());
     }
     catch (err) {
         console.error("Error handling update:", err);
     }
     res.status(200).send("OK");
 });
-async function handleUpdate(tg, update) {
+async function handleUpdate(tg, update, geminiKey) {
     const msg = update.message;
     const cb = update.callback_query;
     if (cb) {
@@ -87,6 +90,22 @@ async function handleUpdate(tg, update) {
         // "Log now" button from the daily reminder — starts the normal log flow.
         if (data === "log") {
             await log.startLog(tg, chatId, session);
+            return;
+        }
+        // ---- Site Engineer agent ----
+        // Tapped a task from the agent's end-of-day worklist.
+        if (data.startsWith("alog:")) {
+            await agent.startTaskCapture(tg, chatId, messageId, session, data.slice(5));
+            return;
+        }
+        // Save the agent-parsed draft (reuses the normal log write path).
+        if (data === "asv") {
+            await log.saveLog(tg, chatId, messageId, session);
+            return;
+        }
+        // Re-describe: go back to free-text capture.
+        if (data === "aed") {
+            await agent.reDescribe(tg, chatId, messageId, session);
             return;
         }
                 if (data === "dt") {
@@ -266,6 +285,11 @@ async function handleUpdate(tg, update) {
         return;
     }
     const step = session.step;
+    // Site Engineer agent: the user described the day in free text.
+    if (step === "agent:capture") {
+        await agent.handleCaptureText(tg, chatId, session, text, geminiKey);
+        return;
+    }
     if (step === "log:progress") {
         const pct = parseInt(text, 10);
         if (isNaN(pct) || pct < 0 || pct > 100) {
@@ -337,9 +361,11 @@ export const onUserUnlinked = onDocumentUpdated({
     }
 });
 
-// Proactive daily reminder: instead of waiting for people to remember, the bot
-// pings every linked user at 5:00 PM IST, Mon–Sat, with a one-tap button that
-// starts the log flow. Runs once a day, so the scheduled cost is negligible.
+// Site Engineer agent — proactive end-of-day nudge at 5:00 PM IST, Mon–Sat.
+// For each linked user it looks at their active project, finds tasks that still
+// need today's log, and asks about those specifically (tap → describe → confirm
+// → save). Users who are already caught up aren't pinged; users with no active
+// project get a light nudge to pick one. Runs once a day.
 export const dailyLogReminder = onSchedule({
     schedule: "0 17 * * 1-6", // 17:00 Mon–Sat (0=Sun) in the timezone below
     timeZone: "Asia/Kolkata",
@@ -353,24 +379,26 @@ export const dailyLogReminder = onSchedule({
         .map((d) => d.data())
         .filter((u: any) => u.telegramChatId);
 
-    let sent = 0;
+    let nudged = 0;
     for (const u of targets) {
         try {
-            await tg.sendMessage(
-                u.telegramChatId,
-                "🌇 <b>End-of-day check-in</b>\n\n" +
-                "Did you record today's site progress? Tap below to log it in under a minute.",
-                [
-                    [{ text: "📝 Log today's work", callback_data: "log" }],
-                    [{ text: "Not today", callback_data: "xx" }],
-                ]
-            );
-            sent++;
+            const session = await getSession(u.telegramChatId);
+            if (session?.activeProjectId) {
+                const sent = await agent.sendAgentNudge(tg, u.telegramChatId, session);
+                if (sent) nudged++;
+                // No gaps → stay quiet (no noise for people already caught up).
+            } else {
+                await tg.sendMessage(
+                    u.telegramChatId,
+                    "🌇 <b>End-of-day check-in</b>\n\nReply /projects to set your active project, then I'll help you log today's work.",
+                );
+                nudged++;
+            }
         }
         catch (err) {
             // A user may have blocked the bot; skip and keep going.
             console.error("Daily reminder failed for chat", u.telegramChatId, err);
         }
     }
-    console.log(`Daily log reminder sent to ${sent}/${targets.length} linked users.`);
+    console.log(`Site Engineer agent nudged ${nudged}/${targets.length} linked users.`);
 });

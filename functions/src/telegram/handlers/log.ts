@@ -269,6 +269,7 @@ export async function saveLog(tg: any, chatId: number, messageId, session) {
         markComplete: d.progressPercent === 100,
         materials: d.materials || [],
         labour: d.labour || [],
+        equipment: d.equipment || [],
         note: d.note || "",
         photoUrls: d.photoUrls || [],
         createdVia: "telegram",
