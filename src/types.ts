@@ -343,10 +343,24 @@ export interface VendorBill {
 // Company/tax identity, stored on the organization doc so both the web app and
 // server-side functions can read it (drives GSTIN validation and the
 // CGST/SGST-vs-IGST split by comparing state codes).
+export type SubscriptionStatus =
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "expired"
+  | "internal"; // operator/grandfathered orgs — never gated
+
 export interface OrgSettings {
   companyName?: string;
   gstin?: string;
   stateCode?: string; // GST state code, e.g. "29" (Karnataka)
+  // Billing lifecycle (see functions/src/billing.ts + useOrgAccess). Orgs with
+  // no status are grandfathered (treated as always-on).
+  subscriptionStatus?: SubscriptionStatus;
+  plan?: string;
+  trialEndsAt?: number;        // epoch ms; while trialing, access ends here
+  currentPeriodEnd?: number;   // epoch ms; paid period end (for active subs)
 }
 
 export interface LaborLogLineItem {

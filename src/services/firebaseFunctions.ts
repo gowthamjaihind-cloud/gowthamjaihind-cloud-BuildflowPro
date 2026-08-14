@@ -102,3 +102,18 @@ export const callAcceptInvite = async (code: string) => {
   const res = await fn({ code });
   return res.data;
 };
+
+// Super-admin: provision a new customer org (7-day trial) + owner invite.
+export const callProvisionOrganization = async (args: { companyName: string; ownerEmail?: string }) => {
+  const fn = httpsCallable<typeof args, { orgId: string; code: string; trialEndsAt: number }>(
+    getFunctionsInstance(), 'provisionOrganization');
+  const res = await fn(args);
+  return res.data;
+};
+
+// Super-admin: set an org's subscription (activate / extend_trial / expire / internal).
+export const callSetSubscription = async (args: { orgId: string; action: string; months?: number }) => {
+  const fn = httpsCallable<typeof args, any>(getFunctionsInstance(), 'setSubscription');
+  const res = await fn(args);
+  return res.data;
+};

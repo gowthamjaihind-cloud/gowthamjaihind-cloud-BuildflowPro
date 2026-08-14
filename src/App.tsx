@@ -57,6 +57,8 @@ import { LandingPage } from "./pages/LandingPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { ProjectDashboard } from "./pages/ProjectDashboard";
 import { Onboarding } from "./components/Onboarding";
+import { Paywall, TrialBanner } from "./components/Paywall";
+import { useOrgAccess } from "./hooks/useOrgAccess";
 
 export const AuthContext = React.createContext<{ user: UserProfile | null }>({
   user: null,
@@ -158,6 +160,8 @@ function AppContent() {
   const viewingSettings = useUIStore((state) => state.viewingSettings);
   const setViewingSettings = useUIStore((state) => state.setViewingSettings);
 
+  const access = useOrgAccess();
+
   const visibleProjects = projects.filter((p) => {
     if (user?.role === "Admin" || user?.role === "Owner") return true;
     const access = user?.projectAccess?.[p.id];
@@ -196,17 +200,17 @@ function AppContent() {
     return <Onboarding user={user} />;
   }
 
-  if (!activeProject) {
-    if (viewingSettings) {
-      return (
-        <SettingsView
-          onBack={() => setViewingSettings(false)}
-          currentUser={user}
-        />
-      );
-    }
+  // Billing gate: block the app once the trial has ended (or a subscription
+  // lapsed). Grandfathered orgs (no subscriptionStatus) are always allowed.
+  if (!access.loading && !access.allowed) {
+    return <Paywall access={access} user={user} />;
+  }
 
-    return (
+  let page: React.ReactNode;
+  if (!activeProject) {
+    page = viewingSettings ? (
+      <SettingsView onBack={() => setViewingSettings(false)} currentUser={user} />
+    ) : (
       <PortfolioPage
         user={user}
         visibleProjects={visibleProjects}
@@ -214,14 +218,21 @@ function AppContent() {
         onSettingsClick={() => setViewingSettings(true)}
       />
     );
+  } else {
+    page = (
+      <ProjectDashboard
+        user={user}
+        activeProject={activeProject}
+        onUpdateProject={(p) => setActiveProject(p)}
+        onBack={() => setActiveProject(null)}
+      />
+    );
   }
 
   return (
-    <ProjectDashboard
-      user={user}
-      activeProject={activeProject}
-      onUpdateProject={(p) => setActiveProject(p)}
-      onBack={() => setActiveProject(null)}
-    />
+    <>
+      {page}
+      {access.isTrial && access.allowed && <TrialBanner daysLeft={access.daysLeft} />}
+    </>
   );
 }
