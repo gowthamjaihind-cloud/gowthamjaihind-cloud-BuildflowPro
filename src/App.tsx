@@ -56,6 +56,7 @@ import { useAuthStore, useProjectStore, useUIStore } from "./store";
 import { LandingPage } from "./pages/LandingPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { ProjectDashboard } from "./pages/ProjectDashboard";
+import { Onboarding } from "./components/Onboarding";
 
 export const AuthContext = React.createContext<{ user: UserProfile | null }>({
   user: null,
@@ -186,6 +187,13 @@ function AppContent() {
 
   if (!user) {
     return <LandingPage isLoggingIn={isLoggingIn} onLogin={login} loginError={loginError} />;
+  }
+
+  // Multi-tenant gate: a signed-in user must belong to an organization. New
+  // orgs are provisioned/invite-only, so anyone without one lands on the
+  // invite-code screen until they join (or an admin provisions their org).
+  if (!user.currentOrgId) {
+    return <Onboarding user={user} />;
   }
 
   if (!activeProject) {

@@ -86,3 +86,19 @@ export const callSetupOrganization = async (companyName?: string) => {
   const res = await fn({ companyName });
   return res.data;
 };
+
+// Owner/Admin mints an invite code for a teammate (shared as …/?invite=CODE).
+export const callCreateInvite = async (args: { email?: string; role: string }) => {
+  const fn = httpsCallable<typeof args, { code: string; orgId: string; role: string; email: string | null }>(
+    getFunctionsInstance(), 'createInvite');
+  const res = await fn(args);
+  return res.data;
+};
+
+// A signed-in user redeems an invite code to join an org.
+export const callAcceptInvite = async (code: string) => {
+  const fn = httpsCallable<{ code: string }, { orgId: string; role: string; orgName: string }>(
+    getFunctionsInstance(), 'acceptInvite');
+  const res = await fn({ code });
+  return res.data;
+};
