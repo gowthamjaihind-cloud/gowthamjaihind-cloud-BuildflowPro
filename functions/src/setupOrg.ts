@@ -5,10 +5,14 @@ import { db } from "./db";
 // (projects/*) to the multi-tenant layout (organizations/{orgId}/projects/*).
 //
 // It creates the organization with the caller seeded as Owner (the membership
-// the security rules check), COPIES every legacy project and all of its nested
-// sub-collections under the new org, and links the caller's account
-// (users/{uid}.currentOrgId). Legacy data is left untouched as a backup, so the
-// operation is reversible. Runs with the Admin SDK, so it bypasses rules.
+// the security rules check), COPIES every legacy project and its sub-collections
+// under the new org, and links the caller's account (users/{uid}.currentOrgId).
+// Legacy data is left untouched as a backup, so the operation is reversible.
+// Runs with the Admin SDK, so it bypasses rules.
+//
+// Resume-safe: if a previous run created the org but didn't finish linking the
+// account (e.g. the client timed out), a re-run adopts that same org and
+// re-copies (overwrite) rather than creating a duplicate.
 export const setupOrganization = onCall(
   { timeoutSeconds: 540, memory: "1GiB" },
   async (request) => {
@@ -26,7 +30,7 @@ export const setupOrganization = onCall(
       throw new HttpsError("permission-denied", "Only an Owner or Admin can set up the organization.");
     }
 
-    // Idempotent: if already linked, do nothing (prevents a second org + re-copy).
+    // Already linked → nothing to do.
     if (userData.currentOrgId) {
       return { orgId: userData.currentOrgId, alreadyLinked: true, projects: 0, docs: 0 };
     }
@@ -36,9 +40,16 @@ export const setupOrganization = onCall(
       userData.displayName ||
       "My Company";
 
-    // Create the org, seeding the caller as Owner in the members map.
-    const orgRef = db.collection("organizations").doc();
+    // Adopt an org this user already started (a prior interrupted run), else
+    // create a fresh one. Avoids duplicate orgs on retry.
+    const existing = await db
+      .collection("organizations")
+      .where("createdByUid", "==", uid)
+      .limit(1)
+      .get();
+    const orgRef = existing.empty ? db.collection("organizations").doc() : existing.docs[0].ref;
     const orgId = orgRef.id;
+
     await orgRef.set(
       {
         companyName,
@@ -50,39 +61,42 @@ export const setupOrganization = onCall(
       { merge: true },
     );
 
-    // Recursively copy a document and every nested sub-collection.
+    // Fast copy. This app's Firestore is two levels deep under a project
+    // (projects/{id}/{collection}/{doc}) — no sub-sub-collections — so we read
+    // each sub-collection in a single batched .get() instead of walking every
+    // document with listCollections() (which caused the timeout).
     const counters = { projects: 0, docs: 0 };
     const writer = db.bulkWriter();
-
-    async function copyInto(
-      srcRef: FirebaseFirestore.DocumentReference,
-      destRef: FirebaseFirestore.DocumentReference,
-    ) {
-      const snap = await srcRef.get();
-      if (snap.exists) {
-        writer.set(destRef, snap.data() as FirebaseFirestore.DocumentData);
-        counters.docs++;
-      }
-      // listCollections finds sub-collections; listDocuments includes "missing"
-      // container docs that only exist to hold sub-collections.
-      const subs = await srcRef.listCollections();
-      for (const sub of subs) {
-        const childRefs = await sub.listDocuments();
-        for (const childRef of childRefs) {
-          await copyInto(childRef, destRef.collection(sub.id).doc(childRef.id));
-        }
-      }
-    }
 
     const legacyProjectRefs = await db.collection("projects").listDocuments();
     for (const projRef of legacyProjectRefs) {
       counters.projects++;
-      await copyInto(projRef, orgRef.collection("projects").doc(projRef.id));
+      const destProjRef = orgRef.collection("projects").doc(projRef.id);
+
+      const projSnap = await projRef.get();
+      if (projSnap.exists) {
+        writer.set(destProjRef, projSnap.data() as FirebaseFirestore.DocumentData);
+        counters.docs++;
+      }
+
+      const subs = await projRef.listCollections();
+      await Promise.all(
+        subs.map(async (sub) => {
+          const qs = await sub.get();
+          qs.forEach((docSnap) => {
+            writer.set(
+              destProjRef.collection(sub.id).doc(docSnap.id),
+              docSnap.data() as FirebaseFirestore.DocumentData,
+            );
+            counters.docs++;
+          });
+        }),
+      );
     }
 
     await writer.close();
 
-    // Link the caller's account to the new org (switches the app to the org path).
+    // Link the caller's account to the org (switches the app to the org path).
     await userRef.update({ currentOrgId: orgId });
 
     return { orgId, alreadyLinked: false, projects: counters.projects, docs: counters.docs };
