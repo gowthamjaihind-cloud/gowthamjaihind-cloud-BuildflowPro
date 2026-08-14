@@ -290,6 +290,11 @@ service cloud.firestore {
     match /bot_sessions/{sessionId} {
       allow read, write: if false;
     }
+    // Invite codes are created and redeemed only by Cloud Functions (Admin SDK,
+    // which bypasses these rules). No client should read or write them directly.
+    match /org_invites/{code} {
+      allow read, write: if false;
+    }
 
     // NOTE: the recursive `/{path=**}/…` fallback rules were intentionally
     // removed. Because Firestore grants access if ANY matching rule allows it,

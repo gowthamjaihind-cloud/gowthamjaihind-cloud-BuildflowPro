@@ -23,6 +23,7 @@ import { EnterpriseAuthView } from "./EnterpriseAuthView";
 import { useUIStore } from "../store";
 import { useOrgSettings } from "../hooks/useOrgSettings";
 import { callSetupOrganization } from "../services/firebaseFunctions";
+import { TeamPanel } from "./settings/TeamPanel";
 
 interface SettingsViewProps {
   onBack: () => void;
@@ -92,6 +93,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 label: "Default Organization",
                 icon: LayoutDashboard,
               },
+              { id: "team", label: "Team", icon: Users },
               { id: "appearance", label: "Appearance", icon: Monitor },
               {
                 id: "enterprise",
@@ -123,6 +125,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 viewMode="enterprise"
               />
             )}
+
+            {activeTab === "team" && <TeamPanel />}
 
             {activeTab === "organization" && (
               <section className="soft-card p-8 squircle-24">
