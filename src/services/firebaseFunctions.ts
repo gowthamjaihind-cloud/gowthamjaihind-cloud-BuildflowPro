@@ -64,3 +64,19 @@ export const callExtractVendorInvoice = async (args: {
   const res = await fn(args);
   return res.data;
 };
+
+export interface SetupOrgResult {
+  orgId: string;
+  alreadyLinked: boolean;
+  projects: number;
+  docs: number;
+}
+
+// One-time admin migration: creates the organization (seeding the caller as
+// Owner), copies legacy projects/* data under organizations/{orgId}/, and links
+// the caller's account. Legacy data is left intact as a backup.
+export const callSetupOrganization = async (companyName?: string) => {
+  const fn = httpsCallable<{ companyName?: string }, SetupOrgResult>(getFunctionsInstance(), 'setupOrganization');
+  const res = await fn({ companyName });
+  return res.data;
+};

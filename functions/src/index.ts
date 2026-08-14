@@ -12,3 +12,4 @@ export * from "./ai";
 export * from "./dailyLogs";
 export * from "./goodsReceipt";
 export * from "./telegram";
+export * from "./setupOrg";

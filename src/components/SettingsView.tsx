@@ -22,6 +22,7 @@ import { Project, UserProfile } from "../types";
 import { EnterpriseAuthView } from "./EnterpriseAuthView";
 import { useUIStore } from "../store";
 import { useOrgSettings } from "../hooks/useOrgSettings";
+import { callSetupOrganization } from "../services/firebaseFunctions";
 
 interface SettingsViewProps {
   onBack: () => void;
@@ -53,6 +54,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [draftGstin, setDraftGstin] = useState("");
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
+  const [settingUp, setSettingUp] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
+  const [setupDone, setSetupDone] = useState<{ projects: number; docs: number } | null>(null);
   // Load the saved GSTIN once it arrives from Firestore.
   React.useEffect(() => {
     setDraftGstin(orgSettings.gstin || "");
@@ -125,6 +129,59 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <h3 className="text-xl font-bold text-ink mb-6">
                   Default Organization
                 </h3>
+
+                {!orgId && !setupDone && (
+                  <div className="mb-6 p-5 rounded-2xl border border-[#D97D54]/40 bg-[#D97D54]/10">
+                    <div className="flex items-start gap-3">
+                      <Shield className="w-5 h-5 text-[#B85F3B] shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="font-bold text-ink">Set up your organization</div>
+                        <p className="text-sm text-ink-muted mt-1">
+                          Your data isn't linked to an organization yet, so it can't be
+                          secured per-tenant. This one-time step creates your organization,
+                          moves a copy of your existing data under it, and makes you the
+                          Owner. Your current data is left untouched as a backup.
+                        </p>
+                        {setupError && (
+                          <p className="text-sm text-[#B91C1C] mt-2">{setupError}</p>
+                        )}
+                        <button
+                          onClick={async () => {
+                            setSettingUp(true);
+                            setSetupError(null);
+                            try {
+                              const res = await callSetupOrganization(companyName || undefined);
+                              setSetupDone({ projects: res.projects, docs: res.docs });
+                            } catch (e: any) {
+                              setSetupError(e?.message || "Couldn't set up the organization.");
+                            } finally {
+                              setSettingUp(false);
+                            }
+                          }}
+                          disabled={settingUp}
+                          className="mt-3 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50"
+                        >
+                          {settingUp ? "Setting up… (may take a minute)" : "Set up organization & migrate data"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {setupDone && (
+                  <div className="mb-6 p-5 rounded-2xl border border-[#059669]/30 bg-[#059669]/10">
+                    <div className="flex items-start gap-3">
+                      <Shield className="w-5 h-5 text-[#059669] shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="font-bold text-ink">Organization created</div>
+                        <p className="text-sm text-ink-muted mt-1">
+                          Migrated {setupDone.projects} project(s) ({setupDone.docs} records) and
+                          made you the Owner. Final step: run the <b>“Deploy Firestore Rules”</b> action
+                          on GitHub to switch on tenant isolation. You may need to reload the app.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {orgId && !isClaimed && (
                   <div className="mb-6 p-5 rounded-2xl border border-[#D97D54]/40 bg-[#D97D54]/10">

@@ -15,7 +15,11 @@ if (savedDarkMode === "true") {
 }
 
 if ("serviceWorker" in navigator) {
-  registerSW({
+  // Auto-apply new versions. Previously onNeedRefresh only logged, so a new
+  // build was downloaded but never activated — users kept running the old,
+  // cached app until they manually cleared the cache. updateSW(true) activates
+  // the waiting worker and reloads to the fresh version.
+  const updateSW = registerSW({
     immediate: true,
     onRegisteredSW(swUrl, r) {
       r && setInterval(() => {
@@ -23,7 +27,7 @@ if ("serviceWorker" in navigator) {
       }, 60 * 60 * 1000); // Check for updates every hour
     },
     onNeedRefresh() {
-      console.log("New content available, please refresh.");
+      updateSW(true);
     },
     onOfflineReady() {
       console.log("App ready to work offline");
