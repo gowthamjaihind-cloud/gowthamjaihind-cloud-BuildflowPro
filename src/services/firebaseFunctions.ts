@@ -76,7 +76,13 @@ export interface SetupOrgResult {
 // Owner), copies legacy projects/* data under organizations/{orgId}/, and links
 // the caller's account. Legacy data is left intact as a backup.
 export const callSetupOrganization = async (companyName?: string) => {
-  const fn = httpsCallable<{ companyName?: string }, SetupOrgResult>(getFunctionsInstance(), 'setupOrganization');
+  // The migration can take a while on large datasets; the httpsCallable default
+  // client timeout is 70s, so raise it to match the function's 540s budget.
+  const fn = httpsCallable<{ companyName?: string }, SetupOrgResult>(
+    getFunctionsInstance(),
+    'setupOrganization',
+    { timeout: 540000 },
+  );
   const res = await fn({ companyName });
   return res.data;
 };
