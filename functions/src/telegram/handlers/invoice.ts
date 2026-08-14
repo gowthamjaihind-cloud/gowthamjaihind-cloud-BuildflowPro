@@ -46,9 +46,13 @@ export async function handleInvoicePhoto(
   let result: any;
   try {
     result = await readAndMatchInvoice(base64, "image/jpeg", session.orgId, session.activeProjectId, key);
-  } catch (e) {
+  } catch (e: any) {
     console.error("Invoice read failed:", e);
-    await tg.sendMessage(chatId, "I couldn't read that invoice. Try a clearer, straight-on photo — or add it in the app.");
+    // Surface the friendly quota message; otherwise a generic read failure.
+    const msg = e?.code === "resource-exhausted" && e?.message
+      ? `🚫 ${e.message}`
+      : "I couldn't read that invoice. Try a clearer, straight-on photo — or add it in the app.";
+    await tg.sendMessage(chatId, msg);
     return;
   }
 

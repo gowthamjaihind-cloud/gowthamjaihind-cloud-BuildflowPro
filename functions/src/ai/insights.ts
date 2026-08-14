@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
+import { chargeAiUsage, orgIdForUser } from "./usage";
 
 // The Gemini API key lives in Secret Manager (never in the client bundle), so
 // the model is only ever called server-side. Create it once with:
@@ -34,6 +35,9 @@ export const generateProjectInsights = onCall(
     if (!brief) {
       throw new HttpsError("invalid-argument", "Missing project brief.");
     }
+
+    // Meter against the org's monthly AI quota (throws if exceeded).
+    await chargeAiUsage(await orgIdForUser(request.auth.uid), "insights");
 
     const prompt = buildPrompt(brief);
     const { text, model } = await callGemini(prompt, GEMINI_API_KEY.value());
