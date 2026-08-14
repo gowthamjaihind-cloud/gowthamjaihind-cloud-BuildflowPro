@@ -128,9 +128,19 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       return;
     }
 
-    // Real-time listener for users
+    const orgId = currentUser?.currentOrgId;
+    if (!orgId) {
+      // No org context — show nothing rather than leaking every org's users.
+      setUsers([]);
+      setProjects([]);
+      setLoading(false);
+      return;
+    }
+
+    // Real-time listener for users IN THIS ORG ONLY (tenant isolation). Members
+    // carry currentOrgId === this org, so this never shows other orgs' users.
     const unsubscribeUsers = onSnapshot(
-      collection(db, "users"),
+      query(collection(db, "users"), where("currentOrgId", "==", orgId)),
       (uSnap) => {
         const all = uSnap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UserProfile);
         const valid = all.filter((u) => {
@@ -151,9 +161,9 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       }
     );
 
-    // Also fetch projects to assign access
+    // Also fetch this org's projects (for per-project access assignment).
     const unsubscribeProjects = onSnapshot(
-      collection(db, "projects"),
+      collection(db, `organizations/${orgId}/projects`),
       (snap) => {
         setProjects(
           snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Project),
@@ -168,7 +178,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       unsubscribeUsers();
       unsubscribeProjects();
     };
-  }, [currentUser?.role]);
+  }, [currentUser?.role, currentUser?.currentOrgId]);
 
   const handleUpdateRole = async (userId: string) => {
     if (currentUser.role !== "Admin" && currentUser.role !== "Owner") {
