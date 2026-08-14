@@ -137,14 +137,26 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       return;
     }
 
-    // Real-time listener for users IN THIS ORG ONLY (tenant isolation). Members
-    // carry currentOrgId === this org, so this never shows other orgs' users.
+    // Members of THIS org only. We read the org's members map (realtime) and
+    // fetch each member's profile by id. Per-id reads keep us within the
+    // locked-down users rule (self-or-same-org) — no global users query.
     const unsubscribeUsers = onSnapshot(
-      query(collection(db, "users"), where("currentOrgId", "==", orgId)),
-      (uSnap) => {
-        const all = uSnap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UserProfile);
-        const valid = all.filter((u) => {
-          if (!u.email || typeof u.email !== "string" || u.email.trim() === "") return false;
+      doc(db, "organizations", orgId),
+      async (orgSnap) => {
+        const members: Record<string, any> = (orgSnap.data()?.members) || {};
+        const uids = Object.keys(members);
+        const profiles = await Promise.all(
+          uids.map(async (uid) => {
+            try {
+              const s = await getDoc(doc(db, "users", uid));
+              return s.exists() ? ({ uid, ...s.data() } as UserProfile) : null;
+            } catch {
+              return null;
+            }
+          }),
+        );
+        const valid = profiles.filter((u): u is UserProfile => {
+          if (!u || !u.email || typeof u.email !== "string" || u.email.trim() === "") return false;
           const lowerEmail = u.email.toLowerCase().trim();
           if (lowerEmail.includes("anonymous")) return false;
           if (lowerEmail.includes("telegram-bot") || lowerEmail.includes("telegrambot")) return false;
@@ -156,7 +168,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
         setLoading(false);
       },
       (err: any) => {
-        console.error("Error listening to users:", err);
+        console.error("Error listening to org members:", err);
         setLoading(false);
       }
     );
