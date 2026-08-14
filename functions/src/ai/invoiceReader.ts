@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { db } from "../db";
+import { chargeAiUsage } from "./usage";
 
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-1.5-flash"];
@@ -35,6 +36,9 @@ export async function readAndMatchInvoice(
   key: string,
 ) {
   const base = projPath(orgId, projectId);
+
+  // Meter this AI action against the org's monthly quota (throws if exceeded).
+  await chargeAiUsage(orgId, "invoice_scan");
 
   let companyState = "";
   let companyGstin = "";

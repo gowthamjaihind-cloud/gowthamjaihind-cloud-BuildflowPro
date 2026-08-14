@@ -75,6 +75,13 @@ service cloud.firestore {
       allow update: if isValidClaim() || (isMemberOfThisOrg() && isAdminOrManager());
       allow delete: if false;
 
+      // AI usage meters — written only by Cloud Functions (Admin SDK); members
+      // may read their own org's usage for display.
+      match /usage/{month} {
+        allow read: if isOrgMember(orgId);
+        allow write: if false;
+      }
+
       match /projects/{projectId} {
         allow read: if isOrgMember(orgId);
         allow write: if isOrgMember(orgId) && isAdminOrManager();
