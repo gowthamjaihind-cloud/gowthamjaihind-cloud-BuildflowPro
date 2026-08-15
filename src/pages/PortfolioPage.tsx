@@ -20,6 +20,7 @@ import { CreateProjectModal } from "../features/projects/components/CreateProjec
 import { EditProjectModal } from "../features/projects/components/EditProjectModal";
 import { SyncStatus } from "../components/SyncStatus";
 import { TelegramBotStatus } from "../components/TelegramBotStatus";
+import { OrgSwitcher } from "../components/OrgSwitcher";
 
 const statusPillClasses = (status?: string) => {
   switch (status) {
@@ -166,6 +167,7 @@ export const PortfolioPage: React.FC = () => {
                 </span>
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+                <OrgSwitcher />
                 <SyncStatus />
                 <TelegramBotStatus />
                 <button

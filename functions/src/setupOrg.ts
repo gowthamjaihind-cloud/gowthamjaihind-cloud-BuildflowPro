@@ -1,4 +1,5 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
 
 // One-time, admin-only migration from the legacy single-tenant layout
@@ -96,8 +97,12 @@ export const setupOrganization = onCall(
 
     await writer.close();
 
-    // Link the caller's account to the org (switches the app to the org path).
-    await userRef.update({ currentOrgId: orgId });
+    // Link the caller's account to the org (switches the app to the org path)
+    // and record membership for the org-switcher.
+    await userRef.set(
+      { currentOrgId: orgId, orgIds: FieldValue.arrayUnion(orgId) },
+      { merge: true },
+    );
 
     return { orgId, alreadyLinked: false, projects: counters.projects, docs: counters.docs };
   },

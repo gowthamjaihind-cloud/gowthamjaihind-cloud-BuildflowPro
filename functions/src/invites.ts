@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { randomBytes } from "crypto";
+import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
 
 // Roles a teammate can be invited as. "Owner" is intentionally excluded — an
@@ -67,8 +68,12 @@ export const acceptInvite = onCall({ timeoutSeconds: 60 }, async (request) => {
 
   // Add the caller to the org's members map (the membership the rules check).
   await db.doc(`organizations/${orgId}`).set({ members: { [uid]: role } }, { merge: true });
-  // Link their account and set their role to the invited one.
-  await db.doc(`users/${uid}`).set({ currentOrgId: orgId, role }, { merge: true });
+  // Link their account: switch to this org, set the invited role, and record
+  // membership in orgIds so the org-switcher can list every org they belong to.
+  await db.doc(`users/${uid}`).set(
+    { currentOrgId: orgId, role, orgIds: FieldValue.arrayUnion(orgId) },
+    { merge: true },
+  );
   // Burn the code.
   await inviteRef.set(
     { used: true, usedByUid: uid, usedAt: new Date().toISOString() },
