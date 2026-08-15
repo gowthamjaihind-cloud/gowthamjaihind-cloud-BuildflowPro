@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { randomBytes } from "crypto";
 import { db } from "./db";
+import { sendInviteEmail, APP_URL } from "./email";
 
 // App operators who may provision orgs and manage subscriptions. Keep in sync
 // with the client-side check in the super-admin panel. (Later this can move to
@@ -54,7 +55,38 @@ export const provisionOrganization = onCall({ timeoutSeconds: 60 }, async (reque
     used: false,
   });
 
-  return { orgId, code, trialEndsAt: now + TRIAL_MS };
+  // Mail the owner-invite link directly if an email was given (best-effort).
+  const emailResult = await sendInviteEmail({
+    to: ownerEmail || null,
+    orgName: companyName,
+    role: "Owner",
+    link: `${APP_URL}/?invite=${code}`,
+  });
+
+  return { orgId, code, trialEndsAt: now + TRIAL_MS, emailed: emailResult.sent };
+});
+
+// ---- Email (Resend) configuration: super-admin only ----
+// Stored in an Admin-only Firestore doc so it can be set from the UI without a
+// redeploy. getEmailConfigStatus never returns the API key.
+export const setEmailConfig = onCall({ timeoutSeconds: 30 }, async (request) => {
+  assertSuperAdmin(request);
+  const apiKey = String(request.data?.apiKey || "").trim();
+  const fromEmail = String(request.data?.fromEmail || "").trim();
+  const fromName = String(request.data?.fromName || "Sitetru").trim();
+  if (!apiKey || !fromEmail) throw new HttpsError("invalid-argument", "API key and from-email are required.");
+  await db.doc("app_config/email").set(
+    { apiKey, fromEmail, fromName, updatedAt: new Date().toISOString(), updatedBy: request.auth!.uid },
+    { merge: true },
+  );
+  return { ok: true };
+});
+
+export const getEmailConfigStatus = onCall({ timeoutSeconds: 30 }, async (request) => {
+  assertSuperAdmin(request);
+  const snap = await db.doc("app_config/email").get();
+  const d: any = snap.exists ? snap.data() : {};
+  return { configured: !!(d?.apiKey && d?.fromEmail), fromEmail: d?.fromEmail || "", fromName: d?.fromName || "" };
 });
 
 // Set/adjust an org's subscription. Super-admin only — this is the manual

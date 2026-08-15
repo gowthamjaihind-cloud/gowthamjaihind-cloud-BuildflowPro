@@ -89,7 +89,7 @@ export const callSetupOrganization = async (companyName?: string) => {
 
 // Owner/Admin mints an invite code for a teammate (shared as …/?invite=CODE).
 export const callCreateInvite = async (args: { email?: string; role: string }) => {
-  const fn = httpsCallable<typeof args, { code: string; orgId: string; role: string; email: string | null }>(
+  const fn = httpsCallable<typeof args, { code: string; orgId: string; role: string; email: string | null; emailed: boolean }>(
     getFunctionsInstance(), 'createInvite');
   const res = await fn(args);
   return res.data;
@@ -105,9 +105,23 @@ export const callAcceptInvite = async (code: string) => {
 
 // Super-admin: provision a new customer org (7-day trial) + owner invite.
 export const callProvisionOrganization = async (args: { companyName: string; ownerEmail?: string }) => {
-  const fn = httpsCallable<typeof args, { orgId: string; code: string; trialEndsAt: number }>(
+  const fn = httpsCallable<typeof args, { orgId: string; code: string; trialEndsAt: number; emailed: boolean }>(
     getFunctionsInstance(), 'provisionOrganization');
   const res = await fn(args);
+  return res.data;
+};
+
+// Super-admin: configure the Resend email service (stores key server-side).
+export const callSetEmailConfig = async (args: { apiKey: string; fromEmail: string; fromName?: string }) => {
+  const fn = httpsCallable<typeof args, { ok: boolean }>(getFunctionsInstance(), 'setEmailConfig');
+  const res = await fn(args);
+  return res.data;
+};
+
+export const callGetEmailConfigStatus = async () => {
+  const fn = httpsCallable<{}, { configured: boolean; fromEmail: string; fromName: string }>(
+    getFunctionsInstance(), 'getEmailConfigStatus');
+  const res = await fn({});
   return res.data;
 };
 

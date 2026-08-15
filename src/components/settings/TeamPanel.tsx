@@ -26,7 +26,7 @@ export const TeamPanel: React.FC = () => {
   const [role, setRole] = useState("Site Engineer");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [invite, setInvite] = useState<{ code: string; link: string } | null>(null);
+  const [invite, setInvite] = useState<{ code: string; link: string; emailed: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Resolve member uids -> names/emails for display.
@@ -59,7 +59,7 @@ export const TeamPanel: React.FC = () => {
     try {
       const res = await callCreateInvite({ email: email.trim() || undefined, role });
       const link = `${window.location.origin}/?invite=${res.code}`;
-      setInvite({ code: res.code, link });
+      setInvite({ code: res.code, link, emailed: res.emailed });
       setEmail("");
     } catch (e: any) {
       setError(e?.message || "Couldn't create the invite.");
@@ -164,6 +164,9 @@ export const TeamPanel: React.FC = () => {
                 <CheckCircle weight="fill" className="w-5 h-5 text-[#059669]" /> Invite ready
               </div>
               <p className="text-sm text-ink-muted mb-3">
+                {invite.emailed
+                  ? <span className="text-[#047857] font-semibold">✓ Emailed the invite directly. </span>
+                  : null}
                 Share this link (or the code <b className="font-mono">{invite.code}</b>). It joins them
                 as <b>{role}</b> and expires in 14 days.
               </p>

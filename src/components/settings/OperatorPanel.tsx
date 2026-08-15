@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Buildings,
   CreditCard,
@@ -6,8 +6,14 @@ import {
   CheckCircle,
   CircleNotch as Loader2,
   WarningCircle as AlertCircle,
+  EnvelopeSimple,
 } from "@phosphor-icons/react";
-import { callProvisionOrganization, callSetSubscription } from "../../services/firebaseFunctions";
+import {
+  callProvisionOrganization,
+  callSetSubscription,
+  callSetEmailConfig,
+  callGetEmailConfigStatus,
+} from "../../services/firebaseFunctions";
 
 // Operator-only console: create a new customer org (7-day trial) and manually
 // manage subscriptions until automated (Razorpay) checkout is wired.
@@ -17,8 +23,36 @@ export const OperatorPanel: React.FC = () => {
   const [ownerEmail, setOwnerEmail] = useState("");
   const [pBusy, setPBusy] = useState(false);
   const [pErr, setPErr] = useState<string | null>(null);
-  const [provisioned, setProvisioned] = useState<{ orgId: string; link: string } | null>(null);
+  const [provisioned, setProvisioned] = useState<{ orgId: string; link: string; emailed: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Email (Resend) config
+  const [emailStatus, setEmailStatus] = useState<{ configured: boolean; fromEmail: string; fromName: string } | null>(null);
+  const [apiKey, setApiKey] = useState("");
+  const [fromEmail, setFromEmail] = useState("");
+  const [fromName, setFromName] = useState("Sitetru");
+  const [emBusy, setEmBusy] = useState(false);
+  const [emMsg, setEmMsg] = useState<string | null>(null);
+  const [emErr, setEmErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    callGetEmailConfigStatus()
+      .then((s) => { setEmailStatus(s); if (s.fromEmail) setFromEmail(s.fromEmail); if (s.fromName) setFromName(s.fromName); })
+      .catch(() => {});
+  }, []);
+
+  const saveEmail = async () => {
+    setEmBusy(true); setEmErr(null); setEmMsg(null);
+    try {
+      await callSetEmailConfig({ apiKey: apiKey.trim(), fromEmail: fromEmail.trim(), fromName: fromName.trim() });
+      setApiKey("");
+      setEmMsg("Saved. Invite emails are now enabled.");
+      const s = await callGetEmailConfigStatus();
+      setEmailStatus(s);
+    } catch (e: any) {
+      setEmErr(e?.message || "Couldn't save email settings.");
+    } finally { setEmBusy(false); }
+  };
 
   // Subscription
   const [orgId, setOrgId] = useState("");
@@ -33,7 +67,7 @@ export const OperatorPanel: React.FC = () => {
     try {
       const res = await callProvisionOrganization({ companyName: companyName.trim(), ownerEmail: ownerEmail.trim() || undefined });
       const link = `${window.location.origin}/?invite=${res.code}`;
-      setProvisioned({ orgId: res.orgId, link });
+      setProvisioned({ orgId: res.orgId, link, emailed: res.emailed });
       setOrgId(res.orgId);
       setCompanyName(""); setOwnerEmail("");
     } catch (e: any) {
@@ -82,6 +116,11 @@ export const OperatorPanel: React.FC = () => {
             <div className="flex items-center gap-2 font-bold text-ink mb-1">
               <CheckCircle weight="fill" className="w-5 h-5 text-[#059669]" /> Org created
             </div>
+            <p className="text-xs mb-2">
+              {provisioned.emailed
+                ? <span className="text-[#047857] font-semibold">✓ Invite emailed to the owner.</span>
+                : <span className="text-ink-muted">Not emailed — share the link below.</span>}
+            </p>
             <p className="text-xs text-ink-muted mb-2">orgId: <span className="font-mono">{provisioned.orgId}</span></p>
             <div className="flex items-center gap-2">
               <input readOnly value={provisioned.link}
@@ -132,6 +171,48 @@ export const OperatorPanel: React.FC = () => {
             className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {sBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
           </button>
+        </div>
+      </section>
+
+      {/* Email (Resend) */}
+      <section className="soft-card p-8 squircle-24">
+        <div className="flex items-center gap-2 mb-1">
+          <EnvelopeSimple className="w-5 h-5 text-primary" />
+          <h3 className="text-xl font-bold text-ink">Invite emails (Resend)</h3>
+        </div>
+        <p className="text-ink-muted text-sm mb-5">
+          Paste your Resend API key so invite links are emailed automatically when you provision an
+          org or invite a teammate. {emailStatus && (
+            emailStatus.configured
+              ? <span className="text-[#047857] font-semibold">Currently ON — sending from {emailStatus.fromEmail}.</span>
+              : <span className="text-[#B85F3B] font-semibold">Currently OFF — links are copy-only.</span>
+          )}
+        </p>
+        {emErr && (
+          <div className="mb-3 p-3 bg-[#EF4444]/8 text-[#B91C1C] rounded-xl border border-[#EF4444]/20 flex items-start gap-2 text-sm">
+            <AlertCircle className="w-5 h-5 shrink-0" /><p>{emErr}</p>
+          </div>
+        )}
+        {emMsg && (
+          <div className="mb-3 p-3 bg-[#059669]/10 text-ink rounded-xl border border-[#059669]/30 text-sm font-semibold">{emMsg}</div>
+        )}
+        <div className="space-y-3">
+          <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} type="password" placeholder="Resend API key (re_…)"
+            className="w-full bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input value={fromEmail} onChange={(e) => setFromEmail(e.target.value)} placeholder="from email (e.g. invites@yourdomain.com)"
+              className="flex-1 bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            <input value={fromName} onChange={(e) => setFromName(e.target.value)} placeholder="from name"
+              className="sm:w-48 bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            <button onClick={saveEmail} disabled={emBusy || !apiKey.trim() || !fromEmail.trim()}
+              className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+              {emBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+            </button>
+          </div>
+          <p className="text-[11px] text-ink-muted">
+            The from-email's domain must be verified in Resend to email anyone. Until then, Resend only
+            delivers to your own account email (test mode).
+          </p>
         </div>
       </section>
     </div>
