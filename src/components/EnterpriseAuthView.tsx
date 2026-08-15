@@ -254,7 +254,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-divider text-ink-muted text-[11px] uppercase tracking-widest font-black">
+              <tr className="border-b border-divider text-ink-muted text-[10px] uppercase tracking-widest font-black">
                 <th className="px-8 py-6">User Email / Identity</th>
                 <th className="px-8 py-6">Platform Role</th>
                 <th className="px-8 py-6">Projects Access</th>

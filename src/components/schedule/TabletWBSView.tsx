@@ -250,7 +250,7 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
             <span className="text-xs font-bold uppercase tracking-wide text-ink truncate">
               {locationGroup.name}
             </span>
-            <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-surface text-ink-muted border border-divider shrink-0">
+            <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-surface text-ink-muted border border-divider shrink-0">
               {locationGroup.children.length}{" "}
               {locationGroup.children.length === 1 ? "task" : "tasks"}
             </span>

@@ -753,7 +753,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           </td>
           <td className="p-3 text-right hidden sm:table-cell bg-panel/30">
             <div className="flex flex-col items-end">
-              <div className="text-[11px] font-black text-rust-strong">
+              <div className="text-[10px] font-black text-rust-strong">
                 ₹
                 {totals.actualMaterial.toLocaleString("en-IN", {
                   maximumFractionDigits: 0,
@@ -799,7 +799,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           </td>
           <td className="p-3 text-right hidden md:table-cell bg-panel/30">
             <div className="flex flex-col items-end">
-              <div className="text-[11px] font-black text-rust-strong">
+              <div className="text-[10px] font-black text-rust-strong">
                 ₹
                 {totals.actualLabor.toLocaleString("en-IN", {
                   maximumFractionDigits: 0,
@@ -844,7 +844,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             )}
           </td>
           <td className="p-3 text-right hidden xl:table-cell bg-panel/30">
-            <div className="text-[11px] font-black text-rust-strong">
+            <div className="text-[10px] font-black text-rust-strong">
               ₹
               {totals.actualOther.toLocaleString("en-IN", {
                 maximumFractionDigits: 0,
@@ -914,7 +914,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             <td colSpan={11} className="p-2 md:p-6 border-b border-[#F7E4DB]">
               <div className="bg-surface rounded-2xl border border-[#F7E4DB] shadow-sm overflow-hidden">
                 <div className="bg-primary px-4 py-2 flex justify-between items-center">
-                  <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                  <span className="text-[10px] md:text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
                     Labor Deployment Breakdown
 
                   </span>
@@ -923,7 +923,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   </button>
                 </div>
                 <div className="overflow-x-auto scroller-hide">
-                  <table className="w-full text-[9px] md:text-[10px] min-w-[600px]">
+                  <table className="w-full text-[10px] md:text-[10px] min-w-[600px]">
                     <thead>
                       <tr className="bg-[#F7E4DB] text-[#B85F3B] font-bold uppercase tracking-wider">
                         <th className="p-2 text-left">Date</th>
@@ -1015,7 +1015,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             <td colSpan={11} className="p-2 md:p-6 border-b border-divider">
               <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
                 <div className="bg-[#3A4F5F] px-4 py-2 flex justify-between items-center">
-                  <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest">
+                  <span className="text-[10px] md:text-[10px] font-black text-white uppercase tracking-widest">
                     Material Consumption Breakdown
                   </span>
                   <button onClick={() => setShowMaterialBreakdown(null)}>
@@ -1023,7 +1023,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   </button>
                 </div>
                 <div className="overflow-x-auto scroller-hide">
-                  <table className="w-full text-[9px] md:text-[10px] min-w-[500px]">
+                  <table className="w-full text-[10px] md:text-[10px] min-w-[500px]">
                     <thead>
                       <tr className="bg-panel text-ink font-bold uppercase tracking-wider">
                         <th className="p-2 text-left">Date</th>
@@ -1173,7 +1173,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
-              className={`flex-1 md:flex-none px-4 md:px-8 py-2 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.2em] apple-transition whitespace-nowrap ${viewMode === mode ? "bg-primary text-white shadow-lg" : "text-ink-muted hover:text-ink"}`}
+              className={`flex-1 md:flex-none px-4 md:px-8 py-2 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.2em] apple-transition whitespace-nowrap ${viewMode === mode ? "bg-primary text-white shadow-lg" : "text-ink-muted hover:text-ink"}`}
             >
               {mode === "dashboard"
                 ? "Overview"
@@ -1268,7 +1268,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       {stat.title}
                       {stat.title === "Labor Cost" && (
                         <span
-                          className="text-[8px] md:text-[9px] text-[#C0653F] bg-[#C0653F]/10 border border-[#C0653F]/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-widest whitespace-nowrap"
+                          className="text-[8px] md:text-[10px] text-[#C0653F] bg-[#C0653F]/10 border border-[#C0653F]/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-widest whitespace-nowrap"
                           title="Legacy source — pending labour-cost trigger"
                         >
                           (legacy source)
@@ -1295,7 +1295,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <div className="space-y-4">
                     {actualOnly ? (
                       <div>
-                        <div className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-1">
+                        <div className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1">
                           Actual
                         </div>
                         <div className="text-2xl font-bold text-primary tracking-tight">
@@ -1304,7 +1304,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             maximumFractionDigits: 0,
                           })}
                         </div>
-                        <div className="text-[11px] text-ink-muted font-medium mt-1">
+                        <div className="text-[10px] text-ink-muted font-medium mt-1">
                           From logged equipment usage
                         </div>
                       </div>
@@ -1312,7 +1312,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <>
                         <div className="flex justify-between items-end">
                           <div>
-                            <div className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-1">
+                            <div className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1">
                               Planned
                             </div>
                             <div className="text-xl font-bold text-ink tracking-tight">
@@ -1323,7 +1323,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-1">
+                            <div className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1">
                               Actual
                             </div>
                             <div className="text-xl font-bold text-primary tracking-tight">
@@ -1388,13 +1388,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 <div className="flex gap-4 md:gap-6">
                   <div className="flex items-center gap-2">
                     <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-success" />
-                    <span className="text-[11px] md:text-[13px] font-medium text-ink-muted">
+                    <span className="text-[10px] md:text-[13px] font-medium text-ink-muted">
                       Planned
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-primary" />
-                    <span className="text-[11px] md:text-[13px] font-medium text-ink-muted">
+                    <span className="text-[10px] md:text-[13px] font-medium text-ink-muted">
                       Actual
                     </span>
                   </div>
@@ -1498,7 +1498,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             maximumFractionDigits: 0,
                           })}
                         </div>
-                        <div className="text-[11px] font-medium text-white/20 uppercase tracking-widest mt-1">
+                        <div className="text-[10px] font-medium text-white/20 uppercase tracking-widest mt-1">
                           {entry.type}
                         </div>
                       </div>
@@ -1582,7 +1582,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-xs md:text-sm border-collapse">
                 <thead>
-                  <tr className="bg-surface-dark text-white text-[9px] md:text-[10px] font-bold uppercase tracking-widest">
+                  <tr className="bg-surface-dark text-white text-[10px] md:text-[10px] font-bold uppercase tracking-widest">
                     <th className="p-2 md:p-3 text-left min-w-[120px] md:min-w-[250px]">
                       WBS Task Hierarchy
                     </th>
@@ -1598,7 +1598,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     >
                       Labor Costs{" "}
                       <span
-                        className="text-[7px] text-[#C0653F] uppercase tracking-tighter"
+                        className="text-[8px] text-[#C0653F] uppercase tracking-tighter"
                         title="Legacy source — pending labour-cost trigger"
                       >
                         (legacy source)
@@ -1660,7 +1660,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                               <Layers className="w-4 h-4" />
                             </div>
                             <div>
-                              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-rust-strong block leading-none mb-1">
+                              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rust-strong block leading-none mb-1">
                                 Project Phase
                               </span>
                               <span className="text-sm font-black text-ink leading-none">
@@ -1845,7 +1845,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[9px] opacity-50">Actual</div>
+                  <div className="text-[10px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-success">
@@ -1854,7 +1854,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[9px] opacity-50">Planned</div>
+                  <div className="text-[10px] opacity-50">Planned</div>
                 </div>
               </div>
             </div>
@@ -1862,7 +1862,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               <div className="text-[10px] font-bold uppercase opacity-50 mb-2 flex justify-between items-center">
                 Labor{" "}
                 <span
-                  className="text-[7px] text-[#C0653F] normal-case bg-[#C0653F]/10 border border-[#C0653F]/20 px-1 py-0.5 rounded ml-2"
+                  className="text-[8px] text-[#C0653F] normal-case bg-[#C0653F]/10 border border-[#C0653F]/20 px-1 py-0.5 rounded ml-2"
                   title="Legacy source — pending labour-cost trigger"
                 >
                   (legacy source)
@@ -1876,7 +1876,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[9px] opacity-50">Actual</div>
+                  <div className="text-[10px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-success">
@@ -1885,7 +1885,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[9px] opacity-50">Planned</div>
+                  <div className="text-[10px] opacity-50">Planned</div>
                 </div>
               </div>
             </div>
@@ -1901,10 +1901,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[9px] opacity-50">Actual</div>
+                  <div className="text-[10px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[9px] opacity-50">Actuals only</div>
+                  <div className="text-[10px] opacity-50">Actuals only</div>
                 </div>
               </div>
             </div>
@@ -1920,7 +1920,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[9px] opacity-50">Actual</div>
+                  <div className="text-[10px] opacity-50">Actual</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-success">
@@ -1929,7 +1929,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[9px] opacity-50">Planned</div>
+                  <div className="text-[10px] opacity-50">Planned</div>
                 </div>
               </div>
             </div>
@@ -1948,7 +1948,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
                     Labor (P/A){" "}
                     <span
-                      className="text-[7px] text-[#C0653F] block normal-case"
+                      className="text-[8px] text-[#C0653F] block normal-case"
                       title="Legacy source — pending labour-cost trigger"
                     >
                       (legacy source)
@@ -1987,7 +1987,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             <Layers className="w-4 h-4" />
                           </div>
                           <div>
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-rust-strong block leading-none mb-1">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rust-strong block leading-none mb-1">
                               Project Phase
                             </span>
                             <span className="text-sm font-black text-ink leading-none">

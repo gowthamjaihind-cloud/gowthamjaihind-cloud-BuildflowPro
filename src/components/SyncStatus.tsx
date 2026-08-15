@@ -28,13 +28,13 @@ export const SyncStatus: React.FC = () => {
     return (
       <div
         id="network-status-indicator"
-        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-rose-500/10 text-danger rounded-full text-[11px] font-bold tracking-wide border border-rose-500/20 shadow-sm"
+        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-rose-500/10 text-danger rounded-full text-[10px] font-bold tracking-wide border border-rose-500/20 shadow-sm"
         title="Network Disconnected (Offline)"
       >
         <span className="relative flex h-2.5 w-2.5">
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-danger" />
         </span>
-        <span className="text-[11px] font-bold">Offline</span>
+        <span className="text-[10px] font-bold">Offline</span>
       </div>
     );
   }
@@ -43,11 +43,11 @@ export const SyncStatus: React.FC = () => {
     return (
       <div
         id="network-status-indicator"
-        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-bold tracking-wide border border-primary/20 shadow-sm"
+        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-primary/10 text-primary rounded-full text-[10px] font-bold tracking-wide border border-primary/20 shadow-sm"
         title="Syncing with cloud..."
       >
         <RefreshCw className="w-3 h-3 animate-spin" />
-        <span className="hidden sm:inline text-[11px] font-bold">Syncing</span>
+        <span className="hidden sm:inline text-[10px] font-bold">Syncing</span>
       </div>
     );
   }
@@ -55,14 +55,14 @@ export const SyncStatus: React.FC = () => {
   return (
     <div
       id="network-status-indicator"
-      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-success/10 text-success rounded-full text-[11px] font-bold tracking-wide border border-success/20 shadow-sm"
+      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-success/10 text-success rounded-full text-[10px] font-bold tracking-wide border border-success/20 shadow-sm"
       title="Network Connected (Online)"
     >
       <span className="relative flex h-2.5 w-2.5">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
       </span>
-      <span className="text-[11px] font-bold">Online</span>
+      <span className="text-[10px] font-bold">Online</span>
     </div>
   );
 };

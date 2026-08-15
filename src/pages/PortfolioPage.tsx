@@ -223,7 +223,7 @@ export const PortfolioPage: React.FC = () => {
                       value={visibleProjects.length}
                       className="font-display text-2xl font-bold leading-none tabular-nums"
                     />
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-white/55">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/55">
                       Projects
                     </span>
                   </div>
@@ -233,7 +233,7 @@ export const PortfolioPage: React.FC = () => {
                       value={activeCount}
                       className="font-display text-2xl font-bold leading-none tabular-nums"
                     />
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-white/55">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/55">
                       Active
                     </span>
                   </div>
@@ -243,7 +243,7 @@ export const PortfolioPage: React.FC = () => {
                       value={onHoldCount}
                       className="font-display text-2xl font-bold leading-none tabular-nums"
                     />
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-white/55">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/55">
                       On Hold
                     </span>
                   </div>
@@ -253,7 +253,7 @@ export const PortfolioPage: React.FC = () => {
                       value={completedCount}
                       className="font-display text-2xl font-bold leading-none tabular-nums"
                     />
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-white/55">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/55">
                       Completed
                     </span>
                   </div>

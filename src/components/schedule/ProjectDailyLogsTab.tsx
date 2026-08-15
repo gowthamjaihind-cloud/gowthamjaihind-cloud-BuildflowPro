@@ -155,7 +155,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                       <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-divider/50">
                         {log.materials.length > 0 && (
                           <div>
-                            <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest flex items-center gap-1 mb-1.5 opacity-70">
+                            <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest flex items-center gap-1 mb-1.5 opacity-70">
                               <Box className="w-3 h-3" /> Materials
                             </span>
                             <ul className="space-y-1 text-xs">
@@ -177,7 +177,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                         )}
                         {log.labour.length > 0 && (
                           <div>
-                            <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest flex items-center gap-1 mb-1.5 opacity-70">
+                            <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest flex items-center gap-1 mb-1.5 opacity-70">
                               <Users className="w-3 h-3" /> Labor
                             </span>
                             <ul className="space-y-1 text-xs">
@@ -291,7 +291,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                         </span>
                         <span className="text-xs font-mono font-bold text-ink shrink-0">
                           {m.count}{" "}
-                          <span className="text-[9px] text-ink-muted uppercase">
+                          <span className="text-[10px] text-ink-muted uppercase">
                             {m.unit}
                           </span>
                         </span>

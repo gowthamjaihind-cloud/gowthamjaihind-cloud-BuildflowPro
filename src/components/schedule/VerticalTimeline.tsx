@@ -106,7 +106,7 @@ export const VerticalTimeline: React.FC<Props> = ({ tasks }) => {
                        
                        <div className="flex-1 bg-[var(--glass)] border border-[var(--edge)] rounded-[18px] p-4">
                          <h4 className="font-bold text-[var(--ink)] text-sm mb-1">{task.title}</h4>
-                         <p className="text-[11px] text-[var(--muted)] mb-2">{task.phaseId} · {task.assigneeName || 'Unassigned'}</p>
+                         <p className="text-[10px] text-[var(--muted)] mb-2">{task.phaseId} · {task.assigneeName || 'Unassigned'}</p>
                          
                          {task.status === 'scheduled' && task.dependsOnTaskIds.length > 0 && (
                            <p className="text-[10px] text-[var(--faint)] mb-3">

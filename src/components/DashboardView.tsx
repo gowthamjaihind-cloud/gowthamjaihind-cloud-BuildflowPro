@@ -224,7 +224,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-3 md:gap-4 px-1 md:px-2">
             <h3 className="text-lg md:text-xl font-bold text-ink">Schedule</h3>
             <div className="flex-1 h-px bg-surface-dark/5" />
-            <span className="text-[11px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest hidden sm:inline">
+            <span className="text-[10px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest hidden sm:inline">
               Timeline
             </span>
           </div>
@@ -244,7 +244,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-3 md:gap-4 px-1 md:px-2">
             <h3 className="text-lg md:text-xl font-bold text-ink">Structure</h3>
             <div className="flex-1 h-px bg-surface-dark/5" />
-            <span className="text-[11px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest hidden sm:inline">
+            <span className="text-[10px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest hidden sm:inline">
               WBS Hierarchy
             </span>
           </div>

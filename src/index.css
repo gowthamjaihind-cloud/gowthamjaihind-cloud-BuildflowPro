@@ -95,6 +95,35 @@
   --color-snow: #FFFFFF;
 }
 
+/* ---------------------------------------------------------------------------
+   Typography system
+   Two-tier heading rule: page/section titles (h1, h2) use the display face
+   (Oswald); component/card titles (h3) and body/labels stay in Jost. A utility
+   font class on an element still wins, so exceptions remain possible.
+
+   Size scale (use these; avoid new arbitrary px):
+     eyebrow/micro label  → 10px  (.eyebrow)     dense/table label → 8px
+     body-sm text-sm(14)  body text-base(16)     lede text-lg(18)
+     titles text-xl…3xl   hero/display font-display text-5xl+
+--------------------------------------------------------------------------- */
+@layer base {
+  h1, h2 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer components {
+  /* Canonical uppercase eyebrow/label — replaces the scattered
+     text-[9/10/11px] font-bold uppercase tracking-widest combos. */
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    line-height: 1.2;
+  }
+}
+
 @media print {
   body {
     background: white !important;

@@ -209,7 +209,7 @@ export const OperatorPanel: React.FC = () => {
               {emBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
             </button>
           </div>
-          <p className="text-[11px] text-ink-muted">
+          <p className="text-[10px] text-ink-muted">
             The from-email's domain must be verified in Resend to email anyone. Until then, Resend only
             delivers to your own account email (test mode).
           </p>

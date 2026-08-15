@@ -137,7 +137,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="font-bold truncate text-ink text-[15px] md:text-[17px] tracking-tight">
                   {user.displayName}
                 </div>
-                <div className="text-[11px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest mt-0.5">
+                <div className="text-[10px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest mt-0.5">
                   {user.role}
                 </div>
               </div>
@@ -216,7 +216,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     onChange={(e) =>
                       updateProjectStatus(activeProject.id, e.target.value)
                     }
-                    className="text-[11px] sm:text-xs font-bold bg-surface/50 border border-divider text-ink rounded-md sm:rounded-lg px-2 py-1 sm:px-3 sm:py-1.5 outline-none apple-transition hover:bg-surface focus:bg-surface"
+                    className="text-[10px] sm:text-xs font-bold bg-surface/50 border border-divider text-ink rounded-md sm:rounded-lg px-2 py-1 sm:px-3 sm:py-1.5 outline-none apple-transition hover:bg-surface focus:bg-surface"
                   >
                     <option value="Planning">Planning</option>
                     <option value="Active">Active</option>
