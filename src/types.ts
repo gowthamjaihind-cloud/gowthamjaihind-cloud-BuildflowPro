@@ -30,6 +30,7 @@ export interface UserProfile {
   photoURL?: string;
   projectAccess?: Record<string, "read" | "write" | "none">;
   currentOrgId?: string; // Appended for multi-tenant SaaS architecture
+  orgIds?: string[];     // every org this user is a member of (for the switcher)
   preferences?: {
     mobileScheduleView?: 'timeline' | 'minigantt';
   };
