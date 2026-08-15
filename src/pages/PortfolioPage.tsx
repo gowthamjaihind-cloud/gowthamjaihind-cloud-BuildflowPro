@@ -25,9 +25,9 @@ import { OrgSwitcher } from "../components/OrgSwitcher";
 const statusPillClasses = (status?: string) => {
   switch (status) {
     case "Active":
-      return "text-[#059669] bg-[#34D399]/15 dark:text-[#34D399] dark:bg-[#34D399]/10";
+      return "text-success bg-success/15 dark:text-success dark:bg-success/10";
     case "On Hold":
-      return "text-[#B85F3B] bg-[#D97D54]/12 dark:text-[#E29677] dark:bg-[#D97D54]/15";
+      return "text-[#B85F3B] bg-primary/12 dark:text-[#E29677] dark:bg-primary/15";
     case "Completed":
       return "text-ink-muted bg-[#6E8CA0]/12";
     default:
@@ -70,6 +70,14 @@ export const PortfolioPage: React.FC = () => {
   const onHoldCount = visibleProjects.filter(
     (p) => p.status === "On Hold",
   ).length;
+  const completedCount = visibleProjects.filter(
+    (p) => p.status === "Completed",
+  ).length;
+
+  // Time-of-day greeting for the hero (live/dynamic).
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const firstName = (user?.displayName || "").trim().split(/\s+/)[0] || "there";
 
   // Pointer-follow tilt for project cards (shared; auto-off in Site Mode).
   const cardTilt = useCardTilt();
@@ -179,7 +187,7 @@ export const PortfolioPage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => logout()}
-                  className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-[#EF4444]/25 text-white/90 hover:text-[#FCA5A5] transition-colors active:scale-95 shrink-0"
+                  className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-danger/25 text-white/90 hover:text-danger transition-colors active:scale-95 shrink-0"
                   title="Sign Out"
                 >
                   <SignOut weight="duotone" className="w-5 h-5" />
@@ -190,6 +198,14 @@ export const PortfolioPage: React.FC = () => {
             {/* Headline + CTA */}
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 lg:gap-12">
               <div className="max-w-2xl">
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15, duration: 0.5 }}
+                  className="text-[12px] sm:text-sm font-bold uppercase tracking-[0.2em] text-primary mb-2 sm:mb-3"
+                >
+                  {greeting}, {firstName}
+                </motion.div>
                 <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-[80px] font-bold tracking-tight leading-[0.95] mb-3 sm:mb-4">
                   {companyName}
                 </h1>
@@ -229,6 +245,16 @@ export const PortfolioPage: React.FC = () => {
                     />
                     <span className="text-[11px] font-bold uppercase tracking-wider text-white/55">
                       On Hold
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-2xl bg-white/[0.07] border border-white/10 px-4 py-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-sage/70" />
+                    <CountUp
+                      value={completedCount}
+                      className="font-display text-2xl font-bold leading-none tabular-nums"
+                    />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-white/55">
+                      Completed
                     </span>
                   </div>
                 </div>
@@ -318,7 +344,7 @@ export const PortfolioPage: React.FC = () => {
                     )}
                     <button
                       onClick={(e) => handleDeleteProjectClick(e, project.id)}
-                      className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-ink-muted hover:text-[#EF4444] hover:bg-[#EF4444]/8 apple-transition"
+                      className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-ink-muted hover:text-danger hover:bg-danger/8 apple-transition"
                       title="Delete Project"
                     >
                       <Trash
@@ -390,7 +416,7 @@ export const PortfolioPage: React.FC = () => {
               </button>
               <button
                 onClick={confirmDeleteProject}
-                className="px-4 py-2 bg-[#EF4444] hover:bg-[#B91C1C] text-white font-medium rounded-xl shadow-sm transition-colors"
+                className="px-4 py-2 bg-danger hover:bg-danger text-white font-medium rounded-xl shadow-sm transition-colors"
               >
                 Delete
               </button>

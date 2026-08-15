@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { motion } from "motion/react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { BrandLogo } from "../components/BrandLogo";
 import {
   ArrowRight,
@@ -70,6 +70,33 @@ const plans = [
   },
 ];
 
+// Rotating end-phrase for the hero headline. Placed on its own line so the
+// changing width never shifts surrounding text.
+const HERO_PHRASES = ["on schedule.", "in budget.", "under control.", "in real time.", "from your phone."];
+const RotatingPhrase: React.FC = () => {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setI((v) => (v + 1) % HERO_PHRASES.length), 2400);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span className="relative inline-block text-primary align-top" style={{ minHeight: "1.1em" }}>
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={i}
+          initial={{ y: "0.5em", opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: "-0.5em", opacity: 0 }}
+          transition={{ duration: 0.4, ease: [0.2, 0, 0, 1] }}
+          className="inline-block"
+        >
+          {HERO_PHRASES[i]}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+};
+
 export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, loginError }) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -130,13 +157,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       </header>
 
       {/* HERO */}
-      <section className="max-w-6xl mx-auto px-5 sm:px-8 pt-14 md:pt-24 pb-16 md:pb-24 grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+      <section className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-14 md:pt-24 pb-16 md:pb-24 grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+        {/* Animated aurora backdrop (motion-safe via global MotionConfig) */}
+        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+          <motion.div
+            className="absolute -top-24 -left-10 w-[420px] h-[420px] rounded-full bg-primary/25 blur-3xl"
+            animate={{ x: [0, 40, 0], y: [0, 30, 0] }}
+            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute top-10 right-0 w-[380px] h-[380px] rounded-full bg-sage/25 blur-3xl"
+            animate={{ x: [0, -30, 0], y: [0, 40, 0] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <div className="inline-flex items-center gap-2 bg-[#87BCBF]/15 text-[#3E8388] px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-6">
+          <div className="inline-flex items-center gap-2 bg-sage/15 text-[#3E8388] px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-6">
             <Lightning weight="fill" className="w-3.5 h-3.5" /> Built for construction teams
           </div>
           <h1 className="font-display font-bold text-[42px] leading-[1.05] sm:text-6xl tracking-tight mb-6">
-            Run your entire site from one place.
+            Run your whole site,<br />
+            <RotatingPhrase />
           </h1>
           <p className="text-lg text-ink-muted font-medium leading-relaxed max-w-lg mb-8">
             Schedule, procurement, labor, cost and daily progress — connected in real time, with field logging as simple as a Telegram message.
@@ -148,13 +189,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             </a>
           </div>
           {loginError && (
-            <div className="mt-6 flex items-start gap-3 text-[13px] font-medium text-[#EF4444] bg-[#EF4444]/10 p-3 rounded-xl border border-[#EF4444]/20 max-w-md">
+            <div className="mt-6 flex items-start gap-3 text-[13px] font-medium text-danger bg-danger/10 p-3 rounded-xl border border-danger/20 max-w-md">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
               <p>{loginError}</p>
             </div>
           )}
           <div className="mt-8 flex items-center gap-2 text-xs font-semibold text-ink-muted">
-            <ShieldCheck weight="duotone" className="w-4 h-4 text-[#059669]" /> Secure Google sign-in · No credit card to start
+            <ShieldCheck weight="duotone" className="w-4 h-4 text-success" /> Secure Google sign-in · No credit card to start
           </div>
         </motion.div>
 
@@ -177,7 +218,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                 <div className="h-full w-[98%] bg-primary rounded-full" />
               </div>
-              <div className="flex items-center gap-2 mt-3 text-[#34D399] text-xs font-bold">
+              <div className="flex items-center gap-2 mt-3 text-success text-xs font-bold">
                 <Check weight="bold" className="w-4 h-4" /> On track
               </div>
             </div>
@@ -296,7 +337,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               <ul className="space-y-3 mb-8">
                 {p.features.map((feat) => (
                   <li key={feat} className="flex items-start gap-2.5 text-sm">
-                    <Check weight="bold" className={`w-4 h-4 mt-0.5 shrink-0 ${p.highlight ? "text-[#34D399]" : "text-[#059669]"}`} />
+                    <Check weight="bold" className={`w-4 h-4 mt-0.5 shrink-0 ${p.highlight ? "text-success" : "text-success"}`} />
                     <span className={p.highlight ? "text-white/90" : "text-ink"}>{feat}</span>
                   </li>
                 ))}

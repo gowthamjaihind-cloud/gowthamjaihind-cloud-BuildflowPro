@@ -97,7 +97,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 : "w-12 h-12 md:w-14 md:h-14 mx-auto justify-center"
             } rounded-[14px] md:rounded-[18px] ${
               activeTab === item.id
-                ? "bg-primary text-white shadow-xl shadow-[#D97D54]/20 ring-1 ring-primary/50"
+                ? "bg-primary text-white shadow-xl shadow-primary/20 ring-1 ring-primary/50"
                 : "text-ink-muted hover:text-ink hover:bg-surface/40"
             } ${uiMode === "site" ? (showLabels ? "!py-3 !rounded-lg" : "!rounded-lg") : ""}`}
           >
@@ -131,7 +131,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   className={`w-10 h-10 md:w-12 md:h-12 rounded-[12px] md:rounded-[16px] object-cover shadow-2xl ${uiMode === "site" ? "!rounded-full" : ""}`}
                   alt=""
                 />
-                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 md:w-4 md:h-4 bg-[#059669] border-2 border-white rounded-full shadow-sm" />
+                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 md:w-4 md:h-4 bg-success border-2 border-white rounded-full shadow-sm" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold truncate text-ink text-[15px] md:text-[17px] tracking-tight">

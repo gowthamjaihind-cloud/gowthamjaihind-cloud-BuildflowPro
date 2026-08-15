@@ -25,7 +25,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-surface">
       <div className="w-full max-w-md soft-card p-10 squircle-24 text-center">
-        <div className="bg-[#D97D54]/10 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-[#D97D54]/20">
+        <div className="bg-primary/10 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-primary/20">
           <Lock className="w-8 h-8 text-[#B85F3B]" />
         </div>
         <h2 className="text-2xl font-bold text-ink mb-2">{headline}</h2>

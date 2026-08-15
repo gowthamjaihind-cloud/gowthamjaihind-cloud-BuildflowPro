@@ -130,7 +130,7 @@ export const TeamPanel: React.FC = () => {
             <UserPlus className="w-5 h-5 text-primary" /> Invite a teammate
           </div>
           {error && (
-            <div className="mb-3 p-3 bg-[#EF4444]/8 text-[#B91C1C] rounded-xl border border-[#EF4444]/20 flex items-start gap-2 text-sm">
+            <div className="mb-3 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
               <AlertCircle className="w-5 h-5 shrink-0" /> <p>{error}</p>
             </div>
           )}
@@ -159,13 +159,13 @@ export const TeamPanel: React.FC = () => {
           </div>
 
           {invite && (
-            <div className="mt-4 p-4 rounded-2xl border border-[#059669]/30 bg-[#059669]/10">
+            <div className="mt-4 p-4 rounded-2xl border border-success/30 bg-success/10">
               <div className="flex items-center gap-2 font-bold text-ink mb-2">
-                <CheckCircle weight="fill" className="w-5 h-5 text-[#059669]" /> Invite ready
+                <CheckCircle weight="fill" className="w-5 h-5 text-success" /> Invite ready
               </div>
               <p className="text-sm text-ink-muted mb-3">
                 {invite.emailed
-                  ? <span className="text-[#047857] font-semibold">✓ Emailed the invite directly. </span>
+                  ? <span className="text-success font-semibold">✓ Emailed the invite directly. </span>
                   : null}
                 Share this link (or the code <b className="font-mono">{invite.code}</b>). It joins them
                 as <b>{role}</b> and expires in 14 days.

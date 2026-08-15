@@ -55,7 +55,7 @@ export const OrgSwitcher: React.FC<{ className?: string }> = ({ className }) => 
               className="w-full flex items-center justify-between gap-2 px-4 py-3 hover:bg-panel transition-colors text-left"
             >
               <span className="truncate text-sm font-semibold text-ink">{o.name}</span>
-              {o.orgId === currentOrgId && <Check weight="bold" className="w-4 h-4 text-[#059669] shrink-0" />}
+              {o.orgId === currentOrgId && <Check weight="bold" className="w-4 h-4 text-success shrink-0" />}
             </button>
           ))}
         </div>

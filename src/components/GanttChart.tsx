@@ -357,7 +357,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 onClick={() => setZoomLevel(level)}
                 className={`flex-1 sm:flex-none px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-md transition-all ${
                   zoomLevel === level
-                    ? "bg-surface text-[#D97D54] shadow-sm"
+                    ? "bg-surface text-primary shadow-sm"
                     : "text-ink-muted hover:text-ink/80"
                 }`}
               >
@@ -371,7 +371,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
               onClick={() => setShowCriticalPath(!showCriticalPath)}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
                 showCriticalPath
-                  ? "bg-[#EF4444]/8 text-[#EF4444] border border-[#EF4444]/20"
+                  ? "bg-danger/8 text-danger border border-danger/20"
                   : "bg-panel text-ink border border-divider"
               }`}
             >
@@ -683,17 +683,17 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                     <div
                       className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full flex-shrink-0 ${
                         task.type === "Milestone"
-                          ? "bg-gradient-to-br from-[#E1946F] to-[#D97D54] rotate-45 shadow-sm"
+                          ? "bg-gradient-to-br from-[#E1946F] to-primary rotate-45 shadow-sm"
                           : task.type === "Summary"
                             ? "bg-[#465D6E] shadow-sm"
                             : isCritical
-                              ? "bg-gradient-to-r from-[#EF4444] to-[#DC2626] shadow-[0_0_10px_rgba(239,68,68,0.4)]"
-                              : "bg-[#D97D54] shadow-sm"
+                              ? "bg-gradient-to-r from-danger to-danger shadow-[0_0_10px_rgba(239,68,68,0.4)]"
+                              : "bg-primary shadow-sm"
                       }`}
                     />
                     <div className="flex flex-col min-w-0">
                       <span
-                        className={`truncate font-medium ${isCritical ? "text-[#EF4444] font-bold" : "text-ink"}`}
+                        className={`truncate font-medium ${isCritical ? "text-danger font-bold" : "text-ink"}`}
                       >
                         {task.name}
                       </span>
@@ -717,14 +717,14 @@ export const GanttChart: React.FC<GanttChartProps> = ({
 
                     {/* Task Bar */}
                     <div
-                      className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] text-white font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${task.type !== "Summary" ? "touch-none" : ""} ${isDraggingThis ? "opacity-70 ring-2 ring-[#D97D54] ring-offset-1" : ""} ${
+                      className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] text-white font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${task.type !== "Summary" ? "touch-none" : ""} ${isDraggingThis ? "opacity-70 ring-2 ring-primary ring-offset-1" : ""} ${
                         task.type === "Milestone"
-                          ? "bg-gradient-to-br from-[#E1946F] to-[#D97D54] w-7 !rounded-sm rotate-45 justify-center border-2 border-white cursor-pointer"
+                          ? "bg-gradient-to-br from-[#E1946F] to-primary w-7 !rounded-sm rotate-45 justify-center border-2 border-white cursor-pointer"
                           : task.type === "Summary"
                             ? "bg-[#465D6E] cursor-pointer"
                             : isCritical
-                              ? "bg-gradient-to-r from-[#EF4444] to-[#DC2626] cursor-move"
-                              : "bg-[#D97D54] cursor-move"
+                              ? "bg-gradient-to-r from-danger to-danger cursor-move"
+                              : "bg-primary cursor-move"
                       }`}
                       style={{
                         left: left,
@@ -792,7 +792,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                     >
                       {/* Linking Start Handle (Left Circle) */}
                       <div
-                        className="absolute -left-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-[#D97D54] rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
+                        className="absolute -left-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
                         title="Link to this task"
                         onMouseUp={(e) => {
                           if (linkingFrom && linkingFrom.taskId !== task.id) {
@@ -837,7 +837,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
 
                       {/* Linking End Handle (Right Circle) */}
                       <div
-                        className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-[#D97D54] rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
+                        className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
                         title="Drag to link to another task"
                         onMouseDown={(e) => {
                           const rect = e.currentTarget.getBoundingClientRect();
@@ -1003,7 +1003,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 )}
               {breakpoint === "mobile" && (
                 <button
-                  className="w-full mt-2 py-1.5 bg-[#D97D54] hover:bg-[#B85F3B] text-white text-xs font-bold rounded-lg pointer-events-auto"
+                  className="w-full mt-2 py-1.5 bg-primary hover:bg-[#B85F3B] text-white text-xs font-bold rounded-lg pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     setHoveredTask(null);

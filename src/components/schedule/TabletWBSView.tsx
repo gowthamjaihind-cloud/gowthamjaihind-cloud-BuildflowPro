@@ -87,11 +87,11 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Delayed":
-        return "text-[#EF4444] bg-red-500/10";
+        return "text-danger bg-red-500/10";
       case "In Progress":
-        return "text-[#D97D54] bg-amber-500/10";
+        return "text-primary bg-amber-500/10";
       case "Completed":
-        return "text-[#10B981] bg-emerald-500/10";
+        return "text-success bg-emerald-500/10";
       default:
         return "text-ink-muted bg-slate-500/10";
     }
@@ -161,13 +161,13 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
               <div className="w-24 flex items-center gap-2">
                 <div className="flex-1 h-1.5 bg-divider rounded-full overflow-hidden">
                   <div
-                    className={`h-full ${node.computedProgress === 100 ? "bg-[#10B981]" : "bg-[#D97D54]"}`}
+                    className={`h-full ${node.computedProgress === 100 ? "bg-success" : "bg-primary"}`}
                     style={{ width: `${node.computedProgress}%` }}
                   />
                 </div>
                 <span
                   className={`text-xs font-mono font-bold w-8 text-right ${
-                    node.computedProgress === 100 ? "text-[#10B981]" : "text-[#D97D54]"
+                    node.computedProgress === 100 ? "text-success" : "text-primary"
                   }`}
                 >
                   {node.computedProgress}%
@@ -207,7 +207,7 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
                 e.stopPropagation();
                 openEditSheet(node);
               }}
-              className="p-2 text-ink-muted hover:text-[#D97D54] bg-panel rounded-xl transition-colors cursor-pointer"
+              className="p-2 text-ink-muted hover:text-primary bg-panel rounded-xl transition-colors cursor-pointer"
             >
               <Edit2 className="w-4 h-4" />
             </button>
@@ -283,17 +283,17 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
           <div className="flex items-center gap-3 min-w-0">
             {hasLocations ? (
               <ChevronRight
-                className={`w-4 h-4 text-[#D97D54] shrink-0 transition-transform duration-200 ${
+                className={`w-4 h-4 text-primary shrink-0 transition-transform duration-200 ${
                   isExpanded ? "rotate-90" : "rotate-0"
                 }`}
               />
             ) : (
               <div className="w-4 h-4 shrink-0" />
             )}
-            <span className="text-xs font-black uppercase tracking-widest text-[#D97D54] truncate">
+            <span className="text-xs font-black uppercase tracking-widest text-primary truncate">
               {phaseGroup.name}
             </span>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#F7E4DB] text-[#D97D54] shrink-0">
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#F7E4DB] text-primary shrink-0">
               {phaseGroup.children.length}{" "}
               {phaseGroup.children.length === 1 ? "location" : "locations"}
             </span>
@@ -332,7 +332,7 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
         <div className="absolute bottom-6 right-6 z-20">
           <button
             onClick={openAddSheet}
-            className="bg-[#D97D54] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-[#B85F3B] active:scale-95 transition-all cursor-pointer"
+            className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-[#B85F3B] active:scale-95 transition-all cursor-pointer"
           >
             <Plus className="w-6 h-6" />
           </button>
@@ -469,7 +469,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
 
         <div className="px-6 py-4 md:py-6 flex items-center justify-between shrink-0">
           <div>
-            <span className="text-xs font-black uppercase tracking-widest text-[#D97D54] block mb-1">
+            <span className="text-xs font-black uppercase tracking-widest text-primary block mb-1">
               {mode === "add" ? "New Task" : "Edit Task"}
             </span>
             {parentNode && (
@@ -497,7 +497,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
                 type="text"
                 value={designation}
                 onChange={(e) => setDesignation(e.target.value)}
-                className="w-full bg-panel border-none rounded-xl px-4 py-3 text-sm font-bold text-ink focus:ring-2 focus:ring-[#D97D54]"
+                className="w-full bg-panel border-none rounded-xl px-4 py-3 text-sm font-bold text-ink focus:ring-2 focus:ring-primary"
                 placeholder="Task Name"
               />
             </div>
@@ -509,7 +509,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full bg-panel border-none rounded-xl px-4 py-3 text-sm font-bold text-ink focus:ring-2 focus:ring-[#D97D54] uppercase tracking-widest"
+                className="w-full bg-panel border-none rounded-xl px-4 py-3 text-sm font-bold text-ink focus:ring-2 focus:ring-primary uppercase tracking-widest"
               >
                 <option value="Pending">Pending</option>
                 <option value="In Progress">In Progress</option>
@@ -533,7 +533,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
               <span className="text-xs font-bold text-ink-muted uppercase tracking-widest">
                 Progress
               </span>
-              <span className="text-2xl font-black text-[#D97D54] font-mono">
+              <span className="text-2xl font-black text-primary font-mono">
                 {computedProgress}%
               </span>
               {mode === "edit" && task?.actualStartDate && (
@@ -549,7 +549,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
                   onClose();
                   onOpenDailyLog(task.id);
                 }}
-                className="bg-[#D97D54] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#B85F3B] transition"
+                className="bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#B85F3B] transition"
               >
                 Log Work
               </button>
@@ -608,7 +608,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full bg-[#D97D54] text-white py-4 rounded-xl font-bold text-sm hover:bg-[#B85F3B] transition disabled:opacity-50"
+              className="w-full bg-primary text-white py-4 rounded-xl font-bold text-sm hover:bg-[#B85F3B] transition disabled:opacity-50"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>
@@ -636,7 +636,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="w-full bg-[#EF4444]/8 text-[#EF4444] py-4 rounded-xl font-bold text-sm hover:bg-[#EF4444]/15 transition mt-2"
+                  className="w-full bg-danger/8 text-danger py-4 rounded-xl font-bold text-sm hover:bg-danger/15 transition mt-2"
                 >
                   Delete Task
                 </button>

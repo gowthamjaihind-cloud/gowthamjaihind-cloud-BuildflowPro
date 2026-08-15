@@ -70,7 +70,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
       <div className="w-full max-w-md soft-card p-10 squircle-24 text-center">
         <div className="bg-primary/10 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-primary/20">
           {joined ? (
-            <CheckCircle weight="fill" className="w-8 h-8 text-[#059669]" />
+            <CheckCircle weight="fill" className="w-8 h-8 text-success" />
           ) : (
             <Buildings className="w-8 h-8 text-primary" />
           )}
@@ -93,7 +93,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
               <b>{user.email}</b>. Joining will switch you to the new organization.
             </p>
             {error && (
-              <div className="mb-4 p-3 bg-[#EF4444]/8 text-[#B91C1C] rounded-xl border border-[#EF4444]/20 flex items-start gap-2 text-sm text-left">
+              <div className="mb-4 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm text-left">
                 <AlertCircle className="w-5 h-5 shrink-0" />
                 <p>{error}</p>
               </div>
@@ -119,7 +119,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
             </p>
 
             {error && (
-              <div className="mb-4 p-3 bg-[#EF4444]/8 text-[#B91C1C] rounded-xl border border-[#EF4444]/20 flex items-start gap-2 text-sm text-left">
+              <div className="mb-4 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm text-left">
                 <AlertCircle className="w-5 h-5 shrink-0" />
                 <p>{error}</p>
               </div>

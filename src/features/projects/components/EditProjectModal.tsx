@@ -176,7 +176,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                         onClick={() =>
                           setEditedProject({ ...editedProject, imageUrl: "" })
                         }
-                        className="text-[#EF4444] hover:bg-[#EF4444]/8 text-sm font-medium px-4 py-1.5 rounded-lg apple-transition"
+                        className="text-danger hover:bg-danger/8 text-sm font-medium px-4 py-1.5 rounded-lg apple-transition"
                       >
                         Remove Image
                       </button>

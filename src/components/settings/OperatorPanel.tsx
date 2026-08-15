@@ -97,7 +97,7 @@ export const OperatorPanel: React.FC = () => {
           Creates a new customer org on a 7-day trial and mints an Owner invite link.
         </p>
         {pErr && (
-          <div className="mb-3 p-3 bg-[#EF4444]/8 text-[#B91C1C] rounded-xl border border-[#EF4444]/20 flex items-start gap-2 text-sm">
+          <div className="mb-3 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
             <AlertCircle className="w-5 h-5 shrink-0" /><p>{pErr}</p>
           </div>
         )}
@@ -112,13 +112,13 @@ export const OperatorPanel: React.FC = () => {
           </button>
         </div>
         {provisioned && (
-          <div className="mt-4 p-4 rounded-2xl border border-[#059669]/30 bg-[#059669]/10">
+          <div className="mt-4 p-4 rounded-2xl border border-success/30 bg-success/10">
             <div className="flex items-center gap-2 font-bold text-ink mb-1">
-              <CheckCircle weight="fill" className="w-5 h-5 text-[#059669]" /> Org created
+              <CheckCircle weight="fill" className="w-5 h-5 text-success" /> Org created
             </div>
             <p className="text-xs mb-2">
               {provisioned.emailed
-                ? <span className="text-[#047857] font-semibold">✓ Invite emailed to the owner.</span>
+                ? <span className="text-success font-semibold">✓ Invite emailed to the owner.</span>
                 : <span className="text-ink-muted">Not emailed — share the link below.</span>}
             </p>
             <p className="text-xs text-ink-muted mb-2">orgId: <span className="font-mono">{provisioned.orgId}</span></p>
@@ -146,12 +146,12 @@ export const OperatorPanel: React.FC = () => {
           checkout will drive this later.
         </p>
         {sErr && (
-          <div className="mb-3 p-3 bg-[#EF4444]/8 text-[#B91C1C] rounded-xl border border-[#EF4444]/20 flex items-start gap-2 text-sm">
+          <div className="mb-3 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
             <AlertCircle className="w-5 h-5 shrink-0" /><p>{sErr}</p>
           </div>
         )}
         {sOk && (
-          <div className="mb-3 p-3 bg-[#059669]/10 text-ink rounded-xl border border-[#059669]/30 text-sm font-semibold">{sOk}</div>
+          <div className="mb-3 p-3 bg-success/10 text-ink rounded-xl border border-success/30 text-sm font-semibold">{sOk}</div>
         )}
         <div className="flex flex-col sm:flex-row gap-3">
           <input value={orgId} onChange={(e) => setOrgId(e.target.value)} placeholder="orgId"
@@ -184,17 +184,17 @@ export const OperatorPanel: React.FC = () => {
           Paste your Resend API key so invite links are emailed automatically when you provision an
           org or invite a teammate. {emailStatus && (
             emailStatus.configured
-              ? <span className="text-[#047857] font-semibold">Currently ON — sending from {emailStatus.fromEmail}.</span>
+              ? <span className="text-success font-semibold">Currently ON — sending from {emailStatus.fromEmail}.</span>
               : <span className="text-[#B85F3B] font-semibold">Currently OFF — links are copy-only.</span>
           )}
         </p>
         {emErr && (
-          <div className="mb-3 p-3 bg-[#EF4444]/8 text-[#B91C1C] rounded-xl border border-[#EF4444]/20 flex items-start gap-2 text-sm">
+          <div className="mb-3 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
             <AlertCircle className="w-5 h-5 shrink-0" /><p>{emErr}</p>
           </div>
         )}
         {emMsg && (
-          <div className="mb-3 p-3 bg-[#059669]/10 text-ink rounded-xl border border-[#059669]/30 text-sm font-semibold">{emMsg}</div>
+          <div className="mb-3 p-3 bg-success/10 text-ink rounded-xl border border-success/30 text-sm font-semibold">{emMsg}</div>
         )}
         <div className="space-y-3">
           <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} type="password" placeholder="Resend API key (re_…)"

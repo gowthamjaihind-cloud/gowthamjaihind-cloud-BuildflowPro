@@ -182,7 +182,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       onClick={() =>
                         setNewProject({ ...newProject, imageUrl: "" })
                       }
-                      className="p-3 text-[#EF4444] hover:bg-[#EF4444]/10 rounded-xl app-transition flex-shrink-0"
+                      className="p-3 text-danger hover:bg-danger/10 rounded-xl app-transition flex-shrink-0"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>

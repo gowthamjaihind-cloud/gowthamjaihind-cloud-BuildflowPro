@@ -11,6 +11,13 @@
   --ink: #1B1C20; /* Onyx */
   --ink-muted: #56778E; /* Slate, darkened for AA body contrast (≈4.7:1 on white) */
   --divider: #C8D1D3; /* Fossil */
+  /* Semantic status colors — one source of truth so success/danger/warning/info
+     are identical everywhere and adapt to dark mode. Use with opacity for soft
+     backgrounds, e.g. bg-success/10, text-success. */
+  --success: #059669;
+  --danger: #EF4444;
+  --warning: #B85F3B;
+  --info: #6E8CA0;
 }
 
 .dark {
@@ -23,6 +30,10 @@
   --ink: #F0F3F4; /* Ice */
   --ink-muted: #8FA6B8; /* Slate, lifted */
   --divider: #3A4A58;
+  --success: #34D399;
+  --danger: #F87171;
+  --warning: #E29677;
+  --info: #8FA6B8;
 }
 
 .schedule-theme {
@@ -68,6 +79,10 @@
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-divider: var(--divider);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
 
   /* Brand palette */
   --color-sage: #87BCBF;
