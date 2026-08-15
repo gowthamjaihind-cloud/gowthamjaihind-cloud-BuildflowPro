@@ -287,7 +287,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
                 >
                   <TelegramLogo weight="fill" className="w-5 h-5" /> Connect Telegram
                 </a>
-                <p className="text-[11px] text-[#46617C] mt-2 text-center sm:text-left">
+                <p className="text-[10px] text-[#46617C] mt-2 text-center sm:text-left">
                   Opens the bot and links your account automatically — no typing.
                 </p>
               </div>

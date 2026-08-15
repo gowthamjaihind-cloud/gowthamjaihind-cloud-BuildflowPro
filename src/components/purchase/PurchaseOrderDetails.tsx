@@ -206,13 +206,13 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                         {([["loading", "Loading charges"], ["transport", "Transport charges"], ["other", "Other charges"]] as const).map(([key, label]) =>
                            po.charges?.[key] ? (
                               <tr key={key}>
-                                 <td colSpan={4} className="px-4 py-1.5 text-right text-[11px] font-bold text-[#B85F3B]/80 uppercase tracking-widest">{label}</td>
+                                 <td colSpan={4} className="px-4 py-1.5 text-right text-[10px] font-bold text-[#B85F3B]/80 uppercase tracking-widest">{label}</td>
                                  <td className="px-4 py-1.5 text-right font-mono text-[#B85F3B]">₹{po.charges[key]!.toLocaleString("en-IN")}</td>
                               </tr>
                            ) : null,
                         )}
                         <tr>
-                           <td colSpan={4} className="p-4 text-right text-[11px] font-black text-primary uppercase tracking-widest">Total Amount</td>
+                           <td colSpan={4} className="p-4 text-right text-[10px] font-black text-primary uppercase tracking-widest">Total Amount</td>
                            <td className="p-4 text-right text-lg font-black font-mono text-primary tracking-tight">₹{po.totalAmount.toLocaleString("en-IN")}</td>
                         </tr>
                      </tfoot>

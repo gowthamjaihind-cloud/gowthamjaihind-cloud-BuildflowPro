@@ -595,7 +595,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     </button>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-8">
                       <div>
-                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
+                        <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
                           Task / Item Name
                         </label>
                         <input
@@ -612,7 +612,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
+                        <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
                           Description
                         </label>
                         <input
@@ -631,7 +631,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-white/5 pt-3">
                       <div>
-                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
+                        <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
                           Quantity
                         </label>
                         <input
@@ -648,7 +648,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
+                        <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
                           Unit
                         </label>
                         <input
@@ -661,7 +661,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
+                        <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
                           Rate (₹)
                         </label>
                         <input
@@ -678,7 +678,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
+                        <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
                           Total (₹)
                         </label>
                         <div className="w-full bg-surface/50 border border-transparent rounded-lg px-3 py-1.5 text-sm text-ink font-bold font-mono">
@@ -1246,7 +1246,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                       <div className={`font-bold ${marginValue >= 0 ? "text-success" : "text-danger"}`}>
                         ₹{marginValue.toLocaleString()}
                       </div>
-                      <div className={`text-[11px] font-medium ${marginValue >= 0 ? "text-success/80" : "text-danger/80"}`}>
+                      <div className={`text-[10px] font-medium ${marginValue >= 0 ? "text-success/80" : "text-danger/80"}`}>
                         {marginPercent !== "—" ? `${marginPercent}%` : "—"}
                       </div>
                     </td>

@@ -260,7 +260,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
                 </div>
               </div>
 
-              <p className="text-[11px] text-ink-muted">
+              <p className="text-[10px] text-ink-muted">
                 Posting records the goods receipt + this bill. Payable = grand total (incl-GST); material cost is booked ex-GST (GST is input credit). Review before saving.
               </p>
             </div>

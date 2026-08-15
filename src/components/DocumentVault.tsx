@@ -316,20 +316,20 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
           <div className="bg-[#6E8CA0]/10 p-1 rounded-xl flex flex-1 md:flex-none">
             <button
               onClick={() => setViewMode("List")}
-              className={`flex-1 md:px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === "List" ? "bg-surface text-primary shadow-sm" : "text-ink-muted"}`}
+              className={`flex-1 md:px-4 py-2 rounded-lg text-[10px] md:text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === "List" ? "bg-surface text-primary shadow-sm" : "text-ink-muted"}`}
             >
               List
             </button>
             <button
               onClick={() => setViewMode("Gallery")}
-              className={`flex-1 md:px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === "Gallery" ? "bg-surface text-primary shadow-sm" : "text-ink-muted"}`}
+              className={`flex-1 md:px-4 py-2 rounded-lg text-[10px] md:text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === "Gallery" ? "bg-surface text-primary shadow-sm" : "text-ink-muted"}`}
             >
               Gallery
             </button>
           </div>
           <button
             onClick={() => setIsUploading(true)}
-            className="flex-1 md:flex-none bg-primary text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] md:text-[10px] flex items-center justify-center gap-2 hover:bg-primary/80 apple-transition shadow-xl shadow-primary/20"
+            className="flex-1 md:flex-none bg-primary text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] md:text-[10px] flex items-center justify-center gap-2 hover:bg-primary/80 apple-transition shadow-xl shadow-primary/20"
           >
             <Upload className="w-4 h-4" /> Upload
           </button>
@@ -357,7 +357,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleBulkDownload}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#3A4F5F] hover:bg-[#465D6E] rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#3A4F5F] hover:bg-[#465D6E] rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
             >
               <Download size={14} /> Download Set
             </button>
@@ -365,12 +365,12 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               <>
                 <button
                   onClick={handleBulkDelete}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-red-900/40 hover:bg-red-900/60 text-danger rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-red-900/40 hover:bg-red-900/60 text-danger rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
                 >
                   <Trash2 size={14} /> Delete
                 </button>
                 <div className="relative group">
-                  <button className="flex items-center gap-2 px-4 py-2.5 bg-[#3A4F5F] hover:bg-[#465D6E] rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors">
+                  <button className="flex items-center gap-2 px-4 py-2.5 bg-[#3A4F5F] hover:bg-[#465D6E] rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
                     <ShieldCheck size={14} /> Access Level
                   </button>
                   <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-[#3A4F5F] rounded-2xl p-2 border border-[#465D6E] shadow-2xl min-w-[160px]">
@@ -379,7 +379,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         <button
                           key={level}
                           onClick={() => handleBulkUpdateAccess(level)}
-                          className="w-full text-left px-4 py-2 hover:bg-[#465D6E] rounded-xl text-[9px] font-black uppercase tracking-widest text-ink-muted hover:text-white transition-colors"
+                          className="w-full text-left px-4 py-2 hover:bg-[#465D6E] rounded-xl text-[10px] font-black uppercase tracking-widest text-ink-muted hover:text-white transition-colors"
                         >
                           Set to {level}
                         </button>
@@ -391,7 +391,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
             )}
             <button
               onClick={() => setSelectedDocIds([])}
-              className="px-6 py-2.5 text-ink-muted hover:text-white transition-colors text-[9px] font-black uppercase tracking-widest"
+              className="px-6 py-2.5 text-ink-muted hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest"
             >
               Deselect All
             </button>
@@ -529,7 +529,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   </option>
                 ))}
               </select>
-              <p className="text-[9px] text-ink-muted font-medium tracking-tight">
+              <p className="text-[10px] text-ink-muted font-medium tracking-tight">
                 Categorizing group photos helps in quick retrieval during
                 audits.
               </p>
@@ -881,7 +881,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         {photo.tags.map((tag, i) => (
                           <span
                             key={i}
-                            className="text-[7px] px-1.5 py-0.5 bg-primary text-white rounded font-bold uppercase tracking-tighter"
+                            className="text-[8px] px-1.5 py-0.5 bg-primary text-white rounded font-bold uppercase tracking-tighter"
                           >
                             #{tag}
                           </span>

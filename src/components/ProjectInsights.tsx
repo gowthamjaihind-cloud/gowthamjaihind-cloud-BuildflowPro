@@ -225,7 +225,7 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
               read, schedule-slippage flags, an executive digest, and a shareable site report.
             </p>
             {result?.generatedAt && (
-              <p className="text-[11px] text-ink-muted font-medium mt-1.5">
+              <p className="text-[10px] text-ink-muted font-medium mt-1.5">
                 Last generated {new Date(result.generatedAt).toLocaleString("en-IN")}
               </p>
             )}
@@ -280,7 +280,7 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
               </div>
             </div>
           ))}
-          <p className="lg:col-span-2 flex items-center gap-1.5 text-[11px] text-ink-muted">
+          <p className="lg:col-span-2 flex items-center gap-1.5 text-[10px] text-ink-muted">
             <Notebook className="w-3.5 h-3.5" />
             AI-generated from your project data — review figures before acting on them.
           </p>

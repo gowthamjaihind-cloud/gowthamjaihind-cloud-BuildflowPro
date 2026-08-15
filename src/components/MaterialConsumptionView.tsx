@@ -477,7 +477,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
             >
               <Package className="w-3.5 h-3.5" />
               <span>Material Consumption</span>
-              <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black ${activeTab !== "labor" ? "bg-white/20 text-white" : "bg-surface text-ink-muted"}`}>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-black ${activeTab !== "labor" ? "bg-white/20 text-white" : "bg-surface text-ink-muted"}`}>
                 {allRecords.length}
               </span>
             </button>
@@ -493,7 +493,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
             >
               <HardHat className="w-3.5 h-3.5" />
               <span>Labor Consumption</span>
-              <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black ${activeTab === "labor" ? "bg-white/20 text-white" : "bg-surface text-ink-muted"}`}>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-black ${activeTab === "labor" ? "bg-white/20 text-white" : "bg-surface text-ink-muted"}`}>
                 {laborRecords.length}
               </span>
             </button>
@@ -505,32 +505,32 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               {/* LABOR FILTERS */}
               <div className="bg-panel p-4 rounded-2xl border border-divider grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3" id="labor-filters">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Task</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Task</label>
                   <select value={laborTask} onChange={(e) => setLaborTask(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#324755] outline-none">
                     <option value="">All Tasks</option>
                     {distinctLaborTasks.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Role / Trade</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Role / Trade</label>
                   <select value={laborRole} onChange={(e) => setLaborRole(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#324755] outline-none">
                     <option value="">All Roles</option>
                     {distinctLaborRoles.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Vendor</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Vendor</label>
                   <select value={laborVendor} onChange={(e) => setLaborVendor(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#324755] outline-none">
                     <option value="">All Vendors</option>
                     {distinctLaborVendors.map((v) => <option key={v} value={v}>{v}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">From</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">From</label>
                   <input type="date" value={laborStartDate} onChange={(e) => setLaborStartDate(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#324755] outline-none" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">To</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">To</label>
                   <input type="date" value={laborEndDate} onChange={(e) => setLaborEndDate(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#324755] outline-none" />
                 </div>
               </div>
@@ -576,10 +576,10 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   <table className="w-full text-left min-w-[600px]">
                     <thead>
                       <tr className="bg-panel border-b border-divider">
-                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Task</th>
-                        <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Entries</th>
-                        <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Manpower</th>
-                        <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Cost</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Task</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Entries</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Manpower</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Cost</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-divider/40">
@@ -604,12 +604,12 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   <table className="w-full text-left min-w-[760px]">
                     <thead>
                       <tr className="bg-panel border-b border-divider">
-                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Date</th>
-                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Task</th>
-                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Role</th>
-                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Vendor</th>
-                        <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Manpower</th>
-                        <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Cost</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Date</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Task</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Role</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Vendor</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Manpower</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Cost</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-divider/40">
@@ -691,7 +691,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Group Code Selector */}
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Material Group Code</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Material Group Code</label>
                     <select
                       id="filter-group-code"
                       value={advGroupCode}
@@ -707,7 +707,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
                   {/* Material Selector */}
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Material Name</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Material Name</label>
                     <select
                       id="filter-material"
                       value={advMaterial}
@@ -725,7 +725,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
                   {/* Task Selector */}
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Task Category</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Task Category</label>
                     <select
                       id="filter-task"
                       value={advTask}
@@ -741,7 +741,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
                   {/* Source Channel Selector */}
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Source Channel</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Source Channel</label>
                     <select
                       id="filter-source"
                       value={advSource}
@@ -756,7 +756,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
                   {/* Date Range Start */}
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">From Date</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">From Date</label>
                     <input
                       id="filter-start-date"
                       type="date"
@@ -768,7 +768,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
                   {/* Date Range End */}
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">To Date</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">To Date</label>
                     <input
                       id="filter-end-date"
                       type="date"
@@ -780,7 +780,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
                   {/* Min Quantity */}
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Min Quantity</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Min Quantity</label>
                     <input
                       id="filter-min-qty"
                       type="number"
@@ -793,7 +793,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
                   {/* Max Quantity */}
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted block ml-1">Max Quantity</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Max Quantity</label>
                     <input
                       id="filter-max-qty"
                       type="number"
@@ -820,7 +820,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
               {/* SEARCH SUMMARY BAR */}
               <div className="flex justify-between items-center bg-panel px-5 py-4 rounded-xl border border-divider" id="search-summary-bar">
-                <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
+                <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
                   Found <span className="font-black text-ink">{advancedFilteredRecords.length}</span> matching consumption entries
                 </span>
                 
@@ -867,11 +867,11 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   <table className="w-full text-left min-w-[800px]">
                     <thead>
                       <tr className="bg-panel border-b border-divider">
-                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Date</th>
-                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Material Name</th>
-                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Consumed In Task</th>
-                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Channel</th>
-                        <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-ink-muted">Quantity</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Date</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Material Name</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Consumed In Task</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Channel</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Quantity</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-divider/40">
@@ -904,7 +904,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                             </td>
                             <td className="px-6 py-5">
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                                   record.source === "Material Issue"
                                     ? "bg-primary/10 text-primary border border-primary/20"
                                     : "bg-[#6E8CA0]/10 text-[#46617C] border border-[#6E8CA0]/20"
@@ -915,7 +915,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                             </td>
                             <td className="px-6 py-5 text-right font-mono text-xs font-bold text-ink">
                               {record.quantity.toLocaleString("en-IN")}{" "}
-                              <span className="text-[9px] text-ink-muted font-normal">{record.unit}</span>
+                              <span className="text-[10px] text-ink-muted font-normal">{record.unit}</span>
                             </td>
                           </tr>
                         ))

@@ -811,7 +811,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowNewEquipment(true)}
-                  className="text-[11px] font-bold text-ink-muted hover:text-ink flex items-center gap-1"
+                  className="text-[10px] font-bold text-ink-muted hover:text-ink flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> New equipment (add to reusable list)
                 </button>

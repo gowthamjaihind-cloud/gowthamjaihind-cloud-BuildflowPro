@@ -475,11 +475,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               <div className="bg-onyx/40 p-2 md:p-3 rounded-xl border border-white/10">
                 <IndianRupee className="w-3.5 h-3.5 md:w-5 md:h-5 text-white" />
               </div>
-              <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">
+              <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
                 Inventory Value
               </span>
             </div>
-            <p className="text-[8px] md:text-[9px] font-bold text-white/40 mb-0.5 md:mb-1 uppercase tracking-widest">
+            <p className="text-[8px] md:text-[10px] font-bold text-white/40 mb-0.5 md:mb-1 uppercase tracking-widest">
               Total Valuation
             </p>
             <h3 className="text-lg md:text-3xl font-bold tracking-tight">
@@ -503,11 +503,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               <div className="bg-success/12 p-2 md:p-3 rounded-xl shadow-sm text-success">
                 <TrendingUp className="w-3.5 h-3.5 md:w-5 md:h-5" />
               </div>
-              <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-600/50">
+              <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600/50">
                 Fiscal Scope
               </span>
             </div>
-            <p className="text-[8px] md:text-[9px] font-bold text-ink-muted mb-0.5 md:mb-1 uppercase tracking-widest">
+            <p className="text-[8px] md:text-[10px] font-bold text-ink-muted mb-0.5 md:mb-1 uppercase tracking-widest">
               Allocated
             </p>
             <h3 className="text-lg md:text-3xl font-bold text-ink tracking-tight">
@@ -531,11 +531,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               <div className="bg-danger/8 p-2 md:p-3 rounded-xl shadow-sm text-danger">
                 <AlertTriangle className="w-3.5 h-3.5 md:w-5 md:h-5" />
               </div>
-              <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] text-red-600/50">
+              <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-red-600/50">
                 Supply Risk
               </span>
             </div>
-            <p className="text-[8px] md:text-[9px] font-bold text-ink-muted mb-0.5 md:mb-1 uppercase tracking-widest">
+            <p className="text-[8px] md:text-[10px] font-bold text-ink-muted mb-0.5 md:mb-1 uppercase tracking-widest">
               Low Stock
             </p>
             <h3 className="text-lg md:text-3xl font-bold text-ink tracking-tight">
@@ -665,7 +665,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       sortable: true,
                       sortAccessor: (item) => item.materialId || "",
                       render: (item) => (
-                        <span className="font-mono text-[9px] md:text-[10px] font-bold text-ink-muted bg-panel px-2 py-0.5 rounded border border-divider">
+                        <span className="font-mono text-[10px] md:text-[10px] font-bold text-ink-muted bg-panel px-2 py-0.5 rounded border border-divider">
                           {item.materialId || "N/A"}
                         </span>
                       ),
@@ -678,7 +678,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       sortAccessor: (item) => item.name,
                       render: (item) => (
                         <div>
-                          <div className="font-bold text-ink text-[11px] md:text-sm tracking-tight mb-0.5 truncate">
+                          <div className="font-bold text-ink text-[10px] md:text-sm tracking-tight mb-0.5 truncate">
                             {item.name}
                           </div>
                           <div className="flex items-center gap-2">
@@ -687,7 +687,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             </span>
                             {item.quantity - (item.consumed || 0) <=
                               item.minThreshold && (
-                              <span className="text-[9px] font-bold text-danger uppercase tracking-widest bg-danger/8 px-1.5 py-0.5 rounded border border-danger/20">
+                              <span className="text-[10px] font-bold text-danger uppercase tracking-widest bg-danger/8 px-1.5 py-0.5 rounded border border-danger/20">
                                 Low Stock
                               </span>
                             )}
@@ -792,12 +792,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         <div className="min-w-0 flex-1">
                           <div className="font-bold text-ink text-sm tracking-tight truncate">{item.name}</div>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span className="font-mono text-[9px] font-bold text-ink-muted bg-panel px-1.5 py-0.5 rounded border border-divider">
+                            <span className="font-mono text-[10px] font-bold text-ink-muted bg-panel px-1.5 py-0.5 rounded border border-divider">
                               {item.materialId || "N/A"}
                             </span>
-                            <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest">{item.groupCode || item.category}</span>
+                            <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">{item.groupCode || item.category}</span>
                             {(item.quantity - (item.consumed || 0)) <= item.minThreshold && (
-                              <span className="text-[9px] font-bold text-danger uppercase tracking-widest bg-danger/8 px-1.5 py-0.5 rounded border border-danger/20">
+                              <span className="text-[10px] font-bold text-danger uppercase tracking-widest bg-danger/8 px-1.5 py-0.5 rounded border border-danger/20">
                                 Low Stock
                               </span>
                             )}
@@ -843,19 +843,19 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-surface-dark text-white/50">
-                      <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/80">
+                      <th className="px-3 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/80">
                         Item Name
                       </th>
-                      <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/30 text-center">
+                      <th className="px-3 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/30 text-center">
                         System Qty
                       </th>
-                      <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/80 text-center">
+                      <th className="px-3 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/80 text-center">
                         Physical Count
                       </th>
-                      <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/80 text-center">
+                      <th className="px-3 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/80 text-center">
                         Variance
                       </th>
-                      <th className="px-3 md:px-6 py-2 md:py-3 text-[9px] md:text-xs font-bold uppercase tracking-widest text-white/30 text-right">
+                      <th className="px-3 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/30 text-right">
                         Action
                       </th>
                     </tr>
@@ -885,7 +885,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               className="hover:bg-panel/50 apple-transition group"
                             >
                               <td className="px-6 py-3">
-                                <div className="font-bold text-ink text-[11px] md:text-sm tracking-tight">
+                                <div className="font-bold text-ink text-[10px] md:text-sm tracking-tight">
                                   {item.name}
                                 </div>
                                 <div className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">
@@ -893,7 +893,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                 </div>
                               </td>
                               <td className="px-6 py-3 text-center">
-                                <div className="text-[11px] md:text-sm font-bold text-ink-muted">
+                                <div className="text-[10px] md:text-sm font-bold text-ink-muted">
                                   {available.toFixed(1)}
                                 </div>
                               </td>
@@ -901,7 +901,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                 <div className="flex justify-center">
                                   <input
                                     type="number"
-                                    className="w-16 md:w-20 bg-surface border border-divider rounded-lg px-2 py-1 text-[11px] md:text-sm font-bold outline-none focus:border-primary text-center"
+                                    className="w-16 md:w-20 bg-surface border border-divider rounded-lg px-2 py-1 text-[10px] md:text-sm font-bold outline-none focus:border-primary text-center"
                                     value={physicalCounts[item.id] ?? available}
                                     onChange={(e) =>
                                       setPhysicalCounts({
@@ -1378,7 +1378,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               materialId: false,
                             }))
                           }
-                          className="text-[9px] md:text-[10px] font-bold text-primary hover:text-[#B85F3B]"
+                          className="text-[10px] md:text-[10px] font-bold text-primary hover:text-[#B85F3B]"
                         >
                           Back to List
                         </button>
@@ -1462,7 +1462,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               groupCode: false,
                             }))
                           }
-                          className="text-[9px] md:text-[10px] font-bold text-primary hover:text-[#B85F3B]"
+                          className="text-[10px] md:text-[10px] font-bold text-primary hover:text-[#B85F3B]"
                         >
                           Back to List
                         </button>
@@ -1549,7 +1549,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               unit: false,
                             }))
                           }
-                          className="text-[9px] md:text-[10px] font-bold text-primary hover:text-[#B85F3B]"
+                          className="text-[10px] md:text-[10px] font-bold text-primary hover:text-[#B85F3B]"
                         >
                           Back to List
                         </button>
@@ -1604,7 +1604,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         <div className="w-full bg-surface border border-divider text-ink-muted rounded-xl p-2.5 md:p-3 text-[10px] md:text-xs font-bold cursor-not-allowed">
                           {editingItem.quantity}
                         </div>
-                        <p className="text-[9px] text-ink-muted ml-1 mt-1">
+                        <p className="text-[10px] text-ink-muted ml-1 mt-1">
                           To change stock quantity, record a Goods Receipt Note
                           against a Purchase Order.
                         </p>
@@ -1623,7 +1623,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             })
                           }
                         />
-                        <p className="text-[9px] text-ink-muted ml-1 mt-1">
+                        <p className="text-[10px] text-ink-muted ml-1 mt-1">
                           Initial seed value. Will be superseded by Goods
                           Receipt Notes once recorded.
                         </p>

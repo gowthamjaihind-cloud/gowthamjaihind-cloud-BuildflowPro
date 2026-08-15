@@ -225,11 +225,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
 
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="soft-card rounded-2xl p-3">
-                <p className="text-[9px] font-black uppercase tracking-widest text-ink-muted">Cost (Actual)</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Cost (Actual)</p>
                 <p className="font-mono font-bold text-lg">₹24.8L</p>
               </div>
               <div className="soft-card rounded-2xl p-3">
-                <p className="text-[9px] font-black uppercase tracking-widest text-ink-muted">Manpower</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Manpower</p>
                 <p className="font-mono font-bold text-lg">42</p>
               </div>
             </div>
@@ -240,7 +240,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               </div>
               <div>
                 <p className="text-xs font-bold">Excavation — 80% ✅</p>
-                <p className="text-[11px] text-ink-muted">Logged via Telegram · 2 min ago</p>
+                <p className="text-[10px] text-ink-muted">Logged via Telegram · 2 min ago</p>
               </div>
             </div>
           </div>
@@ -294,7 +294,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 </div>
                 <div>
                   <p className="text-sm font-bold text-white">{m.t}</p>
-                  <p className="text-[11px] text-white/50">{m.s}</p>
+                  <p className="text-[10px] text-white/50">{m.s}</p>
                 </div>
               </div>
             ))}

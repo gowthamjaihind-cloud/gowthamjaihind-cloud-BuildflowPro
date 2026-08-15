@@ -631,7 +631,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-ink truncate">
                         {row.label}
                       </span>
-                      <span className="text-[9px] font-bold text-ink-muted bg-surface border border-divider px-1.5 py-0.5 rounded-full shrink-0">
+                      <span className="text-[10px] font-bold text-ink-muted bg-surface border border-divider px-1.5 py-0.5 rounded-full shrink-0">
                         {row.count}
                       </span>
                     </div>
@@ -679,7 +679,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
-                  <div className="w-[100px] sm:w-[180px] lg:w-[250px] p-2 sm:p-4 border-r text-[9px] sm:text-xs md:text-sm flex items-center gap-3 bg-surface group-hover:bg-panel sticky left-0 z-20 shadow-[4px_0_10px_-4px_rgba(0,0,0,0.05)] apple-transition h-full">
+                  <div className="w-[100px] sm:w-[180px] lg:w-[250px] p-2 sm:p-4 border-r text-[10px] sm:text-xs md:text-sm flex items-center gap-3 bg-surface group-hover:bg-panel sticky left-0 z-20 shadow-[4px_0_10px_-4px_rgba(0,0,0,0.05)] apple-transition h-full">
                     <div
                       className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full flex-shrink-0 ${
                         task.type === "Milestone"
@@ -697,7 +697,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       >
                         {task.name}
                       </span>
-                      <span className="text-[9px] text-ink-muted truncate hidden sm:block">
+                      <span className="text-[10px] text-ink-muted truncate hidden sm:block">
                         {format(taskStart, "MMM d")} -{" "}
                         {format(taskEnd, "MMM d")}
                       </span>
@@ -954,7 +954,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   {hoveredTask.task.name}
                 </h4>
                 {hoveredTask.task.type === "Milestone" ? (
-                  <span className="shrink-0 inline-flex items-center justify-center bg-amber-500/20 text-[#F0C6B2] rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                  <span className="shrink-0 inline-flex items-center justify-center bg-amber-500/20 text-[#F0C6B2] rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
                     Milestone
                   </span>
                 ) : (
@@ -966,7 +966,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-slate-800/80 p-2 rounded-lg">
-                  <div className="text-[9px] text-ink-muted/80 uppercase tracking-widest font-bold mb-1">
+                  <div className="text-[10px] text-ink-muted/80 uppercase tracking-widest font-bold mb-1">
                     Start
                   </div>
                   <div className="font-medium text-fossil">
@@ -977,7 +977,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   </div>
                 </div>
                 <div className="bg-slate-800/80 p-2 rounded-lg">
-                  <div className="text-[9px] text-ink-muted/80 uppercase tracking-widest font-bold mb-1">
+                  <div className="text-[10px] text-ink-muted/80 uppercase tracking-widest font-bold mb-1">
                     End
                   </div>
                   <div className="font-medium text-fossil">

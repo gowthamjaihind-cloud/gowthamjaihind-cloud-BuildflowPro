@@ -311,7 +311,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       className="w-full bg-surface border border-[#C8D1D3] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink font-mono"
                       placeholder="e.g. 29ABCDE1234F1Z5"
                     />
-                    <p className="text-[11px] text-ink-muted mt-1.5">
+                    <p className="text-[10px] text-ink-muted mt-1.5">
                       Used to validate vendor invoices and split CGST/SGST vs IGST.
                       {draftGstin.length >= 2 && ` State code: ${draftGstin.slice(0, 2)}.`}
                     </p>

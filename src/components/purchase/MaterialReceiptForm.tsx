@@ -297,7 +297,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-1.5 md:space-y-2">
-              <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Vendor</label>
+              <label className="text-[10px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Vendor</label>
               <select
                 required
                 className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-primary outline-none"
@@ -317,7 +317,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
             </div>
 
             <div className="space-y-1.5 md:space-y-2">
-              <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Purchase Order (Optional)</label>
+              <label className="text-[10px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Purchase Order (Optional)</label>
               <select
                 className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-primary outline-none disabled:opacity-50"
                 value={poId}
@@ -335,7 +335,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
             </div>
 
             <div className="space-y-1.5 md:space-y-2">
-              <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Goods Receipts (GRN)</label>
+              <label className="text-[10px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Goods Receipts (GRN)</label>
               <div className="relative">
                  <select
                    multiple
@@ -349,14 +349,14 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                      <option key={grn.id} value={grn.id}>{grn.grnNumber}</option>
                    ))}
                  </select>
-                 <p className="text-[9px] text-ink-muted mt-1 ml-1 font-medium">Ctrl/Cmd+click to select multiple</p>
+                 <p className="text-[10px] text-ink-muted mt-1 ml-1 font-medium">Ctrl/Cmd+click to select multiple</p>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-divider">
             <div className="space-y-1.5 md:space-y-2">
-              <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Invoice / Ref No.</label>
+              <label className="text-[10px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Invoice / Ref No.</label>
               <input
                 required
                 placeholder="INV-001"
@@ -366,7 +366,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               />
             </div>
             <div className="space-y-1.5 md:space-y-2">
-              <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Date</label>
+              <label className="text-[10px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Date</label>
               <input
                 type="date"
                 required
@@ -461,7 +461,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
             {!poId && items.map((item, idx) => (
               <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-panel p-4 rounded-2xl border border-divider">
                 <div className="col-span-1 md:col-span-4 space-y-1">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted">Material</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Material</label>
                   <select
                     required
                     className="w-full bg-surface border rounded-xl p-2.5 text-xs font-bold"
@@ -483,7 +483,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                   </select>
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-1">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted">Quantity</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Quantity</label>
                   <input
                     type="number" required
                     className="w-full bg-surface border rounded-xl p-2.5 text-xs font-bold"
@@ -497,7 +497,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                   />
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-1">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted">Unit Rate (₹)</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Unit Rate (₹)</label>
                   <input
                     type="number" required
                     className="w-full bg-surface border rounded-xl p-2.5 text-xs font-bold"
@@ -511,7 +511,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                   />
                 </div>
                 <div className="col-span-1 md:col-span-3 space-y-1">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted">Total Amount</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Total Amount</label>
                   <div className="w-full bg-surface/50 border border-transparent rounded-xl p-2.5 text-xs font-bold text-ink flex justify-between items-center">
                      <span>₹</span>
                      <span>{item.totalPrice.toLocaleString("en-IN")}</span>
@@ -534,7 +534,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
 
           <div className="flex justify-between items-end border-t border-divider pt-6">
              <div className="space-y-1 w-1/2">
-                <label className="text-[9px] font-black uppercase tracking-widest text-ink-muted">Notes</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Notes</label>
                 <textarea rows={2} className="w-full bg-panel border rounded-xl p-3 text-xs" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Terms, comments..."></textarea>
              </div>
              <div className="text-right">

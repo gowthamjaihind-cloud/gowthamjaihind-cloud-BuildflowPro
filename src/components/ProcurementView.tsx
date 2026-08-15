@@ -723,8 +723,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
 
     const statusBadge = (b: VendorBill) => {
       if (b.status === "pending_review")
-        return <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-primary/15 text-[#B85F3B]">Pending review</span>;
-      return <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-success/15 text-success">Posted</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/15 text-[#B85F3B]">Pending review</span>;
+      return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-success/15 text-success">Posted</span>;
     };
     const matchBadge = (m?: string) => {
       const map: any = {
@@ -732,7 +732,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         "Has Discrepancies": "bg-primary/12 text-[#C0653F]",
         Unlinked: "bg-danger/10 text-danger",
       };
-      return m ? <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${map[m] || "bg-panel text-ink-muted"}`}>{m}</span> : null;
+      return m ? <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${map[m] || "bg-panel text-ink-muted"}`}>{m}</span> : null;
     };
 
     return (
@@ -741,17 +741,17 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           <div className="soft-card p-5 squircle-24">
             <div className="text-[10px] font-black uppercase tracking-widest text-ink-muted mb-1">Input GST (ITC)</div>
             <div className="text-2xl font-black text-ink">{inr(inputGST)}</div>
-            <div className="text-[11px] text-ink-muted mt-1">Claimable credit across posted bills</div>
+            <div className="text-[10px] text-ink-muted mt-1">Claimable credit across posted bills</div>
           </div>
           <div className="soft-card p-5 squircle-24">
             <div className="text-[10px] font-black uppercase tracking-widest text-ink-muted mb-1">Billed (incl-GST)</div>
             <div className="text-2xl font-black text-ink">{inr(totalPayable)}</div>
-            <div className="text-[11px] text-ink-muted mt-1">{posted.length} posted bill{posted.length === 1 ? "" : "s"}</div>
+            <div className="text-[10px] text-ink-muted mt-1">{posted.length} posted bill{posted.length === 1 ? "" : "s"}</div>
           </div>
           <div className="soft-card p-5 squircle-24">
             <div className="text-[10px] font-black uppercase tracking-widest text-ink-muted mb-1">Pending review</div>
             <div className="text-2xl font-black text-ink">{pending.length}</div>
-            <div className="text-[11px] text-ink-muted mt-1">Scanned, awaiting confirm</div>
+            <div className="text-[10px] text-ink-muted mt-1">Scanned, awaiting confirm</div>
           </div>
         </div>
 
@@ -928,7 +928,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       </button>
                     </div>
                     <div className="text-right">
-                      <p className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-ink-muted">
+                      <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-ink-muted">
                         Outstanding
                       </p>
                       <p
@@ -940,7 +940,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         })}
                       </p>
                       <div className="mt-2">
-                        <p className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-ink-muted">
+                        <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-ink-muted">
                           Payments Made
                         </p>
                         <p className="text-sm md:text-base font-bold text-success">
@@ -964,7 +964,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     {vendor.name}
                   </h3>
                 </div>
-                <p className="text-[9px] md:text-xs font-bold text-ink-muted mb-4 uppercase tracking-widest leading-none shrink-0">
+                <p className="text-[10px] md:text-xs font-bold text-ink-muted mb-4 uppercase tracking-widest leading-none shrink-0">
                   {vendor.type}
                 </p>
 
@@ -1058,23 +1058,23 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             <table className="w-full text-left min-w-[700px] md:min-w-[800px]">
               <thead>
                 <tr className="bg-surface-dark text-white/75 border-b border-white/10">
-                  <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
+                  <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
                     Timeline
                   </th>
-                  <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
+                  <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
                     Vendor
                   </th>
-                  <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
+                  <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
                     Reference
                   </th>
-                  <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
+                  <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
                     Items
                   </th>
-                  <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80 text-right">
+                  <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80 text-right">
                     Total
                   </th>
                   {isAdminOrOwner && (
-                    <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 text-right">
+                    <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 text-right">
                       Ops
                     </th>
                   )}
@@ -1086,7 +1086,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     key={receipt.id}
                     className="group hover:bg-panel/50 apple-transition"
                   >
-                    <td className="px-6 md:px-10 py-5 md:py-8 font-mono text-[9px] md:text-[10px] font-bold text-ink-muted group-hover:text-ink apple-transition">
+                    <td className="px-6 md:px-10 py-5 md:py-8 font-mono text-[10px] md:text-[10px] font-bold text-ink-muted group-hover:text-ink apple-transition">
                       {receipt.receiptDate}
                     </td>
                     <td className="px-6 md:px-10 py-5 md:py-8">
@@ -1101,21 +1101,21 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     </td>
                     <td className="px-6 md:px-10 py-5 md:py-8">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[9px] md:text-[10px] font-bold text-rust-strong bg-[#F7E4DB]/50 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-[#F7E4DB]/50 shadow-sm">
+                        <span className="font-mono text-[10px] md:text-[10px] font-bold text-rust-strong bg-[#F7E4DB]/50 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-[#F7E4DB]/50 shadow-sm">
                           {receipt.invoiceNumber}
                         </span>
                         {receipt.matchStatus === "Fully Matched" && (
-                          <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-success bg-success/12 px-2 py-1 rounded-full">
+                          <span className="font-bold text-[8px] md:text-[10px] uppercase tracking-widest text-success bg-success/12 px-2 py-1 rounded-full">
                             Matched
                           </span>
                         )}
                         {receipt.matchStatus === "Has Discrepancies" && (
-                          <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-[#C0653F] bg-primary/10 px-2 py-1 rounded-full border border-primary/30">
+                          <span className="font-bold text-[8px] md:text-[10px] uppercase tracking-widest text-[#C0653F] bg-primary/10 px-2 py-1 rounded-full border border-primary/30">
                             Discrepancy
                           </span>
                         )}
                         {receipt.matchStatus === "Unlinked" && (
-                          <span className="font-bold text-[8px] md:text-[9px] uppercase tracking-widest text-ink-muted bg-page px-2 py-1 rounded-full">
+                          <span className="font-bold text-[8px] md:text-[10px] uppercase tracking-widest text-ink-muted bg-page px-2 py-1 rounded-full">
                             Unlinked
                           </span>
                         )}
@@ -1126,7 +1126,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         {receipt.items.map((item, idx) => (
                           <span
                             key={idx}
-                            className="bg-panel border border-divider px-2 md:px-3 py-1 md:py-1.5 rounded-xl text-[8px] md:text-[9px] font-bold text-ink-muted uppercase tracking-tight whitespace-nowrap"
+                            className="bg-panel border border-divider px-2 md:px-3 py-1 md:py-1.5 rounded-xl text-[8px] md:text-[10px] font-bold text-ink-muted uppercase tracking-tight whitespace-nowrap"
                           >
                             {item.name} × {item.quantity}
                           </span>
@@ -1140,7 +1140,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           maximumFractionDigits: 0,
                         })}
                       </div>
-                      <div className="text-[8px] md:text-[9px] font-bold text-ink-muted uppercase tracking-widest mt-1.5 md:mt-2 tracking-[0.1em]">
+                      <div className="text-[8px] md:text-[10px] font-bold text-ink-muted uppercase tracking-widest mt-1.5 md:mt-2 tracking-[0.1em]">
                         Value
                       </div>
                     </td>
@@ -1189,17 +1189,17 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   </div>
                   <div className="flex items-center gap-2">
                     {receipt.matchStatus === "Fully Matched" && (
-                      <span className="font-bold text-[9px] uppercase tracking-widest text-success bg-success/12 px-2 py-1 rounded-full">
+                      <span className="font-bold text-[10px] uppercase tracking-widest text-success bg-success/12 px-2 py-1 rounded-full">
                         Matched
                       </span>
                     )}
                     {receipt.matchStatus === "Has Discrepancies" && (
-                      <span className="font-bold text-[9px] uppercase tracking-widest text-[#C0653F] bg-primary/10 px-2 py-1 rounded-full border border-primary/30">
+                      <span className="font-bold text-[10px] uppercase tracking-widest text-[#C0653F] bg-primary/10 px-2 py-1 rounded-full border border-primary/30">
                         Discrepancy
                       </span>
                     )}
                     {receipt.matchStatus === "Unlinked" && (
-                      <span className="font-bold text-[9px] uppercase tracking-widest text-ink-muted bg-page px-2 py-1 rounded-full">
+                      <span className="font-bold text-[10px] uppercase tracking-widest text-ink-muted bg-page px-2 py-1 rounded-full">
                         Unlinked
                       </span>
                     )}
@@ -1211,7 +1211,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     <div className="text-[8px] font-bold text-ink-muted uppercase tracking-widest mb-1 tracking-[0.1em]">
                       Date & Ref
                     </div>
-                    <div className="font-mono text-[11px] font-bold text-ink-muted">
+                    <div className="font-mono text-[10px] font-bold text-ink-muted">
                       {receipt.receiptDate}
                     </div>
                     <div className="mt-1">
@@ -1241,7 +1241,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     {receipt.items.map((item, idx) => (
                       <span
                         key={idx}
-                        className="bg-panel border border-divider px-2 py-1 rounded-xl text-[9px] font-bold text-ink-muted uppercase tracking-tight whitespace-nowrap"
+                        className="bg-panel border border-divider px-2 py-1 rounded-xl text-[10px] font-bold text-ink-muted uppercase tracking-tight whitespace-nowrap"
                       >
                         {item.name} × {item.quantity}
                       </span>
@@ -1335,23 +1335,23 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               <table className="w-full text-left min-w-[700px] md:min-w-[800px]">
                 <thead>
                   <tr className="bg-surface-dark text-white/75 border-b border-white/10">
-                    <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
+                    <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
                       Timeline
                     </th>
-                    <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
+                    <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
                       Entity Partner
                     </th>
-                    <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
+                    <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
                       Designation
                     </th>
-                    <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80 text-right">
+                    <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80 text-right">
                       CR (+)
                     </th>
-                    <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80 text-right">
+                    <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80 text-right">
                       DR (-)
                     </th>
                     {isAdminOrOwner && (
-                      <th className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 text-right">
+                      <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 text-right">
                         Ops
                       </th>
                     )}
@@ -1359,7 +1359,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </thead>
                 <tbody className="divide-y divide-divider/40">
                   <tr className="bg-slate-50/50">
-                    <td className="px-6 md:px-10 py-5 md:py-8 font-mono text-[9px] md:text-[10px] font-bold text-ink-muted">
+                    <td className="px-6 md:px-10 py-5 md:py-8 font-mono text-[10px] md:text-[10px] font-bold text-ink-muted">
                       -
                     </td>
                     <td className="px-6 md:px-10 py-5 md:py-8 text-ink-muted text-sm md:text-base font-bold">
@@ -1387,7 +1387,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       key={entry.id}
                       className="group hover:bg-panel/50 apple-transition"
                     >
-                      <td className="px-6 md:px-10 py-5 md:py-8 font-mono text-[9px] md:text-[10px] font-bold text-ink-muted group-hover:text-ink apple-transition">
+                      <td className="px-6 md:px-10 py-5 md:py-8 font-mono text-[10px] md:text-[10px] font-bold text-ink-muted group-hover:text-ink apple-transition">
                         {new Date(entry.date).toLocaleDateString()}
                       </td>
                       <td className="px-6 md:px-10 py-5 md:py-8">
@@ -1412,11 +1412,11 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         </div>
                       </td>
                       <td className="px-6 md:px-10 py-5 md:py-8">
-                        <div className="text-[11px] md:text-xs font-medium text-ink-muted tracking-tight leading-relaxed max-w-[200px] md:max-w-[300px] line-clamp-2">
+                        <div className="text-[10px] md:text-xs font-medium text-ink-muted tracking-tight leading-relaxed max-w-[200px] md:max-w-[300px] line-clamp-2">
                           {entry.description}
                         </div>
                         {entry.overrideReason && (
-                          <div className="text-[8px] md:text-[9px] font-bold text-[#C0653F] mt-1 uppercase tracking-widest border border-amber-200/50 bg-primary/10 px-1.5 py-0.5 rounded-full inline-block">
+                          <div className="text-[8px] md:text-[10px] font-bold text-[#C0653F] mt-1 uppercase tracking-widest border border-amber-200/50 bg-primary/10 px-1.5 py-0.5 rounded-full inline-block">
                             ⚠️ Override: {entry.overrideReason}
                           </div>
                         )}
@@ -1505,7 +1505,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   <tr className="font-black text-sm">
                     <td
                       colSpan={3}
-                      className="px-6 md:px-10 py-6 md:py-10 text-right uppercase tracking-[0.4em] text-white/20 text-[9px] md:text-[11px]"
+                      className="px-6 md:px-10 py-6 md:py-10 text-right uppercase tracking-[0.4em] text-white/20 text-[10px] md:text-[10px]"
                     >
                       Outstanding Statement Balance
                     </td>
@@ -1574,7 +1574,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                             : entry.referenceType || "OFS"}
                       </div>
                     </div>
-                    <div className="font-mono text-[11px] font-bold text-ink-muted">
+                    <div className="font-mono text-[10px] font-bold text-ink-muted">
                       {new Date(entry.date).toLocaleDateString()}
                     </div>
                   </div>
@@ -1584,7 +1584,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       {entry.description}
                     </div>
                     {entry.overrideReason && (
-                      <div className="text-[9px] font-bold text-[#C0653F] mt-2 uppercase tracking-widest border border-amber-200/50 bg-primary/10 px-2 py-1 rounded-full inline-block">
+                      <div className="text-[10px] font-bold text-[#C0653F] mt-2 uppercase tracking-widest border border-amber-200/50 bg-primary/10 px-2 py-1 rounded-full inline-block">
                         ⚠️ Override: {entry.overrideReason}
                       </div>
                     )}
@@ -1716,7 +1716,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 md:flex-none px-4 md:px-8 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] md:tracking-[0.2em] apple-transition whitespace-nowrap ${activeTab === tab ? "bg-surface shadow-sm text-rust-strong ring-1 ring-divider" : "text-ink-muted hover:text-ink/80"}`}
+              className={`flex-1 md:flex-none px-4 md:px-8 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] md:tracking-[0.2em] apple-transition whitespace-nowrap ${activeTab === tab ? "bg-surface shadow-sm text-rust-strong ring-1 ring-divider" : "text-ink-muted hover:text-ink/80"}`}
             >
               {tab === "purchase_orders"
                 ? "Purchase Orders"
@@ -1736,26 +1736,26 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="hidden sm:flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 bg-[#F7E4DB] rounded-lg md:rounded-2xl">
             <Users className="w-3.5 h-3.5 text-rust-strong" />
-            <span className="text-[9px] md:text-[10px] font-black text-rust-strong uppercase tracking-widest">
+            <span className="text-[10px] md:text-[10px] font-black text-rust-strong uppercase tracking-widest">
               {vendors.length} Partners
             </span>
           </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
           <button
             onClick={() => setShowScanInvoice(true)}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#6E8CA0] text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#5C7889] apple-transition shadow-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#6E8CA0] text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#5C7889] apple-transition shadow-sm"
           >
             <Sparkle weight="fill" className="w-3.5 h-3.5" /> Scan Invoice
           </button>
           <button
             onClick={handleExportCSV}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-panel text-ink px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-divider apple-transition border border-divider"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-panel text-ink px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-divider apple-transition border border-divider"
           >
             <Download className="w-3.5 h-3.5" /> Export CSV
           </button>
           <button
             onClick={handleExportPDF}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#C0653F] text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#A0522F] apple-transition shadow-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#C0653F] text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#A0522F] apple-transition shadow-sm"
           >
             <Download className="w-3.5 h-3.5" /> Export PDF
           </button>
@@ -1948,7 +1948,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         setOpeningBalanceInput(parseFloat(e.target.value) || 0)
                       }
                     />
-                    <p className="text-[11px] text-ink-muted ml-1 leading-relaxed">
+                    <p className="text-[10px] text-ink-muted ml-1 leading-relaxed">
                       Balance carried forward before any receipts or payments
                       recorded here. Positive means you owe the party.
                     </p>

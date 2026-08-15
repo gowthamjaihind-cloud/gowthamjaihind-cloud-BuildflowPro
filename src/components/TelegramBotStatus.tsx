@@ -34,11 +34,11 @@ export const TelegramBotStatus: React.FC = () => {
     return (
       <div
         id="telegram-bot-status-indicator"
-        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-panel text-ink-muted rounded-full text-[11px] font-bold tracking-wide border border-divider shadow-sm"
+        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-panel text-ink-muted rounded-full text-[10px] font-bold tracking-wide border border-divider shadow-sm"
         title="Checking Telegram Bot status..."
       >
         <Send className="w-3 h-3 animate-pulse text-ink-muted" />
-        <span className="text-[11px] font-bold">Bot Checking...</span>
+        <span className="text-[10px] font-bold">Bot Checking...</span>
       </div>
     );
   }
@@ -47,13 +47,13 @@ export const TelegramBotStatus: React.FC = () => {
     return (
       <div
         id="telegram-bot-status-indicator"
-        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-rose-500/10 text-danger rounded-full text-[11px] font-bold tracking-wide border border-rose-500/20 shadow-sm"
+        className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-rose-500/10 text-danger rounded-full text-[10px] font-bold tracking-wide border border-rose-500/20 shadow-sm"
         title="Telegram Bot Disconnected / Offline"
       >
         <span className="relative flex h-2.5 w-2.5">
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-danger" />
         </span>
-        <span className="text-[11px] font-bold">Bot Offline</span>
+        <span className="text-[10px] font-bold">Bot Offline</span>
       </div>
     );
   }
@@ -61,14 +61,14 @@ export const TelegramBotStatus: React.FC = () => {
   return (
     <div
       id="telegram-bot-status-indicator"
-      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-[#56778E]/10 text-[#56778E] rounded-full text-[11px] font-bold tracking-wide border border-[#56778E]/20 shadow-sm"
+      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-[#56778E]/10 text-[#56778E] rounded-full text-[10px] font-bold tracking-wide border border-[#56778E]/20 shadow-sm"
       title={botName ? `Telegram Bot Connected (${botName})` : "Telegram Bot Connected & Active"}
     >
       <span className="relative flex h-2.5 w-2.5">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
       </span>
-      <span className="text-[11px] font-bold">Bot Online</span>
+      <span className="text-[10px] font-bold">Bot Online</span>
     </div>
   );
 };

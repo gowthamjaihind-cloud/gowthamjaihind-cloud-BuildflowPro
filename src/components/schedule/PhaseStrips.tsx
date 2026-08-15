@@ -33,7 +33,7 @@ export const PhaseStrips: React.FC<Props> = ({ phases, onNavigate }) => {
             <div key={phase.id} className="flex flex-col space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-ink font-bold text-sm tracking-tight">{phase.name}</span>
-                <span className="text-ink-muted font-mono text-[11px] font-bold">
+                <span className="text-ink-muted font-mono text-[10px] font-bold">
                   {format(phase.startDate, 'MMM')} – {format(phase.endDate, 'MMM')} · {Math.round(phase.progress)}%
                 </span>
               </div>
@@ -46,8 +46,8 @@ export const PhaseStrips: React.FC<Props> = ({ phases, onNavigate }) => {
               </div>
 
               <div className="flex items-center justify-between pt-0.5">
-                <span className="text-[11px] text-ink-muted font-bold uppercase tracking-widest">{phase.unitsLabel}</span>
-                <span className={`text-[11px] font-bold ${phase.scheduleHealth === 'behind' ? 'text-danger' : 'text-primary'}`}>
+                <span className="text-[10px] text-ink-muted font-bold uppercase tracking-widest">{phase.unitsLabel}</span>
+                <span className={`text-[10px] font-bold ${phase.scheduleHealth === 'behind' ? 'text-danger' : 'text-primary'}`}>
                   {phase.healthLabel}
                 </span>
               </div>

@@ -210,7 +210,7 @@ export const MiniGantt: React.FC<Props> = ({ tasks, onTaskClick }) => {
                   <span className={`text-[10px] font-mono leading-none ${td ? 'text-[var(--acc)]' : 'text-[var(--faint)]'}`}>
                     {format(day, 'E')[0]}
                   </span>
-                  <span className={`text-[11px] font-bold mt-0.5 leading-none ${td ? 'text-[var(--ink)] bg-[var(--acc)] px-1 rounded-sm' : 'text-[var(--muted)]'}`}>
+                  <span className={`text-[10px] font-bold mt-0.5 leading-none ${td ? 'text-[var(--ink)] bg-[var(--acc)] px-1 rounded-sm' : 'text-[var(--muted)]'}`}>
                     {format(day, 'd')}
                   </span>
                 </div>
@@ -241,7 +241,7 @@ export const MiniGantt: React.FC<Props> = ({ tasks, onTaskClick }) => {
                     <span className="text-[10px] font-black uppercase tracking-widest text-[var(--ink)] truncate">
                       {row.label}
                     </span>
-                    <span className="text-[9px] font-bold text-[var(--muted)] bg-[var(--bg)] border border-[var(--edge)] px-1.5 py-0.5 rounded-full shrink-0">
+                    <span className="text-[10px] font-bold text-[var(--muted)] bg-[var(--bg)] border border-[var(--edge)] px-1.5 py-0.5 rounded-full shrink-0">
                       {row.count}
                     </span>
                   </div>
@@ -252,7 +252,7 @@ export const MiniGantt: React.FC<Props> = ({ tasks, onTaskClick }) => {
               return (
                 <div key={task.id} className="relative flex h-[42px] items-center w-full group">
                   <div className="w-[96px] shrink-0 h-full flex items-center px-2 z-20 sticky left-0 bg-gradient-to-r from-[var(--bg)] via-[var(--bg)] to-transparent pointer-events-none text-ellipsis overflow-hidden">
-                    <span className="text-[11px] font-bold text-[var(--ink)] drop-shadow-md truncate max-w-full">
+                    <span className="text-[10px] font-bold text-[var(--ink)] drop-shadow-md truncate max-w-full">
                       {task.title}
                     </span>
                   </div>
@@ -263,9 +263,9 @@ export const MiniGantt: React.FC<Props> = ({ tasks, onTaskClick }) => {
                       style={style}
                     >
                       {task.status === 'in_progress' ? (
-                        <span className={`text-[9px] font-bold ${textClass} truncate`}>{Math.round(task.progress)}%</span>
+                        <span className={`text-[10px] font-bold ${textClass} truncate`}>{Math.round(task.progress)}%</span>
                       ) : task.status === 'blocked' ? (
-                        <span className={`text-[9px] font-bold ${textClass} truncate uppercase tracking-wider`}>BLOCKED</span>
+                        <span className={`text-[10px] font-bold ${textClass} truncate uppercase tracking-wider`}>BLOCKED</span>
                       ) : null}
                     </div>
                   </div>

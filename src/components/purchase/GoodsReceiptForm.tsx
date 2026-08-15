@@ -478,7 +478,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                  
                  <label className="w-24 h-24 flex flex-col items-center justify-center gap-2 bg-panel hover:bg-divider border-2 border-dashed border-divider hover:border-primary rounded-xl transition cursor-pointer group flex-shrink-0">
                     <Camera className="w-6 h-6 text-ink-muted group-hover:text-primary transition-colors" />
-                    <span className="text-[9px] font-black uppercase text-ink-muted group-hover:text-primary tracking-widest">Add Photo</span>
+                    <span className="text-[10px] font-black uppercase text-ink-muted group-hover:text-primary tracking-widest">Add Photo</span>
                     <input 
                        type="file" 
                        accept="image/*" 

@@ -94,7 +94,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
               <span className="text-2xl font-black text-primary font-mono tracking-tighter leading-none">
                 {log.progressPercent}%
               </span>
-              <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest block text-right mt-1">
+              <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest block text-right mt-1">
                 Cum. Progress
               </span>
             </div>
@@ -104,19 +104,19 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
             <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-divider/50">
               {log.materials.length > 0 && (
                 <div>
-                  <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest flex flex-wrap items-center gap-1 mb-1.5 opacity-70">
+                  <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest flex flex-wrap items-center gap-1 mb-1.5 opacity-70">
                     <Box className="w-3 h-3" /> Materials
                   </span>
                   <ul className="space-y-1">
                     {log.materials.map((m, i) => (
                       <li
                         key={i}
-                        className="text-[11px] font-bold text-ink/80 flex justify-between"
+                        className="text-[10px] font-bold text-ink/80 flex justify-between"
                       >
                         <span className="truncate pr-2">{m.name}</span>
                         <span className="font-mono">
                           {m.quantity}{" "}
-                          <span className="text-[9px] text-ink-muted">
+                          <span className="text-[10px] text-ink-muted">
                             {m.unit}
                           </span>
                         </span>
@@ -127,14 +127,14 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
               )}
               {log.labour.length > 0 && (
                 <div>
-                  <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest flex flex-wrap items-center gap-1 mb-1.5 opacity-70">
+                  <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest flex flex-wrap items-center gap-1 mb-1.5 opacity-70">
                     <Users className="w-3 h-3" /> Labor
                   </span>
                   <ul className="space-y-1">
                     {log.labour.map((l, i) => (
                       <li
                         key={i}
-                        className="text-[11px] font-bold text-ink/80 flex justify-between"
+                        className="text-[10px] font-bold text-ink/80 flex justify-between"
                       >
                         <span className="truncate pr-2">{l.roleName}</span>
                         <span className="font-mono">{l.headcount}</span>
@@ -145,19 +145,19 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
               )}
               {(log.equipment?.length ?? 0) > 0 && (
                 <div>
-                  <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest flex flex-wrap items-center gap-1 mb-1.5 opacity-70">
+                  <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest flex flex-wrap items-center gap-1 mb-1.5 opacity-70">
                     <Truck className="w-3 h-3" /> Equipment
                   </span>
                   <ul className="space-y-1">
                     {log.equipment!.map((eq, i) => (
                       <li
                         key={i}
-                        className="text-[11px] font-bold text-ink/80 flex justify-between"
+                        className="text-[10px] font-bold text-ink/80 flex justify-between"
                       >
                         <span className="truncate pr-2">{eq.name}</span>
                         <span className="font-mono whitespace-nowrap">
                           {eq.quantity}{" "}
-                          <span className="text-[9px] text-ink-muted">
+                          <span className="text-[10px] text-ink-muted">
                             {eq.unit === "days" ? "days" : "hrs"}
                           </span>
                           {eq.cost ? (
@@ -177,7 +177,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
           {log.note && (
             <div className="mt-4 bg-amber-50/50 p-3 rounded-xl border border-primary/20 flex gap-2 items-start text-[#5E2F1B]">
               <MessageSquare className="w-4 h-4 shrink-0 mt-0.5 text-rust-strong opacity-60" />
-              <p className="text-[11px] font-medium leading-relaxed italic">
+              <p className="text-[10px] font-medium leading-relaxed italic">
                 {log.note}
               </p>
             </div>
