@@ -1,0 +1,5 @@
+{
+  "//": "Version-controlled Firestore composite indexes for the named database. The app is written to avoid composite indexes (single-field filters + client-side sorting), so none are required today. When a query later triggers a 'needs index' error, add its index here and deploy with: firebase deploy --only firestore:indexes. To capture any indexes created via the console first, run: firebase firestore:indexes > firestore.indexes.json",
+  "indexes": [],
+  "fieldOverrides": []
+}
