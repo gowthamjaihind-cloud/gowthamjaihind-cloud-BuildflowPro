@@ -314,6 +314,11 @@ service cloud.firestore {
     match /org_invites/{code} {
       allow read, write: if false;
     }
+    // App config (e.g. the Resend API key) is written/read only by Cloud
+    // Functions via the Admin SDK. Never expose it to clients.
+    match /app_config/{doc} {
+      allow read, write: if false;
+    }
 
     // NOTE: the recursive `/{path=**}/…` fallback rules were intentionally
     // removed. Because Firestore grants access if ANY matching rule allows it,

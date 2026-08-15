@@ -2,6 +2,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { randomBytes } from "crypto";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
+import { sendInviteEmail, APP_URL } from "./email";
 
 // Roles a teammate can be invited as. "Owner" is intentionally excluded — an
 // org has exactly one owner (the creator), and you don't invite people as Owner.
@@ -42,7 +43,17 @@ export const createInvite = onCall({ timeoutSeconds: 60 }, async (request) => {
     expiresAt: Date.now() + INVITE_TTL_MS,
     used: false,
   });
-  return { code, orgId, role, email: email || null };
+
+  // If a recipient email was given, mail the link directly (best-effort).
+  const emailResult = await sendInviteEmail({
+    to: email || null,
+    orgName: orgData?.companyName || "your organization",
+    role,
+    link: `${APP_URL}/?invite=${code}`,
+    inviterName: (userSnap.data() as any)?.displayName || undefined,
+  });
+
+  return { code, orgId, role, email: email || null, emailed: emailResult.sent };
 });
 
 // A signed-in user redeems an invite code and joins the org with the invited
