@@ -131,3 +131,30 @@ export const callSetSubscription = async (args: { orgId: string; action: string;
   const res = await fn(args);
   return res.data;
 };
+
+// ---- Data-subject rights (export / erasure) ----
+
+// Download a machine-readable copy of the caller's profile and (for Owners/
+// Admins) their organization's data. Can take a while on large tenants.
+export const callExportMyData = async () => {
+  const fn = httpsCallable<{}, any>(getFunctionsInstance(), 'exportMyData', { timeout: 300000 });
+  const res = await fn({});
+  return res.data;
+};
+
+// Owner-only: permanently delete an organization and all of its data.
+export const callDeleteOrganization = async (orgId: string) => {
+  const fn = httpsCallable<{ orgId: string }, { ok: boolean; orgId: string; unlinkedMembers: number }>(
+    getFunctionsInstance(), 'deleteOrganization', { timeout: 300000 });
+  const res = await fn({ orgId });
+  return res.data;
+};
+
+// Permanently delete the caller's own account (profile + auth) and their
+// membership in every org (deleting any org where they are the sole member).
+export const callDeleteMyAccount = async () => {
+  const fn = httpsCallable<{}, { ok: boolean; authDeleted: boolean }>(
+    getFunctionsInstance(), 'deleteMyAccount', { timeout: 300000 });
+  const res = await fn({});
+  return res.data;
+};

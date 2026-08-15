@@ -15,3 +15,4 @@ export * from "./telegram";
 export * from "./setupOrg";
 export * from "./invites";
 export * from "./billing";
+export * from "./dataRights";
