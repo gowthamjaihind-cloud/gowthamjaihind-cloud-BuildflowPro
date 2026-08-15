@@ -386,7 +386,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       </div>
 
       {!canExport && (
-        <p className="text-xs text-[#C0653F] bg-[#D97D54]/10 p-3 rounded-lg border border-[#D97D54]/20 font-bold uppercase tracking-widest">
+        <p className="text-xs text-[#C0653F] bg-primary/10 p-3 rounded-lg border border-primary/20 font-bold uppercase tracking-widest">
           Note: PDF Export is restricted to Admin or Manager roles.
         </p>
       )}
@@ -712,7 +712,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                         </button>
                           <button
                             onClick={() => handleDeleteLog(log)}
-                            className="text-xs font-bold text-[#EF4444] hover:text-[#EF4444] flex items-center justify-center p-2 rounded-xl border border-divider hover:bg-[#EF4444]/8 transition-colors"
+                            className="text-xs font-bold text-danger hover:text-danger flex items-center justify-center p-2 rounded-xl border border-divider hover:bg-danger/8 transition-colors"
                             title="Delete Log"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -765,7 +765,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
               </button>
               <button
                 onClick={confirmDeleteLog}
-                className="py-3.5 px-6 rounded-2xl font-bold bg-[#EF4444] hover:bg-[#DC2626] text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
+                className="py-3.5 px-6 rounded-2xl font-bold bg-danger hover:bg-danger text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
               >
                 Delete
               </button>

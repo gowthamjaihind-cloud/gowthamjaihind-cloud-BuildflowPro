@@ -272,7 +272,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
         className="bg-surface rounded-[24px] md:rounded-[32px] w-full max-w-5xl overflow-hidden my-auto shadow-2xl"
       >
         <div className={`p-6 md:p-8 text-white flex justify-between items-center transition-colors
-          ${overallMatchStatus === "Fully Matched" ? "bg-[#059669]" : 
+          ${overallMatchStatus === "Fully Matched" ? "bg-success" : 
             overallMatchStatus === "Has Discrepancies" ? "bg-[#C0653F]" : "bg-[#465D6E]"}`}
         >
           <div>
@@ -290,7 +290,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
 
         <form onSubmit={handleSave} className="p-5 md:p-8 space-y-6 md:space-y-8">
           {error && (
-            <div className="p-4 bg-[#EF4444]/8 text-[#EF4444] rounded-xl text-sm font-bold flex flex-col gap-1">
+            <div className="p-4 bg-danger/8 text-danger rounded-xl text-sm font-bold flex flex-col gap-1">
               <span>{error}</span>
             </div>
           )}
@@ -300,7 +300,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Vendor</label>
               <select
                 required
-                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#D97D54] outline-none"
+                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-primary outline-none"
                 value={supplierId}
                 onChange={(e) => {
                    setSupplierId(e.target.value);
@@ -319,7 +319,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
             <div className="space-y-1.5 md:space-y-2">
               <label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Purchase Order (Optional)</label>
               <select
-                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#D97D54] outline-none disabled:opacity-50"
+                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-primary outline-none disabled:opacity-50"
                 value={poId}
                 onChange={(e) => {
                    setPoId(e.target.value);
@@ -339,7 +339,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <div className="relative">
                  <select
                    multiple
-                   className="w-full bg-panel p-2 rounded-xl text-xs font-bold border-2 border-transparent focus:border-[#D97D54] outline-none min-h-[58px]"
+                   className="w-full bg-panel p-2 rounded-xl text-xs font-bold border-2 border-transparent focus:border-primary outline-none min-h-[58px]"
                    value={grnIds}
                    onChange={(e) => setGrnIds(Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))}
                    disabled={!poId}
@@ -360,7 +360,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <input
                 required
                 placeholder="INV-001"
-                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#D97D54] outline-none"
+                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-primary outline-none"
                 value={invoiceNumber}
                 onChange={(e) => setInvoiceNumber(e.target.value)}
               />
@@ -370,7 +370,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <input
                 type="date"
                 required
-                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-[#D97D54] outline-none"
+                className="w-full bg-panel p-3.5 md:p-4 rounded-xl text-sm font-bold border-2 border-transparent focus:border-primary outline-none"
                 value={receiptDate}
                 onChange={(e) => setReceiptDate(e.target.value)}
               />
@@ -383,7 +383,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               <button
                 type="button"
                 onClick={() => setItems([...items, { itemId: "", materialId: "", name: "", quantity: 0, unitRate: 0, totalPrice: 0 }])}
-                className="text-[#D97D54] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-[#F7E4DB] px-4 py-2 rounded-xl transition-all"
+                className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-[#F7E4DB] px-4 py-2 rounded-xl transition-all"
               >
                 <Plus className="w-3 h-3" /> Add Item
               </button>
@@ -440,13 +440,13 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                                 }}/>
                              </td>
                              <td className="p-3 text-xs bg-[#F7E4DB]/20">
-                                {data.status === "Matched" && <span className="text-[#059669] bg-[#34D399]/12 px-2 py-1 rounded-full font-bold">Matched</span>}
-                                {data.status === "Rate mismatch" && <span className="text-[#C0653F] bg-[#D97D54]/10 px-2 py-1 rounded-full font-bold" title="Rate != PO">Rate mismatch</span>}
-                                {data.status === "Quantity mismatch" && <span className="text-[#C0653F] bg-[#D97D54]/10 px-2 py-1 rounded-full font-bold" title="Qty != GRN">Qty mismatch</span>}
-                                {data.status === "Unmatched" && <span className="text-[#EF4444] bg-[#EF4444]/8 px-2 py-1 rounded-full font-bold">Unmatched</span>}
+                                {data.status === "Matched" && <span className="text-success bg-success/12 px-2 py-1 rounded-full font-bold">Matched</span>}
+                                {data.status === "Rate mismatch" && <span className="text-[#C0653F] bg-primary/10 px-2 py-1 rounded-full font-bold" title="Rate != PO">Rate mismatch</span>}
+                                {data.status === "Quantity mismatch" && <span className="text-[#C0653F] bg-primary/10 px-2 py-1 rounded-full font-bold" title="Qty != GRN">Qty mismatch</span>}
+                                {data.status === "Unmatched" && <span className="text-danger bg-danger/8 px-2 py-1 rounded-full font-bold">Unmatched</span>}
                              </td>
                              <td className="p-2 text-right">
-                                <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-[#F87171] hover:text-[#EF4444] hover:bg-[#EF4444]/8 p-1.5 rounded-lg transition-colors">
+                                <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-danger hover:text-danger hover:bg-danger/8 p-1.5 rounded-lg transition-colors">
                                    <Trash2 className="w-4 h-4" />
                                 </button>
                              </td>
@@ -518,7 +518,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                   </div>
                 </div>
                 <div className="col-span-1 flex justify-end pb-1 pb-1">
-                  <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-[#F87171] hover:text-[#EF4444] hover:bg-[#EF4444]/8 p-2 rounded-xl transition-colors">
+                  <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-danger hover:text-danger hover:bg-danger/8 p-2 rounded-xl transition-colors">
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
@@ -539,7 +539,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
              </div>
              <div className="text-right">
                <p className="text-[10px] font-black text-ink-muted uppercase tracking-widest mb-1">Total Invoice Value</p>
-               <h3 className="text-3xl font-black font-mono text-[#059669] tracking-tight">₹{totalAmount.toLocaleString("en-IN")}</h3>
+               <h3 className="text-3xl font-black font-mono text-success tracking-tight">₹{totalAmount.toLocaleString("en-IN")}</h3>
              </div>
           </div>
 
@@ -547,7 +547,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
             <button type="button" onClick={onClose} className="px-6 py-3 bg-panel hover:bg-divider text-ink text-xs font-bold uppercase tracking-widest rounded-xl transition">
               Cancel
             </button>
-            <button type="submit" disabled={isSubmitting || items.length === 0 || !supplierId} className="px-8 py-3 bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 shadow-[0_4px_20px_rgba(5,150,105,0.2)] disabled:opacity-50 disabled:shadow-none">
+            <button type="submit" disabled={isSubmitting || items.length === 0 || !supplierId} className="px-8 py-3 bg-success hover:bg-success text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 shadow-[0_4px_20px_rgba(5,150,105,0.2)] disabled:opacity-50 disabled:shadow-none">
               <Save className="w-4 h-4" /> Save Invoice
             </button>
           </div>

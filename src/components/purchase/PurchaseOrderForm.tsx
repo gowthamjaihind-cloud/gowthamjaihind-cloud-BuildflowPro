@@ -217,18 +217,18 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
          
          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
             {error && (
-              <div className="p-4 bg-[#EF4444]/8 text-[#EF4444] rounded-xl text-sm font-bold flex flex-col gap-1">
+              <div className="p-4 bg-danger/8 text-danger rounded-xl text-sm font-bold flex flex-col gap-1">
                 <span>{error}</span>
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-               <div className="space-y-1.5 focus-within:text-[#D97D54] transition-colors">
+               <div className="space-y-1.5 focus-within:text-primary transition-colors">
                  <label className="text-[10px] font-black uppercase tracking-widest text-inherit ml-1">Vendor</label>
                  <select
                    required
                    value={vendorId}
                    onChange={e => setVendorId(e.target.value)}
-                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium text-ink focus:ring-2 focus:ring-[#D97D54] transition-all cursor-pointer"
+                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium text-ink focus:ring-2 focus:ring-primary transition-all cursor-pointer"
                  >
                    <option value="">Select Vendor</option>
                    {vendors.map(v => (
@@ -236,14 +236,14 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                    ))}
                  </select>
                </div>
-               <div className="space-y-1.5 focus-within:text-[#D97D54] transition-colors">
+               <div className="space-y-1.5 focus-within:text-primary transition-colors">
                  <label className="text-[10px] font-black uppercase tracking-widest text-inherit ml-1">Order Date</label>
                  <input
                    type="date"
                    required
                    value={orderDate}
                    onChange={e => setOrderDate(e.target.value)}
-                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium font-mono text-ink focus:ring-2 focus:ring-[#D97D54] transition-all cursor-pointer"
+                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium font-mono text-ink focus:ring-2 focus:ring-primary transition-all cursor-pointer"
                  />
                </div>
             </div>
@@ -251,7 +251,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
             <div className="space-y-4">
               <div className="flex justify-between items-end border-b border-divider pb-2">
                  <h3 className="text-xs font-black text-ink uppercase tracking-widest">Line Items</h3>
-                 <button type="button" onClick={addItem} className="text-[10px] font-bold text-[#D97D54] hover:text-[#B85F3B] uppercase tracking-widest flex items-center gap-1">
+                 <button type="button" onClick={addItem} className="text-[10px] font-bold text-primary hover:text-[#B85F3B] uppercase tracking-widest flex items-center gap-1">
                    <Plus className="w-3.5 h-3.5" /> Add
                  </button>
               </div>
@@ -303,7 +303,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                     </span>
                   </div>
                   {items.length > 1 && (
-                    <button type="button" onClick={() => removeItem(idx)} className="p-2 text-ink-muted hover:text-[#EF4444] hover:bg-white rounded-lg transition mb-1 shrink-0">
+                    <button type="button" onClick={() => removeItem(idx)} className="p-2 text-ink-muted hover:text-danger hover:bg-white rounded-lg transition mb-1 shrink-0">
                       <Trash2 className="w-4 h-4 cursor-pointer" />
                     </button>
                   )}
@@ -321,14 +321,14 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                    className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium font-mono text-ink focus:ring-2 focus:ring-primary transition-all cursor-pointer"
                  />
                </div>
-               <div className="space-y-1.5 focus-within:text-[#D97D54] transition-colors">
+               <div className="space-y-1.5 focus-within:text-primary transition-colors">
                  <label className="text-[10px] font-black uppercase tracking-widest text-inherit ml-1">Notes</label>
                  <input
                    type="text"
                    placeholder="e.g. Deliver to North Gate"
                    value={notes}
                    onChange={e => setNotes(e.target.value)}
-                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium text-ink focus:ring-2 focus:ring-[#D97D54] transition-all"
+                   className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium text-ink focus:ring-2 focus:ring-primary transition-all"
                  />
                </div>
             </div>
@@ -348,7 +348,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                            setCharges((c) => ({ ...c, [key]: parseFloat(e.target.value) || 0 }))
                         }
                         placeholder="0"
-                        className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium text-ink focus:ring-2 focus:ring-[#D97D54] transition-all"
+                        className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium text-ink focus:ring-2 focus:ring-primary transition-all"
                      />
                   </div>
                ))}
@@ -365,9 +365,9 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                      <span className="font-mono">₹{chargesTotal.toLocaleString("en-IN")}</span>
                   </div>
                )}
-               <div className="flex justify-between items-center pt-2 border-t border-[#D97D54]/20">
-                  <span className="text-xs font-black text-[#D97D54] uppercase tracking-widest">Total Amount</span>
-                  <span className="text-2xl font-black text-[#D97D54] tracking-tight font-mono">
+               <div className="flex justify-between items-center pt-2 border-t border-primary/20">
+                  <span className="text-xs font-black text-primary uppercase tracking-widest">Total Amount</span>
+                  <span className="text-2xl font-black text-primary tracking-tight font-mono">
                      ₹{totalAmount.toLocaleString("en-IN")}
                   </span>
                </div>
@@ -377,7 +377,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
               <button
                 type="submit"
                 disabled={isSubmitting || !vendorId || totalAmount <= 0}
-                className="w-full py-4 bg-[#D97D54] hover:bg-[#B85F3B] disabled:bg-fossil disabled:cursor-not-allowed text-white text-sm font-bold uppercase tracking-widest rounded-xl transition flex justify-center items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)]"
+                className="w-full py-4 bg-primary hover:bg-[#B85F3B] disabled:bg-fossil disabled:cursor-not-allowed text-white text-sm font-bold uppercase tracking-widest rounded-xl transition flex justify-center items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)]"
               >
                 {isSubmitting ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> {isEditing ? "Updating PO..." : "Saving PO..."}</>

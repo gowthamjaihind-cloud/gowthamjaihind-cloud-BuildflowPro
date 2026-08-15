@@ -106,8 +106,8 @@ class ErrorBoundary extends React.Component<
       return (
         <div className="h-screen flex items-center justify-center p-6">
           <div className="max-w-md w-full soft-card p-12 squircle-24 text-center">
-            <div className="bg-[#EF4444]/10 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-[#EF4444]/20">
-              <AlertCircle className="w-10 h-10 text-[#EF4444]" />
+            <div className="bg-danger/10 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-danger/20">
+              <AlertCircle className="w-10 h-10 text-danger" />
             </div>
             <h2 className="text-[24px] font-bold text-ink mb-3">
               Something went wrong

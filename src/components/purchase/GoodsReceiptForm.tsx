@@ -356,7 +356,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
 
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
            {error && (
-             <div className="p-4 bg-[#EF4444]/8 text-[#EF4444] rounded-xl text-sm font-medium border border-[#EF4444]/20">
+             <div className="p-4 bg-danger/8 text-danger rounded-xl text-sm font-medium border border-danger/20">
                {error}
              </div>
            )}
@@ -369,7 +369,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                    required
                    value={receiptDate}
                    onChange={e => setReceiptDate(e.target.value)}
-                   className="w-full px-4 py-3 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#D97D54] focus:ring-1 focus:ring-[#D97D54] transition-colors"
+                   className="w-full px-4 py-3 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                  />
               </div>
               <div>
@@ -378,7 +378,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                    type="text"
                    value={challanNumber}
                    onChange={e => setChallanNumber(e.target.value)}
-                   className="w-full px-4 py-3 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#D97D54] focus:ring-1 focus:ring-[#D97D54] transition-colors"
+                   className="w-full px-4 py-3 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                    placeholder="e.g. DC-10294"
                  />
               </div>
@@ -418,7 +418,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                                       step="0.01"
                                       value={item.receivedQty || ""}
                                       onChange={(e) => handleReceivedChange(i, e.target.value)}
-                                      className="w-full p-2 text-right bg-surface border border-divider rounded-lg font-mono text-sm focus:border-[#D97D54]"
+                                      className="w-full p-2 text-right bg-surface border border-divider rounded-lg font-mono text-sm focus:border-primary"
                                       placeholder="0"
                                    />
                                 </td>
@@ -429,11 +429,11 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                                       step="0.01"
                                       value={item.acceptedQty || ""}
                                       onChange={(e) => handleAcceptedChange(i, e.target.value)}
-                                      className="w-full p-2 text-right bg-surface border border-divider rounded-lg font-mono text-sm text-[#059669] focus:border-[#10B981]"
+                                      className="w-full p-2 text-right bg-surface border border-divider rounded-lg font-mono text-sm text-success focus:border-success"
                                       placeholder="0"
                                    />
                                 </td>
-                                <td className="p-4 text-right font-mono text-[#EF4444]">
+                                <td className="p-4 text-right font-mono text-danger">
                                    {item.rejectedQty > 0 ? item.rejectedQty : "-"}
                                 </td>
                              </tr>
@@ -450,7 +450,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 rows={3}
-                className="w-full p-4 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#D97D54] focus:ring-1 focus:ring-[#D97D54] transition-colors resize-none"
+                className="w-full p-4 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-primary focus:ring-1 focus:ring-primary transition-colors resize-none"
                 placeholder="Any comments about the delivery condition..."
               />
            </div>
@@ -469,16 +469,16 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                        <button
                           type="button"
                           onClick={() => setPhotos(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute top-1 right-1 p-1 bg-red-500/90 hover:bg-[#DC2626] text-white rounded-lg shadow-sm transition opacity-0 group-hover:opacity-100"
+                          className="absolute top-1 right-1 p-1 bg-red-500/90 hover:bg-danger text-white rounded-lg shadow-sm transition opacity-0 group-hover:opacity-100"
                        >
                           <X className="w-3.5 h-3.5" />
                        </button>
                     </div>
                  ))}
                  
-                 <label className="w-24 h-24 flex flex-col items-center justify-center gap-2 bg-panel hover:bg-divider border-2 border-dashed border-divider hover:border-[#D97D54] rounded-xl transition cursor-pointer group flex-shrink-0">
-                    <Camera className="w-6 h-6 text-ink-muted group-hover:text-[#D97D54] transition-colors" />
-                    <span className="text-[9px] font-black uppercase text-ink-muted group-hover:text-[#D97D54] tracking-widest">Add Photo</span>
+                 <label className="w-24 h-24 flex flex-col items-center justify-center gap-2 bg-panel hover:bg-divider border-2 border-dashed border-divider hover:border-primary rounded-xl transition cursor-pointer group flex-shrink-0">
+                    <Camera className="w-6 h-6 text-ink-muted group-hover:text-primary transition-colors" />
+                    <span className="text-[9px] font-black uppercase text-ink-muted group-hover:text-primary tracking-widest">Add Photo</span>
                     <input 
                        type="file" 
                        accept="image/*" 
@@ -500,7 +500,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
            <button 
              onClick={handleSubmit} 
              disabled={isSubmitting} 
-             className="px-8 py-4 bg-[#D97D54] hover:bg-[#B85F3B] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] disabled:opacity-50"
+             className="px-8 py-4 bg-primary hover:bg-[#B85F3B] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] disabled:opacity-50"
            >
              {isSubmitting ? <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span> : <Save className="w-4 h-4" />} Save Receipt
            </button>

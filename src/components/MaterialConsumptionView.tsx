@@ -408,7 +408,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center p-24 text-ink-muted gap-3" id="loading-container">
-        <Loader2 className="w-10 h-10 animate-spin text-[#D97D54]" />
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
         <p className="text-xs font-bold uppercase tracking-widest animate-pulse">Syncing consumption databases...</p>
       </div>
     );
@@ -435,7 +435,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               disabled={advancedFilteredRecords.length === 0}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-panel hover:bg-divider border border-divider rounded-xl text-xs font-bold uppercase tracking-wider text-ink transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
-              <Download className="w-4 h-4 text-[#D97D54]" />
+              <Download className="w-4 h-4 text-primary" />
               Export CSV
             </button>
             <button
@@ -471,7 +471,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               onClick={() => setSelectedTab("material")}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
                 activeTab !== "labor"
-                  ? "bg-[#D97D54] border-[#D97D54] text-white shadow-md shadow-[#D97D54]/10"
+                  ? "bg-primary border-primary text-white shadow-md shadow-primary/10"
                   : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
               }`}
             >
@@ -555,7 +555,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Total Labor Cost</p>
                     <p className="text-2xl font-black text-ink font-mono">₹{laborTotals.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#34D399]/12 text-[#059669] flex items-center justify-center border border-[#34D399]/30"><IndianRupee className="w-5 h-5" /></div>
+                  <div className="w-10 h-10 rounded-xl bg-success/12 text-success flex items-center justify-center border border-success/30"><IndianRupee className="w-5 h-5" /></div>
                 </div>
                 <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
                   <div>
@@ -590,7 +590,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                           <td className="px-6 py-4 font-bold text-xs text-ink">{t.taskName}</td>
                           <td className="px-6 py-4 text-right font-mono text-xs text-ink-muted">{t.entries}</td>
                           <td className="px-6 py-4 text-right font-mono text-xs font-bold text-ink">{t.headcount.toLocaleString("en-IN")}</td>
-                          <td className="px-6 py-4 text-right font-mono text-xs font-bold text-[#059669]">₹{t.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                          <td className="px-6 py-4 text-right font-mono text-xs font-bold text-success">₹{t.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -622,7 +622,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                           <td className="px-6 py-4 text-xs text-ink">{r.role}</td>
                           <td className="px-6 py-4 text-xs text-ink-muted">{r.vendorName}</td>
                           <td className="px-6 py-4 text-right font-mono text-xs font-bold text-ink">{(r.headcount || 0).toLocaleString("en-IN")}</td>
-                          <td className="px-6 py-4 text-right font-mono text-xs font-bold text-[#059669]">₹{(r.cost || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                          <td className="px-6 py-4 text-right font-mono text-xs font-bold text-success">₹{(r.cost || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -648,7 +648,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       <span className="text-xs font-normal text-ink-muted">{advancedInsights.unit}</span>
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#34D399]/12 text-[#059669] flex items-center justify-center border border-[#34D399]/30">
+                  <div className="w-10 h-10 rounded-xl bg-success/12 text-success flex items-center justify-center border border-success/30">
                     <TrendingUp className="w-5 h-5" />
                   </div>
                 </div>
@@ -676,7 +676,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       <span className="text-xs font-normal text-ink-muted">{advancedInsights.unit}</span>
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#D97D54]/10 text-[#C0653F] flex items-center justify-center border border-[#D97D54]/20">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-[#C0653F] flex items-center justify-center border border-primary/20">
                     <Activity className="w-5 h-5" />
                   </div>
                 </div>
@@ -684,7 +684,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
               <div className="bg-surface border border-divider rounded-2xl p-6 shadow-sm space-y-6" id="advanced-filters-block">
                 <div className="flex items-center gap-2 pb-3 border-b border-divider">
-                  <Filter className="w-4 h-4 text-[#D97D54]" />
+                  <Filter className="w-4 h-4 text-primary" />
                   <h3 className="text-xs font-black uppercase tracking-wider text-ink">Multi-Parameter Search Filters</h3>
                 </div>
 
@@ -696,7 +696,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       id="filter-group-code"
                       value={advGroupCode}
                       onChange={(e) => setAdvGroupCode(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
+                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-primary outline-none"
                     >
                       <option value="">All Group Codes</option>
                       {distinctGroupCodes.map((g) => (
@@ -712,7 +712,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       id="filter-material"
                       value={advMaterial}
                       onChange={(e) => setAdvMaterial(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
+                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-primary outline-none"
                     >
                       <option value="">All Materials</option>
                       {distinctMaterials
@@ -730,7 +730,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       id="filter-task"
                       value={advTask}
                       onChange={(e) => setAdvTask(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
+                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-primary outline-none"
                     >
                       <option value="">All Tasks</option>
                       {distinctTasks.map((t) => (
@@ -746,7 +746,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       id="filter-source"
                       value={advSource}
                       onChange={(e) => setAdvSource(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
+                      className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-primary outline-none"
                     >
                       <option value="">All Sources</option>
                       <option value="Material Issue">Material Issue Documents</option>
@@ -762,7 +762,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       type="date"
                       value={advStartDate}
                       onChange={(e) => setAdvStartDate(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
+                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-primary outline-none"
                     />
                   </div>
 
@@ -774,7 +774,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       type="date"
                       value={advEndDate}
                       onChange={(e) => setAdvEndDate(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#D97D54] outline-none"
+                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-primary outline-none"
                     />
                   </div>
 
@@ -787,7 +787,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       placeholder="e.g. 5"
                       value={advMinQty}
                       onChange={(e) => setAdvMinQty(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#D97D54] outline-none placeholder:text-ink-muted/30 font-mono"
+                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-primary outline-none placeholder:text-ink-muted/30 font-mono"
                     />
                   </div>
 
@@ -800,7 +800,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       placeholder="e.g. 100"
                       value={advMaxQty}
                       onChange={(e) => setAdvMaxQty(e.target.value)}
-                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#D97D54] outline-none placeholder:text-ink-muted/30 font-mono"
+                      className="w-full bg-panel border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-primary outline-none placeholder:text-ink-muted/30 font-mono"
                     />
                   </div>
 
@@ -840,7 +840,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                         setSortOrder("desc");
                       }
                     }}
-                    className={`uppercase tracking-wider text-[10px] ${sortField === "date" ? "text-[#D97D54] font-black" : "text-ink-muted hover:text-ink"}`}
+                    className={`uppercase tracking-wider text-[10px] ${sortField === "date" ? "text-primary font-black" : "text-ink-muted hover:text-ink"}`}
                   >
                     Date {sortField === "date" && (sortOrder === "asc" ? "▲" : "▼")}
                   </button>
@@ -854,7 +854,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                         setSortOrder("desc");
                       }
                     }}
-                    className={`uppercase tracking-wider text-[10px] ${sortField === "quantity" ? "text-[#D97D54] font-black" : "text-ink-muted hover:text-ink"}`}
+                    className={`uppercase tracking-wider text-[10px] ${sortField === "quantity" ? "text-primary font-black" : "text-ink-muted hover:text-ink"}`}
                   >
                     Quantity {sortField === "quantity" && (sortOrder === "asc" ? "▲" : "▼")}
                   </button>
@@ -883,7 +883,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                             <button
                               id="reset-filter-link"
                               onClick={handleResetAdvancedFilters}
-                              className="mt-3 text-xs text-[#D97D54] font-bold hover:underline uppercase tracking-widest"
+                              className="mt-3 text-xs text-primary font-bold hover:underline uppercase tracking-widest"
                             >
                               Reset filters & view all
                             </button>
@@ -906,7 +906,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                               <span
                                 className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                                   record.source === "Material Issue"
-                                    ? "bg-[#D97D54]/10 text-[#D97D54] border border-[#D97D54]/20"
+                                    ? "bg-primary/10 text-primary border border-primary/20"
                                     : "bg-[#6E8CA0]/10 text-[#46617C] border border-[#6E8CA0]/20"
                                 }`}
                               >

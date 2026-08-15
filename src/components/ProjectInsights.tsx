@@ -252,7 +252,7 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
       )}
 
       {error && (
-        <div className="p-4 bg-[#EF4444]/8 text-[#B91C1C] rounded-xl border border-[#EF4444]/20 flex items-start gap-2 text-sm">
+        <div className="p-4 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
           <AlertCircle className="w-5 h-5 shrink-0" />
           <p>{error}</p>
         </div>

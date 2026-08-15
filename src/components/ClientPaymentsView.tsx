@@ -242,7 +242,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               <p className="text-sm font-semibold text-ink-muted">
                 Total Client Received
               </p>
-              <h3 className="text-3xl font-black text-[#059669] mt-1">
+              <h3 className="text-3xl font-black text-success mt-1">
                 ₹
                 <CountUp
                   value={totalClientReceived}
@@ -252,7 +252,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                 />
               </h3>
             </div>
-            <div className="bg-[#34D399]/20 p-3 rounded-xl text-[#059669]">
+            <div className="bg-success/20 p-3 rounded-xl text-success">
               <Building2 className="w-6 h-6" />
             </div>
           </div>
@@ -264,7 +264,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               <p className="text-sm font-semibold text-ink-muted">
                 Total Vendor Paid
               </p>
-              <h3 className="text-3xl font-black text-[#EF4444] mt-1">
+              <h3 className="text-3xl font-black text-danger mt-1">
                 ₹
                 <CountUp
                   value={totalVendorPaid}
@@ -274,7 +274,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                 />
               </h3>
             </div>
-            <div className="bg-[#EF4444]/15 p-3 rounded-xl text-[#EF4444]">
+            <div className="bg-danger/15 p-3 rounded-xl text-danger">
               <HandCoins className="w-6 h-6" />
             </div>
           </div>
@@ -287,7 +287,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                 Cash on Hand
               </p>
               <h3
-                className={`text-3xl font-black mt-1 ${netCashFlow >= 0 ? "text-[#D97D54]" : "text-[#C0653F]"}`}
+                className={`text-3xl font-black mt-1 ${netCashFlow >= 0 ? "text-primary" : "text-[#C0653F]"}`}
               >
                 ₹
                 <CountUp
@@ -299,7 +299,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               </h3>
             </div>
             <div
-              className={`p-3 rounded-xl ${netCashFlow >= 0 ? "bg-[#F7E4DB] text-[#D97D54]" : "bg-[#D97D54]/15 text-[#C0653F]"}`}
+              className={`p-3 rounded-xl ${netCashFlow >= 0 ? "bg-[#F7E4DB] text-primary" : "bg-primary/15 text-[#C0653F]"}`}
             >
               <IndianRupee className="w-6 h-6" />
             </div>
@@ -373,15 +373,15 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         {entry.type === "CLIENT" ? (
-                          <ArrowDownRight className="w-4 h-4 text-[#10B981]" />
+                          <ArrowDownRight className="w-4 h-4 text-success" />
                         ) : (
-                          <ArrowUpRight className="w-4 h-4 text-[#EF4444]" />
+                          <ArrowUpRight className="w-4 h-4 text-danger" />
                         )}
                         <span
                           className={
                             entry.type === "CLIENT"
-                              ? "text-[#047857] font-semibold"
-                              : "text-[#B91C1C]"
+                              ? "text-success font-semibold"
+                              : "text-danger"
                           }
                         >
                           {entry.description}
@@ -402,7 +402,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     </td>
                     <td className="p-4 text-right">
                       {entry.inward > 0 ? (
-                        <span className="font-bold text-[#059669]">
+                        <span className="font-bold text-success">
                           {entry.inward.toLocaleString("en-IN", {
                             maximumFractionDigits: 0,
                           })}
@@ -413,7 +413,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     </td>
                     <td className="p-4 text-right">
                       {entry.outward > 0 ? (
-                        <span className="font-bold text-[#EF4444]">
+                        <span className="font-bold text-danger">
                           {entry.outward.toLocaleString("en-IN", {
                             maximumFractionDigits: 0,
                           })}
@@ -433,7 +433,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                           onClick={() =>
                             handleDelete(entry.originalId, entry.type)
                           }
-                          className="p-1 text-ink-muted hover:text-[#EF4444] hover:bg-[#EF4444]/8 rounded transition-colors"
+                          className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded transition-colors"
                           title="Delete record"
                         >
                           <X className="w-4 h-4" />
@@ -572,7 +572,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-3 bg-[#059669] hover:bg-[#047857] text-white rounded-xl font-bold shadow-md transition-colors"
+                    className="flex-1 px-4 py-3 bg-success hover:bg-success text-white rounded-xl font-bold shadow-md transition-colors"
                   >
                     Save Payment
                   </button>

@@ -148,7 +148,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Tasks
               </div>
               <div className="text-[10px] md:text-xs font-bold whitespace-nowrap">
-                <span className="text-[#059669] mr-1">98%</span>Uptime
+                <span className="text-success mr-1">98%</span>Uptime
               </div>
             </div>
           </div>
@@ -184,7 +184,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div className="relative z-10">
             {tasksAtRisk.count === 0 ? (
-              <div className="flex items-center gap-2 text-[#34D399]">
+              <div className="flex items-center gap-2 text-success">
                 <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="text-sm md:text-base font-bold">
                   All tasks on track
@@ -199,7 +199,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </span>
                 </div>
                 {tasksAtRisk.criticalCount > 0 && (
-                  <span className="text-xs md:text-sm text-[#F87171] font-bold bg-rose-500/10 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full inline-block w-max">
+                  <span className="text-xs md:text-sm text-danger font-bold bg-rose-500/10 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full inline-block w-max">
                     {tasksAtRisk.criticalCount} on critical path
                   </span>
                 )}

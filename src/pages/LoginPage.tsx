@@ -58,14 +58,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         </button>
 
         {loginError && (
-          <div className="mt-6 flex items-start gap-3 text-[13px] font-medium text-[#EF4444] bg-[#EF4444]/10 p-4 rounded-2xl text-left border border-[#EF4444]/20">
+          <div className="mt-6 flex items-start gap-3 text-[13px] font-medium text-danger bg-danger/10 p-4 rounded-2xl text-left border border-danger/20">
             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
             <p>{loginError}</p>
           </div>
         )}
 
         <div className="mt-12 flex items-center justify-center gap-3 text-[13px] font-semibold text-ink-muted">
-          <ShieldCheck className="w-4 h-4 text-[#059669]" />
+          <ShieldCheck className="w-4 h-4 text-success" />
           Secure Enterprise Authentication
         </div>
       </motion.div>

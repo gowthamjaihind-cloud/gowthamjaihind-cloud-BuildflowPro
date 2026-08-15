@@ -143,7 +143,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
 
         <div className="flex-1 overflow-y-auto p-6">
           {error && (
-            <div className="mb-4 p-3 bg-[#EF4444]/8 text-[#B91C1C] rounded-xl border border-[#EF4444]/20 flex items-start gap-2 text-sm whitespace-pre-line">
+            <div className="mb-4 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm whitespace-pre-line">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <p>{error}</p>
             </div>
@@ -173,7 +173,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
           {showReview && bill && (
             <div className="space-y-5">
               {flags.length > 0 && (
-                <div className="p-3 bg-[#D97D54]/10 text-[#B85F3B] rounded-xl border border-[#D97D54]/30 text-sm">
+                <div className="p-3 bg-primary/10 text-[#B85F3B] rounded-xl border border-primary/30 text-sm">
                   <div className="font-bold mb-1 flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> Please check:</div>
                   <ul className="list-disc pl-5 space-y-0.5">
                     {flags.map((f, i) => <li key={i}>{f}</li>)}
@@ -220,11 +220,11 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
                         <td className="p-2">
                           {l.name}
                           {l.poLineRef ? (
-                            <div className="text-[10px] font-semibold text-[#059669] mt-0.5">
+                            <div className="text-[10px] font-semibold text-success mt-0.5">
                               ↳ {inv?.name || "matched to PO"}{code ? ` · ${code}` : ""}
                             </div>
                           ) : (
-                            <span className="text-[#D97D54] text-[10px] font-semibold" title="Not on PO"> ⚠️ not on PO</span>
+                            <span className="text-primary text-[10px] font-semibold" title="Not on PO"> ⚠️ not on PO</span>
                           )}
                         </td>
                         <td className="p-2 text-right">
@@ -268,7 +268,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
 
           {step === "done" && (
             <div className="p-10 text-center">
-              <CheckCircle2 weight="fill" className="w-12 h-12 mx-auto mb-3 text-[#059669]" />
+              <CheckCircle2 weight="fill" className="w-12 h-12 mx-auto mb-3 text-success" />
               <div className="font-black text-ink">Invoice posted</div>
               <div className="text-sm text-ink-muted mt-1">GRN + vendor bill recorded and matched to the PO.</div>
             </div>

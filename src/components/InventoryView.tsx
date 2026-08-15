@@ -454,7 +454,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             <div className="bg-surface-dark p-1.5 md:p-2 rounded-xl shadow-lg">
               <Package className="w-3 h-3 md:w-4 md:h-4 text-white" />
             </div>
-            <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-[#D97D54]">
+            <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
               Inventory Management
             </span>
           </div>
@@ -500,7 +500,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         <div className="bg-surface p-4 md:p-5 rounded-2xl border border-divider shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-2 md:mb-6">
-              <div className="bg-[#34D399]/12 p-2 md:p-3 rounded-xl shadow-sm text-[#059669]">
+              <div className="bg-success/12 p-2 md:p-3 rounded-xl shadow-sm text-success">
                 <TrendingUp className="w-3.5 h-3.5 md:w-5 md:h-5" />
               </div>
               <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-600/50">
@@ -528,7 +528,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         <div className="bg-surface p-4 md:p-5 rounded-2xl border border-divider shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-2 md:mb-6">
-              <div className="bg-[#EF4444]/8 p-2 md:p-3 rounded-xl shadow-sm text-[#EF4444]">
+              <div className="bg-danger/8 p-2 md:p-3 rounded-xl shadow-sm text-danger">
                 <AlertTriangle className="w-3.5 h-3.5 md:w-5 md:h-5" />
               </div>
               <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] text-red-600/50">
@@ -554,19 +554,19 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
           <div className="flex bg-panel p-1 rounded-xl w-full md:w-auto border border-divider overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setViewMode("inventory")}
-              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "inventory" ? "bg-surface shadow-sm text-[#D97D54]" : "text-ink-muted hover:text-ink"}`}
+              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "inventory" ? "bg-surface shadow-sm text-primary" : "text-ink-muted hover:text-ink"}`}
             >
               Stock Ledger
             </button>
             <button
               onClick={() => setViewMode("reconciliation")}
-              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "reconciliation" ? "bg-surface shadow-sm text-[#D97D54]" : "text-ink-muted hover:text-ink"}`}
+              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "reconciliation" ? "bg-surface shadow-sm text-primary" : "text-ink-muted hover:text-ink"}`}
             >
               Reconciliation
             </button>
             <button
               onClick={() => setViewMode("config")}
-              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "config" ? "bg-surface shadow-sm text-[#D97D54]" : "text-ink-muted hover:text-ink"}`}
+              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "config" ? "bg-surface shadow-sm text-primary" : "text-ink-muted hover:text-ink"}`}
             >
               Configuration
             </button>
@@ -575,7 +575,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
             <input
               placeholder="Search items..."
-              className="w-full pl-9 pr-4 py-2 bg-panel border border-transparent focus:border-[#D97D54] focus:bg-surface rounded-xl outline-none apple-transition text-[10px] md:text-xs font-bold"
+              className="w-full pl-9 pr-4 py-2 bg-panel border border-transparent focus:border-primary focus:bg-surface rounded-xl outline-none apple-transition text-[10px] md:text-xs font-bold"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -626,7 +626,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
           >
             <button
               onClick={() => setIsAdding(true)}
-              className="bg-[#D97D54] text-white w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#B85F3B] apple-transition shadow-lg shadow-[#D97D54]/20"
+              className="bg-primary text-white w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#B85F3B] apple-transition shadow-lg shadow-primary/20"
             >
               <Plus className="w-3 h-3" /> <span>Add Item</span>
             </button>
@@ -687,7 +687,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             </span>
                             {item.quantity - (item.consumed || 0) <=
                               item.minThreshold && (
-                              <span className="text-[9px] font-bold text-[#EF4444] uppercase tracking-widest bg-[#EF4444]/8 px-1.5 py-0.5 rounded border border-[#EF4444]/20">
+                              <span className="text-[9px] font-bold text-danger uppercase tracking-widest bg-danger/8 px-1.5 py-0.5 rounded border border-danger/20">
                                 Low Stock
                               </span>
                             )}
@@ -716,7 +716,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         item.quantity - (item.consumed || 0),
                       render: (item) => (
                         <div
-                          className={`text-xs md:text-base font-bold ${item.quantity - (item.consumed || 0) <= item.minThreshold ? "text-[#EF4444]" : "text-ink"}`}
+                          className={`text-xs md:text-base font-bold ${item.quantity - (item.consumed || 0) <= item.minThreshold ? "text-danger" : "text-ink"}`}
                         >
                           {(item.quantity - (item.consumed || 0)).toLocaleString(
                             undefined,
@@ -769,13 +769,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         <div className="flex gap-1 justify-end transition-opacity">
                           <button
                             onClick={() => setEditingItem(item)}
-                            className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-[#D97D54] border border-transparent hover:border-divider"
+                            className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-primary border border-transparent hover:border-divider"
                           >
                             <Edit2 className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() => setItemToDelete(item)}
-                            className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-[#EF4444] border border-transparent hover:border-divider"
+                            className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-danger border border-transparent hover:border-divider"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -797,17 +797,17 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             </span>
                             <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest">{item.groupCode || item.category}</span>
                             {(item.quantity - (item.consumed || 0)) <= item.minThreshold && (
-                              <span className="text-[9px] font-bold text-[#EF4444] uppercase tracking-widest bg-[#EF4444]/8 px-1.5 py-0.5 rounded border border-[#EF4444]/20">
+                              <span className="text-[9px] font-bold text-danger uppercase tracking-widest bg-danger/8 px-1.5 py-0.5 rounded border border-danger/20">
                                 Low Stock
                               </span>
                             )}
                           </div>
                         </div>
                         <div className="flex gap-1 shrink-0 ml-2">
-                          <button onClick={() => setEditingItem(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-[#D97D54] transition-colors">
+                          <button onClick={() => setEditingItem(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-primary transition-colors">
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => setItemToDelete(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-[#EF4444] transition-colors">
+                          <button onClick={() => setItemToDelete(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-danger transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -901,7 +901,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                 <div className="flex justify-center">
                                   <input
                                     type="number"
-                                    className="w-16 md:w-20 bg-surface border border-divider rounded-lg px-2 py-1 text-[11px] md:text-sm font-bold outline-none focus:border-[#D97D54] text-center"
+                                    className="w-16 md:w-20 bg-surface border border-divider rounded-lg px-2 py-1 text-[11px] md:text-sm font-bold outline-none focus:border-primary text-center"
                                     value={physicalCounts[item.id] ?? available}
                                     onChange={(e) =>
                                       setPhysicalCounts({
@@ -915,7 +915,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               </td>
                               <td className="px-6 py-3 text-center">
                                 <div
-                                  className={`text-[10px] md:text-xs font-bold font-mono px-2 py-1 rounded-lg ${Math.abs(variance) < 0.05 ? "text-ink-muted" : variance > 0 ? "bg-[#34D399]/12 text-[#059669]" : "bg-[#EF4444]/8 text-[#EF4444]"}`}
+                                  className={`text-[10px] md:text-xs font-bold font-mono px-2 py-1 rounded-lg ${Math.abs(variance) < 0.05 ? "text-ink-muted" : variance > 0 ? "bg-success/12 text-success" : "bg-danger/8 text-danger"}`}
                                 >
                                   {variance > 0 ? "+" : ""}
                                   {variance.toFixed(1)} {item.unit}
@@ -932,7 +932,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                     physicalCounts[item.id] === undefined ||
                                     physicalCounts[item.id] === available
                                       ? "bg-panel text-ink-muted pointer-events-none"
-                                      : "bg-[#059669] text-white hover:bg-[#047857] shadow-sm"
+                                      : "bg-success text-white hover:bg-success shadow-sm"
                                   }`}
                                 >
                                   Sync
@@ -958,7 +958,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                           <div key={item.id} className="bg-surface p-4 rounded-2xl border border-divider/40 shadow-sm">
                             <div className="flex justify-between items-start mb-3">
                               <div className="font-bold text-ink text-sm tracking-tight">{item.name}</div>
-                              <div className={`text-[10px] font-bold font-mono px-2 py-1 rounded-lg ${Math.abs(variance) < 0.05 ? "text-ink-muted bg-panel" : variance > 0 ? "bg-[#34D399]/12 text-[#059669]" : "bg-[#EF4444]/8 text-[#EF4444]"}`}>
+                              <div className={`text-[10px] font-bold font-mono px-2 py-1 rounded-lg ${Math.abs(variance) < 0.05 ? "text-ink-muted bg-panel" : variance > 0 ? "bg-success/12 text-success" : "bg-danger/8 text-danger"}`}>
                                 {variance > 0 ? "+" : ""}{variance.toFixed(1)} {item.unit}
                               </div>
                             </div>
@@ -971,7 +971,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                 <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-1">Physical Count</p>
                                 <input
                                   type="number"
-                                  className="w-full bg-panel border border-divider rounded-lg px-3 py-2.5 text-sm font-bold outline-none focus:border-[#D97D54] text-center"
+                                  className="w-full bg-panel border border-divider rounded-lg px-3 py-2.5 text-sm font-bold outline-none focus:border-primary text-center"
                                   value={physicalCounts[item.id] ?? available}
                                   onChange={(e) => setPhysicalCounts({ ...physicalCounts, [item.id]: parseFloat(e.target.value) || 0 })}
                                 />
@@ -980,7 +980,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             <button
                               disabled={!hasChange}
                               onClick={() => handleReconcile(item)}
-                              className={`w-full mt-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest apple-transition ${hasChange ? "bg-[#059669] text-white hover:bg-[#047857] shadow-sm" : "bg-panel text-ink-muted pointer-events-none"}`}
+                              className={`w-full mt-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest apple-transition ${hasChange ? "bg-success text-white hover:bg-success shadow-sm" : "bg-panel text-ink-muted pointer-events-none"}`}
                             >
                               Sync
                             </button>
@@ -997,7 +997,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               <div className="max-w-4xl mx-auto space-y-12">
                 <div>
                   <h3 className="text-sm font-black text-ink uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                    <Package className="w-4 h-4 text-[#D97D54]" />
+                    <Package className="w-4 h-4 text-primary" />
                     List Management
                   </h3>
 
@@ -1018,7 +1018,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               editingConfig.index === idx ? (
                                 <input
                                   autoFocus
-                                  className="flex-1 bg-surface border border-[#D97D54] rounded px-2 py-0.5 text-[10px] md:text-xs font-bold outline-none"
+                                  className="flex-1 bg-surface border border-primary rounded px-2 py-0.5 text-[10px] md:text-xs font-bold outline-none"
                                   value={editingConfig.value}
                                   onChange={(e) =>
                                     setEditingConfig({
@@ -1046,7 +1046,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                       value: code,
                                     })
                                   }
-                                  className="text-ink-muted hover:text-[#D97D54] transition-colors"
+                                  className="text-ink-muted hover:text-primary transition-colors"
                                 >
                                   <Edit2 className="w-3 h-3" />
                                 </button>
@@ -1054,7 +1054,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                   onClick={() =>
                                     handleDeleteConfig("materialCodes", idx)
                                   }
-                                  className="text-ink-muted hover:text-[#EF4444] transition-colors"
+                                  className="text-ink-muted hover:text-danger transition-colors"
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </button>
@@ -1064,7 +1064,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         </div>
                         <div className="mt-4 flex gap-2">
                           <input
-                            className="flex-1 bg-surface border border-divider rounded-lg px-2.5 py-1.5 text-[10px] md:text-xs font-bold outline-none focus:border-[#D97D54]"
+                            className="flex-1 bg-surface border border-divider rounded-lg px-2.5 py-1.5 text-[10px] md:text-xs font-bold outline-none focus:border-primary"
                             placeholder="Add Code..."
                             value={
                               newConfigValue.type === "materialCodes"
@@ -1089,7 +1089,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               });
                               handleAddConfig();
                             }}
-                            className="p-1 bg-[#D97D54] text-white rounded-lg"
+                            className="p-1 bg-primary text-white rounded-lg"
                           >
                             <Plus className="w-3.5 h-3.5" />
                           </button>
@@ -1113,7 +1113,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               editingConfig.index === idx ? (
                                 <input
                                   autoFocus
-                                  className="flex-1 bg-surface border border-[#D97D54] rounded px-2 py-0.5 text-[10px] md:text-xs font-bold outline-none"
+                                  className="flex-1 bg-surface border border-primary rounded px-2 py-0.5 text-[10px] md:text-xs font-bold outline-none"
                                   value={editingConfig.value}
                                   onChange={(e) =>
                                     setEditingConfig({
@@ -1141,7 +1141,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                       value: group,
                                     })
                                   }
-                                  className="text-ink-muted hover:text-[#D97D54] transition-colors"
+                                  className="text-ink-muted hover:text-primary transition-colors"
                                 >
                                   <Edit2 className="w-3 h-3" />
                                 </button>
@@ -1149,7 +1149,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                   onClick={() =>
                                     handleDeleteConfig("groupCodes", idx)
                                   }
-                                  className="text-ink-muted hover:text-[#EF4444] transition-colors"
+                                  className="text-ink-muted hover:text-danger transition-colors"
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </button>
@@ -1159,7 +1159,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         </div>
                         <div className="mt-4 flex gap-2">
                           <input
-                            className="flex-1 bg-surface border border-divider rounded-lg px-2.5 py-1.5 text-[10px] md:text-xs font-bold outline-none focus:border-[#D97D54]"
+                            className="flex-1 bg-surface border border-divider rounded-lg px-2.5 py-1.5 text-[10px] md:text-xs font-bold outline-none focus:border-primary"
                             placeholder="Add Group..."
                             value={
                               newConfigValue.type === "groupCodes"
@@ -1184,7 +1184,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               });
                               handleAddConfig();
                             }}
-                            className="p-1 bg-[#D97D54] text-white rounded-lg"
+                            className="p-1 bg-primary text-white rounded-lg"
                           >
                             <Plus className="w-3.5 h-3.5" />
                           </button>
@@ -1208,7 +1208,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               editingConfig.index === idx ? (
                                 <input
                                   autoFocus
-                                  className="flex-1 bg-surface border border-[#D97D54] rounded px-2 py-0.5 text-[10px] md:text-xs font-bold outline-none"
+                                  className="flex-1 bg-surface border border-primary rounded px-2 py-0.5 text-[10px] md:text-xs font-bold outline-none"
                                   value={editingConfig.value}
                                   onChange={(e) =>
                                     setEditingConfig({
@@ -1236,7 +1236,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                       value: unit,
                                     })
                                   }
-                                  className="text-ink-muted hover:text-[#D97D54] transition-colors"
+                                  className="text-ink-muted hover:text-primary transition-colors"
                                 >
                                   <Edit2 className="w-3 h-3" />
                                 </button>
@@ -1244,7 +1244,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                   onClick={() =>
                                     handleDeleteConfig("units", idx)
                                   }
-                                  className="text-ink-muted hover:text-[#EF4444] transition-colors"
+                                  className="text-ink-muted hover:text-danger transition-colors"
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </button>
@@ -1254,7 +1254,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         </div>
                         <div className="mt-4 flex gap-2">
                           <input
-                            className="flex-1 bg-surface border border-divider rounded-lg px-2.5 py-1.5 text-[10px] md:text-xs font-bold outline-none focus:border-[#D97D54]"
+                            className="flex-1 bg-surface border border-divider rounded-lg px-2.5 py-1.5 text-[10px] md:text-xs font-bold outline-none focus:border-primary"
                             placeholder="Add Unit..."
                             value={
                               newConfigValue.type === "units"
@@ -1279,7 +1279,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               });
                               handleAddConfig();
                             }}
-                            className="p-1 bg-[#D97D54] text-white rounded-lg"
+                            className="p-1 bg-primary text-white rounded-lg"
                           >
                             <Plus className="w-3.5 h-3.5" />
                           </button>
@@ -1304,8 +1304,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-surface rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-5 text-center"
             >
-              <div className="bg-[#EF4444]/8 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 border border-[#EF4444]/20">
-                <Trash2 className="w-5 h-5 text-[#EF4444]" />
+              <div className="bg-danger/8 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 border border-danger/20">
+                <Trash2 className="w-5 h-5 text-danger" />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-ink mb-2">
                 Delete Item?
@@ -1317,7 +1317,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               <div className="flex flex-col gap-2">
                 <button
                   onClick={confirmDelete}
-                  className="w-full py-3 bg-[#DC2626] text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#B91C1C] transition-all shadow-sm"
+                  className="w-full py-3 bg-danger text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-danger transition-all shadow-sm"
                 >
                   Delete Item
                 </button>
@@ -1343,7 +1343,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               <div className="bg-surface-dark p-5 md:p-6 text-white relative">
                 <div className="relative z-10 flex items-center justify-between">
                   <h3 className="text-lg md:text-xl font-bold flex items-center gap-3">
-                    <Package className="w-4 h-4 md:w-5 md:h-5 text-[#D97D54]" />
+                    <Package className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                     {editingItem ? "Edit Item" : "New Item"}
                   </h3>
                   <button
@@ -1378,7 +1378,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               materialId: false,
                             }))
                           }
-                          className="text-[9px] md:text-[10px] font-bold text-[#D97D54] hover:text-[#B85F3B]"
+                          className="text-[9px] md:text-[10px] font-bold text-primary hover:text-[#B85F3B]"
                         >
                           Back to List
                         </button>
@@ -1387,7 +1387,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     {customFields.materialId ? (
                       <input
                         placeholder="Enter custom code"
-                        className="w-full bg-panel border border-divider focus:border-[#D97D54] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
+                        className="w-full bg-panel border border-divider focus:border-primary focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
                         value={
                           editingItem
                             ? editingItem.materialId || ""
@@ -1408,7 +1408,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       />
                     ) : (
                       <select
-                        className="w-full bg-panel border border-divider focus:border-[#D97D54] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
+                        className="w-full bg-panel border border-divider focus:border-primary focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
                         value={
                           editingItem
                             ? editingItem.materialId
@@ -1435,7 +1435,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     <input
                       required
                       placeholder="Item name"
-                      className="w-full bg-panel border border-divider focus:border-[#D97D54] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
+                      className="w-full bg-panel border border-divider focus:border-primary focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
                       value={editingItem ? editingItem.name : newItem.name}
                       onChange={(e) =>
                         editingItem
@@ -1462,7 +1462,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               groupCode: false,
                             }))
                           }
-                          className="text-[9px] md:text-[10px] font-bold text-[#D97D54] hover:text-[#B85F3B]"
+                          className="text-[9px] md:text-[10px] font-bold text-primary hover:text-[#B85F3B]"
                         >
                           Back to List
                         </button>
@@ -1471,7 +1471,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     {customFields.groupCode ? (
                       <input
                         placeholder="Enter custom group"
-                        className="w-full bg-panel border border-divider focus:border-[#D97D54] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
+                        className="w-full bg-panel border border-divider focus:border-primary focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
                         value={
                           editingItem
                             ? editingItem.groupCode || ""
@@ -1492,7 +1492,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       />
                     ) : (
                       <select
-                        className="w-full bg-panel border border-divider focus:border-[#D97D54] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
+                        className="w-full bg-panel border border-divider focus:border-primary focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
                         value={
                           editingItem
                             ? editingItem.groupCode || ""
@@ -1517,7 +1517,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       Category
                     </label>
                     <select
-                      className="w-full bg-panel border border-divider focus:border-[#D97D54] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
+                      className="w-full bg-panel border border-divider focus:border-primary focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
                       value={
                         editingItem ? editingItem.category : newItem.category
                       }
@@ -1549,7 +1549,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               unit: false,
                             }))
                           }
-                          className="text-[9px] md:text-[10px] font-bold text-[#D97D54] hover:text-[#B85F3B]"
+                          className="text-[9px] md:text-[10px] font-bold text-primary hover:text-[#B85F3B]"
                         >
                           Back to List
                         </button>
@@ -1558,7 +1558,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     {customFields.unit ? (
                       <input
                         placeholder="Enter custom unit"
-                        className="w-full bg-panel border border-divider focus:border-[#D97D54] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
+                        className="w-full bg-panel border border-divider focus:border-primary focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
                         value={
                           editingItem
                             ? editingItem.unit || ""
@@ -1576,7 +1576,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       />
                     ) : (
                       <select
-                        className="w-full bg-panel border border-divider focus:border-[#D97D54] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
+                        className="w-full bg-panel border border-divider focus:border-primary focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold appearance-none"
                         value={editingItem ? editingItem.unit : newItem.unit}
                         onChange={(e) =>
                           handleSelectCustom("unit", e.target.value)
@@ -1614,7 +1614,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         <input
                           type="number"
                           required
-                          className="w-full bg-panel border border-divider focus:border-[#D97D54] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
+                          className="w-full bg-panel border border-divider focus:border-primary focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
                           value={newItem.quantity}
                           onChange={(e) =>
                             setNewItem({
@@ -1637,7 +1637,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     <input
                       type="number"
                       required
-                      className="w-full bg-panel border border-divider focus:border-[#D97D54] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold text-[#D97D54]"
+                      className="w-full bg-panel border border-divider focus:border-primary focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold text-primary"
                       value={
                         editingItem ? editingItem.unitCost : newItem.unitCost
                       }
@@ -1661,7 +1661,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     <input
                       type="number"
                       required
-                      className="w-full bg-panel border border-divider focus:border-[#D97D54] focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
+                      className="w-full bg-panel border border-divider focus:border-primary focus:bg-surface rounded-xl p-2.5 md:p-3 outline-none transition-all text-[10px] md:text-xs font-bold"
                       value={
                         editingItem
                           ? editingItem.minThreshold
@@ -1685,7 +1685,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                 <div className="flex gap-4 pt-2">
                   <button
                     type="submit"
-                    className="flex-1 bg-[#D97D54] text-white py-3 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-[#B85F3B] transition-all shadow-sm"
+                    className="flex-1 bg-primary text-white py-3 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-[#B85F3B] transition-all shadow-sm"
                   >
                     {editingItem ? "Save Changes" : "Add Item"}
                   </button>

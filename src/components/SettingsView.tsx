@@ -161,7 +161,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </h3>
 
                 {!orgId && !setupDone && (
-                  <div className="mb-6 p-5 rounded-2xl border border-[#D97D54]/40 bg-[#D97D54]/10">
+                  <div className="mb-6 p-5 rounded-2xl border border-primary/40 bg-primary/10">
                     <div className="flex items-start gap-3">
                       <Shield className="w-5 h-5 text-[#B85F3B] shrink-0 mt-0.5" />
                       <div className="flex-1">
@@ -173,7 +173,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           Owner. Your current data is left untouched as a backup.
                         </p>
                         {setupError && (
-                          <p className="text-sm text-[#B91C1C] mt-2">{setupError}</p>
+                          <p className="text-sm text-danger mt-2">{setupError}</p>
                         )}
                         <button
                           onClick={async () => {
@@ -198,9 +198,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
                 )}
                 {setupDone && (
-                  <div className="mb-6 p-5 rounded-2xl border border-[#059669]/30 bg-[#059669]/10">
+                  <div className="mb-6 p-5 rounded-2xl border border-success/30 bg-success/10">
                     <div className="flex items-start gap-3">
-                      <Shield className="w-5 h-5 text-[#059669] shrink-0 mt-0.5" />
+                      <Shield className="w-5 h-5 text-success shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <div className="font-bold text-ink">Organization created</div>
                         <p className="text-sm text-ink-muted mt-1">
@@ -214,7 +214,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 )}
 
                 {orgId && !isClaimed && (
-                  <div className="mb-6 p-5 rounded-2xl border border-[#D97D54]/40 bg-[#D97D54]/10">
+                  <div className="mb-6 p-5 rounded-2xl border border-primary/40 bg-primary/10">
                     <div className="flex items-start gap-3">
                       <Shield className="w-5 h-5 text-[#B85F3B] shrink-0 mt-0.5" />
                       <div className="flex-1">
@@ -224,7 +224,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           data. Do this once, then deploy the updated security rules.
                         </p>
                         {claimError && (
-                          <p className="text-sm text-[#B91C1C] mt-2">{claimError}</p>
+                          <p className="text-sm text-danger mt-2">{claimError}</p>
                         )}
                         <button
                           onClick={async () => {
@@ -248,8 +248,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
                 )}
                 {orgId && isClaimed && (
-                  <div className="mb-6 p-4 rounded-2xl border border-[#059669]/30 bg-[#059669]/10 flex items-center gap-3">
-                    <Shield className="w-5 h-5 text-[#059669] shrink-0" />
+                  <div className="mb-6 p-4 rounded-2xl border border-success/30 bg-success/10 flex items-center gap-3">
+                    <Shield className="w-5 h-5 text-success shrink-0" />
                     <span className="text-sm font-semibold text-ink">
                       {isMember
                         ? "Organization secured — access is limited to its members."

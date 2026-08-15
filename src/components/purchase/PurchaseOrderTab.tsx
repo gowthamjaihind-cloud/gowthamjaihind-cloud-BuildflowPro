@@ -46,13 +46,13 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                placeholder="Search POs..."
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
-               className="w-full pl-9 pr-4 py-2 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#D97D54] focus:ring-1 focus:ring-[#D97D54] transition-colors"
+               className="w-full pl-9 pr-4 py-2 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
              />
            </div>
            <select
              value={statusFilter}
              onChange={(e) => setStatusFilter(e.target.value)}
-             className="px-4 py-2 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-[#D97D54] transition-colors appearance-none pr-8 cursor-pointer relative"
+             className="px-4 py-2 bg-surface text-ink text-sm rounded-xl border border-divider focus:border-primary transition-colors appearance-none pr-8 cursor-pointer relative"
            >
              <option value="All">All Statuses</option>
              <option value="Draft">Draft</option>
@@ -64,7 +64,7 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
         
         <button
           onClick={() => setIsFormOpen(true)}
-          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#D97D54] hover:bg-[#B85F3B] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-primary hover:bg-[#B85F3B] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition"
         >
           <Plus className="w-4 h-4" /> New PO
         </button>
@@ -97,7 +97,7 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                       className="border-b border-divider/50 hover:bg-[#F7E4DB]/30 transition cursor-pointer group"
                     >
                       <td className="p-4 align-middle">
-                        <div className="font-mono text-xs font-bold text-ink group-hover:text-[#D97D54] transition-colors">
+                        <div className="font-mono text-xs font-bold text-ink group-hover:text-primary transition-colors">
                           {po.poNumber}
                         </div>
                       </td>
@@ -114,8 +114,8 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                           po.status === 'Draft' ? 'bg-ice text-[#56778E]' :
                           po.status === 'Approved' ? 'bg-[#E2E8ED] text-[#56778E]' :
-                          po.status === 'Partially Received' ? 'bg-[#D97D54]/10 text-[#C0653F]' :
-                          'bg-[#34D399]/12 text-[#059669]'
+                          po.status === 'Partially Received' ? 'bg-primary/10 text-[#C0653F]' :
+                          'bg-success/12 text-success'
                         }`}>
                           {po.status}
                         </span>

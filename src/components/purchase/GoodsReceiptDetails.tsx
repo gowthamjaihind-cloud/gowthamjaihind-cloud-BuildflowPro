@@ -195,7 +195,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
                            <th className="p-4 text-right">Ordered</th>
                            <th className="p-4 text-right">Received</th>
                            <th className="p-4 text-right">Accepted</th>
-                           <th className="p-4 text-right text-[#EF4444]">Rejected</th>
+                           <th className="p-4 text-right text-danger">Rejected</th>
                         </tr>
                      </thead>
                      <tbody className="text-sm font-medium">
@@ -204,8 +204,8 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
                               <td className="p-4">{item.name}</td>
                               <td className="p-4 text-right font-mono text-ink-muted">{item.orderedQty} {item.unit}</td>
                               <td className="p-4 text-right font-mono">{item.receivedQty} {item.unit}</td>
-                              <td className="p-4 text-right font-mono text-[#059669]">{item.acceptedQty} {item.unit}</td>
-                              <td className="p-4 text-right font-mono text-[#EF4444]">{item.rejectedQty > 0 ? item.rejectedQty : "-"}</td>
+                              <td className="p-4 text-right font-mono text-success">{item.acceptedQty} {item.unit}</td>
+                              <td className="p-4 text-right font-mono text-danger">{item.rejectedQty > 0 ? item.rejectedQty : "-"}</td>
                            </tr>
                         ))}
                      </tbody>
@@ -213,7 +213,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
                </div>
                
                {grn.notes && (
-                  <div className="mt-6 p-4 bg-yellow-50/50 border border-[#D97D54]/20 rounded-xl">
+                  <div className="mt-6 p-4 bg-yellow-50/50 border border-primary/20 rounded-xl">
                      <p className="text-[10px] font-black text-[#C0653F] uppercase tracking-widest mb-1.5">Notes</p>
                      <p className="text-sm font-medium text-ink/80">{grn.notes}</p>
                   </div>
@@ -239,7 +239,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
 
          {canEditOrDelete && (
             <div className="p-6 border-t border-divider bg-panel flex justify-end gap-4 shrink-0">
-               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-[#EF4444]/8 hover:bg-[#EF4444]/15 text-[#EF4444] text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
+               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-danger/8 hover:bg-danger/15 text-danger text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} Delete GRN
                </button>
             </div>
