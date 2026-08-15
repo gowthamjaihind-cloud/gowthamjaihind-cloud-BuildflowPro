@@ -58,9 +58,10 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
       .catch(() => setQrDataUrl(null));
   }, [deepLink]);
 
-  // Check roles (Admin, Owner, Project Manager)
-  const allowedRoles = ["Admin", "Owner", "Project Manager"];
-  const hasAccess = allowedRoles.includes(currentUser.role);
+  // Any signed-in member may link THEIR OWN Telegram account. (The bot is most
+  // useful for Site Engineers filing daily logs, so it must not be admin-gated.)
+  // Firestore rules still only allow a user to create a link code for themselves.
+  const hasAccess = true;
 
   const fetchActiveCode = async () => {
     if (!hasAccess) return;
@@ -225,6 +226,39 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
           </div>
         )}
       </div>
+
+      {!isLinked && (
+        <div className="bg-surface p-6 rounded-[20px] border border-divider shadow-sm">
+          <div className="font-bold text-ink mb-1">Connect in 3 easy steps</div>
+          <p className="text-sm text-ink-muted mb-5">Takes about 20 seconds — no typing needed.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { n: "1", emoji: "👆", title: "Tap “Connect”", body: "Tap the blue Connect Telegram button. On a computer, scan the QR code with your phone instead." },
+              { n: "2", emoji: "▶️", title: "Tap “Start”", body: "Telegram opens the bot. Tap the Start button at the bottom of the chat." },
+              { n: "3", emoji: "✅", title: "You’re linked", body: "That’s it. Send /log in the chat to file a daily site update from your phone." },
+            ].map((s) => (
+              <div key={s.n} className="relative bg-panel rounded-2xl p-4 border border-divider">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-7 h-7 rounded-full bg-primary text-white text-sm font-black flex items-center justify-center shrink-0">{s.n}</span>
+                  <span className="text-2xl leading-none">{s.emoji}</span>
+                </div>
+                <div className="font-bold text-ink text-sm">{s.title}</div>
+                <div className="text-xs text-ink-muted mt-1 leading-relaxed">{s.body}</div>
+              </div>
+            ))}
+          </div>
+          {!activeCode && (
+            <button
+              onClick={generateCode}
+              disabled={loading}
+              className="mt-5 w-full sm:w-auto px-5 py-3 bg-[#229ED9] hover:bg-[#1c8dc4] text-white font-bold rounded-xl transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            >
+              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <TelegramLogo weight="fill" className="w-5 h-5" />}
+              Start — get my connect link
+            </button>
+          )}
+        </div>
+      )}
 
       {activeCode && (
         <div className="bg-blue-50/50 p-6 rounded-[20px] border border-[#6E8CA0]/20 shadow-sm relative overflow-hidden">

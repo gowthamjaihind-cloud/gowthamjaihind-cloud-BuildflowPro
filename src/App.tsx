@@ -196,7 +196,11 @@ function AppContent() {
   // Multi-tenant gate: a signed-in user must belong to an organization. New
   // orgs are provisioned/invite-only, so anyone without one lands on the
   // invite-code screen until they join (or an admin provisions their org).
-  if (!user.currentOrgId) {
+  // Also handle an ?invite=CODE link for users who ALREADY have an org (so an
+  // invite link works regardless of whether the recipient is new) — Onboarding
+  // asks them to confirm switching.
+  const hasInviteParam = new URLSearchParams(window.location.search).has("invite");
+  if (!user.currentOrgId || hasInviteParam) {
     return <Onboarding user={user} />;
   }
 
