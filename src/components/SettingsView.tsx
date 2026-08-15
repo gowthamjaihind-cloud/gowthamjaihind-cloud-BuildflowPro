@@ -17,6 +17,7 @@ import {
   FloppyDisk as Save,
   Monitor,
   PencilSimple as Edit2,
+  TelegramLogo,
 } from "@phosphor-icons/react";
 import { Project, UserProfile } from "../types";
 import { EnterpriseAuthView } from "./EnterpriseAuthView";
@@ -25,6 +26,7 @@ import { useOrgSettings } from "../hooks/useOrgSettings";
 import { callSetupOrganization } from "../services/firebaseFunctions";
 import { TeamPanel } from "./settings/TeamPanel";
 import { OperatorPanel } from "./settings/OperatorPanel";
+import { TelegramIntegration } from "./TelegramIntegration";
 
 const SUPER_ADMIN_EMAILS = ["gowtham.jaihind@gmail.com"];
 
@@ -39,6 +41,7 @@ type SettingsSection =
   | "notifications"
   | "billing"
   | "team"
+  | "telegram"
   | "operator"
   | "appearance"
 
@@ -98,6 +101,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 icon: LayoutDashboard,
               },
               { id: "team", label: "Team", icon: Users },
+              { id: "telegram", label: "Telegram Bot", icon: TelegramLogo },
               ...(SUPER_ADMIN_EMAILS.includes((currentUser?.email || "").toLowerCase())
                 ? [{ id: "operator", label: "Operator", icon: Shield }]
                 : []),
@@ -134,6 +138,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
 
             {activeTab === "team" && <TeamPanel />}
+
+            {activeTab === "telegram" && (
+              <section className="soft-card p-8 squircle-24">
+                <h3 className="text-xl font-bold text-ink mb-1">Telegram Bot</h3>
+                <p className="text-ink-muted text-sm mb-6">
+                  Connect your Telegram to file daily logs, scan invoices, and get updates from your phone.
+                </p>
+                <TelegramIntegration currentUser={currentUser} />
+              </section>
+            )}
 
             {activeTab === "operator" &&
               SUPER_ADMIN_EMAILS.includes((currentUser?.email || "").toLowerCase()) && (
