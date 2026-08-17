@@ -1,9 +1,10 @@
 import React from "react";
 
 /**
- * Sitetru brand mark — a site pin holding a small structure
- * ("truth, reported from site"), in the Rust / Sage / Drab palette.
- * Renders a rounded Drab tile; size and extra styling come from `className`.
+ * Sitetru brand mark — a bold rising checkmark on a rounded Drab tile.
+ * The dip reads as "verified" and the tall up-stroke as a structure rising from
+ * the ground: truth, trending up, from site. Sage down-stroke into a rust
+ * up-stroke, in the Rust / Sage / Drab palette. Size comes from `className`.
  */
 export const BrandLogo: React.FC<{ className?: string }> = ({ className }) => (
   <svg
@@ -13,14 +14,21 @@ export const BrandLogo: React.FC<{ className?: string }> = ({ className }) => (
     aria-label="Sitetru"
   >
     <rect width="512" height="512" rx="116" fill="#324755" />
-    <circle cx="256" cy="206" r="132" fill="#D97D54" />
-    <path d="M150 268 L256 452 L362 268 Z" fill="#D97D54" />
-    <circle cx="256" cy="200" r="60" fill="#F0F3F4" />
+    {/* down-stroke (approach) in sage */}
     <path
-      d="M222 224 L256 178 L290 224"
+      d="M150 280 L230 356"
       fill="none"
-      stroke="#324755"
-      strokeWidth="20"
+      stroke="#87BCBF"
+      strokeWidth="54"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* up-stroke (the rise) in rust */}
+    <path
+      d="M230 356 L372 150"
+      fill="none"
+      stroke="#D97D54"
+      strokeWidth="54"
       strokeLinecap="round"
       strokeLinejoin="round"
     />

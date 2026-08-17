@@ -103,7 +103,7 @@ export const callAcceptInvite = async (code: string) => {
   return res.data;
 };
 
-// Super-admin: provision a new customer org (7-day trial) + owner invite.
+// Super-admin: provision a new customer org (30-day trial) + owner invite.
 export const callProvisionOrganization = async (args: { companyName: string; ownerEmail?: string }) => {
   const fn = httpsCallable<typeof args, { orgId: string; code: string; trialEndsAt: number; emailed: boolean }>(
     getFunctionsInstance(), 'provisionOrganization');

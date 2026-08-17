@@ -21,6 +21,14 @@ import {
   List,
   X,
   Lightning,
+  Buildings,
+  RoadHorizon,
+  HouseLine,
+  ClipboardText,
+  PaintRoller,
+  FlowArrow,
+  Sparkle,
+  Stack,
 } from "@phosphor-icons/react";
 
 interface LandingPageProps {
@@ -46,27 +54,74 @@ const steps = [
   { n: "03", title: "Stay in control", body: "Watch cost, schedule and procurement update live across your whole portfolio." },
 ];
 
+const audience = [
+  { icon: Buildings, title: "Building contractors", body: "Residential & commercial. Keep every site's schedule, cost and labour in one place." },
+  { icon: RoadHorizon, title: "Civil & infrastructure", body: "Roads, water and structures. Track RA bills, GRNs and vendor ledgers without the paperwork." },
+  { icon: HouseLine, title: "Developers & builders", body: "See the health of every project in your portfolio from one executive dashboard." },
+  { icon: ClipboardText, title: "PMCs & consultants", body: "Run multiple clients' sites with role-based access and clean, exportable reports." },
+  { icon: PaintRoller, title: "Interior & fit-out", body: "Manage procurement, labour and change orders on fast-moving jobs." },
+];
+
+const whySitetru = [
+  { icon: TelegramLogo, title: "The field logs itself, over Telegram", body: "No app to train the crew on — foremen report progress, materials and labour from a chat, and it lands live in your dashboards." },
+  { icon: FlowArrow, title: "Everything is connected", body: "Schedule, procurement, labour and cost update each other in real time. Change one, and the rest follows." },
+  { icon: Sparkle, title: "AI that reads your paperwork", body: "Scan a vendor invoice and Sitetru matches it to the PO, flags rate and quantity discrepancies, and updates inventory." },
+  { icon: CurrencyInr, title: "Made for Indian construction", body: "GST-aware invoices, INR costing, RA bills, GRNs and CGST/SGST/IGST — not a foreign tool bent to fit." },
+  { icon: Stack, title: "One source of truth", body: "Replace five spreadsheets, three WhatsApp groups and a paper diary with a single workspace." },
+];
+
+const solutions = [
+  { icon: TreeStructure, pain: "Schedule slipping?", fix: "Live WBS + Gantt with dependencies and auto-shifting dates." },
+  { icon: ChartLineUp, pain: "Costs overrunning?", fix: "Budget vs. actual in real time, CPI, forecasts and AI cost analysis." },
+  { icon: Truck, pain: "Procurement leaking?", fix: "POs, goods receipts, vendor ledgers and AI invoice-matching that keep inventory honest." },
+  { icon: Users, pain: "Labour untracked?", fix: "Daily manpower by trade and task, rate cards and per-task consumption." },
+  { icon: DeviceMobile, pain: "Blind to the site?", fix: "Daily logs with photos, a portfolio health view, and Telegram field updates." },
+];
+
+// Prices in INR. Annual is billed yearly at ~2 months free (shown as an
+// effective monthly rate). Lite is a permanent free tier; paid tiers start with
+// a 30-day trial. `fixed` plans ignore the monthly/annual toggle.
 const plans = [
   {
-    name: "Starter",
-    price: "Free",
-    tag: "For a first project",
-    features: ["1 active project", "Up to 3 users", "WBS & daily logs", "Basic reports"],
+    name: "Lite",
+    monthly: "₹0",
+    annual: "₹0",
+    per: "free forever",
+    fixed: true,
+    tag: "For solo & small contractors",
+    features: ["1 active project", "Up to 2 users", "WBS & daily logs", "Telegram field logging", "Basic reports"],
+    cta: "Start free",
     highlight: false,
   },
   {
-    name: "Pro",
-    price: "₹2,999",
-    per: "/ org / month",
-    tag: "For growing contractors",
-    features: ["Unlimited projects", "Unlimited users", "Telegram field logging", "Procurement, labor & cost", "AI cost analysis", "Client estimates"],
+    name: "Essentials",
+    monthly: "₹1,499",
+    annual: "₹1,249",
+    annualTotal: "₹14,990 billed yearly",
+    tag: "For small contractors",
+    features: ["Up to 3 active projects", "Up to 10 users", "Procurement, labour & cost", "GRN & vendor ledgers", "300 AI invoice scans / mo"],
+    cta: "Start 30-day trial",
+    highlight: false,
+  },
+  {
+    name: "Professional",
+    monthly: "₹3,499",
+    annual: "₹2,916",
+    annualTotal: "₹34,990 billed yearly",
+    tag: "For growing firms",
+    features: ["Unlimited projects", "Unlimited users", "2,000 AI invoice scans / mo", "AI cost analysis & insights", "Client estimates", "Document vault", "Priority support"],
+    cta: "Start 30-day trial",
     highlight: true,
   },
   {
     name: "Enterprise",
-    price: "Custom",
+    monthly: "Custom",
+    annual: "Custom",
+    per: "tailored",
+    fixed: true,
     tag: "For multi-site firms",
-    features: ["Everything in Pro", "SSO & advanced roles", "Document vault", "Priority support", "Dedicated onboarding"],
+    features: ["Everything in Professional", "SSO & advanced roles", "Higher AI limits", "Dedicated onboarding", "Priority SLA support"],
+    cta: "Contact us",
     highlight: false,
   },
 ];
@@ -102,6 +157,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
   const [menuOpen, setMenuOpen] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
 
   // All sign-in entry points route through a consent gate: the user must accept
   // the Terms and Privacy Policy before we start Google auth. The acceptance is
@@ -145,9 +201,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <span className="font-brand font-bold text-xl tracking-tight">Sitetru</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-ink-muted">
+          <div className="hidden md:flex items-center gap-7 text-sm font-semibold text-ink-muted">
+            <a href="#audience" className="hover:text-ink apple-transition">Who we serve</a>
+            <a href="#solutions" className="hover:text-ink apple-transition">Solutions</a>
             <a href="#features" className="hover:text-ink apple-transition">Features</a>
-            <a href="#telegram" className="hover:text-ink apple-transition">Field logging</a>
             <a href="#pricing" className="hover:text-ink apple-transition">Pricing</a>
           </div>
 
@@ -165,8 +222,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
 
         {menuOpen && (
           <div className="md:hidden border-t border-divider/60 bg-page px-5 py-4 flex flex-col gap-3">
+            <a href="#audience" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">Who we serve</a>
+            <a href="#solutions" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">Solutions</a>
             <a href="#features" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">Features</a>
-            <a href="#telegram" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">Field logging</a>
             <a href="#pricing" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">Pricing</a>
             <CTA label="Get started" full className="bg-primary text-white text-sm px-5 py-3 rounded-xl mt-1" />
           </div>
@@ -264,6 +322,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
         </motion.div>
       </section>
 
+      {/* WHO WE SERVE */}
+      <section id="audience" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <p className="eyebrow text-primary mb-3">Built for the people who build</p>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Who we serve</h2>
+          <p className="text-ink-muted font-medium">
+            Sitetru is made for Indian construction businesses that have outgrown spreadsheets, WhatsApp groups and paper diaries.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {audience.map((a) => (
+            <div key={a.title} className="soft-card rounded-3xl p-6 flex items-start gap-4">
+              <div className="w-12 h-12 shrink-0 rounded-2xl bg-sage/15 text-[#3E8388] flex items-center justify-center">
+                <a.icon weight="duotone" className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg tracking-tight mb-1">{a.title}</h3>
+                <p className="text-sm text-ink-muted leading-relaxed">{a.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* FEATURES */}
       <section id="features" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
         <div className="text-center max-w-2xl mx-auto mb-14">
@@ -280,6 +362,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               <p className="text-sm text-ink-muted leading-relaxed">{f.body}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* WHY SITETRU */}
+      <section id="why" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <p className="eyebrow text-primary mb-3">Why teams switch</p>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Why Sitetru</h2>
+          <p className="text-ink-muted font-medium">The difference isn't another dashboard — it's a site that reports itself, honestly, in real time.</p>
+        </div>
+        <div className="grid md:grid-cols-2 gap-5">
+          {whySitetru.map((w) => (
+            <div key={w.title} className="soft-card rounded-3xl p-6 flex items-start gap-4">
+              <div className="w-12 h-12 shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                <w.icon weight="duotone" className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg tracking-tight mb-1">{w.title}</h3>
+                <p className="text-sm text-ink-muted leading-relaxed">{w.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SOLUTIONS */}
+      <section id="solutions" className="max-w-6xl mx-auto px-5 sm:px-8 py-8 md:py-16">
+        <div className="bg-surface-dark rounded-[32px] p-8 md:p-14">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <p className="eyebrow text-sage mb-3">Problems we solve</p>
+            <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight text-white mb-4">From site chaos to control</h2>
+            <p className="text-white/70 font-medium">Every messy part of running a project, answered by one connected workspace.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {solutions.map((s) => (
+              <div key={s.pain} className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <div className="w-11 h-11 rounded-xl bg-primary/20 text-primary flex items-center justify-center mb-4">
+                  <s.icon weight="duotone" className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-white mb-1.5">{s.pain}</h3>
+                <p className="text-sm text-white/70 leading-relaxed">{s.fix}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -337,44 +463,71 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
 
       {/* PRICING */}
       <section id="pricing" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
-        <div className="text-center max-w-2xl mx-auto mb-14">
+        <div className="text-center max-w-2xl mx-auto mb-8">
           <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Simple pricing that grows with you</h2>
-          <p className="text-ink-muted font-medium">Start free. Upgrade when your projects do.</p>
+          <p className="text-ink-muted font-medium">Start free on Lite, or try any paid plan free for 30 days. No credit card to start.</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-6 items-start">
-          {plans.map((p) => (
-            <div key={p.name} className={`rounded-3xl p-8 ${p.highlight ? "bg-surface-dark text-white shadow-2xl shadow-drab/20 md:-mt-4 md:pb-12" : "soft-card"}`}>
-              {p.highlight && <span className="inline-block text-[10px] font-black uppercase tracking-widest bg-primary text-white px-3 py-1 rounded-full mb-4">Most popular</span>}
-              <p className={`text-sm font-black uppercase tracking-widest mb-2 ${p.highlight ? "text-white/60" : "text-ink-muted"}`}>{p.name}</p>
-              <div className="flex items-end gap-1 mb-1">
-                <span className="font-display font-bold text-4xl tracking-tight">{p.price}</span>
-                {p.per && <span className={`text-sm font-medium mb-1.5 ${p.highlight ? "text-white/60" : "text-ink-muted"}`}>{p.per}</span>}
+
+        {/* Monthly / annual toggle */}
+        <div className="flex items-center justify-center mb-12">
+          <div className="inline-flex items-center bg-panel border border-divider rounded-full p-1">
+            <button
+              onClick={() => setBilling("monthly")}
+              className={`px-5 py-2 rounded-full text-sm font-bold apple-transition ${billing === "monthly" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBilling("annual")}
+              className={`px-5 py-2 rounded-full text-sm font-bold apple-transition flex items-center gap-2 ${billing === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
+            >
+              Annual
+              <span className={`text-[10px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full ${billing === "annual" ? "bg-success/20 text-success" : "bg-success/15 text-[#2E8B6F]"}`}>Save ~17%</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+          {plans.map((p) => {
+            const price = p.fixed ? p.monthly : billing === "annual" ? p.annual : p.monthly;
+            const per = p.fixed ? p.per : billing === "annual" ? "/ mo" : "/ org / month";
+            return (
+              <div key={p.name} className={`rounded-3xl p-7 flex flex-col ${p.highlight ? "bg-surface-dark text-white shadow-2xl shadow-drab/20 ring-1 ring-primary/40" : "soft-card"}`}>
+                {p.highlight && <span className="inline-block self-start text-[10px] font-black uppercase tracking-widest bg-primary text-white px-3 py-1 rounded-full mb-4">Most popular</span>}
+                <p className={`text-sm font-black uppercase tracking-widest mb-2 ${p.highlight ? "text-white/60" : "text-ink-muted"}`}>{p.name}</p>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="font-display font-bold text-4xl tracking-tight">{price}</span>
+                  <span className={`text-sm font-medium mb-1.5 ${p.highlight ? "text-white/60" : "text-ink-muted"}`}>{per}</span>
+                </div>
+                <p className={`text-[11px] font-semibold mb-1 h-4 ${p.highlight ? "text-white/50" : "text-ink-muted"}`}>
+                  {!p.fixed && billing === "annual" ? p.annualTotal : ""}
+                </p>
+                <p className={`text-xs font-semibold mb-6 ${p.highlight ? "text-white/50" : "text-ink-muted"}`}>{p.tag}</p>
+                <ul className="space-y-3 mb-8">
+                  {p.features.map((feat) => (
+                    <li key={feat} className="flex items-start gap-2.5 text-sm">
+                      <Check weight="bold" className="w-4 h-4 mt-0.5 shrink-0 text-success" />
+                      <span className={p.highlight ? "text-white/90" : "text-ink"}>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+                <CTA
+                  label={p.cta}
+                  full
+                  className={`mt-auto text-sm py-3.5 rounded-2xl ${p.highlight ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                />
               </div>
-              <p className={`text-xs font-semibold mb-6 ${p.highlight ? "text-white/50" : "text-ink-muted"}`}>{p.tag}</p>
-              <ul className="space-y-3 mb-8">
-                {p.features.map((feat) => (
-                  <li key={feat} className="flex items-start gap-2.5 text-sm">
-                    <Check weight="bold" className={`w-4 h-4 mt-0.5 shrink-0 ${p.highlight ? "text-success" : "text-success"}`} />
-                    <span className={p.highlight ? "text-white/90" : "text-ink"}>{feat}</span>
-                  </li>
-                ))}
-              </ul>
-              <CTA
-                label={p.name === "Enterprise" ? "Contact us" : "Get started"}
-                full
-                className={`text-sm py-3.5 rounded-2xl ${p.highlight ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
-              />
-            </div>
-          ))}
+            );
+          })}
         </div>
-        <p className="text-center text-xs text-ink-muted mt-8">Prices in INR, exclusive of GST. Enterprise billing is custom.</p>
+        <p className="text-center text-xs text-ink-muted mt-8">Prices in INR, exclusive of GST. Annual plans are billed yearly. Enterprise billing is custom.</p>
       </section>
 
       {/* FINAL CTA */}
       <section className="max-w-6xl mx-auto px-5 sm:px-8 pb-20">
         <div className="soft-card rounded-[32px] p-10 md:p-16 text-center">
           <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Bring your next project under control</h2>
-          <p className="text-ink-muted font-medium max-w-lg mx-auto mb-8">Set up your first workspace free — no card required.</p>
+          <p className="text-ink-muted font-medium max-w-lg mx-auto mb-8">Start free on Lite, or try every feature free for 30 days — no card required.</p>
           <div className="flex justify-center">
             <CTA label="Get started free" className="bg-primary text-white text-base px-8 py-4 rounded-2xl hover:bg-[#B85F3B] shadow-xl shadow-primary/20" />
           </div>

@@ -15,7 +15,7 @@ import {
   callGetEmailConfigStatus,
 } from "../../services/firebaseFunctions";
 
-// Operator-only console: create a new customer org (7-day trial) and manually
+// Operator-only console: create a new customer org (30-day trial) and manually
 // manage subscriptions until automated (Razorpay) checkout is wired.
 export const OperatorPanel: React.FC = () => {
   // Provision
@@ -94,7 +94,7 @@ export const OperatorPanel: React.FC = () => {
           <h3 className="text-xl font-bold text-ink">Provision new organization</h3>
         </div>
         <p className="text-ink-muted text-sm mb-5">
-          Creates a new customer org on a 7-day trial and mints an Owner invite link.
+          Creates a new customer org on a 30-day trial and mints an Owner invite link.
         </p>
         {pErr && (
           <div className="mb-3 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
