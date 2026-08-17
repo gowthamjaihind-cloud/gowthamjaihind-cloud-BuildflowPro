@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { BrandLogo } from "../components/BrandLogo";
+import { TERMS_URL, PRIVACY_URL, stashPendingConsent } from "../lib/legal";
 import {
   ArrowRight,
   CircleNotch as Loader2,
@@ -99,10 +100,26 @@ const RotatingPhrase: React.FC = () => {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, loginError }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+
+  // All sign-in entry points route through a consent gate: the user must accept
+  // the Terms and Privacy Policy before we start Google auth. The acceptance is
+  // stashed and written onto their profile once we have a uid (see useAuth).
+  const requestLogin = () => {
+    setMenuOpen(false);
+    setConsentOpen(true);
+  };
+  const confirmConsentAndLogin = () => {
+    if (!agreed) return;
+    stashPendingConsent();
+    setConsentOpen(false);
+    onLogin();
+  };
 
   const CTA = ({ label, className = "", full = false }: { label: string; className?: string; full?: boolean }) => (
     <button
-      onClick={onLogin}
+      onClick={requestLogin}
       disabled={isLoggingIn}
       className={`inline-flex items-center justify-center gap-2 font-bold apple-transition active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed ${full ? "w-full" : ""} ${className}`}
     >
@@ -135,7 +152,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <button onClick={onLogin} disabled={isLoggingIn} className="text-sm font-bold text-ink hover:text-primary apple-transition disabled:opacity-60">
+            <button onClick={requestLogin} disabled={isLoggingIn} className="text-sm font-bold text-ink hover:text-primary apple-transition disabled:opacity-60">
               Sign in
             </button>
             <CTA label="Get started" className="bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-[#B85F3B] shadow-lg shadow-primary/20" />
@@ -371,9 +388,94 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <BrandLogo className="w-8 h-8 rounded-lg" />
             <span className="font-brand font-bold tracking-tight">Sitetru</span>
           </div>
+          <div className="flex items-center gap-5 text-xs font-semibold text-ink-muted">
+            <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="hover:text-ink apple-transition">Terms</a>
+            <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="hover:text-ink apple-transition">Privacy</a>
+          </div>
           <p className="text-xs text-ink-muted">© {new Date().getFullYear()} Sitetru · Truth, reported from site.</p>
         </div>
       </footer>
+
+      {/* CONSENT GATE — shown before any Google sign-in */}
+      <AnimatePresence>
+        {consentOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-onyx/40 backdrop-blur-sm"
+            onClick={() => setConsentOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 10 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md soft-card rounded-[24px] p-8 relative"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Continue to Sitetru"
+            >
+              <button
+                onClick={() => setConsentOpen(false)}
+                className="absolute top-5 right-5 text-ink-muted hover:text-ink apple-transition"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-2.5 mb-5">
+                <BrandLogo className="w-10 h-10 rounded-xl" />
+                <span className="font-brand font-bold text-lg tracking-tight">Sitetru</span>
+              </div>
+
+              <h3 className="font-display font-bold text-2xl tracking-tight mb-2">Continue to Sitetru</h3>
+              <p className="text-sm text-ink-muted leading-relaxed mb-6">
+                You'll sign in securely with Google. Before you continue, please review and accept our terms.
+              </p>
+
+              <label className="flex items-start gap-3 mb-6 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                  className="mt-0.5 w-5 h-5 rounded-md border-divider text-primary focus:ring-primary/30 shrink-0 accent-[#B85F3B]"
+                />
+                <span className="text-sm text-ink leading-relaxed">
+                  I agree to the{" "}
+                  <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold hover:underline">Terms of Service</a>{" "}
+                  and{" "}
+                  <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold hover:underline">Privacy Policy</a>.
+                </span>
+              </label>
+
+              <button
+                onClick={confirmConsentAndLogin}
+                disabled={!agreed || isLoggingIn}
+                className="w-full inline-flex items-center justify-center gap-2 font-bold text-base px-7 py-4 rounded-2xl bg-primary text-white hover:bg-[#B85F3B] shadow-xl shadow-primary/20 apple-transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Connecting…
+                  </>
+                ) : (
+                  <>
+                    Continue with Google <ArrowRight weight="bold" className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+
+              {loginError && (
+                <div className="mt-4 flex items-start gap-2 text-[13px] font-medium text-danger bg-danger/10 p-3 rounded-xl border border-danger/20">
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                  <p>{loginError}</p>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

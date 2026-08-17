@@ -11,6 +11,7 @@ import {
 } from "../firebase";
 import { UserProfile } from "../types";
 import { useAuthStore } from "../store";
+import { readPendingConsent, clearPendingConsent, TERMS_VERSION } from "../lib/legal";
 
 export function useAuthInit() {
   const setUser = useAuthStore((state) => state.setUser);
@@ -32,6 +33,19 @@ export function useAuthInit() {
             async (userDoc) => {
               if (userDoc.exists()) {
                 const data = userDoc.data() as UserProfile;
+                // Record consent captured at the sign-in gate, if we haven't
+                // stored it yet or it predates the current Terms version.
+                const pendingConsent = readPendingConsent();
+                if (
+                  pendingConsent &&
+                  data.legal?.termsVersion !== pendingConsent.termsVersion
+                ) {
+                  await updateDoc(doc(db, "users", firebaseUser.uid), {
+                    legal: pendingConsent,
+                  });
+                  data.legal = pendingConsent;
+                  clearPendingConsent();
+                }
                 // Auto-upgrade specific email to Admin for testing
                 if (
                   firebaseUser.email === "gowtham.jaihind@gmail.com" &&
@@ -55,14 +69,20 @@ export function useAuthInit() {
                   idTokenResult.claims?.admin === true ||
                   firebaseUser.email === "gowtham.jaihind@gmail.com";
 
+                // First sign-in only happens after the consent gate, so record
+                // acceptance on the profile (fall back to the current version).
+                const consent =
+                  readPendingConsent() || { termsVersion: TERMS_VERSION, acceptedAt: new Date().toISOString() };
                 const newProfile: UserProfile = {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email || "",
                   displayName: firebaseUser.displayName || "User",
                   role: firebaseUser.email === "gowtham.jaihind@gmail.com" ? "Owner" : (isAdminFallback ? "Admin" : "Viewer"),
                   photoURL: firebaseUser.photoURL || undefined,
+                  legal: consent,
                 };
                 await setDoc(doc(db, "users", firebaseUser.uid), newProfile);
+                clearPendingConsent();
                 setUser(newProfile);
                 setLoading(false);
               }

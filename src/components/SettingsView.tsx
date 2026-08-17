@@ -18,6 +18,7 @@ import {
   Monitor,
   PencilSimple as Edit2,
   TelegramLogo,
+  LockKey,
 } from "@phosphor-icons/react";
 import { Project, UserProfile } from "../types";
 import { EnterpriseAuthView } from "./EnterpriseAuthView";
@@ -26,6 +27,7 @@ import { useOrgSettings } from "../hooks/useOrgSettings";
 import { callSetupOrganization } from "../services/firebaseFunctions";
 import { TeamPanel } from "./settings/TeamPanel";
 import { OperatorPanel } from "./settings/OperatorPanel";
+import { PrivacyPanel } from "./settings/PrivacyPanel";
 import { TelegramIntegration } from "./TelegramIntegration";
 
 const SUPER_ADMIN_EMAILS = ["gowtham.jaihind@gmail.com"];
@@ -44,6 +46,7 @@ type SettingsSection =
   | "telegram"
   | "operator"
   | "appearance"
+  | "privacy"
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   onBack,
@@ -106,6 +109,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 ? [{ id: "operator", label: "Operator", icon: Shield }]
                 : []),
               { id: "appearance", label: "Appearance", icon: Monitor },
+              { id: "privacy", label: "Privacy & Data", icon: LockKey },
               {
                 id: "enterprise",
                 label: "Identity & Authorization",
@@ -138,6 +142,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
 
             {activeTab === "team" && <TeamPanel />}
+
+            {activeTab === "privacy" && <PrivacyPanel currentUser={currentUser} />}
 
             {activeTab === "telegram" && (
               <section className="soft-card p-8 squircle-24">

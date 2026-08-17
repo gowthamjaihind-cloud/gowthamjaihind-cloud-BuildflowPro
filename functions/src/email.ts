@@ -1,7 +1,9 @@
 import { db } from "./db";
 
 // Public app URL used to build invite links in server-sent emails.
-export const APP_URL = "https://jewel-ledger.web.app";
+// Points at the branded custom domain; the app also stays reachable at
+// jewel-ledger.web.app (Firebase Hosting serves both).
+export const APP_URL = "https://sitetru.com";
 
 interface EmailConfig { apiKey: string; fromEmail: string; fromName: string; }
 
