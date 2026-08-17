@@ -1,0 +1,75 @@
+name: Set up Firestore Backups
+
+# Enables disaster-recovery on the app's NAMED Firestore database:
+#   1. Point-in-Time Recovery (PITR) — a rolling 7-day window you can restore
+#      to at any minute in the last hour / any hour in the last 7 days.
+#   2. A DAILY scheduled backup, retained 7 days.
+#   3. A WEEKLY scheduled backup, retained 14 weeks.
+#
+# MANUAL trigger only (Actions tab -> "Set up Firestore Backups" -> Run workflow).
+# It's idempotent-ish: enabling PITR twice is a no-op; creating a schedule that
+# already exists just logs and continues. Re-run any time to reconcile.
+#
+# IAM: uses the SAME repository secret as the other deploys —
+#   FIREBASE_SERVICE_ACCOUNT  (JSON key for a service account on jewel-ledger).
+# Configuring PITR and backup schedules needs "Cloud Datastore Owner"
+# (roles/datastore.owner) — broader than the rules/hosting deploys. If the first
+# run fails with a permissions error, grant that role to the service account in
+# the Google Cloud console (IAM) and re-run.
+#
+# Restores are deliberately NOT automated here — restoring overwrites/creates a
+# database and must be a considered, manual action (gcloud firestore ... restore).
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-backups
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  setup_backups:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: jewel-ledger
+      DATABASE: ai-studio-97ffdc85-b348-4a76-9ede-baa3db65adee
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Enable Point-in-Time Recovery (7-day window)
+        run: |
+          gcloud firestore databases update \
+            --project="$PROJECT_ID" --database="$DATABASE" --enable-pitr
+
+      - name: Create daily backup schedule (7-day retention)
+        run: |
+          gcloud firestore backups schedules create \
+            --project="$PROJECT_ID" --database="$DATABASE" \
+            --recurrence=daily --retention=7d \
+          || echo "Daily schedule already exists or was rejected — continuing."
+
+      - name: Create weekly backup schedule (14-week retention, Sundays)
+        run: |
+          gcloud firestore backups schedules create \
+            --project="$PROJECT_ID" --database="$DATABASE" \
+            --recurrence=weekly --retention=14w --day-of-week=SUNDAY \
+          || echo "Weekly schedule already exists or was rejected — continuing."
+
+      - name: Show current backup configuration
+        run: |
+          echo "== PITR state =="
+          gcloud firestore databases describe \
+            --project="$PROJECT_ID" --database="$DATABASE" \
+            --format="value(pointInTimeRecoveryEnablement)"
+          echo "== Backup schedules =="
+          gcloud firestore backups schedules list \
+            --project="$PROJECT_ID" --database="$DATABASE"
