@@ -89,7 +89,7 @@ export const callSetupOrganization = async (companyName?: string) => {
 
 // Owner/Admin mints an invite code for a teammate (shared as …/?invite=CODE).
 export const callCreateInvite = async (args: { email?: string; role: string }) => {
-  const fn = httpsCallable<typeof args, { code: string; orgId: string; role: string; email: string | null; emailed: boolean }>(
+  const fn = httpsCallable<typeof args, { code: string; orgId: string; role: string; email: string | null; emailed: boolean; emailError: string | null }>(
     getFunctionsInstance(), 'createInvite');
   const res = await fn(args);
   return res.data;
@@ -105,7 +105,7 @@ export const callAcceptInvite = async (code: string) => {
 
 // Super-admin: provision a new customer org (30-day trial) + owner invite.
 export const callProvisionOrganization = async (args: { companyName: string; ownerEmail?: string }) => {
-  const fn = httpsCallable<typeof args, { orgId: string; code: string; trialEndsAt: number; emailed: boolean }>(
+  const fn = httpsCallable<typeof args, { orgId: string; code: string; trialEndsAt: number; emailed: boolean; emailError: string | null }>(
     getFunctionsInstance(), 'provisionOrganization');
   const res = await fn(args);
   return res.data;
