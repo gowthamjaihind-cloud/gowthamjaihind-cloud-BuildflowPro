@@ -1,65 +1,140 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Lock,
   SignOut as LogOut,
   EnvelopeSimple,
+  Check,
+  CircleNotch as Loader2,
+  Stack,
 } from "@phosphor-icons/react";
 import { UserProfile } from "../types";
 import { OrgAccess } from "../hooks/useOrgAccess";
 import { useAuthStore } from "../store";
+import { useRazorpayCheckout } from "../hooks/useRazorpayCheckout";
+import { PLANS, PlanId } from "../lib/plans";
 
 const SALES_EMAIL = "gowtham.jaihind@gmail.com";
+const PAID: PlanId[] = ["starter", "growth", "business"];
 
 // Shown when the org's trial has ended (or its subscription lapsed). Owners/
-// Admins get a subscribe CTA; other members are told to contact their owner.
-// Payment is currently manual — the CTA emails the operator, who activates the
-// org. (Automated checkout replaces this later.)
+// Admins get a plan picker with Razorpay checkout (payment auto-activates the
+// plan); other members are told to contact their owner. If payments aren't
+// configured yet, checkout surfaces that and the contact-us fallback remains.
 export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ access, user }) => {
   const logout = useAuthStore((s) => s.logout);
   const isOwnerish = user.role === "Owner" || user.role === "Admin";
   const org = access.companyName || "your organization";
+  const [period, setPeriod] = useState<"monthly" | "annual">("monthly");
+  const { pay, busy, error } = useRazorpayCheckout();
 
   const headline =
     access.reason === "trial_expired" ? "Your free trial has ended" : "Subscription needed";
 
+  if (!isOwnerish) {
+    return (
+      <Shell>
+        <h2 className="text-2xl font-bold text-ink mb-2">{headline}</h2>
+        <p className="text-ink-muted mb-6 text-[15px] leading-relaxed">
+          Access to <b>{org}</b> is paused. Please ask your organization's owner to activate a plan.
+        </p>
+        <SignOutButton onClick={logout} />
+      </Shell>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-surface">
-      <div className="w-full max-w-md soft-card p-10 squircle-24 text-center">
-        <div className="bg-primary/10 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-primary/20">
-          <Lock className="w-8 h-8 text-[#B85F3B]" />
+      <div className="w-full max-w-3xl soft-card p-8 md:p-10 squircle-24">
+        <div className="text-center mb-6">
+          <div className="bg-primary/10 w-14 h-14 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-primary/20">
+            <Lock className="w-7 h-7 text-[#B85F3B]" />
+          </div>
+          <h2 className="text-2xl font-bold text-ink mb-1">{headline}</h2>
+          <p className="text-ink-muted text-[15px]">Choose a plan for <b>{org}</b> to keep going. Pay for the projects you run.</p>
         </div>
-        <h2 className="text-2xl font-bold text-ink mb-2">{headline}</h2>
 
-        {isOwnerish ? (
-          <>
-            <p className="text-ink-muted mb-6 text-[15px] leading-relaxed">
-              To keep using the app for <b>{org}</b>, activate a subscription. Reach out and
-              we'll get you set up.
-            </p>
-            <a
-              href={`mailto:${SALES_EMAIL}?subject=${encodeURIComponent(`Subscription for ${org}`)}&body=${encodeURIComponent(`Hi, I'd like to activate a subscription for ${org} (account: ${user.email}).`)}`}
-              className="w-full inline-flex items-center justify-center gap-2 bg-primary text-white py-3.5 rounded-xl font-bold hover:bg-[#B85F3B] transition-colors"
+        {/* Monthly / annual toggle */}
+        <div className="flex items-center justify-center mb-6">
+          <div className="inline-flex items-center bg-panel border border-divider rounded-full p-1">
+            <button
+              onClick={() => setPeriod("monthly")}
+              className={`px-4 py-1.5 rounded-full text-sm font-bold apple-transition ${period === "monthly" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
             >
-              <EnvelopeSimple className="w-5 h-5" /> Subscribe / contact us
-            </a>
-          </>
-        ) : (
-          <p className="text-ink-muted mb-6 text-[15px] leading-relaxed">
-            Access to <b>{org}</b> is paused. Please ask your organization's owner to activate
-            the subscription.
-          </p>
+              Monthly
+            </button>
+            <button
+              onClick={() => setPeriod("annual")}
+              className={`px-4 py-1.5 rounded-full text-sm font-bold apple-transition flex items-center gap-2 ${period === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
+            >
+              Annual
+              <span className="text-[10px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">Save ~17%</span>
+            </button>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 text-sm text-center">
+            {error}
+          </div>
         )}
 
-        <button
-          onClick={logout}
-          className="mt-6 text-sm text-ink-muted hover:text-ink inline-flex items-center gap-1.5"
-        >
-          <LogOut className="w-4 h-4" /> Sign out
-        </button>
+        <div className="grid sm:grid-cols-3 gap-4">
+          {PAID.map((id) => {
+            const p = PLANS[id];
+            const monthly = period === "annual" ? Math.round((p.annual || 0) / 12) : p.monthly || 0;
+            return (
+              <div key={id} className={`rounded-2xl p-5 flex flex-col border ${id === "growth" ? "border-primary/40 ring-1 ring-primary/30" : "border-divider"}`}>
+                <p className="text-sm font-black uppercase tracking-widest text-ink-muted mb-1">{p.name}</p>
+                <div className="flex items-end gap-1 mb-0.5">
+                  <span className="font-display font-bold text-3xl tracking-tight">₹{monthly.toLocaleString("en-IN")}</span>
+                  <span className="text-xs text-ink-muted mb-1.5">/ mo</span>
+                </div>
+                <p className="text-[11px] text-ink-muted mb-3 h-4">
+                  {period === "annual" ? `₹${(p.annual || 0).toLocaleString("en-IN")} billed yearly` : ""}
+                </p>
+                <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 bg-sage/15 text-[#3E8388]">
+                  <Stack weight="bold" className="w-3.5 h-3.5" /> Up to {p.includedProjects} projects
+                </div>
+                <ul className="space-y-1.5 mb-4 text-sm">
+                  <li className="flex items-start gap-2"><Check weight="bold" className="w-4 h-4 mt-0.5 text-success shrink-0" /> {p.userLimit} users</li>
+                  <li className="flex items-start gap-2"><Check weight="bold" className="w-4 h-4 mt-0.5 text-success shrink-0" /> {p.aiQuota} AI scans / mo</li>
+                </ul>
+                <button
+                  onClick={() => pay(id, period, () => window.location.reload())}
+                  disabled={busy}
+                  className={`mt-auto w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                >
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : `Pay ₹${(period === "annual" ? p.annual : p.monthly)?.toLocaleString("en-IN")}`}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="text-center text-[11px] text-ink-muted mt-4">
+          Extra projects beyond your plan are ₹99/project/month. Prices exclusive of GST. Need more, or an Enterprise plan?{" "}
+          <a href={`mailto:${SALES_EMAIL}?subject=${encodeURIComponent(`Plan for ${org}`)}`} className="text-primary font-semibold hover:underline">Contact us</a>.
+        </p>
+
+        <div className="text-center mt-6">
+          <SignOutButton onClick={logout} />
+        </div>
       </div>
     </div>
   );
 };
+
+const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="min-h-screen flex items-center justify-center p-6 bg-surface">
+    <div className="w-full max-w-md soft-card p-10 squircle-24 text-center">{children}</div>
+  </div>
+);
+
+const SignOutButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <button onClick={onClick} className="text-sm text-ink-muted hover:text-ink inline-flex items-center gap-1.5">
+    <LogOut className="w-4 h-4" /> Sign out
+  </button>
+);
 
 // Slim countdown shown while an org is on trial.
 export const TrialBanner: React.FC<{ daysLeft: number }> = ({ daysLeft }) => (
@@ -68,3 +143,5 @@ export const TrialBanner: React.FC<{ daysLeft: number }> = ({ daysLeft }) => (
     {daysLeft > 0 ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left in your free trial` : "Trial ends today"}
   </div>
 );
+
+export default Paywall;

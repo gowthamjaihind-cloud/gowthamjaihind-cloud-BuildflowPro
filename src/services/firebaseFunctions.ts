@@ -158,6 +158,39 @@ export const callGetOrgUsage = async (orgId: string) => {
   return res.data;
 };
 
+// ---- Razorpay (test-mode billing) ----
+
+// Super-admin: store the Razorpay keys (server-side, Admin-only doc).
+export const callSetRazorpayConfig = async (args: { keyId: string; keySecret: string; webhookSecret?: string }) => {
+  const fn = httpsCallable<typeof args, { ok: boolean }>(getFunctionsInstance(), 'setRazorpayConfig');
+  const res = await fn(args);
+  return res.data;
+};
+
+export const callGetRazorpayConfigStatus = async () => {
+  const fn = httpsCallable<{}, { configured: boolean; keyId: string; hasWebhookSecret: boolean; mode: string }>(
+    getFunctionsInstance(), 'getRazorpayConfigStatus');
+  const res = await fn({});
+  return res.data;
+};
+
+// Owner/Admin: create a server-priced Razorpay order for a plan + period.
+export const callCreateRazorpayOrder = async (args: { plan: string; period: 'monthly' | 'annual' }) => {
+  const fn = httpsCallable<typeof args, { orderId: string; amount: number; currency: string; keyId: string }>(
+    getFunctionsInstance(), 'createRazorpayOrder');
+  const res = await fn(args);
+  return res.data;
+};
+
+// Verify a completed payment (backup to the webhook) — activates the plan.
+export const callVerifyRazorpayPayment = async (args: {
+  razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string;
+}) => {
+  const fn = httpsCallable<typeof args, { ok: boolean }>(getFunctionsInstance(), 'verifyRazorpayPayment');
+  const res = await fn(args);
+  return res.data;
+};
+
 // ---- Data-subject rights (export / erasure) ----
 
 // Download a machine-readable copy of the caller's profile and (for Owners/

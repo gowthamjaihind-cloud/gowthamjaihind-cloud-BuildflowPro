@@ -8,6 +8,10 @@
         "source": "/api/telegram-status",
         "function": { "functionId": "telegramStatus", "region": "asia-southeast1" }
       },
+      {
+        "source": "/api/razorpay-webhook",
+        "function": { "functionId": "razorpayWebhook", "region": "asia-southeast1" }
+      },
       { "source": "/terms", "destination": "/terms.html" },
       { "source": "/privacy", "destination": "/privacy.html" },
       { "source": "**", "destination": "/index.html" }

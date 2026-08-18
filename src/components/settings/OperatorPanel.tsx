@@ -17,6 +17,8 @@ import {
   callGetOrgUsage,
   callSetEmailConfig,
   callGetEmailConfigStatus,
+  callSetRazorpayConfig,
+  callGetRazorpayConfigStatus,
   OrgUsage,
 } from "../../services/firebaseFunctions";
 import { PLAN_ORDER, PLANS } from "../../lib/plans";
@@ -119,6 +121,33 @@ export const OperatorPanel: React.FC = () => {
     } catch (e: any) {
       setUErr(e?.message || "Couldn't load usage.");
     } finally { setUBusy(false); }
+  };
+
+  // Razorpay config
+  const [rzpStatus, setRzpStatus] = useState<{ configured: boolean; keyId: string; hasWebhookSecret: boolean; mode: string } | null>(null);
+  const [rzpKeyId, setRzpKeyId] = useState("");
+  const [rzpSecret, setRzpSecret] = useState("");
+  const [rzpWebhook, setRzpWebhook] = useState("");
+  const [rzpBusy, setRzpBusy] = useState(false);
+  const [rzpMsg, setRzpMsg] = useState<string | null>(null);
+  const [rzpErr, setRzpErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    callGetRazorpayConfigStatus()
+      .then((s) => { setRzpStatus(s); if (s.keyId) setRzpKeyId(s.keyId); })
+      .catch(() => {});
+  }, []);
+
+  const saveRzp = async () => {
+    setRzpBusy(true); setRzpErr(null); setRzpMsg(null);
+    try {
+      await callSetRazorpayConfig({ keyId: rzpKeyId.trim(), keySecret: rzpSecret.trim(), webhookSecret: rzpWebhook.trim() || undefined });
+      setRzpSecret("");
+      setRzpMsg("Saved. Plan checkout is now enabled.");
+      setRzpStatus(await callGetRazorpayConfigStatus());
+    } catch (e: any) {
+      setRzpErr(e?.message || "Couldn't save Razorpay settings.");
+    } finally { setRzpBusy(false); }
   };
 
   return (
@@ -289,6 +318,46 @@ export const OperatorPanel: React.FC = () => {
             </div>
           </div>
         )}
+      </section>
+
+      {/* Razorpay (billing) */}
+      <section className="soft-card p-8 squircle-24">
+        <div className="flex items-center gap-2 mb-1">
+          <CreditCard className="w-5 h-5 text-primary" />
+          <h3 className="text-xl font-bold text-ink">Payments (Razorpay)</h3>
+        </div>
+        <p className="text-ink-muted text-sm mb-5">
+          Paste your Razorpay keys so customers can pay and get their plan activated automatically. {rzpStatus && (
+            rzpStatus.configured
+              ? <span className="text-success font-semibold">Currently ON — {rzpStatus.mode.toUpperCase()} mode ({rzpStatus.keyId}){rzpStatus.hasWebhookSecret ? "" : " · webhook secret not set"}.</span>
+              : <span className="text-[#B85F3B] font-semibold">Currently OFF — checkout is disabled.</span>
+          )}
+        </p>
+        {rzpErr && (
+          <div className="mb-3 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
+            <AlertCircle className="w-5 h-5 shrink-0" /><p>{rzpErr}</p>
+          </div>
+        )}
+        {rzpMsg && (
+          <div className="mb-3 p-3 bg-success/10 text-ink rounded-xl border border-success/30 text-sm font-semibold">{rzpMsg}</div>
+        )}
+        <div className="space-y-3">
+          <input value={rzpKeyId} onChange={(e) => setRzpKeyId(e.target.value)} placeholder="Key ID (rzp_test_… or rzp_live_…)"
+            className="w-full bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          <input value={rzpSecret} onChange={(e) => setRzpSecret(e.target.value)} type="password" placeholder="Key Secret"
+            className="w-full bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          <input value={rzpWebhook} onChange={(e) => setRzpWebhook(e.target.value)} type="password" placeholder="Webhook secret (optional but recommended)"
+            className="w-full bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          <button onClick={saveRzp} disabled={rzpBusy || !rzpKeyId.trim() || !rzpSecret.trim()}
+            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            {rzpBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+          </button>
+          <p className="text-[10px] text-ink-muted leading-relaxed">
+            Use <b>test</b> keys (rzp_test_…) first — no KYC needed. In the Razorpay dashboard, add a webhook pointing to{" "}
+            <span className="font-mono">{typeof window !== "undefined" ? window.location.origin : "https://sitetru.com"}/api/razorpay-webhook</span>{" "}
+            for events <span className="font-mono">payment.captured</span> and <span className="font-mono">order.paid</span>, and paste its signing secret above. Switch to live keys after completing KYC.
+          </p>
+        </div>
       </section>
 
       {/* Email (Resend) */}

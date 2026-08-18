@@ -2,9 +2,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { randomBytes } from "crypto";
 import { db } from "./db";
 import { sendInviteEmail, APP_URL } from "./email";
-import { PLANS, isPlanId, OVERAGE_RATE, PlanId } from "./plans";
-
-const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+import { isPlanId, OVERAGE_RATE, PlanId, planPatch } from "./plans";
 
 // App operators who may provision orgs and manage subscriptions. Keep in sync
 // with the client-side check in the super-admin panel. (Later this can move to
@@ -154,20 +152,7 @@ export const setOrgPlan = onCall({ timeoutSeconds: 60 }, async (request) => {
   const snap = await orgRef.get();
   if (!snap.exists) throw new HttpsError("not-found", "Organization not found.");
 
-  const def = PLANS[plan as PlanId];
-  const patch: any = {
-    plan,
-    includedProjects: def.includedProjects,
-    userLimit: def.userLimit,
-    aiQuota: def.aiQuota,
-    overageRate: OVERAGE_RATE,
-  };
-  if (plan === "free") {
-    patch.subscriptionStatus = "free";
-  } else {
-    patch.subscriptionStatus = "active";
-    patch.currentPeriodEnd = Date.now() + months * MONTH_MS;
-  }
+  const patch = planPatch(plan as PlanId, months);
   await orgRef.set(patch, { merge: true });
   return { orgId, plan, ...patch };
 });
