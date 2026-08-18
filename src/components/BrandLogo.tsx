@@ -1,9 +1,9 @@
 import React from "react";
 
 /**
- * Sitetru brand mark — a site pin holding a small structure
- * ("truth, reported from site"), in the Rust / Sage / Drab palette.
- * Renders a rounded Drab tile; size and extra styling come from `className`.
+ * Sitetru brand mark — three ascending rounded bars on a rounded Drab tile:
+ * a rising skyline / progress trending up, in the Rust / Sage / Drab palette
+ * (two rust bars stepping up to a sage peak). Size comes from `className`.
  */
 export const BrandLogo: React.FC<{ className?: string }> = ({ className }) => (
   <svg
@@ -13,16 +13,8 @@ export const BrandLogo: React.FC<{ className?: string }> = ({ className }) => (
     aria-label="Sitetru"
   >
     <rect width="512" height="512" rx="116" fill="#324755" />
-    <circle cx="256" cy="206" r="132" fill="#D97D54" />
-    <path d="M150 268 L256 452 L362 268 Z" fill="#D97D54" />
-    <circle cx="256" cy="200" r="60" fill="#F0F3F4" />
-    <path
-      d="M222 224 L256 178 L290 224"
-      fill="none"
-      stroke="#324755"
-      strokeWidth="20"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <rect x="136" y="272" width="72" height="104" rx="22" fill="#D97D54" />
+    <rect x="222" y="212" width="72" height="164" rx="22" fill="#D97D54" />
+    <rect x="308" y="140" width="72" height="236" rx="22" fill="#87BCBF" />
   </svg>
 );

@@ -8,7 +8,7 @@ import { sendInviteEmail, APP_URL } from "./email";
 // a custom claim or a config doc.)
 const SUPER_ADMINS = ["gowtham.jaihind@gmail.com"];
 
-const TRIAL_MS = 7 * 24 * 60 * 60 * 1000; // 7-day trial
+const TRIAL_MS = 30 * 24 * 60 * 60 * 1000; // 30-day trial
 const INVITE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 const genCode = () => randomBytes(6).toString("hex").toUpperCase();
 
@@ -19,7 +19,7 @@ function assertSuperAdmin(request: any) {
   }
 }
 
-// Provision a brand-new customer organization on a 7-day trial and mint an
+// Provision a brand-new customer organization on a 30-day trial and mint an
 // Owner invite for its first user. Super-admin only.
 export const provisionOrganization = onCall({ timeoutSeconds: 60 }, async (request) => {
   assertSuperAdmin(request);

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Jost:ital,wght@0,100..900;1,100..900&family=Oswald:wght@200..700&family=JetBrains+Mono:wght@100..800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@100..800&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -65,9 +65,11 @@
 }
 
 @theme {
-  --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Oswald", sans-serif;
-  --font-brand: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  /* Modern geometric sans across the whole product. One family (Manrope) with
+     a weight-based hierarchy: body/UI at 400–600, display/brand at 700–800. */
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-brand: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   --color-primary: var(--primary);
@@ -97,9 +99,10 @@
 
 /* ---------------------------------------------------------------------------
    Typography system
-   Two-tier heading rule: page/section titles (h1, h2) use the display face
-   (Oswald); component/card titles (h3) and body/labels stay in Jost. A utility
-   font class on an element still wins, so exceptions remain possible.
+   Single geometric family (Manrope) with a weight-based hierarchy: page/section
+   titles (h1, h2) render heavier via the display token; component/card titles
+   (h3) and body/labels sit lighter. A utility font class on an element still
+   wins, so exceptions remain possible.
 
    Size scale (use these; avoid new arbitrary px):
      eyebrow/micro label  → 10px  (.eyebrow)     dense/table label → 8px
