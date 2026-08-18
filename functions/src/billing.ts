@@ -2,6 +2,9 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { randomBytes } from "crypto";
 import { db } from "./db";
 import { sendInviteEmail, APP_URL } from "./email";
+import { PLANS, isPlanId, OVERAGE_RATE, PlanId } from "./plans";
+
+const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
 // App operators who may provision orgs and manage subscriptions. Keep in sync
 // with the client-side check in the super-admin panel. (Later this can move to
@@ -127,4 +130,72 @@ export const setSubscription = onCall({ timeoutSeconds: 60 }, async (request) =>
   }
   await orgRef.set(patch, { merge: true });
   return { orgId, ...patch };
+});
+
+// Place an org on a project-based plan (Free / Starter / Growth / Business /
+// Enterprise). Sets the capacity fields the app enforces (includedProjects,
+// aiQuota, userLimit, overageRate) and the matching subscription status.
+// Super-admin only — the manual stand-in until automated checkout is wired.
+export const setOrgPlan = onCall({ timeoutSeconds: 60 }, async (request) => {
+  assertSuperAdmin(request);
+  const orgId = String(request.data?.orgId || "").trim();
+  const plan = String(request.data?.plan || "");
+  const months = Number(request.data?.months) || 1;
+  if (!orgId) throw new HttpsError("invalid-argument", "orgId is required.");
+  if (!isPlanId(plan)) throw new HttpsError("invalid-argument", "Unknown plan.");
+
+  const orgRef = db.doc(`organizations/${orgId}`);
+  const snap = await orgRef.get();
+  if (!snap.exists) throw new HttpsError("not-found", "Organization not found.");
+
+  const def = PLANS[plan as PlanId];
+  const patch: any = {
+    plan,
+    includedProjects: def.includedProjects,
+    userLimit: def.userLimit,
+    aiQuota: def.aiQuota,
+    overageRate: OVERAGE_RATE,
+  };
+  if (plan === "free") {
+    patch.subscriptionStatus = "free";
+  } else {
+    patch.subscriptionStatus = "active";
+    patch.currentPeriodEnd = Date.now() + months * MONTH_MS;
+  }
+  await orgRef.set(patch, { merge: true });
+  return { orgId, plan, ...patch };
+});
+
+// Operator view of an org's live usage vs its plan — the "safety-cap" lens:
+// spot an org running far past its included projects or AI quota. Super-admin only.
+export const getOrgUsage = onCall({ timeoutSeconds: 60 }, async (request) => {
+  assertSuperAdmin(request);
+  const orgId = String(request.data?.orgId || "").trim();
+  if (!orgId) throw new HttpsError("invalid-argument", "orgId is required.");
+
+  const orgRef = db.doc(`organizations/${orgId}`);
+  const snap = await orgRef.get();
+  if (!snap.exists) throw new HttpsError("not-found", "Organization not found.");
+  const d: any = snap.data() || {};
+
+  const month = new Date().toISOString().slice(0, 7);
+  const usageSnap = await orgRef.collection("usage").doc(month).get();
+  const aiUsed = usageSnap.exists ? Number((usageSnap.data() as any).aiCalls) || 0 : 0;
+
+  const projectCount = (await orgRef.collection("projects").count().get()).data().count;
+  const included = d.includedProjects ?? null;
+  const overageProjects = included === null ? 0 : Math.max(0, projectCount - included);
+  const overageRate = Number(d.overageRate) || OVERAGE_RATE;
+
+  return {
+    plan: d.plan || null,
+    subscriptionStatus: d.subscriptionStatus || null,
+    companyName: d.companyName || null,
+    includedProjects: included,
+    projectCount,
+    overageProjects,
+    overageCost: overageProjects * overageRate,
+    aiUsed,
+    aiQuota: d.aiQuota ?? null,
+  };
 });

@@ -7,6 +7,8 @@ import {
 } from "@phosphor-icons/react";
 import { projectService } from "../../../services/projectService";
 import { useProjectsQuery } from "../../../hooks/queries";
+import { usePlan } from "../../../hooks/usePlan";
+import { projectCapState } from "../../../lib/plans";
 import { UserProfile } from "../../../types";
 
 interface CreateProjectModalProps {
@@ -68,6 +70,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   };
 
   const { data: projects = [] } = useProjectsQuery();
+  const plan = usePlan();
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +82,26 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     if (projects.some(p => p.name.trim().toLowerCase() === newProject.name.trim().toLowerCase())) {
       alert("A workspace with this name already exists.");
       return;
+    }
+
+    // Plan project-cap enforcement. Free is a hard cap (upgrade to add more);
+    // paid plans allow extra projects at the per-project overage rate.
+    const cap = projectCapState(plan, projects.length);
+    if (cap.capped && cap.atOrOver) {
+      if (cap.isFree) {
+        alert(
+          `Your Free plan includes ${cap.included} project. Upgrade to a paid plan to add more projects.`,
+        );
+        return;
+      }
+      const extraAfter = cap.overage + 1;
+      const added = extraAfter * plan.overageRate;
+      const ok = window.confirm(
+        `This is beyond your plan's ${cap.included} included projects. ` +
+          `Extra projects are ₹${plan.overageRate}/month each — you'll have ${extraAfter} extra ` +
+          `(₹${added}/mo added to your bill). Continue?`,
+      );
+      if (!ok) return;
     }
 
     await projectService.createProject(

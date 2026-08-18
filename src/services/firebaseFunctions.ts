@@ -132,6 +132,32 @@ export const callSetSubscription = async (args: { orgId: string; action: string;
   return res.data;
 };
 
+// Super-admin: place an org on a project-based plan (free/starter/growth/business/enterprise).
+export const callSetOrgPlan = async (args: { orgId: string; plan: string; months?: number }) => {
+  const fn = httpsCallable<typeof args, any>(getFunctionsInstance(), 'setOrgPlan');
+  const res = await fn(args);
+  return res.data;
+};
+
+export interface OrgUsage {
+  plan: string | null;
+  subscriptionStatus: string | null;
+  companyName: string | null;
+  includedProjects: number | null;
+  projectCount: number;
+  overageProjects: number;
+  overageCost: number;
+  aiUsed: number;
+  aiQuota: number | null;
+}
+
+// Super-admin: read an org's live usage vs plan (the safety-cap view).
+export const callGetOrgUsage = async (orgId: string) => {
+  const fn = httpsCallable<{ orgId: string }, OrgUsage>(getFunctionsInstance(), 'getOrgUsage');
+  const res = await fn({ orgId });
+  return res.data;
+};
+
 // ---- Data-subject rights (export / erasure) ----
 
 // Download a machine-readable copy of the caller's profile and (for Owners/

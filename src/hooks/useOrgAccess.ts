@@ -22,7 +22,9 @@ const DAY = 24 * 60 * 60 * 1000;
 export function computeOrgAccess(data: any, now = Date.now()): Omit<OrgAccess, "loading"> {
   const status: SubscriptionStatus | undefined = data?.subscriptionStatus;
   const companyName = data?.companyName;
-  if (!status || status === "active" || status === "internal") {
+  // Grandfathered (no status), paid, operator, and permanent-free (Lite) orgs
+  // all have access — the free tier is never paywalled, just capacity-limited.
+  if (!status || status === "active" || status === "internal" || status === "free") {
     return { allowed: true, status, isTrial: false, daysLeft: 0, companyName };
   }
   if (status === "trialing") {

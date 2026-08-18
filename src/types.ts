@@ -351,6 +351,7 @@ export interface VendorBill {
 export type SubscriptionStatus =
   | "trialing"
   | "active"
+  | "free"       // permanent free (Lite) plan — allowed, never gated
   | "past_due"
   | "canceled"
   | "expired"
@@ -363,9 +364,15 @@ export interface OrgSettings {
   // Billing lifecycle (see functions/src/billing.ts + useOrgAccess). Orgs with
   // no status are grandfathered (treated as always-on).
   subscriptionStatus?: SubscriptionStatus;
-  plan?: string;
+  plan?: string;               // free | starter | growth | business | enterprise
   trialEndsAt?: number;        // epoch ms; while trialing, access ends here
   currentPeriodEnd?: number;   // epoch ms; paid period end (for active subs)
+  // Project-based plan capacity (see src/lib/plans.ts). null = unlimited
+  // (Enterprise); absent = grandfathered/no-cap.
+  includedProjects?: number | null;
+  userLimit?: number | null;
+  aiQuota?: number | null;
+  overageRate?: number;        // ₹ per extra project / month beyond the cap
 }
 
 export interface LaborLogLineItem {

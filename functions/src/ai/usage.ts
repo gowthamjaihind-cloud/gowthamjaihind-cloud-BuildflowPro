@@ -1,18 +1,26 @@
 import { HttpsError } from "firebase-functions/v2/https";
 import { db } from "../db";
 
-// Monthly AI-action quota by plan. null = unlimited.
-//  • no status / "internal" → grandfathered or operator org → unlimited
-//  • "active" (paid)        → generous cap
-//  • "trialing"             → enough to evaluate, bounded so a trial can't run
-//                             up the Gemini bill
-//  • expired/past_due/…     → 0 (also blocked by the app paywall)
+// Monthly AI-action quota. null = unlimited.
+//  • An explicit per-plan `aiQuota` on the org wins (set by setOrgPlan):
+//    a number caps it; null means unlimited (Enterprise).
+//  • Otherwise fall back to the subscription lifecycle (back-compat for orgs
+//    not yet placed on a project plan):
+//     - no status / "internal" → grandfathered or operator org → unlimited
+//     - "active" (paid)        → generous cap
+//     - "trialing"             → enough to evaluate, bounded so a trial can't
+//                                run up the Gemini bill
+//     - "free"                 → 0 (Lite has no AI)
+//     - expired/past_due/…     → 0 (also blocked by the app paywall)
 export function aiQuotaFor(orgData: any): number | null {
+  const q = orgData?.aiQuota;
+  if (q === null) return null; // explicit unlimited (Enterprise)
+  if (typeof q === "number") return q; // explicit per-plan cap
   const status = orgData?.subscriptionStatus;
   if (!status || status === "internal") return null;
   if (status === "active") return 2000;
   if (status === "trialing") return 100;
-  return 0;
+  return 0; // free | expired | past_due | canceled
 }
 
 const monthKey = () => new Date().toISOString().slice(0, 7); // YYYY-MM

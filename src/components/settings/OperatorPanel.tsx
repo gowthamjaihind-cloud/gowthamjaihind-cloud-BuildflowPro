@@ -7,13 +7,19 @@ import {
   CircleNotch as Loader2,
   WarningCircle as AlertCircle,
   EnvelopeSimple,
+  Stack,
+  ChartBar,
 } from "@phosphor-icons/react";
 import {
   callProvisionOrganization,
   callSetSubscription,
+  callSetOrgPlan,
+  callGetOrgUsage,
   callSetEmailConfig,
   callGetEmailConfigStatus,
+  OrgUsage,
 } from "../../services/firebaseFunctions";
+import { PLAN_ORDER, PLANS } from "../../lib/plans";
 
 // Operator-only console: create a new customer org (30-day trial) and manually
 // manage subscriptions until automated (Razorpay) checkout is wired.
@@ -83,6 +89,36 @@ export const OperatorPanel: React.FC = () => {
     } catch (e: any) {
       setSErr(e?.message || "Couldn't update the subscription.");
     } finally { setSBusy(false); }
+  };
+
+  // Plan
+  const [plan, setPlan] = useState("starter");
+  const [planBusy, setPlanBusy] = useState(false);
+  const [planErr, setPlanErr] = useState<string | null>(null);
+  const [planOk, setPlanOk] = useState<string | null>(null);
+
+  const applyPlan = async () => {
+    setPlanBusy(true); setPlanErr(null); setPlanOk(null);
+    try {
+      const res = await callSetOrgPlan({ orgId: orgId.trim(), plan });
+      setPlanOk(`Plan set to ${res.plan} (${res.includedProjects === null ? "unlimited" : res.includedProjects} projects, AI ${res.aiQuota === null ? "unlimited" : res.aiQuota}).`);
+    } catch (e: any) {
+      setPlanErr(e?.message || "Couldn't set the plan.");
+    } finally { setPlanBusy(false); }
+  };
+
+  // Usage (safety-cap view)
+  const [usage, setUsage] = useState<OrgUsage | null>(null);
+  const [uBusy, setUBusy] = useState(false);
+  const [uErr, setUErr] = useState<string | null>(null);
+
+  const loadUsage = async () => {
+    setUBusy(true); setUErr(null); setUsage(null);
+    try {
+      setUsage(await callGetOrgUsage(orgId.trim()));
+    } catch (e: any) {
+      setUErr(e?.message || "Couldn't load usage.");
+    } finally { setUBusy(false); }
   };
 
   return (
@@ -172,6 +208,87 @@ export const OperatorPanel: React.FC = () => {
             {sBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
           </button>
         </div>
+      </section>
+
+      {/* Plan */}
+      <section className="soft-card p-8 squircle-24">
+        <div className="flex items-center gap-2 mb-1">
+          <Stack className="w-5 h-5 text-primary" />
+          <h3 className="text-xl font-bold text-ink">Set project plan</h3>
+        </div>
+        <p className="text-ink-muted text-sm mb-5">
+          Places the org (the <span className="font-mono">orgId</span> above) on a project-based plan —
+          sets its project cap, AI quota and ₹{99}/extra-project overage. Free is never gated; paid
+          plans activate for the period.
+        </p>
+        {planErr && (
+          <div className="mb-3 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
+            <AlertCircle className="w-5 h-5 shrink-0" /><p>{planErr}</p>
+          </div>
+        )}
+        {planOk && (
+          <div className="mb-3 p-3 bg-success/10 text-ink rounded-xl border border-success/30 text-sm font-semibold">{planOk}</div>
+        )}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <select value={plan} onChange={(e) => setPlan(e.target.value)}
+            className="flex-1 bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm font-semibold">
+            {PLAN_ORDER.map((id) => (
+              <option key={id} value={id}>
+                {PLANS[id].name} — {PLANS[id].includedProjects === null ? "unlimited" : `${PLANS[id].includedProjects} projects`}
+                {PLANS[id].monthly ? ` · ₹${PLANS[id].monthly}/mo` : PLANS[id].monthly === 0 ? " · free" : " · custom"}
+              </option>
+            ))}
+          </select>
+          <button onClick={applyPlan} disabled={planBusy || !orgId.trim()}
+            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            {planBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Set plan"}
+          </button>
+        </div>
+      </section>
+
+      {/* Usage (safety-cap) */}
+      <section className="soft-card p-8 squircle-24">
+        <div className="flex items-center gap-2 mb-1">
+          <ChartBar className="w-5 h-5 text-primary" />
+          <h3 className="text-xl font-bold text-ink">Usage &amp; safety-cap</h3>
+        </div>
+        <p className="text-ink-muted text-sm mb-5">
+          Live usage for the <span className="font-mono">orgId</span> above — spot an org running past
+          its included projects or AI quota (the only way margin gets thin).
+        </p>
+        {uErr && (
+          <div className="mb-3 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
+            <AlertCircle className="w-5 h-5 shrink-0" /><p>{uErr}</p>
+          </div>
+        )}
+        <button onClick={loadUsage} disabled={uBusy || !orgId.trim()}
+          className="px-6 py-3 bg-onyx text-white rounded-xl font-bold hover:bg-onyx/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mb-4">
+          {uBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Load usage"}
+        </button>
+        {usage && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+            <div className="bg-panel border border-divider rounded-xl p-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Plan</p>
+              <p className="font-bold text-ink">{usage.plan || usage.subscriptionStatus || "—"}</p>
+            </div>
+            <div className="bg-panel border border-divider rounded-xl p-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Projects</p>
+              <p className="font-bold text-ink">
+                {usage.projectCount}{usage.includedProjects === null ? "" : ` / ${usage.includedProjects}`}
+              </p>
+            </div>
+            <div className={`rounded-xl p-3 border ${usage.overageProjects > 0 ? "bg-[#B85F3B]/10 border-[#B85F3B]/30" : "bg-panel border-divider"}`}>
+              <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Overage</p>
+              <p className="font-bold text-ink">{usage.overageProjects} · ₹{usage.overageCost}/mo</p>
+            </div>
+            <div className="bg-panel border border-divider rounded-xl p-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">AI this month</p>
+              <p className="font-bold text-ink">
+                {usage.aiUsed}{usage.aiQuota === null ? " (unlimited)" : ` / ${usage.aiQuota}`}
+              </p>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Email (Resend) */}
