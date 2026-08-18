@@ -28,6 +28,7 @@ import { callSetupOrganization } from "../services/firebaseFunctions";
 import { TeamPanel } from "./settings/TeamPanel";
 import { OperatorPanel } from "./settings/OperatorPanel";
 import { PrivacyPanel } from "./settings/PrivacyPanel";
+import { PlanSummary } from "./settings/PlanSummary";
 import { TelegramIntegration } from "./TelegramIntegration";
 
 const SUPER_ADMIN_EMAILS = ["gowtham.jaihind@gmail.com"];
@@ -165,6 +166,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <h3 className="text-xl font-bold text-ink mb-6">
                   Default Organization
                 </h3>
+
+                <PlanSummary />
 
                 {!orgId && !setupDone && (
                   <div className="mb-6 p-5 rounded-2xl border border-primary/40 bg-primary/10">

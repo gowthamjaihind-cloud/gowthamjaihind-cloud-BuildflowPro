@@ -78,49 +78,62 @@ const solutions = [
   { icon: DeviceMobile, pain: "Blind to the site?", fix: "Daily logs with photos, a portfolio health view, and Telegram field updates." },
 ];
 
+// Project-based pricing. You pay for the number of active projects you run;
+// need more than your plan includes? Add extra projects at the overage rate.
 // Prices in INR. Annual is billed yearly at ~2 months free (shown as an
-// effective monthly rate). Lite is a permanent free tier; paid tiers start with
-// a 30-day trial. `fixed` plans ignore the monthly/annual toggle.
+// effective monthly rate). Free is permanent; paid tiers start with a 30-day
+// trial. `fixed` plans ignore the monthly/annual toggle.
+const OVERAGE_RATE = 99;
+
+const freePlan = {
+  name: "Free",
+  projects: "1 active project",
+  features: ["1 active project", "Up to 2 users", "WBS & daily logs", "Telegram field logging"],
+};
+
 const plans = [
   {
-    name: "Lite",
-    monthly: "₹0",
-    annual: "₹0",
-    per: "free forever",
-    fixed: true,
-    tag: "For solo & small contractors",
-    features: ["1 active project", "Up to 2 users", "WBS & daily logs", "Telegram field logging", "Basic reports"],
-    cta: "Start free",
-    highlight: false,
-  },
-  {
-    name: "Essentials",
-    monthly: "₹1,499",
-    annual: "₹1,249",
-    annualTotal: "₹14,990 billed yearly",
+    name: "Starter",
+    projects: "Up to 5 projects",
+    monthly: "₹999",
+    annual: "₹832",
+    annualTotal: "₹9,990 billed yearly",
     tag: "For small contractors",
-    features: ["Up to 3 active projects", "Up to 10 users", "Procurement, labour & cost", "GRN & vendor ledgers", "300 AI invoice scans / mo"],
+    features: ["Up to 5 active projects", "10 users", "Procurement, labour & cost", "GRN & vendor ledgers", "150 AI invoice scans / mo"],
     cta: "Start 30-day trial",
     highlight: false,
   },
   {
-    name: "Professional",
-    monthly: "₹3,499",
-    annual: "₹2,916",
-    annualTotal: "₹34,990 billed yearly",
+    name: "Growth",
+    projects: "Up to 10 projects",
+    monthly: "₹1,799",
+    annual: "₹1,499",
+    annualTotal: "₹17,990 billed yearly",
     tag: "For growing firms",
-    features: ["Unlimited projects", "Unlimited users", "2,000 AI invoice scans / mo", "AI cost analysis & insights", "Client estimates", "Document vault", "Priority support"],
+    features: ["Up to 10 active projects", "25 users", "Everything in Starter", "AI cost analysis & insights", "400 AI invoice scans / mo"],
     cta: "Start 30-day trial",
     highlight: true,
   },
   {
+    name: "Business",
+    projects: "Up to 20 projects",
+    monthly: "₹2,999",
+    annual: "₹2,499",
+    annualTotal: "₹29,990 billed yearly",
+    tag: "For established firms",
+    features: ["Up to 20 active projects", "60 users", "Everything in Growth", "Client estimates & document vault", "1,000 AI scans / mo", "Priority support"],
+    cta: "Start 30-day trial",
+    highlight: false,
+  },
+  {
     name: "Enterprise",
+    projects: "Unlimited projects",
     monthly: "Custom",
     annual: "Custom",
     per: "tailored",
     fixed: true,
     tag: "For multi-site firms",
-    features: ["Everything in Professional", "SSO & advanced roles", "Higher AI limits", "Dedicated onboarding", "Priority SLA support"],
+    features: ["Unlimited projects & users", "SSO & advanced roles", "Higher AI limits", "Dedicated onboarding", "Priority SLA support"],
     cta: "Contact us",
     highlight: false,
   },
@@ -464,8 +477,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       {/* PRICING */}
       <section id="pricing" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
         <div className="text-center max-w-2xl mx-auto mb-8">
-          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Simple pricing that grows with you</h2>
-          <p className="text-ink-muted font-medium">Start free on Lite, or try any paid plan free for 30 days. No credit card to start.</p>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Pay for the projects you run</h2>
+          <p className="text-ink-muted font-medium">Pick a plan by how many projects you run. Start free, or try any paid plan free for 30 days — no credit card to start.</p>
         </div>
 
         {/* Monthly / annual toggle */}
@@ -487,6 +500,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
           </div>
         </div>
 
+        {/* Free strip */}
+        <div className="mb-6 soft-card rounded-3xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-black uppercase tracking-widest text-ink-muted">{freePlan.name}</span>
+            <span className="font-display font-bold text-3xl tracking-tight">₹0</span>
+            <span className="text-xs font-semibold text-ink-muted">{freePlan.projects} · up to 2 users · free forever</span>
+          </div>
+          <CTA label="Start free" className="bg-panel border border-divider text-ink hover:bg-surface text-sm px-6 py-3 rounded-2xl" />
+        </div>
+
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
           {plans.map((p) => {
             const price = p.fixed ? p.monthly : billing === "annual" ? p.annual : p.monthly;
@@ -502,6 +525,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 <p className={`text-[11px] font-semibold mb-1 h-4 ${p.highlight ? "text-white/50" : "text-ink-muted"}`}>
                   {!p.fixed && billing === "annual" ? p.annualTotal : ""}
                 </p>
+                <div className={`inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 ${p.highlight ? "bg-white/10 text-white" : "bg-sage/15 text-[#3E8388]"}`}>
+                  <Stack weight="bold" className="w-3.5 h-3.5" /> {p.projects}
+                </div>
                 <p className={`text-xs font-semibold mb-6 ${p.highlight ? "text-white/50" : "text-ink-muted"}`}>{p.tag}</p>
                 <ul className="space-y-3 mb-8">
                   {p.features.map((feat) => (
@@ -520,7 +546,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             );
           })}
         </div>
-        <p className="text-center text-xs text-ink-muted mt-8">Prices in INR, exclusive of GST. Annual plans are billed yearly. Enterprise billing is custom.</p>
+        <div className="mt-8 max-w-2xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-[#B85F3B] px-4 py-2 rounded-full text-sm font-bold">
+            <Stack weight="duotone" className="w-4 h-4" /> Need more projects? Add extra ones any time for ₹{OVERAGE_RATE}/project&nbsp;/&nbsp;month.
+          </div>
+          <p className="text-xs text-ink-muted mt-4">Prices in INR, exclusive of GST. Annual plans are billed yearly. Enterprise billing is custom.</p>
+        </div>
       </section>
 
       {/* FINAL CTA */}
