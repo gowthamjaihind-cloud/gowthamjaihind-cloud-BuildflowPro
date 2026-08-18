@@ -29,7 +29,7 @@ export const OperatorPanel: React.FC = () => {
   const [ownerEmail, setOwnerEmail] = useState("");
   const [pBusy, setPBusy] = useState(false);
   const [pErr, setPErr] = useState<string | null>(null);
-  const [provisioned, setProvisioned] = useState<{ orgId: string; link: string; emailed: boolean } | null>(null);
+  const [provisioned, setProvisioned] = useState<{ orgId: string; link: string; emailed: boolean; emailError?: string | null } | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Email (Resend) config
@@ -73,7 +73,7 @@ export const OperatorPanel: React.FC = () => {
     try {
       const res = await callProvisionOrganization({ companyName: companyName.trim(), ownerEmail: ownerEmail.trim() || undefined });
       const link = `${window.location.origin}/?invite=${res.code}`;
-      setProvisioned({ orgId: res.orgId, link, emailed: res.emailed });
+      setProvisioned({ orgId: res.orgId, link, emailed: res.emailed, emailError: res.emailError });
       setOrgId(res.orgId);
       setCompanyName(""); setOwnerEmail("");
     } catch (e: any) {
@@ -155,7 +155,7 @@ export const OperatorPanel: React.FC = () => {
             <p className="text-xs mb-2">
               {provisioned.emailed
                 ? <span className="text-success font-semibold">✓ Invite emailed to the owner.</span>
-                : <span className="text-ink-muted">Not emailed — share the link below.</span>}
+                : <span className="text-ink-muted">Not emailed{provisioned.emailError ? ` — ${provisioned.emailError}` : " (no owner email given)"} — share the link below.</span>}
             </p>
             <p className="text-xs text-ink-muted mb-2">orgId: <span className="font-mono">{provisioned.orgId}</span></p>
             <div className="flex items-center gap-2">

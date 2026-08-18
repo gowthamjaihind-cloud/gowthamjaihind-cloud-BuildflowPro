@@ -53,7 +53,14 @@ export const createInvite = onCall({ timeoutSeconds: 60 }, async (request) => {
     inviterName: (userSnap.data() as any)?.displayName || undefined,
   });
 
-  return { code, orgId, role, email: email || null, emailed: emailResult.sent };
+  return {
+    code,
+    orgId,
+    role,
+    email: email || null,
+    emailed: emailResult.sent,
+    emailError: emailResult.sent ? null : emailResult.error || null,
+  };
 });
 
 // A signed-in user redeems an invite code and joins the org with the invited

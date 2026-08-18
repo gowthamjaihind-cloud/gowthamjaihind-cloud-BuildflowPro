@@ -66,7 +66,13 @@ export const provisionOrganization = onCall({ timeoutSeconds: 60 }, async (reque
     link: `${APP_URL}/?invite=${code}`,
   });
 
-  return { orgId, code, trialEndsAt: now + TRIAL_MS, emailed: emailResult.sent };
+  return {
+    orgId,
+    code,
+    trialEndsAt: now + TRIAL_MS,
+    emailed: emailResult.sent,
+    emailError: emailResult.sent ? null : emailResult.error || null,
+  };
 });
 
 // ---- Email (Resend) configuration: super-admin only ----
