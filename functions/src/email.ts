@@ -48,6 +48,54 @@ export async function sendInviteEmail(opts: {
   }
 }
 
+// Welcome email sent when a user creates their own organization (self-serve).
+// No-ops when there's no recipient or email isn't configured yet.
+export async function sendWelcomeEmail(opts: {
+  to?: string | null; name?: string; companyName: string; link: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  if (!opts.to) return { sent: false, error: "no recipient email" };
+  const cfg = await getEmailConfig();
+  if (!cfg) return { sent: false, error: "email not configured" };
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${cfg.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: `${cfg.fromName} <${cfg.fromEmail}>`,
+        to: [opts.to],
+        subject: `Welcome to Sitetru — ${opts.companyName} is ready`,
+        html: welcomeHtml(opts),
+      }),
+    });
+    if (!res.ok) {
+      const b = await res.text().catch(() => "");
+      return { sent: false, error: `resend ${res.status}: ${b.slice(0, 180)}` };
+    }
+    return { sent: true };
+  } catch (e: any) {
+    return { sent: false, error: String(e) };
+  }
+}
+
+function welcomeHtml(o: { name?: string; companyName: string; link: string }): string {
+  const hi = o.name ? `Hi ${escapeHtml(o.name)},` : "Hi,";
+  return `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+  <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
+    <div style="background:#ffffff;border:1px solid #e6e8eb;border-radius:20px;padding:32px;">
+      <div style="font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#8a94a6;">Sitetru</div>
+      <h1 style="font-size:22px;color:#1f2937;margin:12px 0 8px;">${hi} welcome to Sitetru</h1>
+      <p style="font-size:15px;color:#4b5563;line-height:1.6;margin:0 0 20px;">
+        Your workspace <b>${escapeHtml(o.companyName)}</b> is ready. Create your first project, invite your team, and start logging from site over Telegram.
+      </p>
+      <a href="${o.link}" style="display:inline-block;background:#D97D54;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 24px;border-radius:12px;">Open Sitetru</a>
+      <p style="font-size:12px;color:#8a94a6;margin:24px 0 0;line-height:1.6;">
+        Need a hand getting set up? Just reply to this email.
+      </p>
+    </div>
+    <p style="text-align:center;font-size:11px;color:#9ca3af;margin-top:16px;">Truth, reported from site.</p>
+  </div></body></html>`;
+}
+
 function inviteHtml(o: { orgName: string; role: string; link: string; inviterName?: string }): string {
   const who = o.inviterName ? `${o.inviterName} has invited you` : "You've been invited";
   return `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
