@@ -25,9 +25,29 @@ import {
   getDocs,
   writeBatch,
 } from "firebase/firestore";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import firebaseConfig from "../firebase-applet-config.json";
 
 const app = initializeApp(firebaseConfig);
+
+// App Check — abuse protection. The reCAPTCHA v3 site key is PUBLIC (safe in the
+// client). When set, every Firestore / Functions / Storage request carries an
+// attestation token, so only the genuine app (not scripts/bots hammering the
+// public backend) can reach it. Left empty until the key is registered; an empty
+// key skips init so nothing breaks before enforcement is turned on in the
+// Firebase console. Can also be supplied at build time via VITE_APPCHECK_SITE_KEY.
+const APPCHECK_SITE_KEY =
+  (import.meta as any).env?.VITE_APPCHECK_SITE_KEY || "";
+if (APPCHECK_SITE_KEY) {
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(APPCHECK_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch (e) {
+    console.warn("App Check initialization failed", e);
+  }
+}
 
 export const db = initializeFirestore(
   app,
