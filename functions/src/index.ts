@@ -13,6 +13,7 @@ export * from "./dailyLogs";
 export * from "./goodsReceipt";
 export * from "./telegram";
 export * from "./setupOrg";
+export * from "./createOrg";
 export * from "./invites";
 export * from "./billing";
 export * from "./dataRights";

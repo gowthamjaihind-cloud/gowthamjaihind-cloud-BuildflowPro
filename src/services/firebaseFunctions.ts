@@ -87,6 +87,14 @@ export const callSetupOrganization = async (companyName?: string) => {
   return res.data;
 };
 
+// Self-serve: a signed-in user creates their own organization and lands in it.
+export const callCreateOrganization = async (args: { companyName: string; plan?: string; startTrial?: boolean }) => {
+  const fn = httpsCallable<typeof args, { orgId: string; plan: string; subscriptionStatus: string }>(
+    getFunctionsInstance(), 'createOrganization');
+  const res = await fn(args);
+  return res.data;
+};
+
 // Owner/Admin mints an invite code for a teammate (shared as …/?invite=CODE).
 export const callCreateInvite = async (args: { email?: string; role: string }) => {
   const fn = httpsCallable<typeof args, { code: string; orgId: string; role: string; email: string | null; emailed: boolean; emailError: string | null }>(
