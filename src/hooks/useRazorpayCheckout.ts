@@ -33,6 +33,7 @@ export function useRazorpayCheckout() {
     plan: string,
     period: "monthly" | "annual",
     onSuccess?: () => void,
+    orgId?: string,
   ) => {
     setBusy(true);
     setError(null);
@@ -41,7 +42,7 @@ export function useRazorpayCheckout() {
       if (!ok || !window.Razorpay) {
         throw new Error("Couldn't load the payment window. Check your connection and try again.");
       }
-      const order = await callCreateRazorpayOrder({ plan, period });
+      const order = await callCreateRazorpayOrder({ plan, period, orgId });
       await new Promise<void>((resolve, reject) => {
         const rzp = new window.Razorpay({
           key: order.keyId,

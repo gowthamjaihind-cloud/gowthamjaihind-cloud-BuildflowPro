@@ -35,6 +35,12 @@ export const createOrganization = onCall({ timeoutSeconds: 60 }, async (request)
     selfServe: true,
   };
 
+  // "Pay now" = a paid plan without the trial flag: the org is created but the
+  // user is NOT linked to it yet, so no workspace access is granted until the
+  // Razorpay payment succeeds (the payment activation links them). Free and
+  // trial both grant access immediately.
+  const isPayNow = plan !== "free" && plan !== "enterprise" && !startTrial;
+
   let state: any;
   if (plan !== "free" && plan !== "enterprise" && startTrial) {
     // 30-day trial of a paid plan — full plan capacity, time-limited.
@@ -49,29 +55,32 @@ export const createOrganization = onCall({ timeoutSeconds: 60 }, async (request)
       trialEndsAt: Date.now() + TRIAL_MS,
     };
   } else {
-    // Free tier now (pay-now upgrades happen via Razorpay checkout afterwards).
+    // Free tier (also the placeholder state for a pay-now org until payment
+    // activation overwrites it with the paid plan).
     state = planPatch("free", 0);
   }
 
   await orgRef.set({ ...base, ...state });
 
-  await db.doc(`users/${uid}`).set(
-    { currentOrgId: orgId, orgIds: FieldValue.arrayUnion(orgId) },
-    { merge: true },
-  );
-
-  // Welcome email (best-effort; no-op if Resend isn't configured).
-  const email = userData.email || (request.auth.token as any)?.email || null;
-  await sendWelcomeEmail({
-    to: email,
-    name: userData.displayName || (request.auth.token as any)?.name || undefined,
-    companyName,
-    link: APP_URL,
-  });
+  if (!isPayNow) {
+    // Grant access now (free / trial): link the user and welcome them.
+    await db.doc(`users/${uid}`).set(
+      { currentOrgId: orgId, orgIds: FieldValue.arrayUnion(orgId) },
+      { merge: true },
+    );
+    const email = userData.email || (request.auth.token as any)?.email || null;
+    await sendWelcomeEmail({
+      to: email,
+      name: userData.displayName || (request.auth.token as any)?.name || undefined,
+      companyName,
+      link: APP_URL,
+    });
+  }
 
   return {
     orgId,
     plan: state.plan || "free",
     subscriptionStatus: state.subscriptionStatus || "free",
+    needsPayment: isPayNow,
   };
 });

@@ -1,4 +1,5 @@
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
+import { FieldValue } from "firebase-admin/firestore";
 import * as crypto from "crypto";
 import { db } from "./db";
 import { isPlanId, planAmountPaise, planPatch, PlanId } from "./plans";
@@ -63,10 +64,14 @@ export const createRazorpayOrder = onCall({ timeoutSeconds: 30 }, async (request
   const amount = planAmountPaise(plan as PlanId, period);
   if (!amount) throw new HttpsError("invalid-argument", "That plan can't be purchased online.");
 
+  // An explicit orgId supports the signup pay-now flow, where the just-created
+  // org isn't linked as the user's currentOrgId yet. Falls back to currentOrgId.
+  const explicitOrgId = String(request.data?.orgId || "").trim();
   const userSnap = await db.doc(`users/${uid}`).get();
-  const orgId = userSnap.exists ? (userSnap.data() as any).currentOrgId : undefined;
+  const orgId = explicitOrgId || (userSnap.exists ? (userSnap.data() as any).currentOrgId : undefined);
   if (!orgId) throw new HttpsError("failed-precondition", "You're not part of an organization.");
   const orgSnap = await db.doc(`organizations/${orgId}`).get();
+  if (!orgSnap.exists) throw new HttpsError("not-found", "Organization not found.");
   const members = (orgSnap.data() as any)?.members || {};
   if (!["Owner", "Admin"].includes(members[uid])) {
     throw new HttpsError("permission-denied", "Only an Owner or Admin can purchase a plan.");
@@ -115,6 +120,14 @@ async function activateOrgFromOrder(orderId: string): Promise<boolean> {
   if (o.status === "paid") return true;
   const months = o.period === "annual" ? 12 : 1;
   await db.doc(`organizations/${o.orgId}`).set(planPatch(o.plan as PlanId, months), { merge: true });
+  // Link the buyer into the org — a self-serve pay-now org is created unlinked
+  // (no access) until payment lands, so this is what grants them access.
+  if (o.uid) {
+    await db.doc(`users/${o.uid}`).set(
+      { currentOrgId: o.orgId, orgIds: FieldValue.arrayUnion(o.orgId) },
+      { merge: true },
+    );
+  }
   await orderRef.set({ status: "paid", paidAt: new Date().toISOString() }, { merge: true });
   return true;
 }

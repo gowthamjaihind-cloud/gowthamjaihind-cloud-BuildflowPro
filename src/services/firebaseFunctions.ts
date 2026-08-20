@@ -87,9 +87,11 @@ export const callSetupOrganization = async (companyName?: string) => {
   return res.data;
 };
 
-// Self-serve: a signed-in user creates their own organization and lands in it.
+// Self-serve: a signed-in user creates their own organization. Free/trial link
+// them immediately; a pay-now org is created unlinked (needsPayment) until the
+// Razorpay payment activates and links it.
 export const callCreateOrganization = async (args: { companyName: string; plan?: string; startTrial?: boolean }) => {
-  const fn = httpsCallable<typeof args, { orgId: string; plan: string; subscriptionStatus: string }>(
+  const fn = httpsCallable<typeof args, { orgId: string; plan: string; subscriptionStatus: string; needsPayment: boolean }>(
     getFunctionsInstance(), 'createOrganization');
   const res = await fn(args);
   return res.data;
@@ -183,7 +185,8 @@ export const callGetRazorpayConfigStatus = async () => {
 };
 
 // Owner/Admin: create a server-priced Razorpay order for a plan + period.
-export const callCreateRazorpayOrder = async (args: { plan: string; period: 'monthly' | 'annual' }) => {
+// orgId is optional — used by the signup pay-now flow (org not yet linked).
+export const callCreateRazorpayOrder = async (args: { plan: string; period: 'monthly' | 'annual'; orgId?: string }) => {
   const fn = httpsCallable<typeof args, { orderId: string; amount: number; currency: string; keyId: string }>(
     getFunctionsInstance(), 'createRazorpayOrder');
   const res = await fn(args);
