@@ -100,9 +100,12 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
     if (!requireName()) return;
     setCreating(`pay:${plan}`); setCreateError(null);
     try {
-      await callCreateOrganization({ companyName: companyName.trim(), plan: "free" });
-      await pay(plan, period, () => reload());
-      setCreating(null); // if the modal was dismissed without paying
+      // Create the org UNLINKED (no workspace access yet), then pay for it.
+      // Access is granted only when the payment activates the plan — so closing
+      // the payment window leaves the user right here, not inside the app.
+      const res = await callCreateOrganization({ companyName: companyName.trim(), plan });
+      await pay(plan, period, () => reload(), res.orgId);
+      setCreating(null); // reached only if the modal was dismissed without paying
     } catch (e: any) {
       setCreateError(e?.message || "Couldn't start checkout.");
       setCreating(null);
