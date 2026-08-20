@@ -2,7 +2,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { randomBytes } from "crypto";
 import { db } from "./db";
 import { sendInviteEmail, APP_URL } from "./email";
-import { isPlanId, OVERAGE_RATE, PlanId, planPatch } from "./plans";
+import { isPlanId, OVERAGE_RATE, PlanId, planPatch, PLANS } from "./plans";
 
 // App operators who may provision orgs and manage subscriptions. Keep in sync
 // with the client-side check in the super-admin panel. (Later this can move to
@@ -151,6 +151,24 @@ export const setOrgPlan = onCall({ timeoutSeconds: 60 }, async (request) => {
   const orgRef = db.doc(`organizations/${orgId}`);
   const snap = await orgRef.get();
   if (!snap.exists) throw new HttpsError("not-found", "Organization not found.");
+
+  // Downgrade safety guard: if the target plan's included cap is finite and the
+  // org already has more projects than that, block by default so we don't strand
+  // a customer's projects over-cap. An operator can override with force:true
+  // (e.g. after the customer agrees to archive/remove the excess). The plan
+  // change never deletes any project — this only gates the plan write.
+  const targetCap = PLANS[plan as PlanId].includedProjects;
+  const force = request.data?.force === true;
+  if (typeof targetCap === "number" && !force) {
+    const projectCount = (await orgRef.collection("projects").count().get()).data().count;
+    if (projectCount > targetCap) {
+      throw new HttpsError(
+        "failed-precondition",
+        `This org has ${projectCount} projects but the ${plan} plan includes ${targetCap}. ` +
+          `Ask the customer to archive/remove ${projectCount - targetCap} first, or pass force to override.`,
+      );
+    }
+  }
 
   const patch = planPatch(plan as PlanId, months);
   await orgRef.set(patch, { merge: true });

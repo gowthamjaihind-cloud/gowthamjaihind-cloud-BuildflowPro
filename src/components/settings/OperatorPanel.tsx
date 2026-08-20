@@ -99,13 +99,25 @@ export const OperatorPanel: React.FC = () => {
   const [planErr, setPlanErr] = useState<string | null>(null);
   const [planOk, setPlanOk] = useState<string | null>(null);
 
-  const applyPlan = async () => {
+  const applyPlan = async (force = false) => {
     setPlanBusy(true); setPlanErr(null); setPlanOk(null);
     try {
-      const res = await callSetOrgPlan({ orgId: orgId.trim(), plan });
+      const res = await callSetOrgPlan({ orgId: orgId.trim(), plan, force });
       setPlanOk(`Plan set to ${res.plan} (${res.includedProjects === null ? "unlimited" : res.includedProjects} projects, AI ${res.aiQuota === null ? "unlimited" : res.aiQuota}).`);
     } catch (e: any) {
-      setPlanErr(e?.message || "Couldn't set the plan.");
+      const msg = e?.message || "Couldn't set the plan.";
+      // Downgrade guard: the org has more projects than the target plan's cap.
+      // Offer an explicit override (no projects are deleted — the cap just goes
+      // over until the customer archives/removes the excess).
+      if (!force && /force to override/i.test(msg)) {
+        if (window.confirm(`${msg}\n\nApply the downgrade anyway? No projects are deleted — the org will simply be over its new cap.`)) {
+          await applyPlan(true);
+          return;
+        }
+        setPlanErr(msg);
+      } else {
+        setPlanErr(msg);
+      }
     } finally { setPlanBusy(false); }
   };
 
@@ -268,7 +280,7 @@ export const OperatorPanel: React.FC = () => {
               </option>
             ))}
           </select>
-          <button onClick={applyPlan} disabled={planBusy || !orgId.trim()}
+          <button onClick={() => applyPlan()} disabled={planBusy || !orgId.trim()}
             className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {planBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Set plan"}
           </button>

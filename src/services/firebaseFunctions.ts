@@ -143,7 +143,8 @@ export const callSetSubscription = async (args: { orgId: string; action: string;
 };
 
 // Super-admin: place an org on a project-based plan (free/starter/growth/business/enterprise).
-export const callSetOrgPlan = async (args: { orgId: string; plan: string; months?: number }) => {
+// force overrides the downgrade guard (target plan's cap < the org's project count).
+export const callSetOrgPlan = async (args: { orgId: string; plan: string; months?: number; force?: boolean }) => {
   const fn = httpsCallable<typeof args, any>(getFunctionsInstance(), 'setOrgPlan');
   const res = await fn(args);
   return res.data;
