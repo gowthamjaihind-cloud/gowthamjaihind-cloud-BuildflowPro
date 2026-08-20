@@ -119,7 +119,12 @@ async function activateOrgFromOrder(orderId: string): Promise<boolean> {
   const o: any = snap.data();
   if (o.status === "paid") return true;
   const months = o.period === "annual" ? 12 : 1;
-  await db.doc(`organizations/${o.orgId}`).set(planPatch(o.plan as PlanId, months), { merge: true });
+  // Clear the pay-now sweep markers so the abandoned-checkout cleanup leaves
+  // this (now-paid) org alone.
+  await db.doc(`organizations/${o.orgId}`).set(
+    { ...planPatch(o.plan as PlanId, months), pendingPayment: FieldValue.delete(), pendingPlan: FieldValue.delete() },
+    { merge: true },
+  );
   // Link the buyer into the org — a self-serve pay-now org is created unlinked
   // (no access) until payment lands, so this is what grants them access.
   if (o.uid) {

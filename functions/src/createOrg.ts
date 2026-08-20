@@ -60,6 +60,15 @@ export const createOrganization = onCall({ timeoutSeconds: 60 }, async (request)
     state = planPatch("free", 0);
   }
 
+  // A pay-now org is unlinked (no access) until payment lands. Mark it so the
+  // scheduled sweeper can delete it if the payment is never completed, and
+  // record which plan the buyer intended so support can see the abandoned
+  // checkout. Payment activation clears pendingPayment.
+  if (isPayNow) {
+    base.pendingPayment = true;
+    base.pendingPlan = plan;
+  }
+
   await orgRef.set({ ...base, ...state });
 
   if (!isPayNow) {
