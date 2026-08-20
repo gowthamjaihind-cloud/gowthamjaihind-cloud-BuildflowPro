@@ -197,7 +197,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
 
   const isLoading = isLoadingLogs || isLoadingMat || isLoadingLab;
 
-  const canExport = user?.role === "Admin" || user?.role === "Project Manager";
+  const canExport = user?.role === "Admin" || user?.role === "Owner" || user?.role === "Project Manager";
 
   const { totalLabor, materialsRollup, laborByRole } = useMemo(
     () => aggregateLogs(logs),
