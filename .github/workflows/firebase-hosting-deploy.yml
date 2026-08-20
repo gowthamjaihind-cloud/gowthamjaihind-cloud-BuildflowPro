@@ -9,6 +9,8 @@ name: Deploy to Firebase Hosting
 #                               "Firebase Hosting Admin" role on jewel-ledger.
 # Optional:
 #   GEMINI_API_KEY            – exposed to the build for in-app AI features.
+#   VITE_SENTRY_DSN           – Sentry DSN for frontend error tracking. When
+#                               absent, Sentry stays disabled (safe no-op).
 
 on:
   push:
@@ -43,6 +45,7 @@ jobs:
         run: npx vite build
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
 
       - name: Deploy to Firebase Hosting (live)
         uses: FirebaseExtended/action-hosting-deploy@v0

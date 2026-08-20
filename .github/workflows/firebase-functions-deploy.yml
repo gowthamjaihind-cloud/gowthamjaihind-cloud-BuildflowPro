@@ -16,6 +16,9 @@ name: Deploy Firebase Functions
 #     Service Account User, Cloud Scheduler Admin, Secret Manager Admin,
 #     Artifact Registry Admin, Service Usage Consumer. (Or, simplest: the
 #     "Editor" role — broad but gets it working.)
+# Optional:
+#   SENTRY_DSN                – Sentry DSN for backend error tracking. When
+#                               absent, Sentry stays disabled (safe no-op).
 
 on:
   workflow_dispatch:
@@ -59,6 +62,21 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Write functions runtime env (Sentry DSN, optional)
+        # Firebase loads functions/.env and applies its keys as runtime env vars
+        # on the deployed functions. Only write SENTRY_DSN when the secret is
+        # set; otherwise backend error tracking stays a safe no-op. .env is
+        # gitignored, so nothing is committed.
+        run: |
+          if [ -n "${SENTRY_DSN}" ]; then
+            echo "SENTRY_DSN=${SENTRY_DSN}" >> functions/.env
+            echo "Wrote SENTRY_DSN to functions/.env"
+          else
+            echo "SENTRY_DSN not set — backend Sentry stays disabled"
+          fi
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
       - name: Deploy functions
         # Application Default Credentials come from the auth step above
