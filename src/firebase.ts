@@ -37,7 +37,8 @@ const app = initializeApp(firebaseConfig);
 // key skips init so nothing breaks before enforcement is turned on in the
 // Firebase console. Can also be supplied at build time via VITE_APPCHECK_SITE_KEY.
 const APPCHECK_SITE_KEY =
-  (import.meta as any).env?.VITE_APPCHECK_SITE_KEY || "";
+  (import.meta as any).env?.VITE_APPCHECK_SITE_KEY ||
+  "6LcbyY8tAAAAALNiKcUMNdJmSBRGuBff2y6KjS2C"; // reCAPTCHA v3 site key (public)
 if (APPCHECK_SITE_KEY) {
   try {
     initializeAppCheck(app, {
