@@ -1,4 +1,8 @@
 import * as admin from "firebase-admin";
+import { initSentry } from "./sentry";
+
+// Start error tracking as early as possible (no-op until SENTRY_DSN is set).
+initSentry();
 
 admin.initializeApp();
 // Firestore access goes through ./db, which binds to the app's named database

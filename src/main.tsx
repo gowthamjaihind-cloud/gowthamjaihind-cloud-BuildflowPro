@@ -5,6 +5,10 @@ import { queryClient } from './lib/react-query';
 import App from "./App.tsx";
 import "./index.css";
 import { registerSW } from "virtual:pwa-register";
+import { initSentry } from "./sentry";
+
+// Start error tracking as early as possible (no-op until VITE_SENTRY_DSN is set).
+initSentry();
 
 // Apply initial theme settings from local storage
 localStorage.removeItem("colorScheme");

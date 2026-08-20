@@ -1,5 +1,6 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { db } from "./db";
+import { captureError } from "./sentry";
 
 // Housekeeping for abandoned pay-now signups.
 //
@@ -40,6 +41,7 @@ export const cleanupAbandonedSignups = onSchedule(
         deleted++;
       } catch (err) {
         console.error("Failed to delete abandoned signup org", doc.id, err);
+        captureError(err, { where: "cleanupAbandonedSignups", orgId: doc.id });
       }
     }
     console.log(`Abandoned-signup cleanup: deleted ${deleted}/${snap.size} pending-payment orgs.`);

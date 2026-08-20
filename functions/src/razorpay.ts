@@ -3,6 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import * as crypto from "crypto";
 import { db } from "./db";
 import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE } from "./plans";
+import { captureError } from "./sentry";
 
 // Razorpay integration (TEST MODE until KYC is completed and live keys are set).
 // Flow: the app creates an order (server-priced) -> Razorpay Checkout collects
@@ -265,6 +266,8 @@ export const razorpayWebhook = onRequest({ region: "asia-southeast1" }, async (r
     }
     res.status(200).send("ok");
   } catch (e) {
+    // A webhook failure means a paid customer may not get activated — track it.
+    captureError(e, { where: "razorpayWebhook" });
     res.status(500).send("error");
   }
 });

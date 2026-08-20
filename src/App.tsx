@@ -52,6 +52,7 @@ import { queryClient } from './lib/react-query';
 import { useAuthInit } from "./hooks/useAuth";
 import { useProjectsQuery } from "./hooks/queries";
 import { useAuthStore, useProjectStore, useUIStore } from "./store";
+import { captureError, setSentryUser } from "./sentry";
 
 import { LandingPage } from "./pages/LandingPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
@@ -91,6 +92,7 @@ class ErrorBoundary extends React.Component<
 
   componentDidCatch(error: any, errorInfo: any) {
     console.error("ErrorBoundary caught an error", error, errorInfo);
+    captureError(error, { componentStack: errorInfo?.componentStack });
   }
 
   render() {
@@ -152,6 +154,11 @@ function AppContent() {
   const isLoggingIn = useAuthStore((state) => state.isLoggingIn);
   const loginError = useAuthStore((state) => state.loginError);
   const login = useAuthStore((state) => state.login);
+
+  // Tag Sentry errors with the signed-in account (no-op until a DSN is set).
+  useEffect(() => {
+    setSentryUser(user ? { uid: user.uid, email: user.email } : null);
+  }, [user]);
 
   const { data: projects = [] } = useProjectsQuery();
   const activeProject = useProjectStore((state) => state.activeProject);
