@@ -4,7 +4,11 @@ import { db } from "./db";
 import { isPlanId, planPatch, PLANS, OVERAGE_RATE, PlanId } from "./plans";
 import { sendWelcomeEmail, APP_URL } from "./email";
 
-const TRIAL_MS = 30 * 24 * 60 * 60 * 1000;
+const TRIAL_MS = 14 * 24 * 60 * 60 * 1000;
+// Only this plan is offered as a self-serve trial. Since there's a permanent
+// Free tier and upgrades are one click, a single entry-level trial is enough —
+// prospects sample the paid feature set on Starter and upgrade when they outgrow it.
+const TRIAL_PLAN = "starter";
 
 // Self-serve org creation: a signed-in user makes their own organization and is
 // dropped into it as Owner. Called from the onboarding screen.
@@ -20,6 +24,11 @@ export const createOrganization = onCall({ timeoutSeconds: 60 }, async (request)
   const startTrial = request.data?.startTrial === true;
   if (!companyName) throw new HttpsError("invalid-argument", "Enter a company / workspace name.");
   if (!isPlanId(plan)) throw new HttpsError("invalid-argument", "Unknown plan.");
+  // Trials are offered on the entry-level plan only. A trial requested for any
+  // other plan is rejected (the higher plans are pay-now; upgrade after trial).
+  if (startTrial && plan !== TRIAL_PLAN) {
+    throw new HttpsError("invalid-argument", `Free trials are available on the ${TRIAL_PLAN} plan only.`);
+  }
 
   const userSnap = await db.doc(`users/${uid}`).get();
   const userData: any = userSnap.exists ? userSnap.data() : {};
@@ -43,7 +52,7 @@ export const createOrganization = onCall({ timeoutSeconds: 60 }, async (request)
 
   let state: any;
   if (plan !== "free" && plan !== "enterprise" && startTrial) {
-    // 30-day trial of a paid plan — full plan capacity, time-limited.
+    // 14-day trial of the entry plan — full plan capacity, time-limited.
     const def = PLANS[plan as PlanId];
     state = {
       plan,
