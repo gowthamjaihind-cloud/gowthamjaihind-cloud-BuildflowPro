@@ -21,8 +21,8 @@ export function RoleGuard({
 
   if (!user) return <>{fallback}</>;
 
-  // Admins have universal access
-  if (user.role === "Admin") return <>{children}</>;
+  // Owners and Admins have universal access.
+  if (user.role === "Admin" || user.role === "Owner") return <>{children}</>;
 
   // Project-specific role overrides global role if set
   if (projectId && user.projectAccess && user.projectAccess[projectId]) {

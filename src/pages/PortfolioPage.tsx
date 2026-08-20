@@ -56,7 +56,8 @@ export const PortfolioPage: React.FC = () => {
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
 
   const visibleProjects = projects.filter((p) => {
-    if (user?.role === "Admin") return true;
+    // Owners and Admins see every project in their organization.
+    if (user?.role === "Admin" || user?.role === "Owner") return true;
     const access = user?.projectAccess?.[p.id];
     if (access === "none") return false;
     if (access === "read" || access === "write") return true;
@@ -330,7 +331,7 @@ export const PortfolioPage: React.FC = () => {
                     {project.status || "Planning"}
                   </span>
                   <div className="flex gap-1">
-                    {user?.role === "Admin" && (
+                    {(user?.role === "Admin" || user?.role === "Owner") && (
                       <button
                         onClick={(e) => handleEditProjectClick(e, project)}
                         className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-ink-muted hover:text-primary hover:bg-page apple-transition"
