@@ -2,7 +2,7 @@ import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import * as crypto from "crypto";
 import { db } from "./db";
-import { isPlanId, planAmountPaise, planPatch, PlanId } from "./plans";
+import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE } from "./plans";
 
 // Razorpay integration (TEST MODE until KYC is completed and live keys are set).
 // Flow: the app creates an order (server-priced) -> Razorpay Checkout collects
@@ -24,6 +24,24 @@ async function getRazorpayConfig(): Promise<RzpConfig | null> {
   const d: any = snap.exists ? snap.data() : null;
   if (!d?.keyId || !d?.keySecret) return null;
   return { keyId: d.keyId, keySecret: d.keySecret, webhookSecret: d.webhookSecret || "" };
+}
+
+// Create a Razorpay order via the REST API. Shared by plan and slot checkouts.
+async function placeRazorpayOrder(
+  cfg: RzpConfig,
+  opts: { amount: number; receipt: string; notes: Record<string, string> },
+): Promise<any> {
+  const auth = Buffer.from(`${cfg.keyId}:${cfg.keySecret}`).toString("base64");
+  const res = await fetch("https://api.razorpay.com/v1/orders", {
+    method: "POST",
+    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ amount: opts.amount, currency: "INR", receipt: opts.receipt, notes: opts.notes }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new HttpsError("internal", `Razorpay order failed: ${res.status} ${body.slice(0, 180)}`);
+  }
+  return res.json();
 }
 
 // ---- Operator config (super-admin) ----
@@ -80,28 +98,71 @@ export const createRazorpayOrder = onCall({ timeoutSeconds: 30 }, async (request
   const cfg = await getRazorpayConfig();
   if (!cfg) throw new HttpsError("failed-precondition", "Payments aren't configured yet.");
 
-  const auth = Buffer.from(`${cfg.keyId}:${cfg.keySecret}`).toString("base64");
-  const res = await fetch("https://api.razorpay.com/v1/orders", {
-    method: "POST",
-    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      amount,
-      currency: "INR",
-      receipt: `org_${orgId}_${Date.now()}`.slice(0, 40),
-      notes: { orgId, plan, period, uid },
-    }),
+  const order = await placeRazorpayOrder(cfg, {
+    amount,
+    receipt: `org_${orgId}_${Date.now()}`.slice(0, 40),
+    notes: { orgId, plan, period, uid },
   });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new HttpsError("internal", `Razorpay order failed: ${res.status} ${body.slice(0, 180)}`);
-  }
-  const order: any = await res.json();
 
   await db.doc(`razorpay_orders/${order.id}`).set({
     orderId: order.id,
+    kind: "plan",
     orgId,
     plan,
     period,
+    uid,
+    amount,
+    status: "created",
+    createdAt: new Date().toISOString(),
+  });
+
+  return { orderId: order.id, amount, currency: "INR", keyId: cfg.keyId };
+});
+
+// ---- Checkout: buy extra project slots (₹99/project overage) ----
+// An Owner/Admin on a paid plan buys N additional project slots for the current
+// cycle. Server-priced at the overage rate; payment raises includedProjects.
+export const createSlotOrder = onCall({ timeoutSeconds: 30 }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+  const uid = request.auth.uid;
+  const quantity = Math.floor(Number(request.data?.quantity) || 0);
+  if (quantity < 1 || quantity > 50) {
+    throw new HttpsError("invalid-argument", "Choose between 1 and 50 extra projects.");
+  }
+
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const orgId = String(request.data?.orgId || "").trim() ||
+    (userSnap.exists ? (userSnap.data() as any).currentOrgId : undefined);
+  if (!orgId) throw new HttpsError("failed-precondition", "You're not part of an organization.");
+  const orgSnap = await db.doc(`organizations/${orgId}`).get();
+  if (!orgSnap.exists) throw new HttpsError("not-found", "Organization not found.");
+  const org: any = orgSnap.data();
+  if (!["Owner", "Admin"].includes((org.members || {})[uid])) {
+    throw new HttpsError("permission-denied", "Only an Owner or Admin can buy project slots.");
+  }
+  // Slots are an overage add-on for paid plans only. Free/enterprise/unlimited
+  // orgs have no per-project overage to buy.
+  if (org.plan === "free" || org.plan === "enterprise" || org.includedProjects == null) {
+    throw new HttpsError("failed-precondition", "Project slots apply to paid Starter/Growth/Business plans only.");
+  }
+
+  const rate = Number(org.overageRate) || OVERAGE_RATE;
+  const amount = quantity * rate * 100; // paise
+
+  const cfg = await getRazorpayConfig();
+  if (!cfg) throw new HttpsError("failed-precondition", "Payments aren't configured yet.");
+
+  const order = await placeRazorpayOrder(cfg, {
+    amount,
+    receipt: `slots_${orgId}_${Date.now()}`.slice(0, 40),
+    notes: { orgId, kind: "slots", quantity: String(quantity), uid },
+  });
+
+  await db.doc(`razorpay_orders/${order.id}`).set({
+    orderId: order.id,
+    kind: "slots",
+    orgId,
+    quantity,
     uid,
     amount,
     status: "created",
@@ -118,6 +179,24 @@ async function activateOrgFromOrder(orderId: string): Promise<boolean> {
   if (!snap.exists) return false;
   const o: any = snap.data();
   if (o.status === "paid") return true;
+
+  if (o.kind === "slots") {
+    // Extra project slots: raise the included cap for the current cycle and
+    // track how many were bought. No plan change, no re-linking.
+    const qty = Math.max(0, Math.floor(Number(o.quantity) || 0));
+    if (qty > 0) {
+      await db.doc(`organizations/${o.orgId}`).set(
+        {
+          includedProjects: FieldValue.increment(qty),
+          purchasedSlots: FieldValue.increment(qty),
+        },
+        { merge: true },
+      );
+    }
+    await orderRef.set({ status: "paid", paidAt: new Date().toISOString() }, { merge: true });
+    return true;
+  }
+
   const months = o.period === "annual" ? 12 : 1;
   // Clear the pay-now sweep markers so the abandoned-checkout cleanup leaves
   // this (now-paid) org alone.

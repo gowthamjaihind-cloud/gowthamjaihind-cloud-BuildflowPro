@@ -10,6 +10,7 @@ import { useProjectsQuery } from "../../../hooks/queries";
 import { usePlan } from "../../../hooks/usePlan";
 import { projectCapState } from "../../../lib/plans";
 import { UserProfile } from "../../../types";
+import { AddCapacityModal } from "../../../components/AddCapacityModal";
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -71,6 +72,29 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
   const { data: projects = [] } = useProjectsQuery();
   const plan = usePlan();
+  const [showCapacity, setShowCapacity] = useState(false);
+
+  // The actual create. Called directly when within cap, or after the user adds
+  // capacity (buys slots / upgrades) from the AddCapacityModal.
+  const doCreate = async () => {
+    await projectService.createProject(
+      {
+        ...newProject,
+        strictDataEntry: true,
+      },
+      user.uid
+    );
+
+    setNewProject({
+      name: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      status: "Planning",
+      imageUrl: "",
+    });
+    onClose();
+  };
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +109,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     }
 
     // Plan project-cap enforcement. Free is a hard cap (upgrade to add more);
-    // paid plans allow extra projects at the per-project overage rate.
+    // a paid plan at its cap opens the Add-capacity modal (buy ₹99 slots or
+    // upgrade) and creates the project once capacity is added.
     const cap = projectCapState(plan, projects.length);
     if (cap.capped && cap.atOrOver) {
       if (cap.isFree) {
@@ -94,33 +119,11 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         );
         return;
       }
-      const extraAfter = cap.overage + 1;
-      const added = extraAfter * plan.overageRate;
-      const ok = window.confirm(
-        `This is beyond your plan's ${cap.included} included projects. ` +
-          `Extra projects are ₹${plan.overageRate}/month each — you'll have ${extraAfter} extra ` +
-          `(₹${added}/mo added to your bill). Continue?`,
-      );
-      if (!ok) return;
+      setShowCapacity(true);
+      return;
     }
 
-    await projectService.createProject(
-      {
-        ...newProject,
-        strictDataEntry: true,
-      },
-      user.uid
-    );
-    
-    setNewProject({
-      name: "",
-      description: "",
-      startDate: "",
-      endDate: "",
-      status: "Planning",
-      imageUrl: "",
-    });
-    onClose();
+    await doCreate();
   };
 
   return (
@@ -294,6 +297,11 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           </motion.form>
         </motion.div>
       )}
+      <AddCapacityModal
+        isOpen={showCapacity}
+        onClose={() => setShowCapacity(false)}
+        onSuccess={doCreate}
+      />
     </AnimatePresence>
   );
 };

@@ -37,6 +37,9 @@ export function planPatch(plan: PlanId, months: number) {
     userLimit: def.userLimit,
     aiQuota: def.aiQuota,
     overageRate: OVERAGE_RATE,
+    // A plan change resets included capacity to the plan base, so any extra
+    // project slots bought under the previous plan no longer apply.
+    purchasedSlots: 0,
   };
   if (plan === "free") {
     patch.subscriptionStatus = "free";
