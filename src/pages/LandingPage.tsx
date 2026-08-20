@@ -81,8 +81,9 @@ const solutions = [
 // Project-based pricing. You pay for the number of active projects you run;
 // need more than your plan includes? Add extra projects at the overage rate.
 // Prices in INR. Annual is billed yearly at ~2 months free (shown as an
-// effective monthly rate). Free is permanent; paid tiers start with a 30-day
-// trial. `fixed` plans ignore the monthly/annual toggle.
+// effective monthly rate). Free is permanent; Starter offers a 14-day free
+// trial (upgrade to any plan anytime). `fixed` plans ignore the monthly/annual
+// toggle.
 const OVERAGE_RATE = 99;
 
 const freePlan = {
@@ -100,7 +101,7 @@ const plans = [
     annualTotal: "₹9,990 billed yearly",
     tag: "For small contractors",
     features: ["Up to 5 active projects", "10 users", "Procurement, labour & cost", "GRN & vendor ledgers", "150 AI invoice scans / mo"],
-    cta: "Start 30-day trial",
+    cta: "Start 14-day trial",
     highlight: false,
   },
   {
@@ -111,7 +112,7 @@ const plans = [
     annualTotal: "₹17,990 billed yearly",
     tag: "For growing firms",
     features: ["Up to 10 active projects", "25 users", "Everything in Starter", "AI cost analysis & insights", "400 AI invoice scans / mo"],
-    cta: "Start 30-day trial",
+    cta: "Get started",
     highlight: true,
   },
   {
@@ -122,7 +123,7 @@ const plans = [
     annualTotal: "₹29,990 billed yearly",
     tag: "For established firms",
     features: ["Up to 20 active projects", "60 users", "Everything in Growth", "Client estimates & document vault", "1,000 AI scans / mo", "Priority support"],
-    cta: "Start 30-day trial",
+    cta: "Get started",
     highlight: false,
   },
   {
@@ -550,7 +551,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
           <div className="inline-flex items-center gap-2 bg-primary/10 text-[#B85F3B] px-4 py-2 rounded-full text-sm font-bold">
             <Stack weight="duotone" className="w-4 h-4" /> Need more projects? Add extra ones any time for ₹{OVERAGE_RATE}/project&nbsp;/&nbsp;month.
           </div>
-          <p className="text-xs text-ink-muted mt-4">Prices in INR, exclusive of GST. Annual plans are billed yearly. Enterprise billing is custom.</p>
+          <p className="text-xs text-ink-muted mt-4">Start free forever, or try Starter free for 14 days — no card, upgrade to any plan anytime. Prices in INR, exclusive of GST. Annual plans are billed yearly. Enterprise billing is custom.</p>
         </div>
       </section>
 

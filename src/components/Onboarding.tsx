@@ -242,19 +242,22 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                 >
                   {creating === `pay:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : `Pay ₹${payLabel?.toLocaleString("en-IN")}`}
                 </button>
-                <button
-                  onClick={() => startTrial(id)} disabled={!!creating}
-                  className="mt-2 text-xs font-semibold text-ink-muted hover:text-ink disabled:opacity-50"
-                >
-                  {creating === `trial:${id}` ? "Starting…" : "or start 30-day free trial"}
-                </button>
+                {id === "starter" && (
+                  <button
+                    onClick={() => startTrial(id)} disabled={!!creating}
+                    className="mt-2 text-xs font-semibold text-ink-muted hover:text-ink disabled:opacity-50"
+                  >
+                    {creating === `trial:${id}` ? "Starting…" : "or start 14-day free trial"}
+                  </button>
+                )}
               </div>
             );
           })}
         </div>
 
         <p className="text-center text-[11px] text-ink-muted mt-5">
-          Prices exclusive of GST. Extra projects ₹99/mo each. Need Enterprise?{" "}
+          New to Sitetru? Try Starter free for 14 days — no card, upgrade anytime. Prices exclusive of GST.
+          Extra projects ₹99/mo each. Need Enterprise?{" "}
           <a href="mailto:gowtham.jaihind@gmail.com?subject=Enterprise%20plan" className="text-primary font-semibold hover:underline">Contact us</a>.
         </p>
 
