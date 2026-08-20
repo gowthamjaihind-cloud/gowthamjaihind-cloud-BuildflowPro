@@ -95,6 +95,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </button>
         </header>
 
+        {/* Plan + usage, always visible above every settings tab. */}
+        <PlanSummary />
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Navigation / Categories */}
           <div className="space-y-2 flex-col flex overflow-y-auto">
@@ -166,8 +169,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <h3 className="text-xl font-bold text-ink mb-6">
                   Default Organization
                 </h3>
-
-                <PlanSummary />
 
                 {!orgId && !setupDone && (
                   <div className="mb-6 p-5 rounded-2xl border border-primary/40 bg-primary/10">
