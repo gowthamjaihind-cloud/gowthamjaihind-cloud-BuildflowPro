@@ -136,6 +136,7 @@ const plans = [
     tag: "For multi-site firms",
     features: ["Unlimited projects & users", "SSO & advanced roles", "Higher AI limits", "Dedicated onboarding", "Priority SLA support"],
     cta: "Contact us",
+    contactHref: "mailto:gowtham.jaihind@gmail.com?subject=Enterprise%20plan%20enquiry",
     highlight: false,
   },
 ];
@@ -187,23 +188,34 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
     onLogin();
   };
 
-  const CTA = ({ label, className = "", full = false }: { label: string; className?: string; full?: boolean }) => (
-    <button
-      onClick={requestLogin}
-      disabled={isLoggingIn}
-      className={`inline-flex items-center justify-center gap-2 font-bold apple-transition active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed ${full ? "w-full" : ""} ${className}`}
-    >
-      {isLoggingIn ? (
-        <>
-          <Loader2 className="w-5 h-5 animate-spin" /> Connecting…
-        </>
-      ) : (
-        <>
-          {label} <ArrowRight weight="bold" className="w-4 h-4" />
-        </>
-      )}
-    </button>
-  );
+  // When `href` is given, the CTA is a link (e.g. Enterprise "Contact us" →
+  // mailto) rather than the login button.
+  const CTA = ({ label, className = "", full = false, href }: { label: string; className?: string; full?: boolean; href?: string }) => {
+    const inner = (
+      <>
+        {label} <ArrowRight weight="bold" className="w-4 h-4" />
+      </>
+    );
+    const cls = `inline-flex items-center justify-center gap-2 font-bold apple-transition active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed ${full ? "w-full" : ""} ${className}`;
+    if (href) {
+      return (
+        <a href={href} className={cls}>
+          {inner}
+        </a>
+      );
+    }
+    return (
+      <button onClick={requestLogin} disabled={isLoggingIn} className={cls}>
+        {isLoggingIn ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" /> Connecting…
+          </>
+        ) : (
+          inner
+        )}
+      </button>
+    );
+  };
 
   return (
     <div className="min-h-[100dvh] bg-page text-ink font-sans overflow-x-hidden">
@@ -540,6 +552,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 </ul>
                 <CTA
                   label={p.cta}
+                  href={(p as any).contactHref}
                   full
                   className={`mt-auto text-sm py-3.5 rounded-2xl ${p.highlight ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                 />
