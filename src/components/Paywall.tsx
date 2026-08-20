@@ -37,6 +37,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
         <p className="text-ink-muted mb-6 text-[15px] leading-relaxed">
           Access to <b>{org}</b> is paused. Please ask your organization's owner to activate a plan.
         </p>
+        <p className="text-[12px] text-ink-muted mb-2">Wrong account? Sign out to start fresh.</p>
         <SignOutButton onClick={logout} />
       </Shell>
     );
@@ -116,7 +117,8 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
           <a href={`mailto:${SALES_EMAIL}?subject=${encodeURIComponent(`Plan for ${org}`)}`} className="text-primary font-semibold hover:underline">Contact us</a>.
         </p>
 
-        <div className="text-center mt-6">
+        <div className="text-center mt-6 pt-5 border-t border-divider/60">
+          <p className="text-[12px] text-ink-muted mb-2">Wrong account, or already used your trial? Sign out to start fresh.</p>
           <SignOutButton onClick={logout} />
         </div>
       </div>
