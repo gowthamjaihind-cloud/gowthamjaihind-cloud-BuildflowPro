@@ -236,18 +236,29 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                   <li className="flex items-start gap-2"><Check weight="bold" className="w-4 h-4 mt-0.5 text-success shrink-0" /> {p.userLimit} users</li>
                   <li className="flex items-start gap-2"><Check weight="bold" className="w-4 h-4 mt-0.5 text-success shrink-0" /> {p.aiQuota} AI scans / mo</li>
                 </ul>
-                <button
-                  onClick={() => payNow(id)} disabled={!!creating}
-                  className={`mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
-                >
-                  {creating === `pay:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : `Pay ₹${payLabel?.toLocaleString("en-IN")}`}
-                </button>
-                {id === "starter" && (
+                {id === "starter" ? (
+                  <>
+                    {/* Starter leads with the 14-day free trial; paying is the
+                        secondary action (or they pay later, in-app). */}
+                    <button
+                      onClick={() => startTrial(id)} disabled={!!creating}
+                      className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 bg-primary text-white hover:bg-[#B85F3B]"
+                    >
+                      {creating === `trial:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Start 14-day free trial <ArrowRight weight="bold" className="w-4 h-4" /></>}
+                    </button>
+                    <button
+                      onClick={() => payNow(id)} disabled={!!creating}
+                      className="mt-2 text-xs font-semibold text-ink-muted hover:text-ink disabled:opacity-50"
+                    >
+                      {creating === `pay:${id}` ? "Starting…" : `or pay ₹${payLabel?.toLocaleString("en-IN")} now`}
+                    </button>
+                  </>
+                ) : (
                   <button
-                    onClick={() => startTrial(id)} disabled={!!creating}
-                    className="mt-2 text-xs font-semibold text-ink-muted hover:text-ink disabled:opacity-50"
+                    onClick={() => payNow(id)} disabled={!!creating}
+                    className={`mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                   >
-                    {creating === `trial:${id}` ? "Starting…" : "or start 14-day free trial"}
+                    {creating === `pay:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : `Pay ₹${payLabel?.toLocaleString("en-IN")}`}
                   </button>
                 )}
               </div>
