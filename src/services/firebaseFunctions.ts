@@ -193,6 +193,15 @@ export const callCreateRazorpayOrder = async (args: { plan: string; period: 'mon
   return res.data;
 };
 
+// Owner/Admin on a paid plan: create a server-priced order for N extra project
+// slots (₹99 each). Payment raises the org's included-project cap.
+export const callCreateSlotOrder = async (args: { quantity: number; orgId?: string }) => {
+  const fn = httpsCallable<typeof args, { orderId: string; amount: number; currency: string; keyId: string }>(
+    getFunctionsInstance(), 'createSlotOrder');
+  const res = await fn(args);
+  return res.data;
+};
+
 // Verify a completed payment (backup to the webhook) — activates the plan.
 export const callVerifyRazorpayPayment = async (args: {
   razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string;
