@@ -158,6 +158,29 @@ export const translations: Record<Language, Record<string, string>> = {
     "views.consumptionHistory": "Consumption History",
     "views.clientEstimates": "Client Estimates",
     "views.costAnalysisReport": "Project Cost Analysis Report",
+
+    // ---- Portfolio ----
+    "portfolio.goodMorning": "Good morning",
+    "portfolio.goodAfternoon": "Good afternoon",
+    "portfolio.goodEvening": "Good evening",
+    "portfolio.greeting": "{greeting}, {name}",
+    "portfolio.eyebrow": "Portfolio",
+    "portfolio.tagline": "Truth, reported from site.",
+    "portfolio.taglineSub": "Every project, ledger, and daily log in one place.",
+    "portfolio.projects": "Projects",
+    "portfolio.active": "Active",
+    "portfolio.onHold": "On Hold",
+    "portfolio.completed": "Completed",
+    "portfolio.initializeWorkspace": "Initialize Workspace",
+    "portfolio.globalSettings": "Global Settings",
+    "portfolio.signOut": "Sign Out",
+    "portfolio.editProject": "Edit Project",
+    "portfolio.deleteProject": "Delete Project",
+    "portfolio.noWorkspaces": "No Active Workspaces",
+    "portfolio.noWorkspacesSub": "Kickstart your work by initializing a new project.",
+    "portfolio.deleteConfirmTitle": "Delete Project?",
+    "portfolio.deleteConfirmBody":
+      "Are you sure you want to delete this entire project? This will remove all associated data and cannot be undone.",
   },
 
   ta: {
@@ -312,5 +335,28 @@ export const translations: Record<Language, Record<string, string>> = {
     "views.consumptionHistory": "நுகர்வு வரலாறு",
     "views.clientEstimates": "வாடிக்கையாளர் மதிப்பீடுகள்",
     "views.costAnalysisReport": "செயல்திட்ட செலவு பகுப்பாய்வு அறிக்கை",
+
+    // ---- Portfolio ----
+    "portfolio.goodMorning": "காலை வணக்கம்",
+    "portfolio.goodAfternoon": "மதிய வணக்கம்",
+    "portfolio.goodEvening": "மாலை வணக்கம்",
+    "portfolio.greeting": "{greeting}, {name}",
+    "portfolio.eyebrow": "போர்ட்ஃபோலியோ",
+    "portfolio.tagline": "தளத்திலிருந்து அறிக்கையிடப்பட்ட உண்மை.",
+    "portfolio.taglineSub": "ஒவ்வொரு செயல்திட்டம், லெட்ஜர் மற்றும் தினசரி பதிவும் ஒரே இடத்தில்.",
+    "portfolio.projects": "செயல்திட்டங்கள்",
+    "portfolio.active": "செயலில்",
+    "portfolio.onHold": "நிறுத்தத்தில்",
+    "portfolio.completed": "முடிந்தது",
+    "portfolio.initializeWorkspace": "பணியிடத்தைத் தொடங்கு",
+    "portfolio.globalSettings": "பொது அமைப்புகள்",
+    "portfolio.signOut": "வெளியேறு",
+    "portfolio.editProject": "செயல்திட்டத்தைத் திருத்து",
+    "portfolio.deleteProject": "செயல்திட்டத்தை நீக்கு",
+    "portfolio.noWorkspaces": "செயலில் உள்ள பணியிடங்கள் இல்லை",
+    "portfolio.noWorkspacesSub": "புதிய செயல்திட்டத்தைத் தொடங்கி உங்கள் வேலையைத் தொடங்குங்கள்.",
+    "portfolio.deleteConfirmTitle": "செயல்திட்டத்தை நீக்கவா?",
+    "portfolio.deleteConfirmBody":
+      "இந்த முழு செயல்திட்டத்தையும் நீக்க விரும்புகிறீர்களா? இது தொடர்புடைய அனைத்து தரவையும் அகற்றும், மீட்டெடுக்க முடியாது.",
   },
 };
