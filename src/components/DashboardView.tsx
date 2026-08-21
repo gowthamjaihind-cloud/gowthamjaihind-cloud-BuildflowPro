@@ -18,6 +18,7 @@ import { Task } from "../types";
 import { useScheduleData } from "../hooks/useScheduleData";
 import { ScheduleView } from "./schedule/ScheduleView";
 import { PhaseStrips } from "./schedule/PhaseStrips";
+import { useTranslation } from "../i18n";
 
 interface DashboardViewProps {
   activeProjectId: string;
@@ -32,6 +33,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   activeProjectId,
   handleAddDependency,
 }) => {
+  const { t } = useTranslation();
   const { data: legacyTasks = [] } = useTasksQuery(activeProjectId);
   const {
     tasks: scheduleTasks,
@@ -97,9 +99,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-6 md:space-y-10">
       <PageHero
-        eyebrow="Project Dashboard"
-        title="Project Intelligence"
-        subtitle="Real-time synchronization of project tasks and critical path analysis."
+        eyebrow={t("dashboard.eyebrow")}
+        title={t("dashboard.heroTitle")}
+        subtitle={t("dashboard.heroSubtitle")}
         icon={
           <Construction
             weight="duotone"
@@ -134,21 +136,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div className="min-w-0">
             <h3 className="text-[15px] md:text-[17px] font-bold text-ink truncate">
-              {auth.currentUser?.displayName || "Session User"}
+              {auth.currentUser?.displayName || t("dashboard.sessionUser")}
             </h3>
             <p className="text-[12px] md:text-[13px] text-ink-muted font-medium">
-              Project Director
+              {t("dashboard.projectDirector")}
             </p>
             <div className="flex flex-wrap gap-2 xl:gap-4 mt-1">
               <div className="text-[10px] md:text-xs font-bold whitespace-nowrap">
                 <CountUp
-                  value={legacyTasks.filter((t) => !t.isSystemGenerated).length}
+                  value={legacyTasks.filter((tk) => !tk.isSystemGenerated).length}
                   className="text-rust-strong mr-1"
                 />
-                Tasks
+                {t("dashboard.tasks")}
               </div>
               <div className="text-[10px] md:text-xs font-bold whitespace-nowrap">
-                <span className="text-success mr-1">98%</span>Uptime
+                <span className="text-success mr-1">98%</span>
+                {t("dashboard.uptime")}
               </div>
             </div>
           </div>
@@ -158,7 +161,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <section className="soft-card p-5 md:p-6 squircle-24 flex flex-col justify-center">
           <div className="flex justify-between items-center mb-2 md:mb-3">
             <h3 className="text-xs md:text-[15px] font-bold text-ink">
-              Completion
+              {t("dashboard.completion")}
             </h3>
             <span className="text-lg md:text-[20px] font-black text-primary tracking-tighter">
               <CountUp value={completionPercentage} />%
@@ -177,7 +180,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Tasks at Risk Panel */}
         <section className="bg-surface-dark p-5 md:p-6 squircle-24 text-white shadow-xl relative overflow-hidden flex flex-col justify-center">
           <div className="flex justify-between items-center mb-2 md:mb-3 relative z-10">
-            <h4 className="text-xs md:text-[15px] font-bold">Tasks at Risk</h4>
+            <h4 className="text-xs md:text-[15px] font-bold">
+              {t("dashboard.tasksAtRisk")}
+            </h4>
             <span className="text-[15px] md:text-[17px] font-mono font-bold">
               <CountUp value={tasksAtRisk.count} />
             </span>
@@ -187,7 +192,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="flex items-center gap-2 text-success">
                 <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="text-sm md:text-base font-bold">
-                  All tasks on track
+                  {t("dashboard.allOnTrack")}
                 </span>
               </div>
             ) : (
@@ -195,12 +200,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div className="flex items-center gap-2 text-[#E1946F]">
                   <AlertTriangle className="w-4 h-4 md:w-5 md:h-5" />
                   <span className="text-sm md:text-base font-bold">
-                    Require attention
+                    {t("dashboard.requireAttention")}
                   </span>
                 </div>
                 {tasksAtRisk.criticalCount > 0 && (
                   <span className="text-xs md:text-sm text-danger font-bold bg-rose-500/10 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full inline-block w-max">
-                    {tasksAtRisk.criticalCount} on critical path
+                    {t("dashboard.onCriticalPath", {
+                      count: tasksAtRisk.criticalCount,
+                    })}
                   </span>
                 )}
               </div>
@@ -222,10 +229,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Gantt View */}
         <section className="space-y-4 md:space-y-6">
           <div className="flex items-center gap-3 md:gap-4 px-1 md:px-2">
-            <h3 className="text-lg md:text-xl font-bold text-ink">Schedule</h3>
+            <h3 className="text-lg md:text-xl font-bold text-ink">
+              {t("dashboard.schedule")}
+            </h3>
             <div className="flex-1 h-px bg-surface-dark/5" />
             <span className="text-[10px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest hidden sm:inline">
-              Timeline
+              {t("dashboard.timeline")}
             </span>
           </div>
           <div className="soft-card rounded-2xl overflow-hidden p-0">
@@ -242,10 +251,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* WBS Hierarchy */}
         <section className="space-y-4 md:space-y-6">
           <div className="flex items-center gap-3 md:gap-4 px-1 md:px-2">
-            <h3 className="text-lg md:text-xl font-bold text-ink">Structure</h3>
+            <h3 className="text-lg md:text-xl font-bold text-ink">
+              {t("dashboard.structure")}
+            </h3>
             <div className="flex-1 h-px bg-surface-dark/5" />
             <span className="text-[10px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest hidden sm:inline">
-              WBS Hierarchy
+              {t("dashboard.wbsHierarchy")}
             </span>
           </div>
           <div className="soft-card rounded-2xl overflow-hidden p-1 overflow-x-auto">
