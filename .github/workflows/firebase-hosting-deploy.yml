@@ -11,6 +11,7 @@ name: Deploy to Firebase Hosting
 #   GEMINI_API_KEY            – exposed to the build for in-app AI features.
 #   VITE_SENTRY_DSN           – Sentry DSN for frontend error tracking. When
 #                               absent, Sentry stays disabled (safe no-op).
+#                               (Configured — frontend error tracking is live.)
 
 on:
   push:
