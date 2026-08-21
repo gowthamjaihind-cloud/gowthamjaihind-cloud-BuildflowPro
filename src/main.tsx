@@ -10,6 +10,12 @@ import { initSentry } from "./sentry";
 // Start error tracking as early as possible (no-op until VITE_SENTRY_DSN is set).
 initSentry();
 
+// Apply the saved UI language to <html lang> as early as possible.
+document.documentElement.setAttribute(
+  "lang",
+  localStorage.getItem("language") === "ta" ? "ta" : "en",
+);
+
 // Apply initial theme settings from local storage
 localStorage.removeItem("colorScheme");
 document.documentElement.removeAttribute("data-theme");

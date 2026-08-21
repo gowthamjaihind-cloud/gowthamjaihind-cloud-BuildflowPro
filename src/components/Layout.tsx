@@ -22,14 +22,17 @@ import {
 import { BrandLogo } from "./BrandLogo";
 import { SyncStatus } from "./SyncStatus";
 import { TelegramBotStatus } from "./TelegramBotStatus";
+import { LanguageToggle } from "./LanguageToggle";
 import { useAuthStore, useUIStore, useProjectStore } from "../store";
 import { useBreakpoint } from "../hooks/useBreakpoint";
+import { useTranslation } from "../i18n";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { t } = useTranslation();
   const breakpoint = useBreakpoint();
   const [isSidebarOpen, setIsSidebarOpen] = useState(
     () => breakpoint === "desktop",
@@ -49,18 +52,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   );
 
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "insights", label: "AI Insights", icon: Sparkles },
-    { id: "wbs", label: "WBS", icon: ListTree },
-    { id: "dailylogs", label: "Daily Logs", icon: CheckCircle2 },
-    { id: "labor", label: "Labor & Billing", icon: Users },
-    { id: "inventory", label: "Inventory", icon: Package },
-    { id: "procurement", label: "Procurement", icon: Truck },
-    { id: "consumption", label: "Consumption History", icon: ClipboardCheck },
-    { id: "costs", label: "Cost Management", icon: IndianRupee },
-    { id: "estimates", label: "Client Estimates", icon: Calculator },
-    { id: "reports", label: "Reports", icon: FileText },
-    { id: "documents", label: "Document Vault", icon: FileText },
+    { id: "dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
+    { id: "insights", label: t("nav.insights"), icon: Sparkles },
+    { id: "wbs", label: t("nav.wbs"), icon: ListTree },
+    { id: "dailylogs", label: t("nav.dailylogs"), icon: CheckCircle2 },
+    { id: "labor", label: t("nav.labor"), icon: Users },
+    { id: "inventory", label: t("nav.inventory"), icon: Package },
+    { id: "procurement", label: t("nav.procurement"), icon: Truck },
+    { id: "consumption", label: t("nav.consumption"), icon: ClipboardCheck },
+    { id: "costs", label: t("nav.costs"), icon: IndianRupee },
+    { id: "estimates", label: t("nav.estimates"), icon: Calculator },
+    { id: "reports", label: t("nav.reports"), icon: FileText },
+    { id: "documents", label: t("nav.documents"), icon: FileText },
   ];
 
   const bottomNavIds = ["dashboard", "dailylogs", "procurement", "costs"];
@@ -203,10 +206,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <h1
                   className={`font-bold text-lg sm:text-xl tracking-tight text-ink truncate ${uiMode === "site" ? "!text-lg" : ""}`}
                 >
-                  {activeProject?.name || "Portfolio"}
+                  {activeProject?.name || t("header.portfolio")}
                 </h1>
                 <div className="hidden sm:block text-[10px] font-black text-rust-strong uppercase tracking-widest mt-0.5">
-                  {uiMode === "site" ? "Site Mode Live" : "Control Center"}
+                  {uiMode === "site" ? t("header.siteModeLive") : t("header.controlCenter")}
                 </div>
               </div>
               {activeProject?.status && (
@@ -218,10 +221,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     }
                     className="text-[10px] sm:text-xs font-bold bg-surface/50 border border-divider text-ink rounded-md sm:rounded-lg px-2 py-1 sm:px-3 sm:py-1.5 outline-none apple-transition hover:bg-surface focus:bg-surface"
                   >
-                    <option value="Planning">Planning</option>
-                    <option value="Active">Active</option>
-                    <option value="On Hold">On Hold</option>
-                    <option value="Completed">Completed</option>
+                    <option value="Planning">{t("status.planning")}</option>
+                    <option value="Active">{t("status.active")}</option>
+                    <option value="On Hold">{t("status.onHold")}</option>
+                    <option value="Completed">{t("status.completed")}</option>
                   </select>
                 </div>
               )}
@@ -229,6 +232,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <LanguageToggle />
             <div className="flex items-center gap-2">
               <SyncStatus />
               <TelegramBotStatus />
@@ -236,14 +240,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <button
               onClick={() => setActiveProject(null)}
               className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:py-2 md:px-4 md:py-2.5 sm:gap-2 rounded-full sm:rounded-[12px] md:rounded-[14px] apple-transition active:scale-95 border border-onyx/5 bg-onyx/5 sm:bg-surface/40 sm:hover:bg-surface text-ink-muted sm:hover:text-ink sm:border-white/60 shadow-none sm:shadow-sm"
-              title="Switch Project"
+              title={t("header.switchProject")}
             >
               <ArrowLeftRight
                 className="w-4 h-4 sm:w-5 sm:h-5"
                 strokeWidth={2}
               />
               <span className="hidden sm:inline-block font-bold text-[13px] md:text-[14px] tracking-tight">
-                Switch
+                {t("header.switch")}
               </span>
             </button>
           </div>
@@ -286,7 +290,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               strokeWidth={1.5}
             />
             <span className="text-[10px] font-medium leading-none text-ink-muted">
-              More
+              {t("nav.more")}
             </span>
           </button>
         </nav>
@@ -304,7 +308,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   className="bg-panel border border-divider shadow-lg rounded-full px-4 py-3 flex items-center gap-3 text-sm font-bold text-ink"
                 >
                   <ClipboardCheck className="w-5 h-5 text-primary" />
-                  New DPR Entry
+                  {t("header.newDprEntry")}
                 </button>
               </div>
             )}
