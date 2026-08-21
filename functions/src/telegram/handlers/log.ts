@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 import { getSession, setSession, clearStep } from "../session";
 import { db } from "../../db";
+import { tt, normalizeLang } from "../i18n";
 const projPath = (orgId, projectId) => orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
 const todayISO = () => {
     const now = new Date(Date.now() + 5.5 * 60 * 60 * 1000); // Asia/Kolkata
@@ -12,6 +13,7 @@ const fmtDate = (iso) => {
     return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 };
 export async function showTaskPicker(tg: any, chatId: number, messageId: any, session: any) {
+    const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
     const recent = session.recentTaskIds || [];
     const buttons = [];
@@ -20,11 +22,11 @@ export async function showTaskPicker(tg: any, chatId: number, messageId: any, se
         if (!snap.exists) continue;
         buttons.push([{ text: snap.data().name, callback_data: `t:${tid}` }]);
     }
-    buttons.push([{ text: "🔍 Browse all tasks", callback_data: "br:0" }]);
-    buttons.push([{ text: "✖ Cancel", callback_data: "xx" }]);
+    buttons.push([{ text: tt(lang, "btnBrowseAll"), callback_data: "br:0" }]);
+    buttons.push([{ text: tt(lang, "btnCancel"), callback_data: "xx" }]);
     await setSession(chatId, { step: "log:task", draft: {} });
-    
-    const text = recent.length ? "<b>What did you work on today?</b>" : "<b>Pick a task</b>";
+
+    const text = recent.length ? tt(lang, "whatWorkedToday") : tt(lang, "pickTask");
     if (messageId) {
         await tg.editMessage(chatId, messageId, text, buttons);
     } else {
@@ -33,8 +35,9 @@ export async function showTaskPicker(tg: any, chatId: number, messageId: any, se
 }
 
 export async function startLog(tg: any, chatId: number, session: any) {
+    const lang = normalizeLang(session?.lang);
     if (!session.activeProjectId) {
-        await tg.sendMessage(chatId, "No active project. Send /projects to pick one.");
+        await tg.sendMessage(chatId, tt(lang, "noActiveProject"));
         return;
     }
     const base = projPath(session.orgId, session.activeProjectId);
@@ -53,14 +56,11 @@ export async function startLog(tg: any, chatId: number, session: any) {
             if (taskSnap.exists) {
                 const taskName = taskSnap.data().name;
                 const formattedDate = fmtDate(todayISO());
-                const msgText = `<b>Log progress</b>
-<i>Today, ${formattedDate}</i>
-
-Continue with your last task?`;
+                const msgText = tt(lang, "logProgressContinue", { date: formattedDate });
                 const buttons = [
-                    [{ text: `✅ Continue — ${taskName}`, callback_data: `ct:${taskId}` }],
-                    [{ text: "🔁 Different task", callback_data: "dt" }],
-                    [{ text: "✖ Cancel", callback_data: "xx" }]
+                    [{ text: tt(lang, "btnContinueTask", { name: taskName }), callback_data: `ct:${taskId}` }],
+                    [{ text: tt(lang, "btnDifferentTask"), callback_data: "dt" }],
+                    [{ text: tt(lang, "btnCancel"), callback_data: "xx" }]
                 ];
                 await setSession(chatId, { step: "log:task", draft: {} });
                 await tg.sendMessage(chatId, msgText, buttons);
@@ -74,6 +74,7 @@ Continue with your last task?`;
     await showTaskPicker(tg, chatId, null, session);
 }
 export async function browseTasks(tg: any, chatId: number, messageId, session, page) {
+    const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.collection(`${base}/tasks`).orderBy("name").get();
     const tasks = snap.docs.map((d) => ({ id: d.id, name: d.data().name }));
@@ -84,19 +85,20 @@ export async function browseTasks(tg: any, chatId: number, messageId, session, p
     ]);
     const nav = [];
     if (page > 0)
-        nav.push({ text: "◀ Prev", callback_data: `br:${page - 1}` });
+        nav.push({ text: tt(lang, "btnPrev"), callback_data: `br:${page - 1}` });
     if ((page + 1) * PER < tasks.length)
-        nav.push({ text: "Next ▶", callback_data: `br:${page + 1}` });
+        nav.push({ text: tt(lang, "btnNext"), callback_data: `br:${page + 1}` });
     if (nav.length)
         buttons.push(nav);
-    buttons.push([{ text: "✖ Cancel", callback_data: "xx" }]);
-    await tg.editMessage(chatId, messageId, "<b>Pick a task</b>", buttons);
+    buttons.push([{ text: tt(lang, "btnCancel"), callback_data: "xx" }]);
+    await tg.editMessage(chatId, messageId, tt(lang, "pickTask"), buttons);
 }
 export async function pickTask(tg: any, chatId: number, messageId, session, taskId) {
+    const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.doc(`${base}/tasks/${taskId}`).get();
     if (!snap.exists) {
-        await tg.editMessage(chatId, messageId, "That task no longer exists.");
+        await tg.editMessage(chatId, messageId, tt(lang, "taskGone"));
         return;
     }
     const t = snap.data();
@@ -126,10 +128,15 @@ export async function pickTask(tg: any, chatId: number, messageId, session, task
             callback_data: `p:${v}`,
         })));
     }
-    rows.push([{ text: "✖ Cancel", callback_data: "xx" }]);
-    await tg.editMessage(chatId, messageId, `<b>${t.name}</b>\nToday, ${fmtDate(todayISO())} · now at <b>${current}%</b>\n\n<b>Progress?</b>\n<i>Tap a number, or type one.</i>`, rows);
+    rows.push([{ text: tt(lang, "btnCancel"), callback_data: "xx" }]);
+    await tg.editMessage(chatId, messageId, tt(lang, "progressPrompt", {
+        name: t.name,
+        date: fmtDate(todayISO()),
+        current,
+    }), rows);
 }
 export async function showMenu(tg: any, chatId: number, messageId, session) {
+    const lang = normalizeLang(session?.lang);
     const d = session.draft || {};
     const mats = (d.materials || []).length;
     const lab = (d.labour || []).length;
@@ -137,21 +144,21 @@ export async function showMenu(tg: any, chatId: number, messageId, session) {
     const photos = (d.photoUrls || []).length;
     let text = `<b>${d.taskName}</b>\n${fmtDate(d.workDate)} · ${d.currentProgress}% → <b>${d.progressPercent}%</b>\n`;
     if (mats)
-        text += `\n📦 ${mats} material${mats > 1 ? "s" : ""}`;
+        text += "\n" + tt(lang, "menuMaterials", { n: mats });
     if (lab)
-        text += `\n👷 ${lab} labour`;
+        text += "\n" + tt(lang, "menuLabour", { n: lab });
     if (equip)
-        text += `\n🚜 ${equip} equipment`;
+        text += "\n" + tt(lang, "menuEquipment", { n: equip });
     if (photos)
-        text += `\n📷 ${photos} photo${photos > 1 ? "s" : ""}`;
+        text += "\n" + tt(lang, "menuPhotos", { n: photos });
     if (d.note)
-        text += `\n📝 ${d.note}`;
+        text += "\n" + tt(lang, "menuNote", { note: d.note });
     const rows = [
-        [{ text: "✅ Save", callback_data: "sv" }],
-        [{ text: "+ Materials", callback_data: "m" }, { text: "+ Labour", callback_data: "l" }],
-        [{ text: "+ Equipment", callback_data: "e" }, { text: "+ Photo", callback_data: "ph" }],
-        [{ text: "+ Note", callback_data: "nt" }],
-        [{ text: "✖ Cancel", callback_data: "xx" }],
+        [{ text: tt(lang, "btnSave"), callback_data: "sv" }],
+        [{ text: tt(lang, "btnAddMaterials"), callback_data: "m" }, { text: tt(lang, "btnAddLabour"), callback_data: "l" }],
+        [{ text: tt(lang, "btnAddEquipment"), callback_data: "e" }, { text: tt(lang, "btnAddPhoto"), callback_data: "ph" }],
+        [{ text: tt(lang, "btnAddNote"), callback_data: "nt" }],
+        [{ text: tt(lang, "btnCancel"), callback_data: "xx" }],
     ];
     await setSession(chatId, { step: "log:menu" });
     if (messageId)
@@ -160,18 +167,19 @@ export async function showMenu(tg: any, chatId: number, messageId, session) {
         await tg.sendMessage(chatId, text, rows);
 }
 export async function pickMaterial(tg: any, chatId: number, messageId, session) {
+    const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.collection(`${base}/inventory`).orderBy("name").limit(20).get();
     if (snap.empty) {
-        await tg.editMessage(chatId, messageId, "No inventory items found for this project.");
+        await tg.editMessage(chatId, messageId, tt(lang, "noInventory"));
         return;
     }
     const rows = snap.docs.map((d) => [
         { text: d.data().name, callback_data: `mi:${d.id}` },
     ]);
-    rows.push([{ text: "◀ Back", callback_data: "bk" }]);
+    rows.push([{ text: tt(lang, "btnBack"), callback_data: "bk" }]);
     await setSession(chatId, { step: "log:material_pick" });
-    await tg.editMessage(chatId, messageId, "<b>Which material?</b>", rows);
+    await tg.editMessage(chatId, messageId, tt(lang, "whichMaterial"), rows);
 }
 export async function askMaterialQty(tg: any, chatId: number, messageId, session, invId) {
     const base = projPath(session.orgId, session.activeProjectId);
@@ -179,6 +187,7 @@ export async function askMaterialQty(tg: any, chatId: number, messageId, session
     if (!snap.exists)
         return;
     const item = snap.data();
+    const lang = normalizeLang(session?.lang);
     await setSession(chatId, {
         step: "log:material_qty",
         draft: {
@@ -186,22 +195,26 @@ export async function askMaterialQty(tg: any, chatId: number, messageId, session
             pendingMaterial: { materialId: invId, name: item.name, unit: item.unit || "" },
         },
     });
-    await tg.editMessage(chatId, messageId, `<b>${item.name}</b>\n\nHow much was used? (${item.unit || "qty"})\n<i>Type a number.</i>`);
+    await tg.editMessage(chatId, messageId, tt(lang, "materialQtyPrompt", {
+        name: item.name,
+        unit: item.unit || "qty",
+    }));
 }
 export async function pickLabourRole(tg: any, chatId: number, messageId, session) {
+    const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.collection(`${base}/labor_rate_cards`).limit(20).get();
     if (snap.empty) {
-        await tg.editMessage(chatId, messageId, "No labour roles set up. Add them in the web app.");
+        await tg.editMessage(chatId, messageId, tt(lang, "noLabourRoles"));
         return;
     }
     const rows = snap.docs.map((d) => {
         const r = d.data();
         return [{ text: r.roleName || r.name || "Role", callback_data: `lr:${d.id}` }];
     });
-    rows.push([{ text: "◀ Back", callback_data: "bk" }]);
+    rows.push([{ text: tt(lang, "btnBack"), callback_data: "bk" }]);
     await setSession(chatId, { step: "log:labour_pick" });
-    await tg.editMessage(chatId, messageId, "<b>Which role?</b>", rows);
+    await tg.editMessage(chatId, messageId, tt(lang, "whichRole"), rows);
 }
 export async function askHeadcount(tg: any, chatId: number, messageId, session, roleId) {
     const base = projPath(session.orgId, session.activeProjectId);
@@ -209,18 +222,20 @@ export async function askHeadcount(tg: any, chatId: number, messageId, session, 
     if (!snap.exists)
         return;
     const r = snap.data();
+    const lang = normalizeLang(session?.lang);
     const roleName = r.roleName || r.name || "Role";
     await setSession(chatId, {
         step: "log:labour_count",
         draft: { ...(session.draft || {}), pendingLabour: { roleId, roleName } },
     });
-    await tg.editMessage(chatId, messageId, `<b>${roleName}</b>\n\nHow many workers?\n<i>Type a number.</i>`);
+    await tg.editMessage(chatId, messageId, tt(lang, "headcountPrompt", { role: roleName }));
 }
 export async function pickEquipment(tg: any, chatId: number, messageId, session) {
+    const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.collection(`${base}/equipment`).limit(20).get();
     if (snap.empty) {
-        await tg.editMessage(chatId, messageId, "No equipment set up. Add it in the web app.");
+        await tg.editMessage(chatId, messageId, tt(lang, "noEquipment"));
         return;
     }
     const rows = snap.docs.map((d) => {
@@ -228,9 +243,9 @@ export async function pickEquipment(tg: any, chatId: number, messageId, session)
         const label = e.ownership ? `${e.name} (${e.ownership})` : e.name;
         return [{ text: label, callback_data: `ei:${d.id}` }];
     });
-    rows.push([{ text: "◀ Back", callback_data: "bk" }]);
+    rows.push([{ text: tt(lang, "btnBack"), callback_data: "bk" }]);
     await setSession(chatId, { step: "log:equipment_pick" });
-    await tg.editMessage(chatId, messageId, "<b>Which equipment?</b>", rows);
+    await tg.editMessage(chatId, messageId, tt(lang, "whichEquipment"), rows);
 }
 export async function askEquipmentUnit(tg: any, chatId: number, messageId, session, equipmentId) {
     const base = projPath(session.orgId, session.activeProjectId);
@@ -238,41 +253,48 @@ export async function askEquipmentUnit(tg: any, chatId: number, messageId, sessi
     if (!snap.exists)
         return;
     const e = snap.data();
+    const lang = normalizeLang(session?.lang);
     await setSession(chatId, {
         step: "log:equipment_unit",
         draft: { ...(session.draft || {}), pendingEquipment: { equipmentId, name: e.name } },
     });
-    await tg.editMessage(chatId, messageId, `<b>${e.name}</b>\n\nMeasured in?`, [
-        [{ text: "Hours", callback_data: "eu:hours" }, { text: "Days", callback_data: "eu:days" }],
-        [{ text: "◀ Back", callback_data: "bk" }],
+    await tg.editMessage(chatId, messageId, tt(lang, "measuredIn", { name: e.name }), [
+        [{ text: tt(lang, "btnHours"), callback_data: "eu:hours" }, { text: tt(lang, "btnDays"), callback_data: "eu:days" }],
+        [{ text: tt(lang, "btnBack"), callback_data: "bk" }],
     ]);
 }
 export async function askEquipmentQty(tg: any, chatId: number, messageId, session, unit) {
+    const lang = normalizeLang(session?.lang);
     const d = session.draft || {};
     const pe = d.pendingEquipment || {};
     await setSession(chatId, {
         step: "log:equipment_qty",
         draft: { ...d, pendingEquipment: { ...pe, unit } },
     });
-    await tg.editMessage(chatId, messageId, `<b>${pe.name}</b>\n\nHow many ${unit}?\n<i>Type a number.</i>`);
+    const unitWord = unit === "days" ? tt(lang, "btnDays") : tt(lang, "btnHours");
+    await tg.editMessage(chatId, messageId, tt(lang, "equipmentQtyPrompt", {
+        name: pe.name,
+        unit: unitWord.toLowerCase(),
+    }));
 }
 export async function handlePhoto(tg: any, chatId: number, session, photoSizes) {
+    const lang = normalizeLang(session?.lang);
     const d = session.draft || {};
     if (!d.logId) {
-        await tg.sendMessage(chatId, "Start with /log before sending a photo.");
+        await tg.sendMessage(chatId, tt(lang, "startLogBeforePhoto"));
         return;
     }
     // Telegram sends several resolutions — the last one is the largest.
     const largest = photoSizes[photoSizes.length - 1];
     const filePath = await tg.getFile(largest.file_id);
     if (!filePath) {
-        await tg.sendMessage(chatId, "Couldn't fetch that photo. Try again.");
+        await tg.sendMessage(chatId, tt(lang, "cantFetchPhoto"));
         return;
     }
     // Download the image bytes from Telegram.
     const res = await fetch(`https://api.telegram.org/file/bot${tg.botToken}/${filePath}`);
     if (!res.ok) {
-        await tg.sendMessage(chatId, "Couldn't download that photo. Try again.");
+        await tg.sendMessage(chatId, tt(lang, "cantDownloadPhoto"));
         return;
     }
     const buffer = Buffer.from(await res.arrayBuffer());
@@ -302,6 +324,7 @@ export async function handlePhoto(tg: any, chatId: number, session, photoSizes) 
     await showMenu(tg, chatId, null, s);
 }
 export async function saveLog(tg: any, chatId: number, messageId, session) {
+    const lang = normalizeLang(session?.lang);
     const d = session.draft || {};
     const base = projPath(session.orgId, session.activeProjectId);
     // Same payload shape as the web app, so the existing dailyLogs Cloud Function
@@ -328,17 +351,18 @@ export async function saveLog(tg: any, chatId: number, messageId, session) {
     ].slice(0, 3);
     await setSession(chatId, { recentTaskIds: recent });
     await clearStep(chatId);
-    let summary = `✅ <b>Logged</b>\n\n${d.taskName} — ${d.progressPercent}%`;
+    let summary = tt(lang, "loggedSummary", { name: d.taskName, pct: d.progressPercent });
     if ((d.materials || []).length)
-        summary += `\n📦 ${d.materials.length} material(s)`;
+        summary += tt(lang, "loggedMaterials", { n: d.materials.length });
     if ((d.labour || []).length)
-        summary += `\n👷 ${d.labour.length} labour`;
+        summary += tt(lang, "loggedLabour", { n: d.labour.length });
     await tg.editMessage(chatId, messageId, summary);
 }
 
 export async function showToday(tg: any, chatId: number, session: any) {
+    const lang = normalizeLang(session?.lang);
     if (!session.activeProjectId) {
-        await tg.sendMessage(chatId, "No active project. Send /projects to pick one.");
+        await tg.sendMessage(chatId, tt(lang, "noActiveProject"));
         return;
     }
     const base = projPath(session.orgId, session.activeProjectId);
@@ -349,7 +373,7 @@ export async function showToday(tg: any, chatId: number, session: any) {
         .get();
 
     if (snap.empty) {
-        await tg.sendMessage(chatId, `<b>Today · ${fmtDate(today)}</b>\n\nNothing logged yet. Send /log to add today's progress.`);
+        await tg.sendMessage(chatId, tt(lang, "todayNothing", { date: fmtDate(today) }));
         return;
     }
 
@@ -363,7 +387,7 @@ export async function showToday(tg: any, chatId: number, session: any) {
         if (t.exists) taskNames.set(tid, t.data()!.name || "Task");
     }));
 
-    let text = `<b>Today · ${fmtDate(today)}</b>\n${logs.length} update${logs.length > 1 ? "s" : ""}\n`;
+    let text = tt(lang, "todayHeader", { date: fmtDate(today), n: logs.length });
     for (const l of logs) {
         const name = taskNames.get(l.taskId) || "Task";
         text += `\n• <b>${name}</b> — ${l.progressPercent ?? 0}%`;
@@ -373,7 +397,7 @@ export async function showToday(tg: any, chatId: number, session: any) {
         if ((l.photoUrls || []).length) extras.push(`📷 ${l.photoUrls.length}`);
         if (extras.length) text += `  ${extras.join("  ")}`;
         if (l.note) text += `\n  📝 ${l.note}`;
-        if (l.createdByName) text += `\n  <i>by ${l.createdByName}</i>`;
+        if (l.createdByName) text += `\n  <i>${tt(lang, "todayBy", { name: l.createdByName })}</i>`;
     }
     await tg.sendMessage(chatId, text);
 }

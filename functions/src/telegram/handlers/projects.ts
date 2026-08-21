@@ -1,8 +1,10 @@
 import * as admin from "firebase-admin";
 import { setSession } from "../session";
 import { db } from "../../db";
+import { tt, normalizeLang } from "../i18n";
 
 export async function showProjects(tg: any, chatId: number, session: any) {
+  const lang = normalizeLang(session?.lang);
   const path = session.orgId
     ? `organizations/${session.orgId}/projects`
     : "projects";
@@ -19,12 +21,12 @@ export async function showProjects(tg: any, chatId: number, session: any) {
   });
 
   if (buttons.length === 0) {
-    await tg.sendMessage(chatId, "No active projects found.");
+    await tg.sendMessage(chatId, tt(lang, "noActiveProjects"));
     return;
   }
 
   await setSession(chatId, { step: "projects:pick" });
-  await tg.sendMessage(chatId, "<b>Select an active project:</b>", buttons);
+  await tg.sendMessage(chatId, tt(lang, "selectProject"), buttons);
 }
 
 export async function pickProject(
@@ -34,6 +36,7 @@ export async function pickProject(
   session: any,
   projectId: string
 ) {
+  const lang = normalizeLang(session?.lang);
   await setSession(chatId, {
     activeProjectId: projectId,
     step: null,
@@ -49,5 +52,5 @@ export async function pickProject(
     projectName = snap.data()!.name || projectName;
   }
 
-  await tg.editMessage(chatId, messageId, `✅ Active project set to: <b>${projectName}</b>`);
+  await tg.editMessage(chatId, messageId, tt(lang, "activeProjectSet", { name: projectName }));
 }
