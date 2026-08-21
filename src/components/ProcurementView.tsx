@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { useTranslation } from "../i18n";
 import { PurchaseOrderTab } from "./purchase/PurchaseOrderTab";
 import { GoodsReceiptTab } from "./purchase/GoodsReceiptTab";
 import { MaterialReceiptForm } from "./purchase/MaterialReceiptForm";
@@ -76,6 +77,7 @@ type Tab =
 export const ProcurementView: React.FC<ProcurementViewProps> = ({
   projectId,
 }) => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
@@ -819,7 +821,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-xl md:text-3xl font-black text-ink tracking-tight">
-              Active Vendors
+              {t("views.activeVendors")}
             </h2>
             <p className="text-ink-muted font-bold text-[10px] md:text-sm tracking-tight uppercase tracking-[0.1em]">
               Vendor ecosystem and tracking.
@@ -1023,7 +1025,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-black text-ink tracking-tight">
-            Material Receipts
+            {t("views.materialReceipts")}
           </h2>
           <p className="text-ink-muted font-bold text-xs md:text-sm tracking-tight uppercase tracking-[0.1em]">
             Inward orchestration record.
@@ -1310,7 +1312,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex flex-wrap items-center gap-3 md:gap-6">
             <h2 className="text-2xl md:text-3xl font-black text-ink tracking-tight">
-              Vendor Ledger
+              {t("views.vendorLedger")}
             </h2>
             {selectedVendor && (
               <div className="flex items-center gap-3 md:gap-4 bg-surface-dark text-white px-4 md:px-6 py-1.5 md:py-2 rounded-xl md:rounded-2xl text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">
@@ -1751,13 +1753,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             onClick={handleExportCSV}
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-panel text-ink px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-divider apple-transition border border-divider"
           >
-            <Download className="w-3.5 h-3.5" /> Export CSV
+            <Download className="w-3.5 h-3.5" /> {t("common.exportCsv")}
           </button>
           <button
             onClick={handleExportPDF}
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#C0653F] text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#A0522F] apple-transition shadow-sm"
           >
-            <Download className="w-3.5 h-3.5" /> Export PDF
+            <Download className="w-3.5 h-3.5" /> {t("common.exportPdf")}
           </button>
         </div>
         </div>

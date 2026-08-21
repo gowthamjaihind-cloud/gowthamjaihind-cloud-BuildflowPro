@@ -16,6 +16,7 @@ import {
   getDoc,
 } from "../firebase";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { useTranslation } from "../i18n";
 import {
   Vendor,
   LaborRateCard,
@@ -69,6 +70,7 @@ type Tab = "rates" | "billing";
 export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
   projectId,
 }) => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
@@ -370,7 +372,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-panel p-6 md:p-8 rounded-[24px] md:rounded-[32px] border border-divider shadow-sm">
           <div>
             <h2 className="text-2xl md:text-3xl font-black text-ink tracking-tight leading-none mb-2">
-              Labor Matrix
+              {t("views.laborMatrix")}
             </h2>
             <p className="text-ink-muted font-bold text-xs md:text-sm tracking-tight uppercase tracking-[0.1em]">
               Pricing indexes mapped to active vendors.
@@ -622,7 +624,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         <div className="space-y-6 md:space-y-10">
           <div>
             <h2 className="text-2xl md:text-3xl font-black text-ink tracking-tight leading-none mb-2">
-              RA Bill Summaries
+              {t("views.raBillSummaries")}
             </h2>
             <p className="text-ink-muted font-bold text-xs md:text-sm tracking-tight uppercase tracking-[0.1em]">
               Running account fiscal reconciliation.
@@ -1037,13 +1039,13 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
             onClick={handleExportCSV}
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-surface-dark text-white px-4 md:px-5 py-2.5 md:py-3 rounded-lg md:rounded-2xl text-[10px] md:text-[10px] font-black uppercase tracking-[0.15em] hover:bg-[#3A4F5F] apple-transition shadow-lg shadow-drab/10"
           >
-            <Download className="w-3.5 h-3.5" /> Export CSV
+            <Download className="w-3.5 h-3.5" /> {t("common.exportCsv")}
           </button>
           <button
             onClick={handleExportPDF}
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#C0653F] text-white px-4 md:px-5 py-2.5 md:py-3 rounded-lg md:rounded-2xl text-[10px] md:text-[10px] font-black uppercase tracking-[0.15em] hover:bg-[#A0522F] apple-transition shadow-lg shadow-primary/20"
           >
-            <Download className="w-3.5 h-3.5" /> Export PDF
+            <Download className="w-3.5 h-3.5" /> {t("common.exportPdf")}
           </button>
         </div>
       </div>

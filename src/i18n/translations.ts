@@ -146,6 +146,18 @@ export const translations: Record<Language, Record<string, string>> = {
     "insights.siteReport": "Site Report",
     "insights.disclaimer":
       "AI-generated from your project data — review figures before acting on them.",
+
+    // ---- Module view titles ----
+    "views.laborMatrix": "Labor Matrix",
+    "views.raBillSummaries": "RA Bill Summaries",
+    "views.archive": "Archive",
+    "views.stockInventory": "Stock Inventory",
+    "views.activeVendors": "Active Vendors",
+    "views.materialReceipts": "Material Receipts",
+    "views.vendorLedger": "Vendor Ledger",
+    "views.consumptionHistory": "Consumption History",
+    "views.clientEstimates": "Client Estimates",
+    "views.costAnalysisReport": "Project Cost Analysis Report",
   },
 
   ta: {
@@ -288,5 +300,17 @@ export const translations: Record<Language, Record<string, string>> = {
     "insights.siteReport": "தள அறிக்கை",
     "insights.disclaimer":
       "உங்கள் செயல்திட்டத் தரவிலிருந்து AI உருவாக்கியது — செயல்படுவதற்கு முன் எண்களைச் சரிபார்க்கவும்.",
+
+    // ---- Module view titles ----
+    "views.laborMatrix": "தொழிலாளர் அட்டவணை",
+    "views.raBillSummaries": "RA பில் சுருக்கங்கள்",
+    "views.archive": "காப்பகம்",
+    "views.stockInventory": "சரக்கு இருப்பு",
+    "views.activeVendors": "செயலில் உள்ள விற்பனையாளர்கள்",
+    "views.materialReceipts": "பொருள் ரசீதுகள்",
+    "views.vendorLedger": "விற்பனையாளர் லெட்ஜர்",
+    "views.consumptionHistory": "நுகர்வு வரலாறு",
+    "views.clientEstimates": "வாடிக்கையாளர் மதிப்பீடுகள்",
+    "views.costAnalysisReport": "செயல்திட்ட செலவு பகுப்பாய்வு அறிக்கை",
   },
 };

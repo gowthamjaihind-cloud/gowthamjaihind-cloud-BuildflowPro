@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { useTranslation } from "../i18n";
 import { useProjectDataQuery, useTasksQuery } from "../hooks/queries";
 import { useProjectDailyLogsQuery } from "../hooks/useDailyLogs";
 import { CountUp } from "./motion";
@@ -29,6 +30,7 @@ interface MaterialConsumptionViewProps {
 const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   projectId,
 }) => {
+  const { t } = useTranslation();
   // Local Filter state for Active Material Tab
   const [localTaskSearch, setLocalTaskSearch] = useState("");
   const [localStartDate, setLocalStartDate] = useState("");
@@ -420,7 +422,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-panel p-6 md:p-8 rounded-[24px] border border-divider shadow-sm" id="header-bar">
         <div>
           <h2 className="text-2xl md:text-3xl font-black text-ink tracking-tight mb-2">
-            Consumption History
+            {t("views.consumptionHistory")}
           </h2>
           <p className="text-ink-muted font-bold text-[10px] md:text-xs uppercase tracking-[0.15em]">
             Material and labor consumption aggregated from daily diaries, material issues and labor logs.
@@ -436,7 +438,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               className="flex items-center gap-1.5 px-4 py-2.5 bg-panel hover:bg-divider border border-divider rounded-xl text-xs font-bold uppercase tracking-wider text-ink transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <Download className="w-4 h-4 text-primary" />
-              Export CSV
+              {t("common.exportCsv")}
             </button>
             <button
               id="export-current-pdf-btn"
@@ -445,7 +447,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               className="flex items-center gap-1.5 px-4 py-2.5 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <Download className="w-4 h-4" />
-              Export PDF
+              {t("common.exportPdf")}
             </button>
           </div>
         )}
