@@ -124,6 +124,28 @@ export const translations: Record<Language, Record<string, string>> = {
     "reports.labourDeployment": "Labour Deployment",
     "reports.shifts": "shifts",
     "reports.taskProgressDetails": "Task Progress Details",
+
+    // ---- AI Insights ----
+    "insights.title": "AI Project Insights",
+    "insights.subtitle":
+      "A model reads this project's costs, schedule, and daily logs to produce a cost-variance read, schedule-slippage flags, an executive digest, and a shareable site report.",
+    "insights.lastGenerated": "Last generated {when}",
+    "insights.analyzing": "Analyzing…",
+    "insights.regenerate": "Regenerate",
+    "insights.generate": "Generate Insights",
+    "insights.noSectionData": "No data for this section yet.",
+    "insights.addDataFirst":
+      "Add some tasks and daily logs first — insights are generated from your project data.",
+    "insights.notConfigured":
+      "The AI service isn't configured yet (missing GEMINI_API_KEY). Ask the admin to add it.",
+    "insights.genFailed": "Failed to generate insights. Please try again.",
+    "insights.reading": "Reading your project and writing insights…",
+    "insights.executiveDigest": "Executive Digest",
+    "insights.costVariance": "Cost Variance",
+    "insights.scheduleSlippage": "Schedule Slippage",
+    "insights.siteReport": "Site Report",
+    "insights.disclaimer":
+      "AI-generated from your project data — review figures before acting on them.",
   },
 
   ta: {
@@ -244,5 +266,27 @@ export const translations: Record<Language, Record<string, string>> = {
     "reports.labourDeployment": "தொழிலாளர் பணியமர்த்தம்",
     "reports.shifts": "ஷிப்ட்கள்",
     "reports.taskProgressDetails": "பணி முன்னேற்ற விவரங்கள்",
+
+    // ---- AI Insights ----
+    "insights.title": "AI செயல்திட்ட நுண்ணறிவு",
+    "insights.subtitle":
+      "இந்த செயல்திட்டத்தின் செலவுகள், அட்டவணை மற்றும் தினசரி பதிவுகளை AI படித்து, செலவு வேறுபாடு, அட்டவணை தாமதக் குறிப்புகள், நிர்வாகச் சுருக்கம் மற்றும் பகிரக்கூடிய தள அறிக்கையை உருவாக்குகிறது.",
+    "insights.lastGenerated": "கடைசியாக உருவாக்கப்பட்டது {when}",
+    "insights.analyzing": "பகுப்பாய்வு செய்கிறது…",
+    "insights.regenerate": "மீண்டும் உருவாக்கு",
+    "insights.generate": "நுண்ணறிவுகளை உருவாக்கு",
+    "insights.noSectionData": "இந்தப் பிரிவுக்கு இன்னும் தரவு இல்லை.",
+    "insights.addDataFirst":
+      "முதலில் சில பணிகளையும் தினசரி பதிவுகளையும் சேர்க்கவும் — உங்கள் செயல்திட்டத் தரவிலிருந்து நுண்ணறிவுகள் உருவாக்கப்படுகின்றன.",
+    "insights.notConfigured":
+      "AI சேவை இன்னும் அமைக்கப்படவில்லை (GEMINI_API_KEY இல்லை). நிர்வாகியிடம் சேர்க்கச் சொல்லுங்கள்.",
+    "insights.genFailed": "நுண்ணறிவுகளை உருவாக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+    "insights.reading": "உங்கள் செயல்திட்டத்தைப் படித்து நுண்ணறிவுகளை எழுதுகிறது…",
+    "insights.executiveDigest": "நிர்வாகச் சுருக்கம்",
+    "insights.costVariance": "செலவு வேறுபாடு",
+    "insights.scheduleSlippage": "அட்டவணை தாமதம்",
+    "insights.siteReport": "தள அறிக்கை",
+    "insights.disclaimer":
+      "உங்கள் செயல்திட்டத் தரவிலிருந்து AI உருவாக்கியது — செயல்படுவதற்கு முன் எண்களைச் சரிபார்க்கவும்.",
   },
 };
