@@ -7,6 +7,7 @@ import {
   WarningCircle as AlertCircle,
 } from "@phosphor-icons/react";
 import { BrandLogo } from "../components/BrandLogo";
+import { useTranslation } from "../i18n";
 
 interface LoginPageProps {
   isLoggingIn: boolean;
@@ -19,6 +20,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   onLogin,
   loginError,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="h-screen flex items-center justify-center p-6 overflow-hidden relative">
       <motion.div
@@ -31,7 +33,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           Sitetru
         </h1>
         <p className="text-[17px] text-ink-muted mb-12 leading-relaxed font-medium">
-          Precision Infrastructure Orchestration for modern enterprises.
+          {t("login.tagline")}
         </p>
 
         <button
@@ -42,7 +44,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           {isLoggingIn ? (
             <>
               <Loader2 className="w-6 h-6 animate-spin" />
-              Connecting...
+              {t("login.connecting")}
             </>
           ) : (
             <>
@@ -51,7 +53,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 className="w-6 h-6 grayscale brightness-200"
                 alt=""
               />
-              Continue with Google
+              {t("login.continueGoogle")}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 apple-transition" />
             </>
           )}
@@ -66,7 +68,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
         <div className="mt-12 flex items-center justify-center gap-3 text-[13px] font-semibold text-ink-muted">
           <ShieldCheck className="w-4 h-4 text-success" />
-          Secure Enterprise Authentication
+          {t("login.secureAuth")}
         </div>
       </motion.div>
     </div>

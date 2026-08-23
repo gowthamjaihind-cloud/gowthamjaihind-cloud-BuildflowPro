@@ -234,6 +234,40 @@ export const translations: Record<Language, Record<string, string>> = {
     "dlog.speechUnsupported": "Speech recognition not supported in this browser.",
     "dlog.failedAddEquipment": "Failed to add equipment.",
     "dlog.failedSave": "Failed to save daily log.",
+
+    // ---- Login ----
+    "login.tagline": "Precision Infrastructure Orchestration for modern enterprises.",
+    "login.connecting": "Connecting...",
+    "login.continueGoogle": "Continue with Google",
+    "login.secureAuth": "Secure Enterprise Authentication",
+
+    // ---- Paywall / Trial ----
+    "paywall.trialEnded": "Your free trial has ended",
+    "paywall.subNeeded": "Subscription needed",
+    "paywall.accessPausedPre": "Access to",
+    "paywall.accessPausedPost":
+      "is paused. Please ask your organization's owner to activate a plan.",
+    "paywall.wrongAccount": "Wrong account? Sign out to start fresh.",
+    "paywall.choosePlanPre": "Choose a plan for",
+    "paywall.choosePlanPost": "to keep going. Pay for the projects you run.",
+    "paywall.monthly": "Monthly",
+    "paywall.annual": "Annual",
+    "paywall.savePct": "Save ~17%",
+    "paywall.perMo": "/ mo",
+    "paywall.billedYearly": "₹{amount} billed yearly",
+    "paywall.upToProjects": "Up to {n} projects",
+    "paywall.users": "{n} users",
+    "paywall.aiScans": "{n} AI scans / mo",
+    "paywall.pay": "Pay ₹{amount}",
+    "paywall.extraNote":
+      "Extra projects beyond your plan are ₹99/project/month. Prices exclusive of GST. Need more, or an Enterprise plan?",
+    "paywall.contactUs": "Contact us",
+    "paywall.wrongAccountTrial":
+      "Wrong account, or already used your trial? Sign out to start fresh.",
+    "paywall.signOut": "Sign out",
+    "paywall.daysLeft": "{n} days left in your free trial",
+    "paywall.oneDayLeft": "1 day left in your free trial",
+    "paywall.trialEndsToday": "Trial ends today",
   },
 
   ta: {
@@ -464,5 +498,40 @@ export const translations: Record<Language, Record<string, string>> = {
     "dlog.speechUnsupported": "இந்த உலாவியில் பேச்சு அறிதல் ஆதரிக்கப்படவில்லை.",
     "dlog.failedAddEquipment": "உபகரணம் சேர்க்க முடியவில்லை.",
     "dlog.failedSave": "தினசரி பதிவைச் சேமிக்க முடியவில்லை.",
+
+    // ---- Login ----
+    "login.tagline": "நவீன நிறுவனங்களுக்கான துல்லியமான உள்கட்டமைப்பு ஒருங்கிணைப்பு.",
+    "login.connecting": "இணைக்கிறது...",
+    "login.continueGoogle": "Google உடன் தொடரவும்",
+    "login.secureAuth": "பாதுகாப்பான நிறுவன அங்கீகாரம்",
+
+    // ---- Paywall / Trial ----
+    "paywall.trialEnded": "உங்கள் இலவச சோதனை முடிந்தது",
+    "paywall.subNeeded": "சந்தா தேவை",
+    "paywall.accessPausedPre": "",
+    "paywall.accessPausedPost":
+      "க்கான அணுகல் இடைநிறுத்தப்பட்டுள்ளது. ஒரு திட்டத்தைச் செயல்படுத்த உங்கள் நிறுவனத்தின் உரிமையாளரிடம் கேட்கவும்.",
+    "paywall.wrongAccount": "தவறான கணக்கா? புதிதாகத் தொடங்க வெளியேறவும்.",
+    "paywall.choosePlanPre": "",
+    "paywall.choosePlanPost":
+      "க்கு தொடர ஒரு திட்டத்தைத் தேர்ந்தெடுக்கவும். நீங்கள் இயக்கும் செயல்திட்டங்களுக்கு பணம் செலுத்துங்கள்.",
+    "paywall.monthly": "மாதாந்திர",
+    "paywall.annual": "ஆண்டு",
+    "paywall.savePct": "~17% சேமி",
+    "paywall.perMo": "/ மாதம்",
+    "paywall.billedYearly": "₹{amount} ஆண்டுதோறும் பில் செய்யப்படும்",
+    "paywall.upToProjects": "{n} செயல்திட்டங்கள் வரை",
+    "paywall.users": "{n} பயனர்கள்",
+    "paywall.aiScans": "{n} AI ஸ்கேன்கள் / மாதம்",
+    "paywall.pay": "₹{amount} செலுத்து",
+    "paywall.extraNote":
+      "உங்கள் திட்டத்திற்கு அப்பால் கூடுதல் செயல்திட்டங்கள் ₹99/செயல்திட்டம்/மாதம். விலைகள் GST தவிர்த்து. அதிகம் தேவையா, அல்லது Enterprise திட்டமா?",
+    "paywall.contactUs": "எங்களைத் தொடர்புகொள்ளவும்",
+    "paywall.wrongAccountTrial":
+      "தவறான கணக்கா, அல்லது ஏற்கனவே உங்கள் சோதனையைப் பயன்படுத்திவிட்டீர்களா? புதிதாகத் தொடங்க வெளியேறவும்.",
+    "paywall.signOut": "வெளியேறு",
+    "paywall.daysLeft": "உங்கள் இலவச சோதனையில் {n} நாட்கள் மீதம்",
+    "paywall.oneDayLeft": "உங்கள் இலவச சோதனையில் 1 நாள் மீதம்",
+    "paywall.trialEndsToday": "சோதனை இன்று முடிகிறது",
   },
 };
