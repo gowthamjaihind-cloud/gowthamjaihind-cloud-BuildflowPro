@@ -31,6 +31,7 @@ import { updateDoc, setDoc, doc, collection, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import { compressImage } from "../utils/imageCompressor";
+import { useTranslation } from "../i18n";
 
 interface DailyLogEntryScreenProps {
   projectId: string;
@@ -46,6 +47,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
   initialDate,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [selectedTaskId, setSelectedTaskId] = useState<string>(
     editLog?.taskId || taskId || "",
   );
@@ -154,7 +156,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition)
-      return alert("Speech recognition not supported in this browser.");
+      return alert(t("dlog.speechUnsupported"));
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
@@ -306,7 +308,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
       setShowNewEquipment(false);
     } catch (err) {
       console.error("Failed to add equipment", err);
-      alert("Failed to add equipment.");
+      alert(t("dlog.failedAddEquipment"));
     } finally {
       setSavingEquipment(false);
     }
@@ -382,7 +384,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
       }
     } catch (err) {
       console.error(err);
-      alert("Failed to save daily log.");
+      alert(t("dlog.failedSave"));
     }
   };
 
@@ -405,10 +407,10 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
         <div className="flex justify-between items-center p-6 border-b border-divider bg-surface sticky top-0 z-10 shrink-0">
           <div>
             <h2 className="text-xl font-black text-ink tracking-tight mb-1">
-              {editLog ? "Edit Log Entry" : "Log Today's Work"}
+              {editLog ? t("dlog.editTitle") : t("dlog.newTitle")}
             </h2>
             <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">
-              {editLog ? "Modify historical record" : "Single Source of Truth"}
+              {editLog ? t("dlog.editSubtitle") : t("dlog.newSubtitle")}
             </p>
           </div>
           <button
@@ -430,7 +432,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
-                    Select Location
+                    {t("dlog.selectLocation")}
                   </label>
                   <select
                     value={selectedLocation}
@@ -440,7 +442,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     }}
                     className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-primary"
                   >
-                    <option value="">-- Choose Location --</option>
+                    <option value="">{t("dlog.chooseLocation")}</option>
                     {locations.map((loc) => (
                       <option key={loc} value={loc}>
                         {loc}
@@ -451,7 +453,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
 
                 <div className="space-y-2">
                   <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
-                    Select Task
+                    {t("dlog.selectTask")}
                   </label>
                   <select
                     required
@@ -461,7 +463,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">
-                      {!selectedLocation ? "-- Choose Location First --" : "-- Choose Task --"}
+                      {!selectedLocation ? t("dlog.chooseLocationFirst") : t("dlog.chooseTask")}
                     </option>
                     {tasks
                       .filter((t) => {
@@ -481,7 +483,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             {taskId && currentTask && (
               <div className="bg-[#F7E4DB] p-4 rounded-xl border border-[#F7E4DB]">
                 <span className="text-[10px] font-black uppercase tracking-widest text-rust-strong block mb-1">
-                  Logging for Task
+                  {t("dlog.loggingForTask")}
                 </span>
                 <span className="text-sm font-bold text-[#B85F3B] block">
                   {currentTask.name}
@@ -491,7 +493,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
 
             <div className="space-y-2">
               <label className="text-xs font-black text-ink-muted uppercase tracking-widest flex items-center gap-2">
-                <Calendar className="w-4 h-4" /> Work Date
+                <Calendar className="w-4 h-4" /> {t("dlog.workDate")}
               </label>
               <input
                 type="date"
@@ -501,14 +503,14 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-primary font-mono"
               />
               <p className="text-[10px] text-ink-muted font-bold ml-1">
-                The date the work was actually performed on site.
+                {t("dlog.workDateHint")}
               </p>
             </div>
 
             <div className="bg-panel rounded-2xl p-6 border border-divider space-y-6">
               <div className="flex justify-between items-end mb-2">
                 <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
-                  Cumulative Progress
+                  {t("dlog.cumulativeProgress")}
                 </label>
                 <span className="text-xl font-black text-rust-strong font-mono">
                   {markComplete ? 100 : progressPercent}%
@@ -527,17 +529,17 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
               />
               {latestLog && (
                 <p className="text-[10px] text-ink-muted font-bold text-right italic">
-                  was {latestLog.progressPercent}% on {latestLog.workDate}
+                  {t("dlog.wasOn", { pct: latestLog.progressPercent, date: latestLog.workDate })}
                 </p>
               )}
 
               <div className="pt-4 border-t border-divider flex items-center justify-between">
                 <div>
                   <span className="text-sm font-bold text-ink block">
-                    Mark as Complete
+                    {t("dlog.markComplete")}
                   </span>
                   <span className="text-[10px] text-ink-muted font-bold">
-                    100% done, finished on this date.
+                    {t("dlog.markCompleteHint")}
                   </span>
                 </div>
                 <button
@@ -554,14 +556,14 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
-                  Materials Consumed
+                  {t("dlog.materialsConsumed")}
                 </label>
                 <button
                   type="button"
                   onClick={handleAddMaterial}
                   className="text-rust-strong text-xs font-bold hover:underline flex items-center gap-1"
                 >
-                  <Plus className="w-3 h-3" /> Add Material
+                  <Plus className="w-3 h-3" /> {t("dlog.addMaterial")}
                 </button>
               </div>
               {materials.map((m, i) => (
@@ -573,7 +575,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     }
                     className="flex-[2] bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none"
                   >
-                    <option value="">Select Material...</option>
+                    <option value="">{t("dlog.selectMaterial")}</option>
                     {globalInventory.map((inv) => (
                       <option key={inv.id} value={inv.id}>
                         {inv.name} ({inv.unit})
@@ -582,7 +584,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                   </select>
                   <input
                     type="number"
-                    placeholder="Qty"
+                    placeholder={t("dlog.qty")}
                     min="0.1"
                     step="0.1"
                     value={m.quantity || ""}
@@ -608,14 +610,14 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
-                  Labor Deployed
+                  {t("dlog.laborDeployed")}
                 </label>
                 <button
                   type="button"
                   onClick={handleAddLabor}
                   className="text-rust-strong text-xs font-bold hover:underline flex items-center gap-1"
                 >
-                  <Plus className="w-3 h-3" /> Add Labor
+                  <Plus className="w-3 h-3" /> {t("dlog.addLabor")}
                 </button>
               </div>
               {labour.map((l, i) => (
@@ -625,7 +627,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     onChange={(e) => updateLabor(i, "roleId", e.target.value)}
                     className="flex-[2] bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none"
                   >
-                    <option value="">Select Role...</option>
+                    <option value="">{t("dlog.selectRole")}</option>
                     {rateCards.map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.role}
@@ -634,7 +636,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                   </select>
                   <input
                     type="number"
-                    placeholder="Count"
+                    placeholder={t("dlog.count")}
                     min="1"
                     step="1"
                     value={l.headcount || ""}
@@ -660,14 +662,14 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-black text-ink-muted uppercase tracking-widest flex items-center gap-2">
-                  <Truck className="w-4 h-4" /> Equipment Used
+                  <Truck className="w-4 h-4" /> {t("dlog.equipmentUsed")}
                 </label>
                 <button
                   type="button"
                   onClick={handleAddEquipment}
                   className="text-rust-strong text-xs font-bold hover:underline flex items-center gap-1"
                 >
-                  <Plus className="w-3 h-3" /> Add Equipment
+                  <Plus className="w-3 h-3" /> {t("dlog.addEquipment")}
                 </button>
               </div>
               {equipment.map((eq, i) => (
@@ -679,7 +681,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     }
                     className="flex-[2] min-w-0 bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none"
                   >
-                    <option value="">Select Equipment...</option>
+                    <option value="">{t("dlog.selectEquipment")}</option>
                     {equipmentMaster.map((em) => (
                       <option key={em.id} value={em.id}>
                         {em.name} ({em.ownership})
@@ -688,7 +690,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                   </select>
                   <input
                     type="number"
-                    placeholder="Qty"
+                    placeholder={t("dlog.qty")}
                     min="0.5"
                     step="0.5"
                     value={eq.quantity || ""}
@@ -702,8 +704,8 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     onChange={(e) => updateEquipment(i, "unit", e.target.value)}
                     className="w-20 shrink-0 bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none"
                   >
-                    <option value="hours">hrs</option>
-                    <option value="days">days</option>
+                    <option value="hours">{t("dlog.hrs")}</option>
+                    <option value="days">{t("dlog.days")}</option>
                   </select>
                   <button
                     type="button"
@@ -721,13 +723,13 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <div className="flex justify-between items-center px-1">
                   {equipment.some((e) => e.equipmentId && !(e.cost && e.cost > 0)) ? (
                     <span className="text-[10px] font-bold text-[#C0653F]">
-                      Set a rate on the equipment to cost its usage
+                      {t("dlog.setRateHint")}
                     </span>
                   ) : (
                     <span />
                   )}
                   <span className="text-xs font-black text-ink font-mono">
-                    Equipment: ₹{equipmentTotal.toLocaleString("en-IN")}
+                    {t("dlog.equipmentTotal", { amount: equipmentTotal.toLocaleString("en-IN") })}
                   </span>
                 </div>
               )}
@@ -739,7 +741,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     <input
                       type="text"
                       autoFocus
-                      placeholder="Equipment name (e.g., Excavator)"
+                      placeholder={t("dlog.equipmentNamePlaceholder")}
                       value={newEquipmentName}
                       onChange={(e) => setNewEquipmentName(e.target.value)}
                       className="flex-[2] min-w-0 bg-surface p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none"
@@ -753,8 +755,8 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       }
                       className="w-28 shrink-0 bg-surface p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none"
                     >
-                      <option value="Owned">Owned</option>
-                      <option value="Rented">Rented</option>
+                      <option value="Owned">{t("dlog.owned")}</option>
+                      <option value="Rented">{t("dlog.rented")}</option>
                     </select>
                   </div>
                   <div className="flex gap-2">
@@ -762,7 +764,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       type="number"
                       min="0"
                       step="1"
-                      placeholder="₹ / hour (optional)"
+                      placeholder={t("dlog.perHourOptional")}
                       value={newEquipmentHourly}
                       onChange={(e) => setNewEquipmentHourly(e.target.value)}
                       className="flex-1 min-w-0 bg-surface p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none font-mono"
@@ -771,15 +773,14 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       type="number"
                       min="0"
                       step="1"
-                      placeholder="₹ / day (optional)"
+                      placeholder={t("dlog.perDayOptional")}
                       value={newEquipmentDaily}
                       onChange={(e) => setNewEquipmentDaily(e.target.value)}
                       className="flex-1 min-w-0 bg-surface p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none font-mono"
                     />
                   </div>
                   <p className="text-[10px] text-ink-muted font-bold">
-                    Set the rate matching how you log this machine (hours or
-                    days). Usage cost rolls into the project's Direct Cost.
+                    {t("dlog.rateRollupHint")}
                   </p>
                   <div className="flex justify-end gap-2">
                     <button
@@ -790,7 +791,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       }}
                       className="px-3 py-2 text-xs font-bold text-ink-muted hover:bg-divider rounded-lg"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                     <button
                       type="button"
@@ -803,7 +804,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       ) : (
                         <Plus className="w-3.5 h-3.5" />
                       )}
-                      Save to list
+                      {t("dlog.saveToList")}
                     </button>
                   </div>
                 </div>
@@ -813,7 +814,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                   onClick={() => setShowNewEquipment(true)}
                   className="text-[10px] font-bold text-ink-muted hover:text-ink flex items-center gap-1"
                 >
-                  <Plus className="w-3 h-3" /> New equipment (add to reusable list)
+                  <Plus className="w-3 h-3" /> {t("dlog.newEquipment")}
                 </button>
               )}
             </div>
@@ -821,7 +822,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             <div className="space-y-2 relative">
               <div className="flex justify-between items-center mb-2">
                 <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
-                  Note (Optional)
+                  {t("dlog.noteOptional")}
                 </label>
                 <button
                   type="button"
@@ -833,7 +834,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                   }`}
                 >
                   <Mic className="w-3.5 h-3.5" />
-                  {isRecording ? "Recording..." : "Dictate"}
+                  {isRecording ? t("dlog.recording") : t("dlog.dictate")}
                 </button>
               </div>
               <textarea
@@ -841,14 +842,14 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 onChange={(e) => setNote(e.target.value)}
                 rows={3}
                 className="w-full bg-panel p-4 rounded-xl border border-divider text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-primary resize-none"
-                placeholder="Any issues, delays, or general remarks?"
+                placeholder={t("dlog.notePlaceholder")}
               />
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
-                  Site Photos
+                  {t("dlog.sitePhotos")}
                 </label>
                 <button
                   type="button"
@@ -856,7 +857,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                   className="bg-panel hover:bg-divider text-ink px-4 py-2 rounded-xl text-[10px] md:text-xs font-bold flex items-center gap-2 apple-transition border border-divider shadow-sm"
                 >
                   <Camera className="w-3.5 h-3.5" />
-                  Capture / Upload
+                  {t("dlog.captureUpload")}
                 </button>
                 <input
                   type="file"
@@ -907,10 +908,10 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             className="w-full bg-primary text-white rounded-2xl py-4 text-sm font-bold shadow-lg hover:bg-[#B85F3B] active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-50"
           >
             {saveMutation.isPending ? (
-              "Saving..."
+              t("dlog.saving")
             ) : (
               <>
-                <CheckCircle2 className="w-5 h-5" /> Submit Log
+                <CheckCircle2 className="w-5 h-5" /> {t("dlog.submitLog")}
               </>
             )}
           </button>
