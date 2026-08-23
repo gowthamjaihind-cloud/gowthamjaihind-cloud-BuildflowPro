@@ -369,6 +369,23 @@ export const translations: Record<Language, Record<string, string>> = {
     "cpm.description": "Description",
     "cpm.startDate": "Start Date",
     "cpm.targetEndDate": "Target End Date",
+
+    // ---- Document Vault ----
+    "dv.title": "Digital Project Vault",
+    "dv.list": "List",
+    "dv.gallery": "Gallery",
+    "dv.upload": "Upload",
+    "dv.searchPlaceholder": "Search documents...",
+    "dv.noDocuments": "No documents found matching search criteria",
+
+    // ---- WBS ----
+    "wbs.title": "WBS",
+    "wbs.subtitle": "Project Breakdown Structure",
+    "wbs.addTask": "Add Task",
+    "wbs.createNewTask": "Create New Task",
+    "wbs.newTask": "New Task",
+    "wbs.noTasks": "No tasks defined. Start by adding a task with Phase and Location.",
+    "wbs.editTask": "Edit Task: {name}",
   },
 
   ta: {
@@ -736,5 +753,22 @@ export const translations: Record<Language, Record<string, string>> = {
     "cpm.description": "விளக்கம்",
     "cpm.startDate": "தொடக்க தேதி",
     "cpm.targetEndDate": "இலக்கு முடிவு தேதி",
+
+    // ---- Document Vault ----
+    "dv.title": "டிஜிட்டல் செயல்திட்ட களஞ்சியம்",
+    "dv.list": "பட்டியல்",
+    "dv.gallery": "கேலரி",
+    "dv.upload": "பதிவேற்று",
+    "dv.searchPlaceholder": "ஆவணங்களைத் தேடு...",
+    "dv.noDocuments": "தேடல் நிபந்தனைகளுக்குப் பொருந்தும் ஆவணங்கள் இல்லை",
+
+    // ---- WBS ----
+    "wbs.title": "WBS",
+    "wbs.subtitle": "செயல்திட்டப் பிரிவு அமைப்பு",
+    "wbs.addTask": "பணி சேர்",
+    "wbs.createNewTask": "புதிய பணியை உருவாக்கு",
+    "wbs.newTask": "புதிய பணி",
+    "wbs.noTasks": "பணிகள் எதுவும் வரையறுக்கப்படவில்லை. கட்டம் மற்றும் இடத்துடன் ஒரு பணியைச் சேர்த்து தொடங்குங்கள்.",
+    "wbs.editTask": "பணியைத் திருத்து: {name}",
   },
 };

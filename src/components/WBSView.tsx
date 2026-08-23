@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "../i18n";
 import {
   db,
   collection,
@@ -84,6 +85,7 @@ interface WBSViewProps {
 }
 
 export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
 
@@ -1075,10 +1077,10 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
               </div>
               <div>
                 <h2 className="text-2xl font-black text-ink tracking-tight leading-none mb-1">
-                  WBS
+                  {t("wbs.title")}
                 </h2>
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">
-                  Project Breakdown Structure
+                  {t("wbs.subtitle")}
                 </p>
               </div>
 
@@ -1132,7 +1134,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                   className="w-full md:w-auto bg-divider text-ink-muted px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 font-bold text-sm cursor-not-allowed cursor-help"
                   title="You don't have permission to add tasks"
                 >
-                  <Plus className="w-5 h-5" /> <span>Add Task</span>
+                  <Plus className="w-5 h-5" /> <span>{t("wbs.addTask")}</span>
                 </button>
               }
             >
@@ -1140,7 +1142,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                 onClick={() => setIsAdding("root")}
                 className="w-full md:w-auto bg-onyx text-white px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 hover:bg-onyx/80 apple-transition shadow-2xl shadow-drab/10 font-bold text-sm"
               >
-                <Plus className="w-5 h-5" /> <span>Add Task</span>
+                <Plus className="w-5 h-5" /> <span>{t("wbs.addTask")}</span>
               </button>
             </RoleGuard>
           </div>
@@ -1307,8 +1309,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                     <ListTree className="w-8 h-8 text-ink-muted" />
                   </div>
                   <p className="text-ink-muted text-sm italic">
-                    No tasks defined. Start by adding a task with Phase and
-                    Location.
+                    {t("wbs.noTasks")}
                   </p>
                 </div>
               )}
@@ -1458,8 +1459,8 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                     <Plus className="w-5 h-5 text-primary" />
                   )}
                   {editingTask
-                    ? `Edit Task: ${editingTask.name}`
-                    : "Create New Task"}
+                    ? t("wbs.editTask", { name: editingTask.name })
+                    : t("wbs.createNewTask")}
                 </h3>
                 <button
                   type="button"
@@ -3089,7 +3090,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                       type="submit"
                       className="bg-primary text-white px-6 md:px-12 py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase tracking-[0.1em] md:tracking-[0.2em] text-[10px] md:text-[10px] hover:bg-surface-dark transition-all shadow-xl shadow-[#F7E4DB]"
                     >
-                      {editingTask ? "Save Changes" : "Add Task"}
+                      {editingTask ? t("cpm.saveChanges") : t("wbs.addTask")}
                     </button>
                   </div>
                 </div>
