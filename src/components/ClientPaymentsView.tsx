@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { useTranslation } from "../i18n";
 import {
   Plus,
   X,
@@ -34,7 +35,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
   vendors,
   costEntries,
 }) => {
-
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -240,7 +241,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-sm font-semibold text-ink-muted">
-                Total Client Received
+                {t("cpay.totalClientReceived")}
               </p>
               <h3 className="text-3xl font-black text-success mt-1">
                 ₹
@@ -262,7 +263,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-sm font-semibold text-ink-muted">
-                Total Vendor Paid
+                {t("cpay.totalVendorPaid")}
               </p>
               <h3 className="text-3xl font-black text-danger mt-1">
                 ₹
@@ -284,7 +285,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-sm font-semibold text-ink-muted">
-                Cash on Hand
+                {t("cpay.cashOnHand")}
               </p>
               <h3
                 className={`text-3xl font-black mt-1 ${netCashFlow >= 0 ? "text-primary" : "text-[#C0653F]"}`}
@@ -310,7 +311,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
       <div className="bg-surface rounded-2xl border shadow-sm overflow-hidden">
         <div className="p-6 border-b bg-panel/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h3 className="text-lg font-bold text-ink">
-            Integrated Ledger (Cash Book)
+            {t("cpay.ledgerTitle")}
           </h3>
           <div className="flex items-center gap-2">
             <button
@@ -332,7 +333,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                 onClick={() => setIsAdding(true)}
                 className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors ml-1"
               >
-                <Plus className="w-4 h-4" /> Add Payment
+                <Plus className="w-4 h-4" /> {t("cpay.addPayment")}
               </button>
             )}
           </div>
@@ -342,12 +343,12 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-panel border-b text-[10px] font-black uppercase tracking-wider text-ink-muted">
-                <th className="p-4">Date</th>
-                <th className="p-4">Description</th>
-                <th className="p-4">Ref/Method</th>
-                <th className="p-4 text-right">Inward (₹)</th>
-                <th className="p-4 text-right">Outward (₹)</th>
-                <th className="p-4 text-right">Balance (₹)</th>
+                <th className="p-4">{t("common.date")}</th>
+                <th className="p-4">{t("cpay.description")}</th>
+                <th className="p-4">{t("cpay.refMethod")}</th>
+                <th className="p-4 text-right">{t("cpay.inward")}</th>
+                <th className="p-4 text-right">{t("cpay.outward")}</th>
+                <th className="p-4 text-right">{t("cpay.balance")}</th>
                 <th className="p-4 w-10"></th>
               </tr>
             </thead>
@@ -458,7 +459,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
             >
               <div className="bg-primary p-6 text-white flex justify-between items-center">
-                <h3 className="text-lg font-bold">Record Client Payment</h3>
+                <h3 className="text-lg font-bold">{t("cpay.recordPayment")}</h3>
                 <button
                   onClick={() => setIsAdding(false)}
                   className="hover:bg-white/20 p-1 rounded-full transition-colors"

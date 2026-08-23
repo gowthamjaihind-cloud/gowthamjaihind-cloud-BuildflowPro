@@ -333,6 +333,19 @@ export const translations: Record<Language, Record<string, string>> = {
     "settings.uiWorkMode": "UI Work Mode",
     "settings.displayMode": "Display Mode",
     "settings.enterCompanyName": "Enter company name",
+
+    // ---- Client Payments ----
+    "cpay.totalClientReceived": "Total Client Received",
+    "cpay.totalVendorPaid": "Total Vendor Paid",
+    "cpay.cashOnHand": "Cash on Hand",
+    "cpay.ledgerTitle": "Integrated Ledger (Cash Book)",
+    "cpay.addPayment": "Add Payment",
+    "cpay.description": "Description",
+    "cpay.refMethod": "Ref/Method",
+    "cpay.inward": "Inward (₹)",
+    "cpay.outward": "Outward (₹)",
+    "cpay.balance": "Balance (₹)",
+    "cpay.recordPayment": "Record Client Payment",
   },
 
   ta: {
@@ -664,5 +677,18 @@ export const translations: Record<Language, Record<string, string>> = {
     "settings.uiWorkMode": "UI வேலை பயன்முறை",
     "settings.displayMode": "காட்சி பயன்முறை",
     "settings.enterCompanyName": "நிறுவனப் பெயரை உள்ளிடவும்",
+
+    // ---- Client Payments ----
+    "cpay.totalClientReceived": "வாடிக்கையாளரிடமிருந்து பெற்றது",
+    "cpay.totalVendorPaid": "விற்பனையாளருக்கு செலுத்தியது",
+    "cpay.cashOnHand": "கையிருப்பு பணம்",
+    "cpay.ledgerTitle": "ஒருங்கிணைந்த லெட்ஜர் (ரொக்கப் புத்தகம்)",
+    "cpay.addPayment": "பணம் சேர்",
+    "cpay.description": "விளக்கம்",
+    "cpay.refMethod": "குறிப்பு/முறை",
+    "cpay.inward": "உள்வரவு (₹)",
+    "cpay.outward": "வெளிச்செலவு (₹)",
+    "cpay.balance": "இருப்பு (₹)",
+    "cpay.recordPayment": "வாடிக்கையாளர் பணத்தைப் பதிவு செய்",
   },
 };
