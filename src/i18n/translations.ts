@@ -386,6 +386,35 @@ export const translations: Record<Language, Record<string, string>> = {
     "wbs.newTask": "New Task",
     "wbs.noTasks": "No tasks defined. Start by adding a task with Phase and Location.",
     "wbs.editTask": "Edit Task: {name}",
+
+    // ---- Landing (marketing frame) ----
+    "land.navServe": "Who we serve",
+    "land.navSolutions": "Solutions",
+    "land.navFeatures": "Features",
+    "land.navPricing": "Pricing",
+    "land.getStarted": "Get started",
+    "land.getStartedFree": "Get started free",
+    "land.startFree": "Start free",
+    "land.seeFeatures": "See features",
+    "land.heroEyebrow": "Built for construction teams",
+    "land.heroTitle": "Run your whole site,",
+    "land.heroSubhead":
+      "Schedule, procurement, labor, cost and daily progress — connected in real time, with field logging as simple as a Telegram message.",
+    "land.trustLine": "Secure Google sign-in · No credit card to start",
+    "land.serveEyebrow": "Built for the people who build",
+    "land.serveHeading": "Who we serve",
+    "land.featuresHeading": "Everything a project needs, in one workspace",
+    "land.featuresSub":
+      "Stop stitching together spreadsheets, WhatsApp groups and paper diaries. Sitetru connects the whole site.",
+    "land.whyEyebrow": "Why teams switch",
+    "land.whyHeading": "Why Sitetru",
+    "land.whySub":
+      "The difference isn't another dashboard — it's a site that reports itself, honestly, in real time.",
+    "land.solveEyebrow": "Problems we solve",
+    "land.solveHeading": "From site chaos to control",
+    "land.stepsHeading": "Up and running in a day",
+    "land.pricingHeading": "Pay for the projects you run",
+    "land.finalHeading": "Bring your next project under control",
   },
 
   ta: {
@@ -770,5 +799,34 @@ export const translations: Record<Language, Record<string, string>> = {
     "wbs.newTask": "புதிய பணி",
     "wbs.noTasks": "பணிகள் எதுவும் வரையறுக்கப்படவில்லை. கட்டம் மற்றும் இடத்துடன் ஒரு பணியைச் சேர்த்து தொடங்குங்கள்.",
     "wbs.editTask": "பணியைத் திருத்து: {name}",
+
+    // ---- Landing (marketing frame) ----
+    "land.navServe": "நாங்கள் யாருக்கு சேவை செய்கிறோம்",
+    "land.navSolutions": "தீர்வுகள்",
+    "land.navFeatures": "அம்சங்கள்",
+    "land.navPricing": "விலை",
+    "land.getStarted": "தொடங்குங்கள்",
+    "land.getStartedFree": "இலவசமாகத் தொடங்குங்கள்",
+    "land.startFree": "இலவசமாகத் தொடங்கு",
+    "land.seeFeatures": "அம்சங்களைப் பார்",
+    "land.heroEyebrow": "கட்டுமான அணிகளுக்காக உருவாக்கப்பட்டது",
+    "land.heroTitle": "உங்கள் முழு தளத்தையும் நிர்வகியுங்கள்,",
+    "land.heroSubhead":
+      "அட்டவணை, கொள்முதல், தொழிலாளர், செலவு மற்றும் தினசரி முன்னேற்றம் — நிகழ்நேரத்தில் இணைக்கப்பட்டு, டெலிகிராம் செய்தி அளவுக்கு எளிதான களப் பதிவுடன்.",
+    "land.trustLine": "பாதுகாப்பான Google உள்நுழைவு · தொடங்க கிரெடிட் கார்டு தேவையில்லை",
+    "land.serveEyebrow": "கட்டுபவர்களுக்காக உருவாக்கப்பட்டது",
+    "land.serveHeading": "நாங்கள் யாருக்கு சேவை செய்கிறோம்",
+    "land.featuresHeading": "ஒரு செயல்திட்டத்திற்குத் தேவையான அனைத்தும், ஒரே பணியிடத்தில்",
+    "land.featuresSub":
+      "விரிதாள்கள், WhatsApp குழுக்கள் மற்றும் காகித நாட்குறிப்புகளை இணைப்பதை நிறுத்துங்கள். Sitetru முழு தளத்தையும் இணைக்கிறது.",
+    "land.whyEyebrow": "அணிகள் ஏன் மாறுகின்றன",
+    "land.whyHeading": "ஏன் Sitetru",
+    "land.whySub":
+      "வித்தியாசம் மற்றொரு டாஷ்போர்டு அல்ல — அது நிகழ்நேரத்தில், நேர்மையாகத் தன்னைப் பற்றி அறிக்கையிடும் ஒரு தளம்.",
+    "land.solveEyebrow": "நாங்கள் தீர்க்கும் சிக்கல்கள்",
+    "land.solveHeading": "தள குழப்பத்திலிருந்து கட்டுப்பாட்டுக்கு",
+    "land.stepsHeading": "ஒரே நாளில் இயங்கத் தொடங்குங்கள்",
+    "land.pricingHeading": "நீங்கள் இயக்கும் செயல்திட்டங்களுக்கு பணம் செலுத்துங்கள்",
+    "land.finalHeading": "உங்கள் அடுத்த செயல்திட்டத்தைக் கட்டுப்பாட்டுக்குக் கொண்டு வாருங்கள்",
   },
 };
