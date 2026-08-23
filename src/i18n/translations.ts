@@ -318,6 +318,21 @@ export const translations: Record<Language, Record<string, string>> = {
     "onb.footerNote":
       "New to Sitetru? Try Starter free for 14 days — no card, upgrade anytime. Prices exclusive of GST. Extra projects ₹99/mo each. Need Enterprise?",
     "onb.haveInvite": "Have an invite code?",
+
+    // ---- Settings ----
+    "settings.title": "Preferences",
+    "settings.subtitle": "Manage your global configuration and systemic parameters.",
+    "settings.back": "Back to Portfolio",
+    "settings.tabOrganization": "Default Organization",
+    "settings.tabTeam": "Team",
+    "settings.tabTelegram": "Telegram Bot",
+    "settings.tabOperator": "Operator",
+    "settings.tabAppearance": "Appearance",
+    "settings.tabPrivacy": "Privacy & Data",
+    "settings.tabEnterprise": "Identity & Authorization",
+    "settings.uiWorkMode": "UI Work Mode",
+    "settings.displayMode": "Display Mode",
+    "settings.enterCompanyName": "Enter company name",
   },
 
   ta: {
@@ -634,5 +649,20 @@ export const translations: Record<Language, Record<string, string>> = {
     "onb.footerNote":
       "Sitetru இல் புதியவரா? Starter ஐ 14 நாட்களுக்கு இலவசமாக முயற்சிக்கவும் — கார்டு இல்லை, எப்போது வேண்டுமானாலும் மேம்படுத்தலாம். விலைகள் GST தவிர்த்து. கூடுதல் செயல்திட்டங்கள் தலா ₹99/மாதம். Enterprise தேவையா?",
     "onb.haveInvite": "அழைப்புக் குறியீடு உள்ளதா?",
+
+    // ---- Settings ----
+    "settings.title": "விருப்பங்கள்",
+    "settings.subtitle": "உங்கள் பொது கட்டமைப்பு மற்றும் அமைப்பு அளவுருக்களை நிர்வகிக்கவும்.",
+    "settings.back": "போர்ட்ஃபோலியோவுக்குத் திரும்பு",
+    "settings.tabOrganization": "இயல்புநிலை நிறுவனம்",
+    "settings.tabTeam": "அணி",
+    "settings.tabTelegram": "டெலிகிராம் போட்",
+    "settings.tabOperator": "இயக்குபவர்",
+    "settings.tabAppearance": "தோற்றம்",
+    "settings.tabPrivacy": "தனியுரிமை & தரவு",
+    "settings.tabEnterprise": "அடையாளம் & அங்கீகாரம்",
+    "settings.uiWorkMode": "UI வேலை பயன்முறை",
+    "settings.displayMode": "காட்சி பயன்முறை",
+    "settings.enterCompanyName": "நிறுவனப் பெயரை உள்ளிடவும்",
   },
 };
