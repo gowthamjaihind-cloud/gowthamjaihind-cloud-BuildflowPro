@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react";
 import { useProjectStore } from "../../../store";
 import { Project } from "../../../types";
+import { useTranslation } from "../../../i18n";
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
   onClose,
   project,
 }) => {
+  const { t } = useTranslation();
   const [editedProject, setEditedProject] = useState<Partial<Project>>({});
   const updateProject = useProjectStore((state) => state.updateProject);
 
@@ -111,10 +113,10 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
             <div className="relative z-10 mb-12 flex justify-between items-start">
               <div>
                 <h2 className="text-[34px] font-bold text-ink mb-2 tracking-tight">
-                  Edit Workspace
+                  {t("cpm.editWorkspace")}
                 </h2>
                 <p className="text-[17px] text-ink-muted font-medium">
-                  Modify Project Parameters
+                  {t("cpm.modifyParams")}
                 </p>
               </div>
               <button
@@ -129,12 +131,12 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
               <div className="md:col-span-2 space-y-3">
                 <label className="text-[13px] font-bold text-ink-muted ml-1">
-                  Workspace Name
+                  {t("cpm.workspaceName")}
                 </label>
                 <input
                   required
                   className="w-full bg-surface/50 border border-divider rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition font-bold text-lg md:text-xl"
-                  placeholder="Project Horizon"
+                  placeholder={t("cpm.workspacePlaceholder")}
                   value={editedProject.name || ""}
                   onChange={(e) =>
                     setEditedProject({ ...editedProject, name: e.target.value })
@@ -143,7 +145,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               </div>
               <div className="md:col-span-2 space-y-3">
                 <label className="text-[13px] font-bold text-ink-muted ml-1">
-                  Project Image (Optional)
+                  {t("cpm.projectImage")}
                 </label>
                 <div className="flex items-center gap-4">
                   {editedProject.imageUrl ? (
@@ -162,7 +164,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                   <div className="flex flex-col gap-2">
                     <label className="bg-surface border border-divider hover:bg-white/40 cursor-pointer apple-transition px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
                       <ImageIcon className="w-4 h-4" />
-                      Upload Cover
+                      {t("cpm.uploadCover")}
                       <input
                         type="file"
                         accept="image/*"
@@ -178,7 +180,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                         }
                         className="text-danger hover:bg-danger/8 text-sm font-medium px-4 py-1.5 rounded-lg apple-transition"
                       >
-                        Remove Image
+                        {t("cpm.removeImage")}
                       </button>
                     )}
                   </div>
@@ -186,12 +188,12 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               </div>
               <div className="md:col-span-2 space-y-3">
                 <label className="text-[13px] font-bold text-ink-muted ml-1">
-                  Description
+                  {t("cpm.description")}
                 </label>
                 <textarea
                   required
                   className="w-full bg-surface/50 border border-divider rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition min-h-[120px] resize-none"
-                  placeholder="Brief overview of the project scope and objectives..."
+                  placeholder={t("cpm.missionPlaceholder")}
                   value={editedProject.description || ""}
                   onChange={(e) =>
                     setEditedProject({
@@ -204,7 +206,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
               <div className="space-y-3">
                 <label className="text-[13px] font-bold text-ink-muted ml-1">
-                  Start Date
+                  {t("cpm.startDate")}
                 </label>
                 <input
                   required
@@ -222,7 +224,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
               <div className="space-y-3">
                 <label className="text-[13px] font-bold text-ink-muted ml-1">
-                  Target End Date
+                  {t("cpm.targetEndDate")}
                 </label>
                 <input
                   required
@@ -240,7 +242,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                   type="submit"
                   className="w-full bg-primary text-white py-4 md:py-5 rounded-2xl font-bold text-[17px] hover:bg-[#B85F3B] apple-transition shadow-xl hover:shadow-2xl active:scale-[0.98]"
                 >
-                  Save Changes
+                  {t("cpm.saveChanges")}
                 </button>
               </div>
             </div>

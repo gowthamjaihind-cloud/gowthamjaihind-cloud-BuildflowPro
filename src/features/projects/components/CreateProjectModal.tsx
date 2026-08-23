@@ -11,6 +11,7 @@ import { usePlan } from "../../../hooks/usePlan";
 import { projectCapState } from "../../../lib/plans";
 import { UserProfile } from "../../../types";
 import { AddCapacityModal } from "../../../components/AddCapacityModal";
+import { useTranslation } from "../../../i18n";
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   onClose,
   user,
 }) => {
+  const { t } = useTranslation();
   const [newProject, setNewProject] = useState({
     name: "",
     description: "",
@@ -145,10 +147,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             <div className="relative z-10 mb-12 flex justify-between items-start">
               <div>
                 <h2 className="text-[34px] font-bold text-ink mb-2 tracking-tight">
-                  New Workspace
+                  {t("cpm.newWorkspace")}
                 </h2>
                 <p className="text-[17px] text-ink-muted font-medium">
-                  Initialize Project Parameters
+                  {t("cpm.initParams")}
                 </p>
               </div>
               <button
@@ -163,12 +165,12 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
               <div className="md:col-span-2 space-y-3">
                 <label className="text-[13px] font-bold text-ink-muted ml-1">
-                  Workspace Name
+                  {t("cpm.workspaceName")}
                 </label>
                 <input
                   required
                   className="w-full bg-surface/50 border border-divider rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition font-bold text-lg md:text-xl"
-                  placeholder="Project Horizon"
+                  placeholder={t("cpm.workspacePlaceholder")}
                   value={newProject.name}
                   onChange={(e) =>
                     setNewProject({ ...newProject, name: e.target.value })
@@ -177,7 +179,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </div>
               <div className="md:col-span-2 space-y-3">
                 <label className="text-[13px] font-bold text-ink-muted ml-1">
-                  Project Image (Optional)
+                  {t("cpm.projectImage")}
                 </label>
                 <div className="flex items-center gap-4">
                   {newProject.imageUrl ? (
@@ -194,7 +196,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     </div>
                   )}
                   <label className="cursor-pointer bg-surface/50 border border-divider rounded-xl px-4 py-3 flex-1 flex items-center justify-center hover:bg-surface apple-transition text-sm font-bold text-ink">
-                    <ImageIcon className="w-4 h-4 mr-2" /> Upload Icon
+                    <ImageIcon className="w-4 h-4 mr-2" /> {t("cpm.uploadIcon")}
                     <input
                       type="file"
                       accept="image/*"
@@ -217,12 +219,12 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </div>
               <div className="md:col-span-2 space-y-3">
                 <label className="text-[13px] font-bold text-ink-muted ml-1">
-                  Mission Profile
+                  {t("cpm.missionProfile")}
                 </label>
                 <textarea
                   className="w-full bg-surface/50 border border-divider rounded-2xl p-5 focus:bg-surface outline-none apple-transition font-medium"
                   rows={3}
-                  placeholder="Project scope and primary objectives..."
+                  placeholder={t("cpm.missionPlaceholder")}
                   value={newProject.description}
                   onChange={(e) =>
                     setNewProject({
@@ -234,7 +236,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </div>
               <div className="md:col-span-2 space-y-3">
                 <label className="text-[13px] font-bold text-ink-muted ml-1">
-                  Status
+                  {t("cpm.status")}
                 </label>
                 <select
                   className="w-full bg-surface/50 border border-divider rounded-2xl p-5 focus:bg-surface outline-none apple-transition font-bold text-ink"
@@ -243,15 +245,15 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     setNewProject({ ...newProject, status: e.target.value })
                   }
                 >
-                  <option value="Planning">Planning</option>
-                  <option value="Active">Active</option>
-                  <option value="On Hold">On Hold</option>
-                  <option value="Completed">Completed</option>
+                  <option value="Planning">{t("status.planning")}</option>
+                  <option value="Active">{t("status.active")}</option>
+                  <option value="On Hold">{t("status.onHold")}</option>
+                  <option value="Completed">{t("status.completed")}</option>
                 </select>
               </div>
               <div className="space-y-3">
                 <label className="text-[13px] font-bold text-ink ml-1">
-                  Commencement
+                  {t("cpm.commencement")}
                 </label>
                 <input
                   type="date"
@@ -265,7 +267,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </div>
               <div className="space-y-3">
                 <label className="text-[13px] font-bold text-ink ml-1">
-                  Provisional Completion
+                  {t("cpm.provisionalCompletion")}
                 </label>
                 <input
                   type="date"
@@ -285,13 +287,13 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 onClick={onClose}
                 className="px-8 py-4 font-bold text-[17px] text-ink-muted hover:text-ink apple-transition"
               >
-                Discard
+                {t("cpm.discard")}
               </button>
               <button
                 type="submit"
                 className="bg-onyx text-white px-10 py-4 rounded-3xl font-bold text-[17px] shadow-xl hover:bg-onyx/80 apple-transition"
               >
-                Initialize Project
+                {t("cpm.initProject")}
               </button>
             </div>
           </motion.form>
