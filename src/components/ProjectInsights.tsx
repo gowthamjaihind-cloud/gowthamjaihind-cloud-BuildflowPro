@@ -20,6 +20,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getProjectSubCollectionPath } from "../utils/projectPath";
 import { useProjectStore } from "../store";
 import { useTranslation } from "../i18n";
+import { AnalyticsTabs } from "./analytics/AnalyticsTabs";
 
 interface ProjectInsightsProps {
   projectId: string;
@@ -247,6 +248,10 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
           )}
         </button>
       </div>
+
+      {/* Interactive visual analytics — always available from project data,
+          independent of the AI text generation below. */}
+      <AnalyticsTabs projectId={projectId} />
 
       {!hasData && (
         <div className="p-6 bg-panel rounded-2xl border border-divider text-sm text-ink-muted flex items-center gap-2">

@@ -18,6 +18,7 @@ import { Task } from "../types";
 import { useScheduleData } from "../hooks/useScheduleData";
 import { ScheduleView } from "./schedule/ScheduleView";
 import { PhaseStrips } from "./schedule/PhaseStrips";
+import { AnalyticsTabs } from "./analytics/AnalyticsTabs";
 import { useTranslation } from "../i18n";
 
 interface DashboardViewProps {
@@ -215,6 +216,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </section>
       </div>
+
+      {/* Visual Analytics — interactive per-module dashboards */}
+      <section className="space-y-4 md:space-y-6">
+        <div className="flex items-center gap-3 md:gap-4 px-1 md:px-2">
+          <h3 className="text-lg md:text-xl font-bold text-ink">
+            {t("an.sectionTitle")}
+          </h3>
+          <div className="flex-1 h-px bg-surface-dark/5" />
+          <span className="text-[10px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest hidden sm:inline">
+            {t("an.sectionEyebrow")}
+          </span>
+        </div>
+        <AnalyticsTabs projectId={activeProjectId} />
+      </section>
 
       {/* Phase Strips */}
       <div className="grid grid-cols-1 mb-8">
