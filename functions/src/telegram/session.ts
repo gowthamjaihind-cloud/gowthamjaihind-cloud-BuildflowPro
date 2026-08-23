@@ -12,6 +12,7 @@ export interface BotSession {
   planDraft?: Record<string, any> | null; // morning plan being assembled
   recentTaskIds?: string[];
   saving?: boolean;          // idempotency guard against double-tap on Save
+  lang?: "en" | "ta";        // per-user bot language preference
   linkedAt?: number;
   lastSeenAt?: number;
 }

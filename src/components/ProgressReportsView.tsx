@@ -22,6 +22,7 @@ import {
 } from "../hooks/queries";
 import { aggregateLogs } from "../utils/reportUtils";
 import { useAuthStore } from "../store";
+import { useTranslation } from "../i18n";
 import { DailyLogEntry, MaterialIssue, DailyLaborLog } from "../types";
 import { DailyLogEntryScreen } from "./DailyLogEntryScreen";
 import {
@@ -47,6 +48,7 @@ interface ProgressReportsViewProps {
 export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
   projectId,
 }) => {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const { data: project } = useProjectQuery(projectId);
   const { data: tasks = [] } = useTasksQuery(projectId);
@@ -220,28 +222,45 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
     setTimeout(async () => {
       try {
         const element = document.getElementById("report-printable-area");
-        if (!element) return;
+        if (!element) {
+          alert(t("reports.pdfNoContent"));
+          return;
+        }
 
         const canvas = await html2canvas(element, {
           scale: 2,
           useCORS: true,
           logging: false,
           windowWidth: 1000,
+          backgroundColor: "#ffffff",
         });
 
-        const imgData = canvas.toDataURL("image/jpeg", 1.0);
+        // toDataURL throws a SecurityError if the canvas was tainted by a
+        // cross-origin image (e.g. a site photo without CORS headers). Catch it
+        // and tell the user, instead of the button appearing to do nothing.
+        let imgData: string;
+        try {
+          imgData = canvas.toDataURL("image/jpeg", 0.95);
+        } catch (taintErr) {
+          console.error("PDF canvas tainted", taintErr);
+          alert(t("reports.pdfTainted"));
+          return;
+        }
+
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-        let position = 0;
         const pageHeight = pdf.internal.pageSize.getHeight();
 
+        // Slice the tall image across A4 pages. The small epsilon stops a
+        // trailing near-blank page when the content ends exactly on a boundary.
+        let heightLeft = pdfHeight;
+        let position = 0;
         pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, pdfHeight);
-        let heightLeft = pdfHeight - pageHeight;
+        heightLeft -= pageHeight;
 
-        while (heightLeft >= 0) {
-          position = heightLeft - pdfHeight;
+        while (heightLeft > 1) {
+          position -= pageHeight;
           pdf.addPage();
           pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, pdfHeight);
           heightLeft -= pageHeight;
@@ -254,6 +273,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
         );
       } catch (err) {
         console.error("PDF generation error", err);
+        alert(t("reports.pdfFailed"));
       } finally {
         setIsGeneratingPdf(false);
       }
@@ -315,7 +335,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       <div className="flex items-center justify-center p-20 text-ink-muted flex-col gap-4">
         <Loader2 className="w-8 h-8 animate-spin" />
         <p className="font-bold text-sm tracking-widest uppercase">
-          Aggregating Report Data...
+          {t("reports.aggregating")}
         </p>
       </div>
     );
@@ -328,21 +348,21 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-panel p-5 md:p-6 rounded-2xl border border-divider shadow-sm gap-6">
         <div>
           <h2 className="text-2xl font-black text-ink tracking-tight leading-none mb-1">
-            Progress Reports
+            {t("reports.title")}
           </h2>
           <p className="text-sm font-bold text-ink-muted">
-            Generate project updates from daily logs.
+            {t("reports.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="flex bg-panel/50 p-1.5 rounded-xl border border-divider shadow-sm">
-            {(["daily", "weekly", "monthly"] as const).map((t) => (
+            {(["daily", "weekly", "monthly"] as const).map((rt) => (
               <button
-                key={t}
-                onClick={() => setReportType(t)}
-                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${reportType === t ? "bg-white text-primary shadow" : "text-ink-muted hover:text-ink"}`}
+                key={rt}
+                onClick={() => setReportType(rt)}
+                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${reportType === rt ? "bg-white text-primary shadow" : "text-ink-muted hover:text-ink"}`}
               >
-                {t}
+                {t(`reports.${rt}`)}
               </button>
             ))}
           </div>
@@ -352,7 +372,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       <div className="flex items-center gap-4">
         <div className="flex-1 bg-surface p-4 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
           <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
-            Report Date/Period
+            {t("reports.reportDatePeriod")}
           </span>
           <input
             type="date"
@@ -368,7 +388,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             className={`flex items-center gap-2 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-panel border border-divider hover:bg-divider text-ink active:scale-95 cursor-pointer"}`}
           >
             <Download className="w-4 h-4 text-ink/80" />
-            Export CSV
+            {t("common.exportCsv")}
           </button>
           <button
             onClick={handleExportPDF}
@@ -380,23 +400,25 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             ) : (
               <Download className="w-4 h-4" />
             )}
-            {canExport ? "Export PDF" : "Manager Access Required"}
+            {canExport ? t("common.exportPdf") : t("common.managerAccessRequired")}
           </button>
         </div>
       </div>
 
       {!canExport && (
         <p className="text-xs text-[#C0653F] bg-primary/10 p-3 rounded-lg border border-primary/20 font-bold uppercase tracking-widest">
-          Note: PDF Export is restricted to Admin or Manager roles.
+          {t("reports.pdfRestricted")}
         </p>
       )}
 
       {logs.length === 0 ? (
         <div className="bg-surface rounded-3xl p-12 text-center border shadow-sm">
           <FileText className="w-12 h-12 text-ink-muted/30 mx-auto mb-4" />
-          <h3 className="text-lg font-black text-ink mb-1">No work logged</h3>
+          <h3 className="text-lg font-black text-ink mb-1">
+            {t("reports.noWorkLogged")}
+          </h3>
           <p className="text-sm font-bold text-ink-muted">
-            There are no daily logs for {isDaily ? "this date" : "this period"}.
+            {isDaily ? t("reports.noLogsThisDate") : t("reports.noLogsThisPeriod")}
           </p>
         </div>
       ) : (
@@ -413,13 +435,12 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                   {project?.name || "Project"}
                 </h1>
                 <h2 className="text-lg font-bold text-[#56778E] uppercase tracking-widest">
-                  {reportType.charAt(0).toUpperCase() + reportType.slice(1)}{" "}
-                  Progress Report
+                  {t(`reports.${reportType}`)} {t("reports.progressReport")}
                 </h2>
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold text-ink-muted uppercase tracking-widest mb-1">
-                  Period
+                  {t("reports.period")}
                 </p>
                 <p className="text-base font-black">
                   {isDaily
@@ -433,7 +454,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             <div className="grid grid-cols-3 gap-6 mb-10">
               <div className="bg-page p-5 border border-divider rounded-xl">
                 <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-ink-muted mb-2">
-                  <Activity className="w-3.5 h-3.5" /> Tasks Active
+                  <Activity className="w-3.5 h-3.5" /> {t("reports.tasksActive")}
                 </span>
                 <p className="text-2xl font-black font-mono">
                   {logsByTask.size}
@@ -441,13 +462,13 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
               </div>
               <div className="bg-page p-5 border border-divider rounded-xl">
                 <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-ink-muted mb-2">
-                  <Users className="w-3.5 h-3.5" /> Total Labour Days
+                  <Users className="w-3.5 h-3.5" /> {t("reports.totalLabourDays")}
                 </span>
                 <p className="text-2xl font-black font-mono">{totalLabor}</p>
               </div>
               <div className="bg-page p-5 border border-divider rounded-xl">
                 <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-ink-muted mb-2">
-                  <Package className="w-3.5 h-3.5" /> Unique Materials
+                  <Package className="w-3.5 h-3.5" /> {t("reports.uniqueMaterials")}
                 </span>
                 <p className="text-2xl font-black font-mono">
                   {materialsRollup.length}
@@ -459,12 +480,12 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             {!isDaily && (
               <div className="mb-10">
                 <h3 className="text-sm font-black uppercase tracking-widest mb-4 bg-onyx text-white py-2 px-4 rounded">
-                  Period Consolidation
+                  {t("reports.periodConsolidation")}
                 </h3>
                 <div className="grid grid-cols-2 gap-8">
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-widest text-ink-muted mb-3 border-b pb-2">
-                      Material Consumption
+                      {t("reports.materialConsumption")}
                     </h4>
                     <table className="w-full text-sm">
                       <tbody>
@@ -487,7 +508,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                   </div>
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-widest text-ink-muted mb-3 border-b pb-2">
-                      Labour Deployment
+                      {t("reports.labourDeployment")}
                     </h4>
                     <table className="w-full text-sm">
                       <tbody>
@@ -502,7 +523,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                             <td className="py-2 text-right font-mono font-bold">
                               {l.count}{" "}
                               <span className="text-[10px] text-ink-muted uppercase">
-                                shifts
+                                {t("reports.shifts")}
                               </span>
                             </td>
                           </tr>
@@ -516,7 +537,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
 
             {/* Per-Task Breakdown */}
             <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-onyx text-white py-2 px-4 rounded">
-              Task Progress Details
+              {t("reports.taskProgressDetails")}
             </h3>
             <div className="space-y-8">
               {Array.from(logsByTask.entries()).map(([taskId, tLogs]) => {

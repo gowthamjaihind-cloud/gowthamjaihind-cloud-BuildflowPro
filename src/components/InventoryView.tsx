@@ -13,6 +13,7 @@ import {
   OperationType,
 } from "../firebase";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { useTranslation } from "../i18n";
 import { InventoryItem, Task } from "../types";
 import {
   Package,
@@ -47,6 +48,7 @@ interface InventoryViewProps {
 }
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
 
@@ -459,7 +461,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             </span>
           </div>
           <h2 className="text-xl md:text-3xl font-bold text-ink tracking-tight">
-            Stock Inventory
+            {t("views.stockInventory")}
           </h2>
           <p className="text-ink-muted font-medium mt-1 text-[10px] md:text-sm">
             Monitor and manage material logistics and resource orchestration.

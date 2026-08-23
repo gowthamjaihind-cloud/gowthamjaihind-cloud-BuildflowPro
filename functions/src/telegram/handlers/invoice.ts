@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 import { db } from "../../db";
 import { readAndMatchInvoice } from "../../ai/invoiceReader";
+import { tt, normalizeLang } from "../i18n";
 
 const projPath = (orgId: any, projectId: any) =>
   orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -19,12 +20,13 @@ export async function handleInvoicePhoto(
   photoSizes: any[],
   key: string,
 ) {
+  const lang = normalizeLang(session?.lang);
   if (!session.activeProjectId) {
-    await tg.sendMessage(chatId, "Set your active project first with /projects, then resend the invoice photo.");
+    await tg.sendMessage(chatId, tt(lang, "invSetProjectFirst"));
     return;
   }
 
-  await tg.sendMessage(chatId, "📄 Reading the invoice…");
+  await tg.sendMessage(chatId, tt(lang, "invReading"));
 
   const base = projPath(session.orgId, session.activeProjectId);
 
@@ -32,12 +34,12 @@ export async function handleInvoicePhoto(
   const largest = photoSizes[photoSizes.length - 1];
   const filePath = await tg.getFile(largest.file_id);
   if (!filePath) {
-    await tg.sendMessage(chatId, "Couldn't fetch that photo. Try again.");
+    await tg.sendMessage(chatId, tt(lang, "cantFetchPhoto"));
     return;
   }
   const dl = await fetch(`https://api.telegram.org/file/bot${tg.botToken}/${filePath}`);
   if (!dl.ok) {
-    await tg.sendMessage(chatId, "Couldn't download that photo. Try again.");
+    await tg.sendMessage(chatId, tt(lang, "cantDownloadPhoto"));
     return;
   }
   const buffer = Buffer.from(await dl.arrayBuffer());
@@ -51,7 +53,7 @@ export async function handleInvoicePhoto(
     // Surface the friendly quota message; otherwise a generic read failure.
     const msg = e?.code === "resource-exhausted" && e?.message
       ? `🚫 ${e.message}`
-      : "I couldn't read that invoice. Try a clearer, straight-on photo — or add it in the app.";
+      : tt(lang, "invReadFailed");
     await tg.sendMessage(chatId, msg);
     return;
   }
@@ -88,15 +90,15 @@ export async function handleInvoicePhoto(
   });
 
   let msg =
-    `📄 <b>Invoice read & saved as a draft</b>\n\n` +
-    `Vendor: <b>${bill.vendorName || "—"}</b>\n` +
-    `Invoice: ${bill.invoiceNumber || "—"}\n` +
-    `Total (incl. GST): <b>${inr(bill.grandTotal)}</b>\n` +
-    `PO: ${bill.poNumber || "— not matched —"}\n` +
-    `Match: ${bill.matchStatus}`;
+    `${tt(lang, "invSavedHeader")}\n\n` +
+    `${tt(lang, "invVendor")}: <b>${bill.vendorName || "—"}</b>\n` +
+    `${tt(lang, "invInvoice")}: ${bill.invoiceNumber || "—"}\n` +
+    `${tt(lang, "invTotal")}: <b>${inr(bill.grandTotal)}</b>\n` +
+    `${tt(lang, "invPO")}: ${bill.poNumber || tt(lang, "invNotMatched")}\n` +
+    `${tt(lang, "invMatch")}: ${bill.matchStatus}`;
   if ((result.flags || []).length) {
     msg += `\n\n⚠️ ${result.flags.slice(0, 3).join("\n⚠️ ")}`;
   }
-  msg += `\n\nReview &amp; post it in the app → <b>Procurement → Bills</b>.`;
+  msg += `\n\n${tt(lang, "invReviewPost")}`;
   await tg.sendMessage(chatId, msg);
 }

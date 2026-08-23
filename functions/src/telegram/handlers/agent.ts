@@ -6,6 +6,7 @@
 // integrity is preserved. Nothing is written until the user confirms.
 import { setSession } from "../session";
 import { db } from "../../db";
+import { tt, normalizeLang, type BotLang } from "../i18n";
 
 const projPath = (orgId: any, projectId: any) =>
   orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -74,6 +75,7 @@ export async function sendAgentNudge(
   chatId: number,
   session: any,
 ): Promise<boolean> {
+  const lang = normalizeLang(session?.lang);
   const gaps = await buildWorklist(session);
   if (gaps.length === 0) return false;
 
@@ -83,12 +85,12 @@ export async function sendAgentNudge(
       callback_data: `alog:${g.id}`,
     },
   ]);
-  rows.push([{ text: "Not today", callback_data: "xx" }]);
+  rows.push([{ text: tt(lang, "btnNotToday"), callback_data: "xx" }]);
 
   const anyPlanned = gaps.some((g) => g.planned);
   const text =
-    `🌇 <b>End-of-day check-in</b>\n\n${gaps.length} task${gaps.length > 1 ? "s" : ""} still need today's update. Tap one to log it — pick from your lists, no typing except quantities.` +
-    (anyPlanned ? `\n\n⭐ = planned this morning.` : "");
+    tt(lang, "agentNudge", { n: gaps.length }) +
+    (anyPlanned ? tt(lang, "agentPlannedLegend") : "");
   await tg.sendMessage(chatId, text, rows);
   return true;
 }
@@ -122,10 +124,7 @@ function rank(t: any): number {
   return (t.progress || 0) > 0 ? 1 : 2;
 }
 
-const PLAN_HEADER =
-  "🌅 <b>Good morning — plan today's work</b>\n\nTap the tasks you'll work on today, then <b>Save plan</b>.";
-
-function planKeyboard(cands: PlanCandidate[], selected: string[]) {
+function planKeyboard(lang: BotLang, cands: PlanCandidate[], selected: string[]) {
   const sel = new Set(selected);
   const rows = cands.map((c) => [
     {
@@ -134,8 +133,8 @@ function planKeyboard(cands: PlanCandidate[], selected: string[]) {
     },
   ]);
   rows.push([
-    { text: "💾 Save plan", callback_data: "psav" },
-    { text: "✖ Cancel", callback_data: "xx" },
+    { text: tt(lang, "btnSavePlan"), callback_data: "psav" },
+    { text: tt(lang, "btnCancel"), callback_data: "xx" },
   ]);
   return rows;
 }
@@ -146,13 +145,14 @@ export async function sendPlanPrompt(
   chatId: number,
   session: any,
 ): Promise<boolean> {
+  const lang = normalizeLang(session?.lang);
   const cands = await candidateTasks(session);
   if (cands.length === 0) return false;
   await setSession(chatId, {
     step: "plan:select",
     planDraft: { date: todayISO(), taskIds: [], candidates: cands },
   });
-  await tg.sendMessage(chatId, PLAN_HEADER, planKeyboard(cands, []));
+  await tg.sendMessage(chatId, tt(lang, "planHeader"), planKeyboard(lang, cands, []));
   return true;
 }
 
@@ -163,13 +163,14 @@ export async function togglePlanTask(
   session: any,
   taskId: string,
 ) {
+  const lang = normalizeLang(session?.lang);
   const pd = session.planDraft || { taskIds: [], candidates: [] };
   const set = new Set<string>(pd.taskIds || []);
   if (set.has(taskId)) set.delete(taskId);
   else set.add(taskId);
   const taskIds = Array.from(set);
   await setSession(chatId, { planDraft: { ...pd, taskIds } });
-  await tg.editMessage(chatId, messageId, PLAN_HEADER, planKeyboard(pd.candidates || [], taskIds));
+  await tg.editMessage(chatId, messageId, tt(lang, "planHeader"), planKeyboard(lang, pd.candidates || [], taskIds));
 }
 
 export async function savePlan(
@@ -178,9 +179,10 @@ export async function savePlan(
   messageId: any,
   session: any,
 ) {
+  const lang = normalizeLang(session?.lang);
   const pd = session.planDraft || { taskIds: [], candidates: [] };
   if (!pd.taskIds || pd.taskIds.length === 0) {
-    await tg.editMessage(chatId, messageId, "No tasks selected — plan not saved. Send /plan to try again.");
+    await tg.editMessage(chatId, messageId, tt(lang, "planNoTasks"));
     await setSession(chatId, { step: null, planDraft: null });
     return;
   }
@@ -204,6 +206,6 @@ export async function savePlan(
   await tg.editMessage(
     chatId,
     messageId,
-    `✅ <b>Today's plan saved</b> — ${pd.taskIds.length} task${pd.taskIds.length > 1 ? "s" : ""}:\n${list}\n\nI'll ask for the actuals at 5 PM.`,
+    tt(lang, "planSaved", { n: pd.taskIds.length, list }),
   );
 }

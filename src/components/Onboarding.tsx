@@ -15,6 +15,7 @@ import { useAuthStore } from "../store";
 import { callAcceptInvite, callCreateOrganization } from "../services/firebaseFunctions";
 import { useRazorpayCheckout } from "../hooks/useRazorpayCheckout";
 import { PLANS, PlanId } from "../lib/plans";
+import { useTranslation } from "../i18n";
 
 const PAID: PlanId[] = ["starter", "growth", "business"];
 
@@ -22,6 +23,7 @@ const PAID: PlanId[] = ["starter", "growth", "business"];
 // ?invite=CODE link). Two paths: create your own organization (self-serve —
 // Free instantly, or a paid plan by trial/payment), or redeem an invite code.
 export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
+  const { t } = useTranslation();
   const logout = useAuthStore((s) => s.logout);
   const urlCode = new URLSearchParams(window.location.search).get("invite") || "";
   const hasOrg = !!user.currentOrgId;
@@ -46,7 +48,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
       try { window.history.replaceState({}, "", window.location.pathname); } catch { /* ignore */ }
       setJoined(res.orgName || "your organization");
     } catch (e: any) {
-      setError(e?.message || "Couldn't join with that code.");
+      setError(e?.message || t("onb.errJoin"));
     } finally { setBusy(false); }
   };
 
@@ -66,7 +68,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
 
   const requireName = () => {
     if (!companyName.trim()) {
-      setCreateError("Enter your company / workspace name first.");
+      setCreateError(t("onb.errName"));
       return false;
     }
     return true;
@@ -79,7 +81,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
       await callCreateOrganization({ companyName: companyName.trim(), plan: "free" });
       reload();
     } catch (e: any) {
-      setCreateError(e?.message || "Couldn't create your organization.");
+      setCreateError(e?.message || t("onb.errCreate"));
       setCreating(null);
     }
   };
@@ -91,7 +93,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
       await callCreateOrganization({ companyName: companyName.trim(), plan, startTrial: true });
       reload();
     } catch (e: any) {
-      setCreateError(e?.message || "Couldn't start your trial.");
+      setCreateError(e?.message || t("onb.errTrial"));
       setCreating(null);
     }
   };
@@ -107,7 +109,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
       await pay(plan, period, () => reload(), res.orgId);
       setCreating(null); // reached only if the modal was dismissed without paying
     } catch (e: any) {
-      setCreateError(e?.message || "Couldn't start checkout.");
+      setCreateError(e?.message || t("onb.errCheckout"));
       setCreating(null);
     }
   };
@@ -117,8 +119,8 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
     return (
       <Card>
         <Badge success />
-        <h2 className="text-2xl font-bold text-ink mb-2">You're in</h2>
-        <p className="text-ink-muted mb-6">Joined <b>{joined}</b>. Loading your workspace…</p>
+        <h2 className="text-2xl font-bold text-ink mb-2">{t("onb.youreIn")}</h2>
+        <p className="text-ink-muted mb-6">{t("onb.joinedLoading")} <b>{joined}</b>{t("onb.joinedLoadingPost")}</p>
         <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
       </Card>
     );
@@ -131,32 +133,32 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
         <Badge />
         {urlCode && hasOrg ? (
           <>
-            <h2 className="text-2xl font-bold text-ink mb-2">Join a new organization?</h2>
+            <h2 className="text-2xl font-bold text-ink mb-2">{t("onb.joinNewOrg")}</h2>
             <p className="text-ink-muted mb-6 text-[15px] leading-relaxed">
-              You're invited to a different organization, signed in as <b>{user.email}</b>. Joining will switch you to it.
+              {t("onb.inviteSwitchPre")} <b>{user.email}</b>{t("onb.inviteSwitchPost")}
             </p>
             {error && <ErrorBox>{error}</ErrorBox>}
-            <PrimaryButton onClick={() => accept(code)} busy={busy}>Join organization</PrimaryButton>
-            <button onClick={() => window.location.assign(window.location.pathname)} className="mt-3 text-sm text-ink-muted hover:text-ink">No thanks — go to my workspace</button>
+            <PrimaryButton onClick={() => accept(code)} busy={busy}>{t("onb.joinOrg")}</PrimaryButton>
+            <button onClick={() => window.location.assign(window.location.pathname)} className="mt-3 text-sm text-ink-muted hover:text-ink">{t("onb.noThanks")}</button>
           </>
         ) : (
           <>
-            <h2 className="text-2xl font-bold text-ink mb-2">Join your team</h2>
+            <h2 className="text-2xl font-bold text-ink mb-2">{t("onb.joinTeam")}</h2>
             <p className="text-ink-muted mb-6 text-[15px] leading-relaxed">
-              Signed in as <b>{user.email}</b>. Enter the invite code your admin gave you.
+              {t("onb.signedInAs")} <b>{user.email}</b>{t("onb.joinTeamPost")}
             </p>
             {error && <ErrorBox>{error}</ErrorBox>}
             <input
               type="text" value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               onKeyDown={(e) => e.key === "Enter" && accept(code)}
-              placeholder="INVITE CODE"
+              placeholder={t("onb.inviteCodePlaceholder")}
               className="w-full bg-panel border border-divider px-4 py-3 rounded-xl text-center font-mono tracking-widest text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 mb-4"
             />
-            <PrimaryButton onClick={() => accept(code)} busy={busy} disabled={!code.trim()}>Join organization</PrimaryButton>
+            <PrimaryButton onClick={() => accept(code)} busy={busy} disabled={!code.trim()}>{t("onb.joinOrg")}</PrimaryButton>
             {!hasOrg && (
               <button onClick={() => setMode("create")} className="mt-5 text-sm font-semibold text-primary hover:underline">
-                Or create your own organization →
+                {t("onb.orCreateOwn")}
               </button>
             )}
           </>
@@ -174,15 +176,15 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
           <div className="bg-primary/10 w-14 h-14 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-primary/20">
             <Buildings className="w-7 h-7 text-primary" />
           </div>
-          <h2 className="text-2xl font-bold text-ink mb-1">Create your organization</h2>
-          <p className="text-ink-muted text-[15px]">Signed in as <b>{user.email}</b>. Set up your workspace to get started.</p>
+          <h2 className="text-2xl font-bold text-ink mb-1">{t("onb.createOrg")}</h2>
+          <p className="text-ink-muted text-[15px]">{t("onb.signedInAs")} <b>{user.email}</b>{t("onb.createPost")}</p>
         </div>
 
-        <label className="block text-sm font-semibold text-ink mb-1.5">Company / workspace name</label>
+        <label className="block text-sm font-semibold text-ink mb-1.5">{t("onb.companyName")}</label>
         <input
           type="text" value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
-          placeholder="e.g. BV Realty"
+          placeholder={t("onb.companyPlaceholder")}
           className="w-full bg-panel border border-divider px-4 py-3 rounded-xl text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 mb-6"
         />
 
@@ -192,26 +194,26 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
         <div className="rounded-2xl border border-divider p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-black uppercase tracking-widest text-ink-muted">Free</span>
+              <span className="text-sm font-black uppercase tracking-widest text-ink-muted">{t("onb.free")}</span>
               <span className="font-display font-bold text-2xl">₹0</span>
-              <span className="text-xs text-ink-muted">forever</span>
+              <span className="text-xs text-ink-muted">{t("onb.forever")}</span>
             </div>
-            <p className="text-xs text-ink-muted mt-0.5">1 project · up to 2 users · Telegram logging</p>
+            <p className="text-xs text-ink-muted mt-0.5">{t("onb.freeFeatures")}</p>
           </div>
           <button
             onClick={startFree} disabled={!!creating}
             className="shrink-0 px-6 py-3 rounded-xl font-bold text-sm bg-panel border border-divider text-ink hover:bg-surface apple-transition disabled:opacity-50 flex items-center gap-2"
           >
-            {creating === "free" ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Start free <ArrowRight weight="bold" className="w-4 h-4" /></>}
+            {creating === "free" ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{t("onb.startFree")} <ArrowRight weight="bold" className="w-4 h-4" /></>}
           </button>
         </div>
 
         {/* Period toggle */}
         <div className="flex items-center justify-center mb-4">
           <div className="inline-flex items-center bg-panel border border-divider rounded-full p-1">
-            <button onClick={() => setPeriod("monthly")} className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition ${period === "monthly" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}>Monthly</button>
+            <button onClick={() => setPeriod("monthly")} className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition ${period === "monthly" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}>{t("paywall.monthly")}</button>
             <button onClick={() => setPeriod("annual")} className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition flex items-center gap-1.5 ${period === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}>
-              Annual <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">-17%</span>
+              {t("paywall.annual")} <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">-17%</span>
             </button>
           </div>
         </div>
@@ -227,14 +229,14 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                 <p className="text-sm font-black uppercase tracking-widest text-ink-muted mb-1">{p.name}</p>
                 <div className="flex items-end gap-1 mb-0.5">
                   <span className="font-display font-bold text-3xl tracking-tight">₹{monthly.toLocaleString("en-IN")}</span>
-                  <span className="text-xs text-ink-muted mb-1.5">/ mo</span>
+                  <span className="text-xs text-ink-muted mb-1.5">{t("paywall.perMo")}</span>
                 </div>
                 <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full my-2 bg-sage/15 text-[#3E8388]">
-                  <Stack weight="bold" className="w-3.5 h-3.5" /> Up to {p.includedProjects} projects
+                  <Stack weight="bold" className="w-3.5 h-3.5" /> {t("paywall.upToProjects", { n: p.includedProjects })}
                 </div>
                 <ul className="space-y-1.5 mb-4 text-sm">
-                  <li className="flex items-start gap-2"><Check weight="bold" className="w-4 h-4 mt-0.5 text-success shrink-0" /> {p.userLimit} users</li>
-                  <li className="flex items-start gap-2"><Check weight="bold" className="w-4 h-4 mt-0.5 text-success shrink-0" /> {p.aiQuota} AI scans / mo</li>
+                  <li className="flex items-start gap-2"><Check weight="bold" className="w-4 h-4 mt-0.5 text-success shrink-0" /> {t("paywall.users", { n: p.userLimit })}</li>
+                  <li className="flex items-start gap-2"><Check weight="bold" className="w-4 h-4 mt-0.5 text-success shrink-0" /> {t("paywall.aiScans", { n: p.aiQuota })}</li>
                 </ul>
                 {id === "starter" ? (
                   <>
@@ -244,13 +246,13 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                       onClick={() => startTrial(id)} disabled={!!creating}
                       className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 bg-primary text-white hover:bg-[#B85F3B]"
                     >
-                      {creating === `trial:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Start 14-day free trial <ArrowRight weight="bold" className="w-4 h-4" /></>}
+                      {creating === `trial:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{t("onb.startTrial")} <ArrowRight weight="bold" className="w-4 h-4" /></>}
                     </button>
                     <button
                       onClick={() => payNow(id)} disabled={!!creating}
                       className="mt-2 text-xs font-semibold text-ink-muted hover:text-ink disabled:opacity-50"
                     >
-                      {creating === `pay:${id}` ? "Starting…" : `or pay ₹${payLabel?.toLocaleString("en-IN")} now`}
+                      {creating === `pay:${id}` ? t("onb.starting") : t("onb.orPayNow", { amount: payLabel?.toLocaleString("en-IN") || "" })}
                     </button>
                   </>
                 ) : (
@@ -258,7 +260,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                     onClick={() => payNow(id)} disabled={!!creating}
                     className={`mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                   >
-                    {creating === `pay:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : `Pay ₹${payLabel?.toLocaleString("en-IN")}`}
+                    {creating === `pay:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : t("paywall.pay", { amount: payLabel?.toLocaleString("en-IN") || "" })}
                   </button>
                 )}
               </div>
@@ -267,14 +269,13 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
         </div>
 
         <p className="text-center text-[11px] text-ink-muted mt-5">
-          New to Sitetru? Try Starter free for 14 days — no card, upgrade anytime. Prices exclusive of GST.
-          Extra projects ₹99/mo each. Need Enterprise?{" "}
-          <a href="mailto:gowtham.jaihind@gmail.com?subject=Enterprise%20plan" className="text-primary font-semibold hover:underline">Contact us</a>.
+          {t("onb.footerNote")}{" "}
+          <a href="mailto:gowtham.jaihind@gmail.com?subject=Enterprise%20plan" className="text-primary font-semibold hover:underline">{t("paywall.contactUs")}</a>.
         </p>
 
         <div className="flex items-center justify-center gap-6 mt-6">
           <button onClick={() => setMode("invite")} className="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1.5">
-            <Ticket className="w-4 h-4" /> Have an invite code?
+            <Ticket className="w-4 h-4" /> {t("onb.haveInvite")}
           </button>
           <SignOutInline onClick={logout} />
         </div>
@@ -305,13 +306,19 @@ const PrimaryButton: React.FC<{ onClick: () => void; busy?: boolean; disabled?: 
     {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{children} <ArrowRight className="w-4 h-4" /></>}
   </button>
 );
-const SignOut: React.FC<{ onClick: () => void }> = ({ onClick }) => (
-  <button onClick={onClick} className="mt-6 text-sm text-ink-muted hover:text-ink inline-flex items-center gap-1.5">
-    <LogOut className="w-4 h-4" /> Sign out
-  </button>
-);
-const SignOutInline: React.FC<{ onClick: () => void }> = ({ onClick }) => (
-  <button onClick={onClick} className="text-sm text-ink-muted hover:text-ink inline-flex items-center gap-1.5">
-    <LogOut className="w-4 h-4" /> Sign out
-  </button>
-);
+const SignOut: React.FC<{ onClick: () => void }> = ({ onClick }) => {
+  const { t } = useTranslation();
+  return (
+    <button onClick={onClick} className="mt-6 text-sm text-ink-muted hover:text-ink inline-flex items-center gap-1.5">
+      <LogOut className="w-4 h-4" /> {t("paywall.signOut")}
+    </button>
+  );
+};
+const SignOutInline: React.FC<{ onClick: () => void }> = ({ onClick }) => {
+  const { t } = useTranslation();
+  return (
+    <button onClick={onClick} className="text-sm text-ink-muted hover:text-ink inline-flex items-center gap-1.5">
+      <LogOut className="w-4 h-4" /> {t("paywall.signOut")}
+    </button>
+  );
+};

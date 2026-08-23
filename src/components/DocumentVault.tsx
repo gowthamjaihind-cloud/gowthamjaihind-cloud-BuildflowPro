@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "../i18n";
 import {
   db,
   collection,
@@ -45,6 +46,7 @@ interface DocumentVaultProps {
 }
 
 export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
+  const { t } = useTranslation();
 
   const user = useAuthStore((state) => state.user);
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -310,7 +312,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
           <div className="p-2.5 md:p-3 bg-primary text-white rounded-2xl shadow-lg shadow-[#F7E4DB]">
             <FileText className="w-5 h-5 md:w-6 md:h-6" />
           </div>
-          Digital Project Vault
+          {t("dv.title")}
         </h2>
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="bg-[#6E8CA0]/10 p-1 rounded-xl flex flex-1 md:flex-none">
@@ -318,20 +320,20 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               onClick={() => setViewMode("List")}
               className={`flex-1 md:px-4 py-2 rounded-lg text-[10px] md:text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === "List" ? "bg-surface text-primary shadow-sm" : "text-ink-muted"}`}
             >
-              List
+              {t("dv.list")}
             </button>
             <button
               onClick={() => setViewMode("Gallery")}
               className={`flex-1 md:px-4 py-2 rounded-lg text-[10px] md:text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === "Gallery" ? "bg-surface text-primary shadow-sm" : "text-ink-muted"}`}
             >
-              Gallery
+              {t("dv.gallery")}
             </button>
           </div>
           <button
             onClick={() => setIsUploading(true)}
             className="flex-1 md:flex-none bg-primary text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] md:text-[10px] flex items-center justify-center gap-2 hover:bg-primary/80 apple-transition shadow-xl shadow-primary/20"
           >
-            <Upload className="w-4 h-4" /> Upload
+            <Upload className="w-4 h-4" /> {t("dv.upload")}
           </button>
         </div>
       </div>
@@ -404,7 +406,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
           <input
             className="w-full pl-11 pr-4 py-3 bg-surface border border-divider rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none font-bold text-ink shadow-sm transition-all text-xs md:text-sm"
-            placeholder="Search documents..."
+            placeholder={t("dv.searchPlaceholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -810,7 +812,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 <tr>
                   <td colSpan={5} className="px-8 py-20 text-center">
                     <p className="text-[10px] font-black text-ink-muted uppercase tracking-widest">
-                      No documents found matching search criteria
+                      {t("dv.noDocuments")}
                     </p>
                   </td>
                 </tr>

@@ -13,6 +13,7 @@ import {
   OperationType,
 } from "../firebase";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { useTranslation } from "../i18n";
 import {
   CostEntry,
   Task,
@@ -70,6 +71,7 @@ interface CostManagementProps {
 export const CostManagement: React.FC<CostManagementProps> = ({
   projectId,
 }) => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
 
@@ -1815,7 +1817,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           <div className="flex justify-between items-start mb-10 border-b pb-8">
             <div>
               <h1 className="text-3xl font-black text-ink mb-2">
-                Project Cost Analysis Report
+                {t("views.costAnalysisReport")}
               </h1>
               <p className="text-ink-muted">
                 Generated on {new Date().toLocaleDateString()} • Detailed WBS

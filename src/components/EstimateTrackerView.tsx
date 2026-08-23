@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { useTranslation } from "../i18n";
 import { motion } from "motion/react";
 import {
   Plus,
@@ -44,6 +45,7 @@ interface EstimateTrackerViewProps {
 export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
   projectId,
 }) => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -1135,7 +1137,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-ink">Client Estimates</h2>
+          <h2 className="text-2xl font-bold text-ink">{t("views.clientEstimates")}</h2>
           <p className="text-ink-muted text-sm mt-1">
             Track estimates and approvals with the client.
           </p>

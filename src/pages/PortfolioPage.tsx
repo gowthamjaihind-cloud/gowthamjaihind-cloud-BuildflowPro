@@ -21,6 +21,7 @@ import { EditProjectModal } from "../features/projects/components/EditProjectMod
 import { SyncStatus } from "../components/SyncStatus";
 import { TelegramBotStatus } from "../components/TelegramBotStatus";
 import { OrgSwitcher } from "../components/OrgSwitcher";
+import { useTranslation } from "../i18n";
 
 const statusPillClasses = (status?: string) => {
   switch (status) {
@@ -36,6 +37,7 @@ const statusPillClasses = (status?: string) => {
 };
 
 export const PortfolioPage: React.FC = () => {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const { data: projects = [] } = useProjectsQuery();
@@ -77,7 +79,12 @@ export const PortfolioPage: React.FC = () => {
 
   // Time-of-day greeting for the hero (live/dynamic).
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const greeting =
+    hour < 12
+      ? t("portfolio.goodMorning")
+      : hour < 17
+        ? t("portfolio.goodAfternoon")
+        : t("portfolio.goodEvening");
   const firstName = (user?.displayName || "").trim().split(/\s+/)[0] || "there";
 
   // Pointer-follow tilt for project cards (shared; auto-off in Site Mode).
@@ -172,7 +179,7 @@ export const PortfolioPage: React.FC = () => {
                   />
                 </div>
                 <span className="hidden sm:inline text-[13px] font-bold uppercase tracking-[0.22em] text-white/60">
-                  Portfolio
+                  {t("portfolio.eyebrow")}
                 </span>
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
@@ -182,14 +189,14 @@ export const PortfolioPage: React.FC = () => {
                 <button
                   onClick={() => setViewingSettings(true)}
                   className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white/90 transition-colors active:scale-95 shrink-0"
-                  title="Global Settings"
+                  title={t("portfolio.globalSettings")}
                 >
                   <GearSix weight="duotone" className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => logout()}
                   className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-danger/25 text-white/90 hover:text-danger transition-colors active:scale-95 shrink-0"
-                  title="Sign Out"
+                  title={t("portfolio.signOut")}
                 >
                   <SignOut weight="duotone" className="w-5 h-5" />
                 </button>
@@ -205,15 +212,15 @@ export const PortfolioPage: React.FC = () => {
                   transition={{ delay: 0.15, duration: 0.5 }}
                   className="text-[12px] sm:text-sm font-bold uppercase tracking-[0.2em] text-primary mb-2 sm:mb-3"
                 >
-                  {greeting}, {firstName}
+                  {t("portfolio.greeting", { greeting, name: firstName })}
                 </motion.div>
                 <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-[80px] font-bold tracking-tight leading-[0.95] mb-3 sm:mb-4">
                   {companyName}
                 </h1>
                 <p className="text-[15px] sm:text-[17px] md:text-lg text-white/70 font-medium leading-relaxed">
-                  Truth, reported from site.{" "}
+                  {t("portfolio.tagline")}{" "}
                   <span className="text-white/45">
-                    Every project, ledger, and daily log in one place.
+                    {t("portfolio.taglineSub")}
                   </span>
                 </p>
 
@@ -225,7 +232,7 @@ export const PortfolioPage: React.FC = () => {
                       className="font-display text-2xl font-bold leading-none tabular-nums"
                     />
                     <span className="text-[10px] font-bold uppercase tracking-wider text-white/55">
-                      Projects
+                      {t("portfolio.projects")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 rounded-2xl bg-white/[0.07] border border-white/10 px-4 py-2.5">
@@ -235,7 +242,7 @@ export const PortfolioPage: React.FC = () => {
                       className="font-display text-2xl font-bold leading-none tabular-nums"
                     />
                     <span className="text-[10px] font-bold uppercase tracking-wider text-white/55">
-                      Active
+                      {t("portfolio.active")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 rounded-2xl bg-white/[0.07] border border-white/10 px-4 py-2.5">
@@ -245,7 +252,7 @@ export const PortfolioPage: React.FC = () => {
                       className="font-display text-2xl font-bold leading-none tabular-nums"
                     />
                     <span className="text-[10px] font-bold uppercase tracking-wider text-white/55">
-                      On Hold
+                      {t("portfolio.onHold")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 rounded-2xl bg-white/[0.07] border border-white/10 px-4 py-2.5">
@@ -255,7 +262,7 @@ export const PortfolioPage: React.FC = () => {
                       className="font-display text-2xl font-bold leading-none tabular-nums"
                     />
                     <span className="text-[10px] font-bold uppercase tracking-wider text-white/55">
-                      Completed
+                      {t("portfolio.completed")}
                     </span>
                   </div>
                 </div>
@@ -266,7 +273,7 @@ export const PortfolioPage: React.FC = () => {
                 className="cta-shine w-full lg:w-auto justify-center bg-primary text-white px-6 sm:px-8 md:px-10 py-4 md:py-5 rounded-2xl md:rounded-3xl font-bold text-[15px] sm:text-[17px] flex items-center gap-3 shadow-lg shadow-primary/30 hover:bg-primary/90 apple-transition sm:hover:-translate-y-1 active:scale-95 shrink-0"
               >
                 <Plus weight="bold" className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
-                <span className="truncate">Initialize Workspace</span>
+                <span className="truncate">{t("portfolio.initializeWorkspace")}</span>
               </button>
             </div>
           </div>
@@ -328,14 +335,16 @@ export const PortfolioPage: React.FC = () => {
                       project.status,
                     )}`}
                   >
-                    {project.status || "Planning"}
+                    {project.status
+                      ? t(`status.${project.status.replace(/\s+/g, "").replace(/^./, (c) => c.toLowerCase())}`)
+                      : t("status.planning")}
                   </span>
                   <div className="flex gap-1">
                     {(user?.role === "Admin" || user?.role === "Owner") && (
                       <button
                         onClick={(e) => handleEditProjectClick(e, project)}
                         className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-ink-muted hover:text-primary hover:bg-page apple-transition"
-                        title="Edit Project"
+                        title={t("portfolio.editProject")}
                       >
                         <PencilSimple
                           weight="duotone"
@@ -346,7 +355,7 @@ export const PortfolioPage: React.FC = () => {
                     <button
                       onClick={(e) => handleDeleteProjectClick(e, project.id)}
                       className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-ink-muted hover:text-danger hover:bg-danger/8 apple-transition"
-                      title="Delete Project"
+                      title={t("portfolio.deleteProject")}
                     >
                       <Trash
                         weight="duotone"
@@ -385,10 +394,10 @@ export const PortfolioPage: React.FC = () => {
                 />
               </div>
               <h3 className="text-2xl sm:text-3xl md:text-[34px] font-bold text-ink mb-2 sm:mb-3">
-                No Active Workspaces
+                {t("portfolio.noWorkspaces")}
               </h3>
               <p className="text-[15px] sm:text-[17px] text-ink-muted font-medium leading-relaxed max-w-[280px] sm:max-w-md mx-auto">
-                Kickstart your work by initializing a new project.
+                {t("portfolio.noWorkspacesSub")}
               </p>
             </div>
           )}
@@ -403,23 +412,24 @@ export const PortfolioPage: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="soft-card bg-surface rounded-2xl w-full max-w-sm p-6 relative"
           >
-            <h3 className="text-xl font-bold text-ink mb-2">Delete Project?</h3>
+            <h3 className="text-xl font-bold text-ink mb-2">
+              {t("portfolio.deleteConfirmTitle")}
+            </h3>
             <p className="text-ink-muted mb-6 text-sm">
-              Are you sure you want to delete this entire project? This will
-              remove all associated data and cannot be undone.
+              {t("portfolio.deleteConfirmBody")}
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setProjectToDelete(null)}
                 className="px-4 py-2 text-ink font-medium hover:bg-panel rounded-xl transition-colors"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={confirmDeleteProject}
                 className="px-4 py-2 bg-danger hover:bg-danger text-white font-medium rounded-xl shadow-sm transition-colors"
               >
-                Delete
+                {t("common.delete")}
               </button>
             </div>
           </motion.div>

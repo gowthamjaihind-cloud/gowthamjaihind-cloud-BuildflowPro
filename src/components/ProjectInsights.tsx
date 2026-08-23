@@ -19,6 +19,8 @@ import { db } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getProjectSubCollectionPath } from "../utils/projectPath";
 import { useProjectStore } from "../store";
+import { useTranslation } from "../i18n";
+import { AnalyticsTabs } from "./analytics/AnalyticsTabs";
 
 interface ProjectInsightsProps {
   projectId: string;
@@ -27,8 +29,9 @@ interface ProjectInsightsProps {
 // A tiny Markdown renderer (bold + bullet lists + ### headings). Avoids pulling
 // in a markdown dependency for the short, model-generated sections.
 const InsightText: React.FC<{ text: string }> = ({ text }) => {
+  const { t: tr } = useTranslation();
   if (!text?.trim()) {
-    return <p className="text-sm text-ink-muted italic">No data for this section yet.</p>;
+    return <p className="text-sm text-ink-muted italic">{tr("insights.noSectionData")}</p>;
   }
   const renderInline = (s: string) => {
     const parts = s.split(/(\*\*[^*]+\*\*)/g);
@@ -88,6 +91,7 @@ const todayKolkata = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
 
 export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) => {
+  const { t } = useTranslation();
   const { data: tasks = [] } = useTasksQuery(projectId);
   const { data: dailyLogs = [] } = useProjectDailyLogsQuery(projectId);
   const { stats, getTaskTotals } = useProjectCostTotals(projectId);
@@ -191,8 +195,8 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
       console.error("Insight generation failed:", err);
       setError(
         err?.message?.includes("GEMINI") || err?.code === "internal"
-          ? "The AI service isn't configured yet (missing GEMINI_API_KEY). Ask the admin to add it."
-          : err?.message || "Failed to generate insights. Please try again.",
+          ? t("insights.notConfigured")
+          : err?.message || t("insights.genFailed"),
       );
     } finally {
       setLoading(false);
@@ -201,12 +205,12 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
 
   const sections = useMemo(
     () => [
-      { key: "executiveDigest" as const, title: "Executive Digest", icon: Sparkle, accent: "#6E8CA0" },
-      { key: "costVariance" as const, title: "Cost Variance", icon: ChartLineUp, accent: "#D97D54" },
-      { key: "scheduleSlippage" as const, title: "Schedule Slippage", icon: CalendarX, accent: "#B85F3B" },
-      { key: "siteReport" as const, title: "Site Report", icon: Buildings, accent: "#56778E" },
+      { key: "executiveDigest" as const, title: t("insights.executiveDigest"), icon: Sparkle, accent: "#6E8CA0" },
+      { key: "costVariance" as const, title: t("insights.costVariance"), icon: ChartLineUp, accent: "#D97D54" },
+      { key: "scheduleSlippage" as const, title: t("insights.scheduleSlippage"), icon: CalendarX, accent: "#B85F3B" },
+      { key: "siteReport" as const, title: t("insights.siteReport"), icon: Buildings, accent: "#56778E" },
     ],
-    [],
+    [t],
   );
 
   return (
@@ -218,15 +222,16 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
           </div>
           <div>
             <h2 className="text-lg font-black text-ink tracking-tight flex items-center gap-2">
-              AI Project Insights
+              {t("insights.title")}
             </h2>
             <p className="text-sm text-ink-muted mt-0.5 max-w-xl">
-              A model reads this project's costs, schedule, and daily logs to produce a cost-variance
-              read, schedule-slippage flags, an executive digest, and a shareable site report.
+              {t("insights.subtitle")}
             </p>
             {result?.generatedAt && (
               <p className="text-[10px] text-ink-muted font-medium mt-1.5">
-                Last generated {new Date(result.generatedAt).toLocaleString("en-IN")}
+                {t("insights.lastGenerated", {
+                  when: new Date(result.generatedAt).toLocaleString("en-IN"),
+                })}
               </p>
             )}
           </div>
@@ -237,17 +242,21 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
           className="shrink-0 px-5 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading ? (
-            <><RefreshCw className="w-4 h-4 animate-spin" /> Analyzing…</>
+            <><RefreshCw className="w-4 h-4 animate-spin" /> {t("insights.analyzing")}</>
           ) : (
-            <><Sparkle weight="fill" className="w-4 h-4" /> {result ? "Regenerate" : "Generate Insights"}</>
+            <><Sparkle weight="fill" className="w-4 h-4" /> {result ? t("insights.regenerate") : t("insights.generate")}</>
           )}
         </button>
       </div>
 
+      {/* Interactive visual analytics — always available from project data,
+          independent of the AI text generation below. */}
+      <AnalyticsTabs projectId={projectId} />
+
       {!hasData && (
         <div className="p-6 bg-panel rounded-2xl border border-divider text-sm text-ink-muted flex items-center gap-2">
           <AlertCircle className="w-5 h-5" />
-          Add some tasks and daily logs first — insights are generated from your project data.
+          {t("insights.addDataFirst")}
         </div>
       )}
 
@@ -261,7 +270,7 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
       {loading && !result && (
         <div className="p-10 text-center text-ink-muted">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
-          Reading your project and writing insights…
+          {t("insights.reading")}
         </div>
       )}
 
@@ -282,7 +291,7 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
           ))}
           <p className="lg:col-span-2 flex items-center gap-1.5 text-[10px] text-ink-muted">
             <Notebook className="w-3.5 h-3.5" />
-            AI-generated from your project data — review figures before acting on them.
+            {t("insights.disclaimer")}
           </p>
         </div>
       )}

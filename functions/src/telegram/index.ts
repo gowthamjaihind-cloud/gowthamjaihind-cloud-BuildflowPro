@@ -5,6 +5,7 @@ import { defineSecret } from "firebase-functions/params";
 import { TelegramApi } from "./api";
 import { getSession, setSession, clearStep, clearSession } from "./session";
 import { checkRateLimit, redeemLinkCode, validateSession } from "./auth";
+import { tt, normalizeLang, type BotLang } from "./i18n";
 import * as log from "./handlers/log";
 import * as projects from "./handlers/projects";
 import * as agent from "./handlers/agent";
@@ -85,7 +86,19 @@ async function handleUpdate(tg, update, geminiKey) {
         const data = cb.data || "";
         const session = await getSession(chatId);
         if (!(await validateSession(chatId, session))) {
-            await tg.editMessage(chatId, messageId, "Session expired. Send /link to reconnect.");
+            await tg.editMessage(chatId, messageId, tt(session?.lang, "sessionExpired"));
+            return;
+        }
+        const lang: BotLang = normalizeLang(session?.lang);
+        // Language switch buttons (from /language).
+        if (data === "lang:en" || data === "lang:ta") {
+            const newLang: BotLang = data === "lang:ta" ? "ta" : "en";
+            await setSession(chatId, { lang: newLang });
+            await tg.editMessage(
+                chatId,
+                messageId,
+                tt(newLang, newLang === "ta" ? "languageSetTa" : "languageSetEn"),
+            );
             return;
         }
         // "Log now" button from the daily reminder — starts the normal log flow.
@@ -120,7 +133,7 @@ async function handleUpdate(tg, update, geminiKey) {
         }
         if (data === "xx") {
             await clearStep(chatId);
-            await tg.editMessage(chatId, messageId, "Cancelled.");
+            await tg.editMessage(chatId, messageId, tt(lang, "cancelled"));
             return;
         }
         if (data === "bk") {
@@ -178,12 +191,12 @@ async function handleUpdate(tg, update, geminiKey) {
         }
         if (data === "ph") {
             await setSession(chatId, { step: "log:photo" });
-            await tg.editMessage(chatId, messageId, "Send the photo now.");
+            await tg.editMessage(chatId, messageId, tt(lang, "sendPhotoNow"));
             return;
         }
         if (data === "nt") {
             await setSession(chatId, { step: "log:note" });
-            await tg.editMessage(chatId, messageId, "Type your note.");
+            await tg.editMessage(chatId, messageId, tt(lang, "typeNote"));
             return;
         }
         if (data === "sv") {
@@ -197,7 +210,7 @@ async function handleUpdate(tg, update, geminiKey) {
         const chatId = msg.chat.id;
         const session = await getSession(chatId);
         if (!(await validateSession(chatId, session))) {
-            await tg.sendMessage(chatId, "You're not linked. Send /link to connect.");
+            await tg.sendMessage(chatId, tt(session?.lang, "notLinkedShort"));
             return;
         }
         if (session.step === "log:photo") {
@@ -227,12 +240,15 @@ async function handleUpdate(tg, update, geminiKey) {
         catch {
             /* deletion can fail in some chat types; not fatal */
         }
+        // Best-effort default language from the user's Telegram client until they
+        // pick one with /language (Tamil clients start in Tamil).
+        const clientLang: BotLang = msg.from?.language_code === "ta" ? "ta" : "en";
         if (!arg) {
-            await tg.sendMessage(chatId, "Ask your admin for a link code, then send:\n<code>/link ABCD-EFGH</code>");
+            await tg.sendMessage(chatId, tt(clientLang, "askLinkCode"));
             return;
         }
         if (!(await checkRateLimit(chatId))) {
-            await tg.sendMessage(chatId, "Too many attempts. Please wait an hour and ask your admin for a fresh code.");
+            await tg.sendMessage(chatId, tt(clientLang, "tooManyAttempts"));
             return;
         }
         const code = arg.replace(/[\s-]/g, "").toUpperCase();
@@ -240,51 +256,54 @@ async function handleUpdate(tg, update, geminiKey) {
         const result = await redeemLinkCode(code, chatId);
         if (!result.ok) {
             // Deliberately vague — never reveal whether a code exists, is used, or expired.
-            await tg.sendMessage(chatId, "That code isn't valid. It may have expired or already been used. Ask your admin for a new one.");
+            await tg.sendMessage(chatId, tt(clientLang, "codeInvalid"));
             return;
         }
         await setSession(chatId, {
             userId: result.userId,
             email: result.email,
             orgId: result.orgId,
+            lang: clientLang,
             linkedAt: Date.now(),
         });
-        await tg.sendMessage(chatId, `✅ Linked as <b>${result.email}</b>\n\nSend /help to see what I can do.`);
+        await tg.sendMessage(chatId, tt(clientLang, "linkedAs", { email: result.email as string }));
         return;
     }
     // ---------- everything below requires a valid session ----------
     const session = await getSession(chatId);
     if (!(await validateSession(chatId, session))) {
-        await tg.sendMessage(chatId, "You're not linked. Ask your admin for a link code, then send:\n<code>/link ABCD-EFGH</code>");
+        await tg.sendMessage(chatId, tt(session?.lang, "notLinked"));
         return;
     }
+    const lang: BotLang = normalizeLang(session?.lang);
     if (text === "/unlink") {
         if (session?.userId) {
             await db.collection("users").doc(session.userId).update({
                 telegramChatId: null,
                 telegramLinkedAt: null
             });
-            await tg.sendMessage(chatId, "Your Telegram account has been unlinked.");
+            await tg.sendMessage(chatId, tt(lang, "unlinked"));
             await clearSession(chatId);
         }
         else {
-            await tg.sendMessage(chatId, "You are not currently linked.");
+            await tg.sendMessage(chatId, tt(lang, "notLinkedNow"));
         }
         return;
     }
     if (text === "/cancel") {
         await clearStep(chatId);
-        await tg.sendMessage(chatId, "Cancelled.");
+        await tg.sendMessage(chatId, tt(lang, "cancelled"));
+        return;
+    }
+    if (text === "/language" || text === "/lang") {
+        await tg.sendMessage(chatId, tt(lang, "chooseLanguage"), [[
+            { text: tt(lang, "langEnglish"), callback_data: "lang:en" },
+            { text: tt(lang, "langTamil"), callback_data: "lang:ta" },
+        ]]);
         return;
     }
     if (text === "/help" || text === "/start") {
-        await tg.sendMessage(chatId, `<b>Sitetru Bot</b>\n\n` +
-            `/plan — plan today's tasks (morning)\n` +
-            `/log — log today's site progress\n` +
-            `/today — see what's already logged today\n` +
-            `/projects — switch active project\n` +
-            `/cancel — cancel what you're doing\n` +
-            `/help — this message`);
+        await tg.sendMessage(chatId, tt(lang, "help"));
         return;
     }
     if (text === "/log") {
@@ -297,11 +316,11 @@ async function handleUpdate(tg, update, geminiKey) {
     }
     if (text === "/plan") {
         if (!session.activeProjectId) {
-            await tg.sendMessage(chatId, "No active project. Send /projects to pick one.");
+            await tg.sendMessage(chatId, tt(lang, "noActiveProject"));
             return;
         }
         const ok = await agent.sendPlanPrompt(tg, chatId, session);
-        if (!ok) await tg.sendMessage(chatId, "No plannable tasks found for this project.");
+        if (!ok) await tg.sendMessage(chatId, tt(lang, "noPlannableTasks"));
         return;
     }
     if (text === "/projects") {
@@ -312,7 +331,7 @@ async function handleUpdate(tg, update, geminiKey) {
     if (step === "log:progress") {
         const pct = parseInt(text, 10);
         if (isNaN(pct) || pct < 0 || pct > 100) {
-            await tg.sendMessage(chatId, "Enter a number between 0 and 100.");
+            await tg.sendMessage(chatId, tt(lang, "enter0to100"));
             return;
         }
         await setSession(chatId, {
@@ -325,7 +344,7 @@ async function handleUpdate(tg, update, geminiKey) {
     if (step === "log:material_qty") {
         const qty = parseFloat(text);
         if (isNaN(qty) || qty <= 0) {
-            await tg.sendMessage(chatId, "Enter a quantity greater than 0.");
+            await tg.sendMessage(chatId, tt(lang, "enterQtyGt0"));
             return;
         }
         const d = session.draft || {};
@@ -340,7 +359,7 @@ async function handleUpdate(tg, update, geminiKey) {
     if (step === "log:equipment_qty") {
         const qty = parseFloat(text);
         if (isNaN(qty) || qty <= 0) {
-            await tg.sendMessage(chatId, "Enter a quantity greater than 0.");
+            await tg.sendMessage(chatId, tt(lang, "enterQtyGt0"));
             return;
         }
         const d = session.draft || {};
@@ -359,7 +378,7 @@ async function handleUpdate(tg, update, geminiKey) {
     if (step === "log:labour_count") {
         const n = parseInt(text, 10);
         if (isNaN(n) || n <= 0) {
-            await tg.sendMessage(chatId, "Enter a headcount greater than 0.");
+            await tg.sendMessage(chatId, tt(lang, "enterHeadcountGt0"));
             return;
         }
         const d = session.draft || {};
@@ -377,7 +396,7 @@ async function handleUpdate(tg, update, geminiKey) {
         await log.showMenu(tg, chatId, null, s);
         return;
     }
-    await tg.sendMessage(chatId, "I didn't understand that. Send /help.");
+    await tg.sendMessage(chatId, tt(lang, "didntUnderstand"));
 }
 export const onUserUnlinked = onDocumentUpdated({
     document: "users/{userId}",
@@ -391,7 +410,8 @@ export const onUserUnlinked = onDocumentUpdated({
     if (oldChatId && !newChatId) {
         const tg = new TelegramApi(BOT_TOKEN.value());
         try {
-            await tg.sendMessage(oldChatId, "Your Telegram account has been unlinked from Sitetru.");
+            const s = await getSession(oldChatId);
+            await tg.sendMessage(oldChatId, tt(normalizeLang(s?.lang), "unlinkedNotify"));
         }
         catch (err) {
             console.error("Failed to send unlink message:", err);
@@ -428,7 +448,7 @@ export const dailyLogReminder = onSchedule({
             } else {
                 await tg.sendMessage(
                     u.telegramChatId,
-                    "🌇 <b>End-of-day check-in</b>\n\nReply /projects to set your active project, then I'll help you log today's work.",
+                    tt(normalizeLang(session?.lang), "endOfDayNoProject"),
                 );
                 nudged++;
             }

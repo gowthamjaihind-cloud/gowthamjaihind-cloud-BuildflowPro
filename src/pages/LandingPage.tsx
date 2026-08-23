@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useTranslation } from "../i18n";
 import { BrandLogo } from "../components/BrandLogo";
 import { TERMS_URL, PRIVACY_URL, stashPendingConsent } from "../lib/legal";
 import {
@@ -169,6 +170,7 @@ const RotatingPhrase: React.FC = () => {
 };
 
 export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, loginError }) => {
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
@@ -228,17 +230,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
           </div>
 
           <div className="hidden md:flex items-center gap-7 text-sm font-semibold text-ink-muted">
-            <a href="#audience" className="hover:text-ink apple-transition">Who we serve</a>
-            <a href="#solutions" className="hover:text-ink apple-transition">Solutions</a>
-            <a href="#features" className="hover:text-ink apple-transition">Features</a>
-            <a href="#pricing" className="hover:text-ink apple-transition">Pricing</a>
+            <a href="#audience" className="hover:text-ink apple-transition">{t("land.navServe")}</a>
+            <a href="#solutions" className="hover:text-ink apple-transition">{t("land.navSolutions")}</a>
+            <a href="#features" className="hover:text-ink apple-transition">{t("land.navFeatures")}</a>
+            <a href="#pricing" className="hover:text-ink apple-transition">{t("land.navPricing")}</a>
           </div>
 
           <div className="hidden md:flex items-center gap-3">
             <button onClick={requestLogin} disabled={isLoggingIn} className="text-sm font-bold text-ink hover:text-primary apple-transition disabled:opacity-60">
               Sign in
             </button>
-            <CTA label="Get started" className="bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-[#B85F3B] shadow-lg shadow-primary/20" />
+            <CTA label={t("land.getStarted")} className="bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-[#B85F3B] shadow-lg shadow-primary/20" />
           </div>
 
           <button className="md:hidden p-2 -mr-2 text-ink" onClick={() => setMenuOpen((v) => !v)} aria-label="Menu">
@@ -248,11 +250,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
 
         {menuOpen && (
           <div className="md:hidden border-t border-divider/60 bg-page px-5 py-4 flex flex-col gap-3">
-            <a href="#audience" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">Who we serve</a>
-            <a href="#solutions" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">Solutions</a>
-            <a href="#features" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">Features</a>
-            <a href="#pricing" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">Pricing</a>
-            <CTA label="Get started" full className="bg-primary text-white text-sm px-5 py-3 rounded-xl mt-1" />
+            <a href="#audience" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navServe")}</a>
+            <a href="#solutions" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navSolutions")}</a>
+            <a href="#features" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navFeatures")}</a>
+            <a href="#pricing" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navPricing")}</a>
+            <CTA label={t("land.getStarted")} full className="bg-primary text-white text-sm px-5 py-3 rounded-xl mt-1" />
           </div>
         )}
       </header>
@@ -274,19 +276,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
         </div>
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <div className="inline-flex items-center gap-2 bg-sage/15 text-[#3E8388] px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-6">
-            <Lightning weight="fill" className="w-3.5 h-3.5" /> Built for construction teams
+            <Lightning weight="fill" className="w-3.5 h-3.5" /> {t("land.heroEyebrow")}
           </div>
           <h1 className="font-display font-bold text-[42px] leading-[1.05] sm:text-6xl tracking-tight mb-6">
-            Run your whole site,<br />
+            {t("land.heroTitle")}<br />
             <RotatingPhrase />
           </h1>
           <p className="text-lg text-ink-muted font-medium leading-relaxed max-w-lg mb-8">
-            Schedule, procurement, labor, cost and daily progress — connected in real time, with field logging as simple as a Telegram message.
+            {t("land.heroSubhead")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
-            <CTA label="Get started free" className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-[#B85F3B] shadow-xl shadow-primary/20" />
+            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-[#B85F3B] shadow-xl shadow-primary/20" />
             <a href="#features" className="inline-flex items-center justify-center gap-2 font-bold text-base px-7 py-4 rounded-2xl bg-panel border border-divider text-ink hover:bg-surface apple-transition">
-              See features
+              {t("land.seeFeatures")}
             </a>
           </div>
           {loginError && (
@@ -296,7 +298,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             </div>
           )}
           <div className="mt-8 flex items-center gap-2 text-xs font-semibold text-ink-muted">
-            <ShieldCheck weight="duotone" className="w-4 h-4 text-success" /> Secure Google sign-in · No credit card to start
+            <ShieldCheck weight="duotone" className="w-4 h-4 text-success" /> {t("land.trustLine")}
           </div>
         </motion.div>
 
@@ -351,8 +353,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       {/* WHO WE SERVE */}
       <section id="audience" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <p className="eyebrow text-primary mb-3">Built for the people who build</p>
-          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Who we serve</h2>
+          <p className="eyebrow text-primary mb-3">{t("land.serveEyebrow")}</p>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{t("land.serveHeading")}</h2>
           <p className="text-ink-muted font-medium">
             Sitetru is made for Indian construction businesses that have outgrown spreadsheets, WhatsApp groups and paper diaries.
           </p>
@@ -375,8 +377,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       {/* FEATURES */}
       <section id="features" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Everything a project needs, in one workspace</h2>
-          <p className="text-ink-muted font-medium">Stop stitching together spreadsheets, WhatsApp groups and paper diaries. Sitetru connects the whole site.</p>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{t("land.featuresHeading")}</h2>
+          <p className="text-ink-muted font-medium">{t("land.featuresSub")}</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {features.map((f) => (
@@ -394,9 +396,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       {/* WHY SITETRU */}
       <section id="why" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <p className="eyebrow text-primary mb-3">Why teams switch</p>
-          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Why Sitetru</h2>
-          <p className="text-ink-muted font-medium">The difference isn't another dashboard — it's a site that reports itself, honestly, in real time.</p>
+          <p className="eyebrow text-primary mb-3">{t("land.whyEyebrow")}</p>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{t("land.whyHeading")}</h2>
+          <p className="text-ink-muted font-medium">{t("land.whySub")}</p>
         </div>
         <div className="grid md:grid-cols-2 gap-5">
           {whySitetru.map((w) => (
@@ -417,8 +419,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       <section id="solutions" className="max-w-6xl mx-auto px-5 sm:px-8 py-8 md:py-16">
         <div className="bg-surface-dark rounded-[32px] p-8 md:p-14">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <p className="eyebrow text-sage mb-3">Problems we solve</p>
-            <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight text-white mb-4">From site chaos to control</h2>
+            <p className="eyebrow text-sage mb-3">{t("land.solveEyebrow")}</p>
+            <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight text-white mb-4">{t("land.solveHeading")}</h2>
             <p className="text-white/70 font-medium">Every messy part of running a project, answered by one connected workspace.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -448,7 +450,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <p className="text-white/70 font-medium leading-relaxed mb-8">
               No app to train the crew on. Foremen log progress, materials, labour and photos straight from a chat — and it lands live in your dashboards, cost sheets and inventory.
             </p>
-            <CTA label="Get started free" className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-[#B85F3B]" />
+            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-[#B85F3B]" />
           </div>
           <div className="space-y-3">
             {[
@@ -474,7 +476,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       {/* HOW IT WORKS */}
       <section className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
         <div className="text-center mb-14">
-          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Up and running in a day</h2>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{t("land.stepsHeading")}</h2>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {steps.map((s) => (
@@ -490,7 +492,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       {/* PRICING */}
       <section id="pricing" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
         <div className="text-center max-w-2xl mx-auto mb-8">
-          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Pay for the projects you run</h2>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{t("land.pricingHeading")}</h2>
           <p className="text-ink-muted font-medium">Pick a plan by how many projects you run. Start free, or try any paid plan free for 30 days — no credit card to start.</p>
         </div>
 
@@ -520,7 +522,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <span className="font-display font-bold text-3xl tracking-tight">₹0</span>
             <span className="text-xs font-semibold text-ink-muted">{freePlan.projects} · up to 2 users · free forever</span>
           </div>
-          <CTA label="Start free" className="bg-panel border border-divider text-ink hover:bg-surface text-sm px-6 py-3 rounded-2xl" />
+          <CTA label={t("land.startFree")} className="bg-panel border border-divider text-ink hover:bg-surface text-sm px-6 py-3 rounded-2xl" />
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
@@ -571,10 +573,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       {/* FINAL CTA */}
       <section className="max-w-6xl mx-auto px-5 sm:px-8 pb-20">
         <div className="soft-card rounded-[32px] p-10 md:p-16 text-center">
-          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">Bring your next project under control</h2>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{t("land.finalHeading")}</h2>
           <p className="text-ink-muted font-medium max-w-lg mx-auto mb-8">Start free on Lite, or try every feature free for 30 days — no card required.</p>
           <div className="flex justify-center">
-            <CTA label="Get started free" className="bg-primary text-white text-base px-8 py-4 rounded-2xl hover:bg-[#B85F3B] shadow-xl shadow-primary/20" />
+            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-8 py-4 rounded-2xl hover:bg-[#B85F3B] shadow-xl shadow-primary/20" />
           </div>
         </div>
       </section>

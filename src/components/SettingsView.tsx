@@ -30,6 +30,7 @@ import { OperatorPanel } from "./settings/OperatorPanel";
 import { PrivacyPanel } from "./settings/PrivacyPanel";
 import { PlanSummary } from "./settings/PlanSummary";
 import { TelegramIntegration } from "./TelegramIntegration";
+import { useTranslation } from "../i18n";
 
 const SUPER_ADMIN_EMAILS = ["gowtham.jaihind@gmail.com"];
 
@@ -53,6 +54,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onBack,
   currentUser,
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsSection>("organization");
   const companyName = useUIStore((state) => state.companyName);
   const setCompanyName = useUIStore((state) => state.setCompanyName);
@@ -80,10 +82,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <header className="mb-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <h2 className="text-[34px] font-bold tracking-tight text-ink mb-2 leading-tight">
-              Preferences
+              {t("settings.title")}
             </h2>
             <p className="text-[15px] text-ink-muted font-medium leading-relaxed max-w-2xl">
-              Manage your global configuration and systemic parameters.
+              {t("settings.subtitle")}
             </p>
           </div>
           <button
@@ -91,7 +93,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="p-4 bg-surface border border-divider rounded-2xl hover:bg-panel apple-transition shadow-sm flex items-center gap-2 font-bold text-ink"
           >
             <ArrowLeftRight className="w-5 h-5 text-ink-muted" />
-            Back to Portfolio
+            {t("settings.back")}
           </button>
         </header>
 
@@ -104,19 +106,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             {[
               {
                 id: "organization",
-                label: "Default Organization",
+                label: t("settings.tabOrganization"),
                 icon: LayoutDashboard,
               },
-              { id: "team", label: "Team", icon: Users },
-              { id: "telegram", label: "Telegram Bot", icon: TelegramLogo },
+              { id: "team", label: t("settings.tabTeam"), icon: Users },
+              { id: "telegram", label: t("settings.tabTelegram"), icon: TelegramLogo },
               ...(SUPER_ADMIN_EMAILS.includes((currentUser?.email || "").toLowerCase())
-                ? [{ id: "operator", label: "Operator", icon: Shield }]
+                ? [{ id: "operator", label: t("settings.tabOperator"), icon: Shield }]
                 : []),
-              { id: "appearance", label: "Appearance", icon: Monitor },
-              { id: "privacy", label: "Privacy & Data", icon: LockKey },
+              { id: "appearance", label: t("settings.tabAppearance"), icon: Monitor },
+              { id: "privacy", label: t("settings.tabPrivacy"), icon: LockKey },
               {
                 id: "enterprise",
-                label: "Identity & Authorization",
+                label: t("settings.tabEnterprise"),
                 icon: Shield,
               },
             ].map((item) => (
@@ -151,7 +153,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             {activeTab === "telegram" && (
               <section className="soft-card p-8 squircle-24">
-                <h3 className="text-xl font-bold text-ink mb-1">Telegram Bot</h3>
+                <h3 className="text-xl font-bold text-ink mb-1">{t("settings.tabTelegram")}</h3>
                 <p className="text-ink-muted text-sm mb-6">
                   Connect your Telegram to file daily logs, scan invoices, and get updates from your phone.
                 </p>
@@ -278,7 +280,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <input
                           type="text"
                           className="w-full bg-surface border border-[#C8D1D3] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink"
-                          placeholder="Enter company name"
+                          placeholder={t("settings.enterCompanyName")}
                           value={draftCompanyName}
                           onChange={(e) => setDraftCompanyName(e.target.value)}
                         />
@@ -367,7 +369,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </h3>
                 <div className="space-y-8">
                   <div>
-                    <h4 className="font-bold text-ink mb-4">UI Work Mode</h4>
+                    <h4 className="font-bold text-ink mb-4">{t("settings.uiWorkMode")}</h4>
                     <div className="flex gap-4">
                       <button
                         onClick={() => setUIMode("executive")}
@@ -405,7 +407,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
 
                   <div>
-                    <h4 className="font-bold text-ink mb-4">Display Mode</h4>
+                    <h4 className="font-bold text-ink mb-4">{t("settings.displayMode")}</h4>
                     <div className="flex gap-4">
                       <button
                         onClick={() => setDarkMode(false)}

@@ -66,6 +66,17 @@ export function exportToPDF(
   const usableWidth = pageWidth - margin * 2;
   const colWidth = usableWidth / Math.max(headers.length, 1);
 
+  // Shrink a cell's text with an ellipsis so it never bleeds into the next
+  // column. Rows are a fixed height, so wrapping (maxWidth) would overflow the
+  // row instead — clip to a single line that fits the column.
+  const fit = (text: string, maxW: number) => {
+    if (maxW <= 0) return "";
+    if (doc.getTextWidth(text) <= maxW) return text;
+    let s = text;
+    while (s.length > 1 && doc.getTextWidth(s + "…") > maxW) s = s.slice(0, -1);
+    return s + "…";
+  };
+
   const renderTableHeader = (y: number) => {
     doc.setFillColor(241, 245, 249);
     doc.rect(margin, y, usableWidth, 7, "F");
@@ -75,7 +86,7 @@ export function exportToPDF(
 
     headers.forEach((h, i) => {
       const x = margin + i * colWidth + 1.5;
-      doc.text(String(h).toUpperCase(), x, y + 4.8, { maxWidth: colWidth - 3 });
+      doc.text(fit(String(h).toUpperCase(), colWidth - 3), x, y + 4.8);
     });
   };
 
@@ -115,7 +126,7 @@ export function exportToPDF(
     row.forEach((cell, cellIndex) => {
       const cellText = String(cell ?? "");
       const x = margin + cellIndex * colWidth + 1.5;
-      doc.text(cellText, x, startY + 4.5, { maxWidth: colWidth - 3 });
+      doc.text(fit(cellText, colWidth - 3), x, startY + 4.5);
     });
 
     startY += 6.5;
