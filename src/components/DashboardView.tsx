@@ -2,23 +2,20 @@ import React from "react";
 import { motion } from "motion/react";
 import {
   Barricade as Construction,
-  Info,
-  Users,
-  ArrowsClockwise as RefreshCw,
   Warning as AlertTriangle,
   CheckCircle as CheckCircle2,
+  ChartLineUp,
+  ArrowRight,
 } from "@phosphor-icons/react";
-import { WBSView } from "./WBSView";
 import { CountUp, PageHero } from "./motion";
-import { auth } from "../firebase";
-import { useQueryClient } from "@tanstack/react-query";
 import { useTasksQuery } from "../hooks/queries";
 import { Task } from "../types";
+import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
+import { useUIStore } from "../store";
 
 import { useScheduleData } from "../hooks/useScheduleData";
 import { ScheduleView } from "./schedule/ScheduleView";
 import { PhaseStrips } from "./schedule/PhaseStrips";
-import { AnalyticsTabs } from "./analytics/AnalyticsTabs";
 import { useTranslation } from "../i18n";
 
 interface DashboardViewProps {
@@ -35,7 +32,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   handleAddDependency,
 }) => {
   const { t } = useTranslation();
+  const setActiveTab = useUIStore((s) => s.setActiveTab);
   const { data: legacyTasks = [] } = useTasksQuery(activeProjectId);
+  const { stats } = useProjectCostTotals(activeProjectId);
   const {
     tasks: scheduleTasks,
     phases,
@@ -44,40 +43,46 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const calculateGlobalProgress = () => {
     const activeTasks = legacyTasks.filter(
-      (t) => t.type === "Task" && !t.isSystemGenerated,
+      (tk) => tk.type === "Task" && !tk.isSystemGenerated,
     );
     if (activeTasks.length === 0) return 0;
     const totalDuration = activeTasks.reduce(
-      (acc, t) => acc + (Number(t.duration) || 1),
+      (acc, tk) => acc + (Number(tk.duration) || 1),
       0,
     );
     const weightedProgress = activeTasks.reduce(
-      (acc, t) => acc + (Number(t.progress) || 0) * (Number(t.duration) || 1),
+      (acc, tk) => acc + (Number(tk.progress) || 0) * (Number(tk.duration) || 1),
       0,
     );
     return Math.round(weightedProgress / (totalDuration || 1));
   };
 
   const calculateTasksAtRisk = () => {
-    const validTasks = scheduleTasks.filter((t) => !t.isSystemGenerated);
+    const validTasks = scheduleTasks.filter((tk) => !tk.isSystemGenerated);
     const today = new Date().toISOString().split("T")[0];
-
     const atRisk = validTasks.filter(
-      (t) =>
-        (t.endDate && t.endDate < today && t.status !== "Completed") ||
-        t.status === "Delayed",
+      (tk) =>
+        (tk.endDate && tk.endDate < today && tk.status !== "Completed") ||
+        tk.status === "Delayed",
     );
-
-    const criticalCount = atRisk.filter((t) => t.isCritical).length;
-
-    return {
-      count: atRisk.length,
-      criticalCount,
-    };
+    const criticalCount = atRisk.filter((tk) => tk.isCritical).length;
+    return { count: atRisk.length, criticalCount };
   };
 
   const completionPercentage = calculateGlobalProgress();
   const tasksAtRisk = calculateTasksAtRisk();
+
+  const totalBudget = stats.totalBudgeted || 0;
+  const totalActual = stats.totalActual || 0;
+  const consumedPct = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
+  const costVariance = totalActual - totalBudget;
+  const inr = (n: number) => {
+    const a = Math.abs(n);
+    if (a >= 1e7) return `₹${(n / 1e7).toFixed(1)}Cr`;
+    if (a >= 1e5) return `₹${(n / 1e5).toFixed(1)}L`;
+    if (a >= 1e3) return `₹${(n / 1e3).toFixed(0)}k`;
+    return `₹${Math.round(n)}`;
+  };
 
   const handleTaskUpdate = async (task: Task) => {
     try {
@@ -98,187 +103,92 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 md:space-y-10">
+    <div className="space-y-5 md:space-y-7">
       <PageHero
         eyebrow={t("dashboard.eyebrow")}
         title={t("dashboard.heroTitle")}
         subtitle={t("dashboard.heroSubtitle")}
-        icon={
-          <Construction
-            weight="duotone"
-            className="w-4 h-4 sm:w-5 sm:h-5 text-white"
-          />
-        }
-        glyph={
-          <Construction
-            weight="duotone"
-            className="w-40 h-40 sm:w-56 sm:h-56"
-          />
-        }
-        className="mb-6 md:mb-10"
+        icon={<Construction weight="duotone" className="w-4 h-4 sm:w-5 sm:h-5 text-white" />}
+        glyph={<Construction weight="duotone" className="w-40 h-40 sm:w-56 sm:h-56" />}
+        className="mb-4 md:mb-8"
       />
 
-      {/* Top Row: Compact Info Panels */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-        {/* Profile Panel (Reduced Size) */}
-        <section className="soft-card p-5 md:p-6 squircle-24 flex items-center gap-5">
-          <div className="relative shrink-0">
-            <img
-              src={
-                auth.currentUser?.photoURL ||
-                `https://ui-avatars.com/api/?name=${auth.currentUser?.displayName}`
-              }
-              className="w-12 md:w-16 h-12 md:h-16 rounded-2xl shadow-xl border-2 border-white/50"
-              alt="Profile"
-            />
-            <div className="absolute -bottom-1 -right-1 bg-surface p-1 rounded-lg shadow-md border border-white/40">
-              <Users className="w-3 md:w-4 h-3 md:h-4 text-primary" />
-            </div>
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-[15px] md:text-[17px] font-bold text-ink truncate">
-              {auth.currentUser?.displayName || t("dashboard.sessionUser")}
-            </h3>
-            <p className="text-[12px] md:text-[13px] text-ink-muted font-medium">
-              {t("dashboard.projectDirector")}
-            </p>
-            <div className="flex flex-wrap gap-2 xl:gap-4 mt-1">
-              <div className="text-[10px] md:text-xs font-bold whitespace-nowrap">
-                <CountUp
-                  value={legacyTasks.filter((tk) => !tk.isSystemGenerated).length}
-                  className="text-rust-strong mr-1"
-                />
-                {t("dashboard.tasks")}
-              </div>
-              <div className="text-[10px] md:text-xs font-bold whitespace-nowrap">
-                <span className="text-success mr-1">98%</span>
-                {t("dashboard.uptime")}
-              </div>
-            </div>
+      {/* KPI strip — one consistent row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <section className="soft-card p-4 md:p-5 squircle-24 flex flex-col gap-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{t("dashboard.completion")}</span>
+          <span className="text-2xl font-black font-mono text-primary tracking-tight"><CountUp value={completionPercentage} />%</span>
+          <div className="h-1.5 bg-surface/40 rounded-full overflow-hidden">
+            <motion.div initial={{ width: 0 }} animate={{ width: `${completionPercentage}%` }} transition={{ duration: 1, ease: [0.2, 0, 0, 1] }} className="h-full bg-primary rounded-full" />
           </div>
         </section>
 
-        {/* Global Progress Panel */}
-        <section className="soft-card p-5 md:p-6 squircle-24 flex flex-col justify-center">
-          <div className="flex justify-between items-center mb-2 md:mb-3">
-            <h3 className="text-xs md:text-[15px] font-bold text-ink">
-              {t("dashboard.completion")}
-            </h3>
-            <span className="text-lg md:text-[20px] font-black text-primary tracking-tighter">
-              <CountUp value={completionPercentage} />%
-            </span>
-          </div>
-          <div className="h-2 md:h-2.5 bg-surface/30 rounded-full overflow-hidden shadow-inner">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${completionPercentage}%` }}
-              transition={{ duration: 1, ease: [0.2, 0, 0, 1] }}
-              className="h-full bg-gradient-to-r from-primary to-[#E29677]"
-            />
+        <section className="soft-card p-4 md:p-5 squircle-24 flex flex-col gap-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{t("an.consumed")}</span>
+          <span className={`text-2xl font-black font-mono tracking-tight ${consumedPct > 100 ? "text-danger" : "text-ink"}`}>{consumedPct}%</span>
+          <div className="h-1.5 bg-surface/40 rounded-full overflow-hidden">
+            <div className={`h-full rounded-full ${consumedPct > 100 ? "bg-danger" : "bg-[#2E8B6F]"}`} style={{ width: `${Math.min(consumedPct, 100)}%` }} />
           </div>
         </section>
 
-        {/* Tasks at Risk Panel */}
-        <section className="bg-surface-dark p-5 md:p-6 squircle-24 text-white shadow-xl relative overflow-hidden flex flex-col justify-center">
-          <div className="flex justify-between items-center mb-2 md:mb-3 relative z-10">
-            <h4 className="text-xs md:text-[15px] font-bold">
-              {t("dashboard.tasksAtRisk")}
-            </h4>
-            <span className="text-[15px] md:text-[17px] font-mono font-bold">
-              <CountUp value={tasksAtRisk.count} />
-            </span>
-          </div>
-          <div className="relative z-10">
-            {tasksAtRisk.count === 0 ? (
-              <div className="flex items-center gap-2 text-success">
-                <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="text-sm md:text-base font-bold">
-                  {t("dashboard.allOnTrack")}
-                </span>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-1 md:gap-1.5">
-                <div className="flex items-center gap-2 text-[#E1946F]">
-                  <AlertTriangle className="w-4 h-4 md:w-5 md:h-5" />
-                  <span className="text-sm md:text-base font-bold">
-                    {t("dashboard.requireAttention")}
-                  </span>
-                </div>
-                {tasksAtRisk.criticalCount > 0 && (
-                  <span className="text-xs md:text-sm text-danger font-bold bg-rose-500/10 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full inline-block w-max">
-                    {t("dashboard.onCriticalPath", {
-                      count: tasksAtRisk.criticalCount,
-                    })}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+        <section className="soft-card p-4 md:p-5 squircle-24 flex flex-col gap-1.5 justify-center">
+          <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{t("an.variance")}</span>
+          <span className={`text-2xl font-black font-mono tracking-tight ${costVariance > 0 ? "text-danger" : "text-[#2E8B6F]"}`}>{costVariance > 0 ? "+" : ""}{inr(costVariance)}</span>
+          <span className="text-[10px] font-bold text-ink-muted">{t("an.totalSpent")} {inr(totalActual)}</span>
+        </section>
+
+        <section className="bg-surface-dark p-4 md:p-5 squircle-24 text-white flex flex-col gap-1.5 justify-center">
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/60">{t("dashboard.tasksAtRisk")}</span>
+          <span className="text-2xl font-black font-mono tracking-tight"><CountUp value={tasksAtRisk.count} /></span>
+          {tasksAtRisk.count === 0 ? (
+            <span className="text-[11px] font-bold text-success flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />{t("dashboard.allOnTrack")}</span>
+          ) : (
+            <span className="text-[11px] font-bold text-[#E1946F] flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{tasksAtRisk.criticalCount > 0 ? t("dashboard.onCriticalPath", { count: tasksAtRisk.criticalCount }) : t("dashboard.requireAttention")}</span>
+          )}
         </section>
       </div>
 
-      {/* Visual Analytics — interactive per-module dashboards */}
+      {/* Cost snapshot → full interactive analytics live on the AI Insights tab */}
+      <button
+        onClick={() => setActiveTab("insights")}
+        className="w-full soft-card rounded-2xl p-4 md:p-5 flex items-center justify-between gap-4 hover:bg-surface/40 apple-transition text-left group cursor-pointer"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-2.5 bg-primary/10 text-primary rounded-xl shrink-0"><ChartLineUp weight="fill" className="w-5 h-5" /></div>
+          <div className="min-w-0">
+            <div className="text-sm font-black text-ink">{t("an.costSnapshot")}</div>
+            <div className="text-xs text-ink-muted font-medium truncate">
+              {inr(totalActual)} / {inr(totalBudget)} · {consumedPct}%
+            </div>
+          </div>
+        </div>
+        <span className="flex items-center gap-1.5 text-xs font-bold text-primary shrink-0 whitespace-nowrap">
+          {t("an.viewFull")} <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+        </span>
+      </button>
+
+      {/* Phase timeline */}
+      <div className="grid grid-cols-1">
+        <PhaseStrips phases={phases} onNavigate={() => setActiveTab("wbs")} />
+      </div>
+
+      {/* Schedule */}
       <section className="space-y-4 md:space-y-6">
         <div className="flex items-center gap-3 md:gap-4 px-1 md:px-2">
-          <h3 className="text-lg md:text-xl font-bold text-ink">
-            {t("an.sectionTitle")}
-          </h3>
+          <h3 className="text-lg md:text-xl font-bold text-ink">{t("dashboard.schedule")}</h3>
           <div className="flex-1 h-px bg-surface-dark/5" />
-          <span className="text-[10px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest hidden sm:inline">
-            {t("an.sectionEyebrow")}
-          </span>
+          <span className="text-[10px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest hidden sm:inline">{t("dashboard.timeline")}</span>
         </div>
-        <AnalyticsTabs projectId={activeProjectId} />
+        <div className="soft-card rounded-2xl overflow-hidden p-0">
+          <ScheduleView
+            projectId={activeProjectId}
+            tasks={scheduleTasks}
+            loading={scheduleLoading}
+            onAddDependency={handleAddDependency}
+            onTaskUpdate={handleTaskUpdate}
+          />
+        </div>
       </section>
-
-      {/* Phase Strips */}
-      <div className="grid grid-cols-1 mb-8">
-        <PhaseStrips
-          phases={phases}
-          onNavigate={() => console.log("Navigate to full schedule")}
-        />
-      </div>
-
-      {/* Large Visualizations (Increased Width) */}
-      <div className="grid grid-cols-1 gap-6 md:gap-10">
-        {/* Gantt View */}
-        <section className="space-y-4 md:space-y-6">
-          <div className="flex items-center gap-3 md:gap-4 px-1 md:px-2">
-            <h3 className="text-lg md:text-xl font-bold text-ink">
-              {t("dashboard.schedule")}
-            </h3>
-            <div className="flex-1 h-px bg-surface-dark/5" />
-            <span className="text-[10px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest hidden sm:inline">
-              {t("dashboard.timeline")}
-            </span>
-          </div>
-          <div className="soft-card rounded-2xl overflow-hidden p-0">
-            <ScheduleView
-              projectId={activeProjectId}
-              tasks={scheduleTasks}
-              loading={scheduleLoading}
-              onAddDependency={handleAddDependency}
-              onTaskUpdate={handleTaskUpdate}
-            />
-          </div>
-        </section>
-
-        {/* WBS Hierarchy */}
-        <section className="space-y-4 md:space-y-6">
-          <div className="flex items-center gap-3 md:gap-4 px-1 md:px-2">
-            <h3 className="text-lg md:text-xl font-bold text-ink">
-              {t("dashboard.structure")}
-            </h3>
-            <div className="flex-1 h-px bg-surface-dark/5" />
-            <span className="text-[10px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest hidden sm:inline">
-              {t("dashboard.wbsHierarchy")}
-            </span>
-          </div>
-          <div className="soft-card rounded-2xl overflow-hidden p-1 overflow-x-auto">
-            <WBSView projectId={activeProjectId} />
-          </div>
-        </section>
-      </div>
     </div>
   );
 };
