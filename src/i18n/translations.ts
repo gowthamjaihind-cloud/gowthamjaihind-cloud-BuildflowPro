@@ -283,6 +283,41 @@ export const translations: Record<Language, Record<string, string>> = {
     "dlh.deleteBody":
       "This will update the task's progress, dates, and material/labour rollups. This action cannot be undone.",
     "dlh.failedDelete": "Failed to delete log",
+
+    // ---- Onboarding ----
+    "onb.errJoin": "Couldn't join with that code.",
+    "onb.errName": "Enter your company / workspace name first.",
+    "onb.errCreate": "Couldn't create your organization.",
+    "onb.errTrial": "Couldn't start your trial.",
+    "onb.errCheckout": "Couldn't start checkout.",
+    "onb.youreIn": "You're in",
+    "onb.joinedLoading": "Joined",
+    "onb.joinedLoadingPost": ". Loading your workspace…",
+    "onb.joinNewOrg": "Join a new organization?",
+    "onb.inviteSwitchPre":
+      "You're invited to a different organization, signed in as",
+    "onb.inviteSwitchPost": ". Joining will switch you to it.",
+    "onb.joinOrg": "Join organization",
+    "onb.noThanks": "No thanks — go to my workspace",
+    "onb.joinTeam": "Join your team",
+    "onb.signedInAs": "Signed in as",
+    "onb.joinTeamPost": ". Enter the invite code your admin gave you.",
+    "onb.inviteCodePlaceholder": "INVITE CODE",
+    "onb.orCreateOwn": "Or create your own organization →",
+    "onb.createOrg": "Create your organization",
+    "onb.createPost": ". Set up your workspace to get started.",
+    "onb.companyName": "Company / workspace name",
+    "onb.companyPlaceholder": "e.g. BV Realty",
+    "onb.free": "Free",
+    "onb.forever": "forever",
+    "onb.freeFeatures": "1 project · up to 2 users · Telegram logging",
+    "onb.startFree": "Start free",
+    "onb.startTrial": "Start 14-day free trial",
+    "onb.starting": "Starting…",
+    "onb.orPayNow": "or pay ₹{amount} now",
+    "onb.footerNote":
+      "New to Sitetru? Try Starter free for 14 days — no card, upgrade anytime. Prices exclusive of GST. Extra projects ₹99/mo each. Need Enterprise?",
+    "onb.haveInvite": "Have an invite code?",
   },
 
   ta: {
@@ -563,5 +598,41 @@ export const translations: Record<Language, Record<string, string>> = {
     "dlh.deleteBody":
       "இது பணியின் முன்னேற்றம், தேதிகள் மற்றும் பொருள்/தொழிலாளர் தொகுப்புகளைப் புதுப்பிக்கும். இந்தச் செயலை மீட்டெடுக்க முடியாது.",
     "dlh.failedDelete": "பதிவை நீக்க முடியவில்லை",
+
+    // ---- Onboarding ----
+    "onb.errJoin": "அந்தக் குறியீட்டுடன் இணைய முடியவில்லை.",
+    "onb.errName": "முதலில் உங்கள் நிறுவனம் / பணியிடப் பெயரை உள்ளிடவும்.",
+    "onb.errCreate": "உங்கள் நிறுவனத்தை உருவாக்க முடியவில்லை.",
+    "onb.errTrial": "உங்கள் சோதனையைத் தொடங்க முடியவில்லை.",
+    "onb.errCheckout": "செக்அவுட்டைத் தொடங்க முடியவில்லை.",
+    "onb.youreIn": "நீங்கள் இணைந்துவிட்டீர்கள்",
+    "onb.joinedLoading": "இணைந்தது:",
+    "onb.joinedLoadingPost": ". உங்கள் பணியிடம் ஏற்றுகிறது…",
+    "onb.joinNewOrg": "புதிய நிறுவனத்தில் சேரவா?",
+    "onb.inviteSwitchPre": "நீங்கள் வேறு நிறுவனத்திற்கு அழைக்கப்பட்டுள்ளீர்கள், ",
+    "onb.inviteSwitchPost":
+      " ஆக உள்நுழைந்துள்ளீர்கள். இணைவது உங்களை அதற்கு மாற்றும்.",
+    "onb.joinOrg": "நிறுவனத்தில் சேர்",
+    "onb.noThanks": "வேண்டாம் — என் பணியிடத்திற்குச் செல்",
+    "onb.joinTeam": "உங்கள் அணியில் சேரவும்",
+    "onb.signedInAs": "",
+    "onb.joinTeamPost":
+      " ஆக உள்நுழைந்துள்ளீர்கள். உங்கள் நிர்வாகி வழங்கிய அழைப்புக் குறியீட்டை உள்ளிடவும்.",
+    "onb.inviteCodePlaceholder": "அழைப்புக் குறியீடு",
+    "onb.orCreateOwn": "அல்லது உங்கள் சொந்த நிறுவனத்தை உருவாக்கவும் →",
+    "onb.createOrg": "உங்கள் நிறுவனத்தை உருவாக்கவும்",
+    "onb.createPost": " ஆக உள்நுழைந்துள்ளீர்கள். தொடங்க உங்கள் பணியிடத்தை அமைக்கவும்.",
+    "onb.companyName": "நிறுவனம் / பணியிடப் பெயர்",
+    "onb.companyPlaceholder": "எ.கா. BV Realty",
+    "onb.free": "இலவசம்",
+    "onb.forever": "எப்போதும்",
+    "onb.freeFeatures": "1 செயல்திட்டம் · 2 பயனர்கள் வரை · டெலிகிராம் பதிவு",
+    "onb.startFree": "இலவசமாகத் தொடங்கு",
+    "onb.startTrial": "14-நாள் இலவச சோதனையைத் தொடங்கு",
+    "onb.starting": "தொடங்குகிறது…",
+    "onb.orPayNow": "அல்லது இப்போது ₹{amount} செலுத்து",
+    "onb.footerNote":
+      "Sitetru இல் புதியவரா? Starter ஐ 14 நாட்களுக்கு இலவசமாக முயற்சிக்கவும் — கார்டு இல்லை, எப்போது வேண்டுமானாலும் மேம்படுத்தலாம். விலைகள் GST தவிர்த்து. கூடுதல் செயல்திட்டங்கள் தலா ₹99/மாதம். Enterprise தேவையா?",
+    "onb.haveInvite": "அழைப்புக் குறியீடு உள்ளதா?",
   },
 };
