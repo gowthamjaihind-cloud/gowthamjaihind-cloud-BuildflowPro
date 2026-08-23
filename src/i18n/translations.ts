@@ -124,6 +124,10 @@ export const translations: Record<Language, Record<string, string>> = {
     "reports.labourDeployment": "Labour Deployment",
     "reports.shifts": "shifts",
     "reports.taskProgressDetails": "Task Progress Details",
+    "reports.pdfNoContent": "Nothing to export yet — generate a report first.",
+    "reports.pdfTainted":
+      "Couldn't build the PDF because a site photo blocked rendering. Export CSV instead, or remove the photo and retry.",
+    "reports.pdfFailed": "Couldn't generate the PDF. Please try again.",
 
     // ---- AI Insights ----
     "insights.title": "AI Project Insights",
@@ -535,6 +539,10 @@ export const translations: Record<Language, Record<string, string>> = {
     "reports.labourDeployment": "தொழிலாளர் பணியமர்த்தம்",
     "reports.shifts": "ஷிப்ட்கள்",
     "reports.taskProgressDetails": "பணி முன்னேற்ற விவரங்கள்",
+    "reports.pdfNoContent": "இன்னும் ஏற்றுமதி செய்ய எதுவும் இல்லை — முதலில் ஒரு அறிக்கையை உருவாக்கவும்.",
+    "reports.pdfTainted":
+      "தள புகைப்படம் ஒன்று ரெண்டரிங்கைத் தடுத்ததால் PDF ஐ உருவாக்க முடியவில்லை. அதற்குப் பதிலாக CSV ஏற்றுமதி செய்யவும், அல்லது புகைப்படத்தை அகற்றி மீண்டும் முயற்சிக்கவும்.",
+    "reports.pdfFailed": "PDF ஐ உருவாக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
 
     // ---- AI Insights ----
     "insights.title": "AI செயல்திட்ட நுண்ணறிவு",

@@ -222,28 +222,45 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
     setTimeout(async () => {
       try {
         const element = document.getElementById("report-printable-area");
-        if (!element) return;
+        if (!element) {
+          alert(t("reports.pdfNoContent"));
+          return;
+        }
 
         const canvas = await html2canvas(element, {
           scale: 2,
           useCORS: true,
           logging: false,
           windowWidth: 1000,
+          backgroundColor: "#ffffff",
         });
 
-        const imgData = canvas.toDataURL("image/jpeg", 1.0);
+        // toDataURL throws a SecurityError if the canvas was tainted by a
+        // cross-origin image (e.g. a site photo without CORS headers). Catch it
+        // and tell the user, instead of the button appearing to do nothing.
+        let imgData: string;
+        try {
+          imgData = canvas.toDataURL("image/jpeg", 0.95);
+        } catch (taintErr) {
+          console.error("PDF canvas tainted", taintErr);
+          alert(t("reports.pdfTainted"));
+          return;
+        }
+
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-        let position = 0;
         const pageHeight = pdf.internal.pageSize.getHeight();
 
+        // Slice the tall image across A4 pages. The small epsilon stops a
+        // trailing near-blank page when the content ends exactly on a boundary.
+        let heightLeft = pdfHeight;
+        let position = 0;
         pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, pdfHeight);
-        let heightLeft = pdfHeight - pageHeight;
+        heightLeft -= pageHeight;
 
-        while (heightLeft >= 0) {
-          position = heightLeft - pdfHeight;
+        while (heightLeft > 1) {
+          position -= pageHeight;
           pdf.addPage();
           pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, pdfHeight);
           heightLeft -= pageHeight;
@@ -256,6 +273,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
         );
       } catch (err) {
         console.error("PDF generation error", err);
+        alert(t("reports.pdfFailed"));
       } finally {
         setIsGeneratingPdf(false);
       }
