@@ -268,6 +268,21 @@ export const translations: Record<Language, Record<string, string>> = {
     "paywall.daysLeft": "{n} days left in your free trial",
     "paywall.oneDayLeft": "1 day left in your free trial",
     "paywall.trialEndsToday": "Trial ends today",
+
+    // ---- Daily Log history ----
+    "dlh.loading": "Loading history...",
+    "dlh.noWork": "No work logged yet.",
+    "dlh.noWorkHint": "Log the first day of work to track progress.",
+    "dlh.markedComplete": "Marked Complete",
+    "dlh.loggedBy": "Logged by {name}",
+    "dlh.cumProgress": "Cum. Progress",
+    "dlh.materials": "Materials",
+    "dlh.labor": "Labor",
+    "dlh.equipment": "Equipment",
+    "dlh.deleteTitle": "Delete Log Entry?",
+    "dlh.deleteBody":
+      "This will update the task's progress, dates, and material/labour rollups. This action cannot be undone.",
+    "dlh.failedDelete": "Failed to delete log",
   },
 
   ta: {
@@ -533,5 +548,20 @@ export const translations: Record<Language, Record<string, string>> = {
     "paywall.daysLeft": "உங்கள் இலவச சோதனையில் {n} நாட்கள் மீதம்",
     "paywall.oneDayLeft": "உங்கள் இலவச சோதனையில் 1 நாள் மீதம்",
     "paywall.trialEndsToday": "சோதனை இன்று முடிகிறது",
+
+    // ---- Daily Log history ----
+    "dlh.loading": "வரலாறு ஏற்றுகிறது...",
+    "dlh.noWork": "இன்னும் வேலை எதுவும் பதிவு செய்யப்படவில்லை.",
+    "dlh.noWorkHint": "முன்னேற்றத்தைக் கண்காணிக்க முதல் நாள் வேலையைப் பதிவு செய்யுங்கள்.",
+    "dlh.markedComplete": "முடிந்ததாகக் குறிக்கப்பட்டது",
+    "dlh.loggedBy": "{name} பதிவு செய்தார்",
+    "dlh.cumProgress": "ஒட்டுமொத்த முன்னேற்றம்",
+    "dlh.materials": "பொருட்கள்",
+    "dlh.labor": "தொழிலாளர்",
+    "dlh.equipment": "உபகரணம்",
+    "dlh.deleteTitle": "பதிவை நீக்கவா?",
+    "dlh.deleteBody":
+      "இது பணியின் முன்னேற்றம், தேதிகள் மற்றும் பொருள்/தொழிலாளர் தொகுப்புகளைப் புதுப்பிக்கும். இந்தச் செயலை மீட்டெடுக்க முடியாது.",
+    "dlh.failedDelete": "பதிவை நீக்க முடியவில்லை",
   },
 };

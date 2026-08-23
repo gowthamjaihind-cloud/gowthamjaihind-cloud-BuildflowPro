@@ -17,6 +17,7 @@ import {
 import { DailyLogEntryScreen } from "./DailyLogEntryScreen";
 import { DailyLogEntry } from "../types";
 import { useAuthStore } from "../store";
+import { useTranslation } from "../i18n";
 
 interface DailyLogHistoryProps {
   projectId: string;
@@ -27,6 +28,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
   projectId,
   taskId,
 }) => {
+  const { t } = useTranslation();
   const { data: logs = [], isLoading } = useDailyLogsQuery(projectId, taskId);
   const [logToEdit, setLogToEdit] = useState<DailyLogEntry | null>(null);
   const [logToDelete, setLogToDelete] = useState<DailyLogEntry | null>(null);
@@ -44,14 +46,14 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
       setLogToDelete(null);
     } catch (e) {
       console.error(e);
-      alert("Failed to delete log");
+      alert(t("dlh.failedDelete"));
     }
   };
 
   if (isLoading) {
     return (
       <div className="p-4 text-center text-ink-muted animate-pulse">
-        Loading history...
+        {t("dlh.loading")}
       </div>
     );
   }
@@ -59,9 +61,9 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
   if (logs.length === 0) {
     return (
       <div className="p-8 text-center bg-panel border border-divider rounded-2xl">
-        <p className="text-ink-muted text-sm font-bold">No work logged yet.</p>
+        <p className="text-ink-muted text-sm font-bold">{t("dlh.noWork")}</p>
         <p className="text-[10px] text-ink-muted/70 mt-1">
-          Log the first day of work to track progress.
+          {t("dlh.noWorkHint")}
         </p>
       </div>
     );
@@ -77,7 +79,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
           {log.markComplete ? (
             <div
               className="absolute top-0 right-0 border-b-[32px] border-l-[32px] border-b-transparent border-l-emerald-500 w-0 h-0"
-              title="Marked Complete"
+              title={t("dlh.markedComplete")}
             ></div>
           ) : null}
 
@@ -87,7 +89,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
                 {format(new Date(log.workDate), "MMM d, yyyy")}
               </span>
               <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest flex items-center gap-1 mt-0.5">
-                Logged by {log.createdByName}
+                {t("dlh.loggedBy", { name: log.createdByName })}
               </span>
             </div>
             <div className="text-right">
@@ -95,7 +97,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
                 {log.progressPercent}%
               </span>
               <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest block text-right mt-1">
-                Cum. Progress
+                {t("dlh.cumProgress")}
               </span>
             </div>
           </div>
@@ -105,7 +107,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
               {log.materials.length > 0 && (
                 <div>
                   <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest flex flex-wrap items-center gap-1 mb-1.5 opacity-70">
-                    <Box className="w-3 h-3" /> Materials
+                    <Box className="w-3 h-3" /> {t("dlh.materials")}
                   </span>
                   <ul className="space-y-1">
                     {log.materials.map((m, i) => (
@@ -128,7 +130,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
               {log.labour.length > 0 && (
                 <div>
                   <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest flex flex-wrap items-center gap-1 mb-1.5 opacity-70">
-                    <Users className="w-3 h-3" /> Labor
+                    <Users className="w-3 h-3" /> {t("dlh.labor")}
                   </span>
                   <ul className="space-y-1">
                     {log.labour.map((l, i) => (
@@ -146,7 +148,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
               {(log.equipment?.length ?? 0) > 0 && (
                 <div>
                   <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest flex flex-wrap items-center gap-1 mb-1.5 opacity-70">
-                    <Truck className="w-3 h-3" /> Equipment
+                    <Truck className="w-3 h-3" /> {t("dlh.equipment")}
                   </span>
                   <ul className="space-y-1">
                     {log.equipment!.map((eq, i) => (
@@ -158,7 +160,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
                         <span className="font-mono whitespace-nowrap">
                           {eq.quantity}{" "}
                           <span className="text-[10px] text-ink-muted">
-                            {eq.unit === "days" ? "days" : "hrs"}
+                            {eq.unit === "days" ? t("dlog.days") : t("dlog.hrs")}
                           </span>
                           {eq.cost ? (
                             <span className="text-ink-muted">
@@ -189,13 +191,13 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
                 onClick={() => setLogToEdit(log)}
                 className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#F7E4DB] transition"
               >
-                <Edit2 className="w-3.5 h-3.5" /> Edit
+                <Edit2 className="w-3.5 h-3.5" /> {t("common.edit")}
               </button>
               <button
                 onClick={() => setLogToDelete(log)}
                 className="text-xs font-bold text-ink-muted hover:text-danger flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-danger/8 transition"
               >
-                <Trash2 className="w-3.5 h-3.5" /> Delete
+                <Trash2 className="w-3.5 h-3.5" /> {t("common.delete")}
               </button>
             </div>
           )}
@@ -218,24 +220,23 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
               <Trash2 className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-black text-center text-ink mb-2">
-              Delete Log Entry?
+              {t("dlh.deleteTitle")}
             </h3>
             <p className="text-sm font-medium text-ink-muted text-center mb-8">
-              This will update the task's progress, dates, and material/labour
-              rollups. This action cannot be undone.
+              {t("dlh.deleteBody")}
             </p>
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => setLogToDelete(null)}
                 className="py-3.5 px-6 rounded-2xl font-bold bg-panel hover:bg-divider text-ink transition cursor-pointer"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleDelete}
                 className="py-3.5 px-6 rounded-2xl font-bold bg-danger hover:bg-danger text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
               >
-                Delete
+                {t("common.delete")}
               </button>
             </div>
           </div>
