@@ -9,6 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { useTranslation } from "../../i18n";
 import { CostAnalyticsDashboard } from "./CostAnalyticsDashboard";
+import { LaborAnalyticsDashboard } from "./LaborAnalyticsDashboard";
 
 interface AnalyticsTabsProps {
   projectId: string;
@@ -27,7 +28,7 @@ export const AnalyticsTabs: React.FC<AnalyticsTabsProps> = ({ projectId }) => {
 
   const modules: { id: ModuleId; label: string; icon: React.ElementType; ready: boolean }[] = [
     { id: "cost", label: t("an.moduleCost"), icon: CurrencyInr, ready: true },
-    { id: "labor", label: t("an.moduleLabor"), icon: Users, ready: false },
+    { id: "labor", label: t("an.moduleLabor"), icon: Users, ready: true },
     { id: "procurement", label: t("an.moduleProcurement"), icon: Truck, ready: false },
     { id: "inventory", label: t("an.moduleInventory"), icon: Package, ready: false },
     { id: "progress", label: t("an.moduleProgress"), icon: ChartBar, ready: false },
@@ -54,8 +55,9 @@ export const AnalyticsTabs: React.FC<AnalyticsTabsProps> = ({ projectId }) => {
       </div>
 
       {active === "cost" && <CostAnalyticsDashboard projectId={projectId} />}
+      {active === "labor" && <LaborAnalyticsDashboard projectId={projectId} />}
 
-      {active !== "cost" && (
+      {active !== "cost" && active !== "labor" && (
         <div className="soft-card rounded-2xl p-12 text-center text-ink-muted">
           <Sparkle className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm font-bold">

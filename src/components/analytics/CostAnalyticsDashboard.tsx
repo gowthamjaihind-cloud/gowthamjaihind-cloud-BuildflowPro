@@ -10,8 +10,8 @@ import {
   ReferenceLine,
 } from "recharts";
 import { useProjectCostTotals } from "../../hooks/useProjectCostTotals";
-import { useProjectDataQuery } from "../../hooks/queries";
-import { CostEntry } from "../../types";
+import { useProjectDataQuery, useTasksQuery } from "../../hooks/queries";
+import { CostEntry, Task } from "../../types";
 import { useUIStore } from "../../store";
 import { useTranslation } from "../../i18n";
 import { ChartLineUp, TrendUp, TrendDown } from "@phosphor-icons/react";
@@ -39,10 +39,18 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
 }) => {
   const { t } = useTranslation();
   const dark = useUIStore((s) => s.darkMode);
-  const { stats } = useProjectCostTotals(projectId);
+  const { stats, getTaskTotals } = useProjectCostTotals(projectId);
   const { data: costEntries = [] } = useProjectDataQuery<CostEntry>(projectId, "costs");
+  const { data: allTasks = [] } = useTasksQuery(projectId);
   const [view, setView] = useState<ViewId>("utilisation");
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const [compTask, setCompTask] = useState<string>("all");
+
+  // Leaf/phase tasks selectable in the composition donut's task filter.
+  const filterTasks = useMemo(
+    () => (allTasks as Task[]).filter((t) => !t.isSystemGenerated && t.name),
+    [allTasks],
+  );
 
   // Validated palettes (dataviz checker): 2-series budget/actual + status, and a
   // 4-hue categorical set for the composition donut (order keeps the similar
@@ -70,6 +78,27 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [stats.chartData, dark, t],
   );
+
+  // Actual composition for the donut — either the whole project or one task.
+  const compRows = useMemo(() => {
+    if (compTask === "all") {
+      return rows.map((r) => ({ key: r.key, name: r.name, actual: r.actual, color: r.color }));
+    }
+    const task = filterTasks.find((tk) => tk.id === compTask);
+    if (!task) return [];
+    const tt: any = getTaskTotals(task);
+    const direct = (tt.actualOther || 0) - (tt.actualEquipment || 0);
+    const map: Record<string, number> = {
+      Material: tt.actualMaterial || 0,
+      Labor: tt.actualLabor || 0,
+      Equipment: tt.actualEquipment || 0,
+      "Direct Cost": direct,
+    };
+    return ["Material", "Labor", "Equipment", "Direct Cost"].map((k, i) => ({
+      key: k, name: catLabel(k), actual: Math.max(0, Math.round(map[k])), color: CAT[i],
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compTask, rows, filterTasks, dark, t]);
 
   const totalBudget = stats.totalBudgeted || 0;
   const totalActual = stats.totalActual || 0;
@@ -169,7 +198,16 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
       <div className="soft-card rounded-2xl p-4 md:p-6">
         {view === "utilisation" && <UtilisationView rows={rows} statusColor={statusColor} dark={dark} t={t} />}
         {view === "composition" && (
-          <CompositionView rows={rows} excluded={excluded} setExcluded={setExcluded} dark={dark} t={t} />
+          <CompositionView
+            rows={compRows}
+            excluded={excluded}
+            setExcluded={setExcluded}
+            dark={dark}
+            t={t}
+            tasks={filterTasks}
+            selectedTask={compTask}
+            onSelectTask={setCompTask}
+          />
         )}
         {view === "bullet" && <BulletView rows={rows} S={S} dark={dark} t={t} />}
         {view === "variance" && <VarianceView rows={rows} S={S} t={t} />}
@@ -260,7 +298,7 @@ const arc = (cx: number, cy: number, ro: number, ri: number, start: number, end:
   return `M${x1},${y1} A${ro},${ro} 0 ${large} 0 ${x2},${y2} L${x3},${y3} A${ri},${ri} 0 ${large} 1 ${x4},${y4} Z`;
 };
 
-const CompositionView: React.FC<any> = ({ rows, excluded, setExcluded, dark, t }) => {
+const CompositionView: React.FC<any> = ({ rows, excluded, setExcluded, dark, t, tasks, selectedTask, onSelectTask }) => {
   const [active, setActive] = useState<string | null>(null);
   const included = rows.filter((r: any) => !excluded.has(r.key) && r.actual > 0);
   const total = included.reduce((s: number, r: any) => s + r.actual, 0);
@@ -287,10 +325,25 @@ const CompositionView: React.FC<any> = ({ rows, excluded, setExcluded, dark, t }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <h4 className="text-xs font-black uppercase tracking-widest text-ink-muted">{t("an.compositionTitle")}</h4>
-        <span className="text-[10px] text-ink-muted font-medium">{t("an.compositionHint")}</span>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          <span className="uppercase tracking-widest text-[10px]">{t("an.filterByTask")}</span>
+          <select
+            value={selectedTask}
+            onChange={(e) => onSelectTask(e.target.value)}
+            className="bg-panel border border-divider rounded-lg px-2.5 py-1.5 text-xs font-bold text-ink outline-none focus:ring-2 focus:ring-primary/30 max-w-[190px]"
+          >
+            <option value="all">{t("an.allTasks")}</option>
+            {(tasks || []).map((tk: any) => (
+              <option key={tk.id} value={tk.id}>{tk.name}</option>
+            ))}
+          </select>
+        </label>
       </div>
+      {total <= 0 ? (
+        <div className="py-10 text-center text-ink-muted text-sm font-bold">{t("an.noCostData")}</div>
+      ) : (
       <div className="grid sm:grid-cols-[200px_1fr] gap-5 items-center">
         <svg viewBox="0 0 200 200" className="w-full max-w-[200px] mx-auto" role="img" aria-label={t("an.compositionTitle")}>
           {segs.map((s: any) => (
@@ -339,6 +392,7 @@ const CompositionView: React.FC<any> = ({ rows, excluded, setExcluded, dark, t }
           })}
         </div>
       </div>
+      )}
     </div>
   );
 };
