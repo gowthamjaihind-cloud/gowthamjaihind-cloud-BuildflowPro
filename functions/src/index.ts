@@ -23,4 +23,3 @@ export * from "./billing";
 export * from "./dataRights";
 export * from "./razorpay";
 export * from "./cleanup";
-export * from "./sentryTest"; // TEMPORARY — remove after backend Sentry receipt is verified
