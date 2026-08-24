@@ -5,6 +5,7 @@ import { useRazorpayCheckout } from "../hooks/useRazorpayCheckout";
 import { usePlan } from "../hooks/usePlan";
 import { useProjectsQuery } from "../hooks/queries";
 import { PLANS, PLAN_ORDER, PlanId } from "../lib/plans";
+import { useL } from "../i18n";
 
 interface AddCapacityModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ interface AddCapacityModalProps {
 // Offers BOTH paths: buy ₹99 project slots for the current cycle, or upgrade to
 // a bigger plan. Payment auto-activates on the server; usePlan updates live.
 export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const L = useL();
   const plan = usePlan();
   const { data: projects = [] } = useProjectsQuery();
   const { pay, paySlots, busy, error } = useRazorpayCheckout();
@@ -72,9 +74,9 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
         >
           <div className="flex items-start justify-between mb-5">
             <div>
-              <h2 className="text-2xl font-bold text-ink tracking-tight">Add project capacity</h2>
+              <h2 className="text-2xl font-bold text-ink tracking-tight">{L("Add project capacity","செயல்திட்ட கொள்ளளவைச் சேர்")}</h2>
               <p className="text-[15px] text-ink-muted font-medium mt-1">
-                You've used {projects.length} of {included} included project{included === 1 ? "" : "s"}.
+                {L("You've used", "நீங்கள் பயன்படுத்தியது")} {projects.length} / {included} {L("included projects.", "உள்ளடங்கிய செயல்திட்டங்கள்.")}
               </p>
             </div>
             <button
@@ -96,10 +98,10 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
           <div className="rounded-2xl border border-primary/30 ring-1 ring-primary/20 p-5 mb-5">
             <div className="flex items-center gap-2 mb-1">
               <Stack weight="duotone" className="w-5 h-5 text-primary" />
-              <p className="font-bold text-ink">Add project slots</p>
+              <p className="font-bold text-ink">{L("Add project slots","செயல்திட்ட ஸ்லாட்களைச் சேர்")}</p>
             </div>
             <p className="text-sm text-ink-muted mb-4">
-              ₹{rate} per extra project / month. Added to this plan immediately.
+              {L(`₹${rate} per extra project / month. Added to this plan immediately.`, `கூடுதல் செயல்திட்டத்திற்கு ₹${rate} / மாதம். இந்த திட்டத்தில் உடனடியாக சேர்க்கப்படும்.`)}
             </p>
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="inline-flex items-center gap-3 bg-panel border border-divider rounded-full p-1">
@@ -127,7 +129,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
                 disabled={busy}
                 className="flex-1 min-w-[160px] py-3 rounded-xl font-bold text-sm bg-primary text-white hover:bg-[#B85F3B] apple-transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : `Pay ₹${(slots * rate).toLocaleString("en-IN")} / mo`}
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : L(`Pay ₹${(slots * rate).toLocaleString("en-IN")} / mo`, `₹${(slots * rate).toLocaleString("en-IN")} / மாதம் செலுத்து`)}
               </button>
             </div>
           </div>
@@ -137,7 +139,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
             <>
               <div className="flex items-center gap-3 my-4">
                 <div className="h-px bg-divider flex-1" />
-                <span className="text-[11px] font-black uppercase tracking-widest text-ink-muted">or upgrade your plan</span>
+                <span className="text-[11px] font-black uppercase tracking-widest text-ink-muted">{L("or upgrade your plan","அல்லது உங்கள் திட்டத்தை மேம்படுத்து")}</span>
                 <div className="h-px bg-divider flex-1" />
               </div>
 
@@ -147,14 +149,14 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
                     onClick={() => setPeriod("monthly")}
                     className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition ${period === "monthly" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
                   >
-                    Monthly
+                    {L("Monthly","மாதாந்திர")}
                   </button>
                   <button
                     onClick={() => setPeriod("annual")}
                     className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition flex items-center gap-2 ${period === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
                   >
-                    Annual
-                    <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">Save ~17%</span>
+                    {L("Annual","ஆண்டு")}
+                    <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">{L("Save ~17%","~17% சேமி")}</span>
                   </button>
                 </div>
               </div>
@@ -171,14 +173,14 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
                         <span className="text-[11px] text-ink-muted mb-1">/ mo</span>
                       </div>
                       <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 bg-sage/15 text-[#3E8388]">
-                        <Stack weight="bold" className="w-3.5 h-3.5" /> {p.includedProjects} projects
+                        <Stack weight="bold" className="w-3.5 h-3.5" /> {L(`${p.includedProjects} projects`, `${p.includedProjects} செயல்திட்டங்கள்`)}
                       </div>
                       <button
                         onClick={() => handleUpgrade(id)}
                         disabled={busy}
                         className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm bg-panel border border-divider text-ink hover:bg-surface apple-transition disabled:opacity-50 flex items-center justify-center gap-2"
                       >
-                        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check weight="bold" className="w-4 h-4" /> Upgrade</>}
+                        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check weight="bold" className="w-4 h-4" /> {L("Upgrade","மேம்படுத்து")}</>}
                       </button>
                     </div>
                   );
@@ -188,7 +190,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
           )}
 
           <p className="text-center text-[11px] text-ink-muted mt-5">
-            Extra slots apply to your current billing cycle. Prices exclusive of GST.
+            {L("Extra slots apply to your current billing cycle. Prices exclusive of GST.","கூடுதல் ஸ்லாட்கள் உங்கள் தற்போதைய பில்லிங் சுழற்சிக்குப் பொருந்தும். விலைகள் GST தவிர்த்து.")}
           </p>
         </motion.div>
       </motion.div>
