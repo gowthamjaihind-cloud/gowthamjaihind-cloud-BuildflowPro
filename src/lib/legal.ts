@@ -5,6 +5,9 @@ export const TERMS_VERSION = "2026-08-15";
 
 export const TERMS_URL = "/terms.html";
 export const PRIVACY_URL = "/privacy.html";
+export const REFUND_URL = "/refund.html";
+export const SHIPPING_URL = "/shipping.html";
+export const CONTACT_URL = "/contact.html";
 
 // The consent captured pre-auth (at the sign-in gate) is stashed here and then
 // written onto the user profile once we have a uid (see useAuth).
