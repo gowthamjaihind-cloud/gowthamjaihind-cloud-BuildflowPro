@@ -35,3 +35,13 @@ export function useTranslation() {
     translate(language, key, params);
   return { t, language };
 }
+
+/**
+ * Inline bilingual helper for one-off component copy that isn't worth a
+ * dictionary key: `const L = useL(); L("English", "தமிழ்")`. Returns the Tamil
+ * string when the UI is in Tamil (and a Tamil value is supplied), else English.
+ */
+export function useL() {
+  const language = useUIStore((s) => s.language);
+  return (en: string, ta?: string) => (language === "ta" && ta ? ta : en);
+}
