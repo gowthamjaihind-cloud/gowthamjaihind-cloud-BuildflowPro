@@ -11,7 +11,7 @@ import { captureError, sentryEnabled } from "./sentry";
 //
 // Remove this file (and its export in index.ts) once a test event is
 // confirmed in the Sentry `sitetru-functions` project.
-export const sentryTest = onRequest(
+export const sentryTestHttp = onRequest(
   { timeoutSeconds: 30, cors: true },
   async (req, res) => {
     const marker = `backend-sentry-test-${Date.now()}`;
