@@ -3,6 +3,10 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updateProfile,
   signOut,
 } from "firebase/auth";
 import {
@@ -84,6 +88,10 @@ export {
   orderBy,
   getDocFromServer,
   signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updateProfile,
   signOut,
   addDoc,
   runTransaction,
