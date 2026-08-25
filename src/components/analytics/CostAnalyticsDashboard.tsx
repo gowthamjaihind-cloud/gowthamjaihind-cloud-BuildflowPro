@@ -41,6 +41,14 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
   const dark = useUIStore((s) => s.darkMode);
   const { stats, getTaskTotals } = useProjectCostTotals(projectId);
   const { data: costEntries = [] } = useProjectDataQuery<CostEntry>(projectId, "costs");
+  // Actual spend is not only manual cost entries: materials issued from stock,
+  // structured labour logs and daily-log labour all carry dates and feed the
+  // actual-cost totals. The trend reads all of them, otherwise it stays flat
+  // for projects that record everything from site.
+  const { data: materialIssues = [] } = useProjectDataQuery<any>(projectId, "material_issues");
+  const { data: laborLogs = [] } = useProjectDataQuery<any>(projectId, "labor_logs");
+  const { data: dailyLogs = [] } = useProjectDataQuery<any>(projectId, "dailyLogs");
+  const { data: laborRates = [] } = useProjectDataQuery<any>(projectId, "labor_rate_cards");
   const { data: allTasks = [] } = useTasksQuery(projectId);
   const [view, setView] = useState<ViewId>("utilisation");
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
@@ -113,21 +121,53 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
 
   // Cumulative dated actual spend, grouped by month, for the trend view.
   const trend = useMemo(() => {
-    const actual = (costEntries || [])
-      .filter((e) => e.type === "Actual" && e.date && e.amount)
-      .sort((a, b) => a.date.localeCompare(b.date));
-    if (actual.length < 2) return [];
     const byMonth = new Map<string, number>();
-    for (const e of actual) {
-      const m = e.date.slice(0, 7); // YYYY-MM
-      byMonth.set(m, (byMonth.get(m) || 0) + e.amount);
+    const add = (date: any, amount: number) => {
+      if (!date || !amount) return;
+      const m = String(date).slice(0, 7); // YYYY-MM
+      if (m.length < 7) return;
+      byMonth.set(m, (byMonth.get(m) || 0) + amount);
+    };
+    // Manual actual cost entries.
+    for (const e of costEntries || []) {
+      if (e.type === "Actual") add(e.date, e.amount || 0);
     }
+    // Materials issued to site.
+    for (const iss of materialIssues as any[]) {
+      const date = iss.issueDate || iss.createdAt;
+      const total = iss.totalCost != null
+        ? iss.totalCost
+        : (iss.items || []).reduce(
+            (s: number, li: any) =>
+              s + (li.totalPrice != null ? li.totalPrice : (li.quantity || 0) * (li.unitCost || 0)),
+            0,
+          );
+      add(date, total || 0);
+    }
+    // Structured labour logs.
+    for (const log of laborLogs as any[]) {
+      const total = log.totalCost != null
+        ? log.totalCost
+        : (log.items || []).reduce((s: number, i: any) => s + (i.cost || 0), 0);
+      add(log.date, total || 0);
+    }
+    // Daily-log labour, costed from the rate cards.
+    for (const log of dailyLogs as any[]) {
+      const total = (log.labour || []).reduce((s: number, l: any) => {
+        const rate = laborRates.find((r: any) => r.id === l.roleId)?.rate || 0;
+        return s + (l.headcount || 0) * rate;
+      }, 0);
+      add(log.workDate || log.date, total);
+    }
+    if (byMonth.size < 2) return [];
     let cum = 0;
-    return Array.from(byMonth.entries()).map(([m, v]) => {
-      cum += v;
-      return { month: m, spend: Math.round(cum) };
-    });
-  }, [costEntries]);
+    return Array.from(byMonth.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([m, v]) => {
+        cum += v;
+        return { month: m, spend: Math.round(cum) };
+      });
+  }, [costEntries, materialIssues, laborLogs, dailyLogs, laborRates]);
 
   if (!hasData) {
     return (
