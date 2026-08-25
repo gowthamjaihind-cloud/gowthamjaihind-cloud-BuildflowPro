@@ -82,8 +82,11 @@ export const createOrganization = onCall({ timeoutSeconds: 60 }, async (request)
 
   if (!isPayNow) {
     // Grant access now (free / trial): link the user and welcome them.
+    // role: "Owner" mirrors the org members map onto the user profile — the
+    // security rules read the profile role, so without this a self-serve Owner
+    // couldn't create projects (and Owner-only UI would stay hidden).
     await db.doc(`users/${uid}`).set(
-      { currentOrgId: orgId, orgIds: FieldValue.arrayUnion(orgId) },
+      { currentOrgId: orgId, orgIds: FieldValue.arrayUnion(orgId), role: "Owner" },
       { merge: true },
     );
     const email = userData.email || (request.auth.token as any)?.email || null;
