@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "../i18n";
 import { BrandLogo } from "../components/BrandLogo";
-import { TERMS_URL, PRIVACY_URL, stashPendingConsent } from "../lib/legal";
+import { TERMS_URL, PRIVACY_URL, REFUND_URL, SHIPPING_URL, CONTACT_URL, stashPendingConsent } from "../lib/legal";
 import {
   ArrowRight,
   CircleNotch as Loader2,
@@ -609,9 +609,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <BrandLogo className="w-8 h-8 rounded-lg" />
             <span className="font-brand font-bold tracking-tight">Sitetru</span>
           </div>
-          <div className="flex items-center gap-5 text-xs font-semibold text-ink-muted">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold text-ink-muted">
             <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="hover:text-ink apple-transition">{L("Terms", "விதிமுறைகள்")}</a>
             <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="hover:text-ink apple-transition">{L("Privacy", "தனியுரிமை")}</a>
+            <a href={REFUND_URL} target="_blank" rel="noopener noreferrer" className="hover:text-ink apple-transition">{L("Refund", "பணத்திரும்பம்")}</a>
+            <a href={SHIPPING_URL} target="_blank" rel="noopener noreferrer" className="hover:text-ink apple-transition">{L("Delivery", "வழங்கல்")}</a>
+            <a href={CONTACT_URL} target="_blank" rel="noopener noreferrer" className="hover:text-ink apple-transition">{L("Contact", "தொடர்பு")}</a>
           </div>
           <p className="text-xs text-ink-muted">© {new Date().getFullYear()} Sitetru · {L("Truth, reported from site.", "தளத்திலிருந்து அறிக்கையிடப்பட்ட உண்மை.")}</p>
         </div>

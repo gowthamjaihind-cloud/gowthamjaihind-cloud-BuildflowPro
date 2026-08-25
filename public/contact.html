@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact Us · Sitetru</title>
+  <meta name="description" content="How to contact Sitetru for support, billing, privacy, and grievances." />
+  <style>
+    :root {
+      --ink: #1f2937; --ink-muted: #556070; --primary: #B85F3B; --accent: #D97D54;
+      --page: #F4F5F7; --panel: #ffffff; --divider: #e6e8eb;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--page); color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.65; font-size: 16px;
+    }
+    .wrap { max-width: 780px; margin: 0 auto; padding: 40px 20px 96px; }
+    header.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    header.brand .dot { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--primary)); }
+    header.brand .name { font-weight: 800; font-size: 20px; letter-spacing: -0.01em; }
+    a { color: var(--primary); }
+    .card { background: var(--panel); border: 1px solid var(--divider); border-radius: 20px; padding: 32px 28px; margin-top: 20px; }
+    h1 { font-size: 30px; letter-spacing: -0.02em; margin: 4px 0 6px; }
+    h2 { font-size: 19px; letter-spacing: -0.01em; margin: 32px 0 8px; }
+    .meta { color: var(--ink-muted); font-size: 13px; font-weight: 600; }
+    .lead { color: var(--ink-muted); font-size: 16px; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 15px; }
+    th, td { text-align: left; padding: 10px 12px; border: 1px solid var(--divider); vertical-align: top; }
+    th { background: #FAFBFC; font-weight: 700; width: 40%; }
+    .draft { background: #FEF3C7; border: 1px solid #F1C453; border-radius: 14px; padding: 14px 16px; font-size: 14px; color: #7a5b00; margin-top: 16px; }
+    .ph { background: #FDE68A; color: #6b4e00; border-radius: 4px; padding: 0 4px; font-weight: 700; }
+    footer { margin-top: 40px; text-align: center; color: var(--ink-muted); font-size: 12px; }
+    footer a { color: var(--ink-muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="brand">
+      <div class="dot"></div>
+      <div class="name">Sitetru</div>
+    </header>
+
+    <div class="card">
+      <h1>Contact Us</h1>
+      <p class="meta">Last updated 25 August 2026</p>
+
+      <p class="lead">We’re happy to help with questions about your account, billing, privacy, or any concern about the Service.</p>
+
+      <h2>Business details</h2>
+      <table>
+        <tr><th>Operator</th><td>B Gowtham (sole proprietor), trading as “Sitetru”</td></tr>
+        <tr><th>Principal place of business</th><td>271 East Marret Street, Madurai, Tamil Nadu, India</td></tr>
+        <tr><th>GST</th><td>Not GST-registered at this time (individual / unregistered business)</td></tr>
+      </table>
+
+      <h2>Reach us</h2>
+      <table>
+        <tr><th>General &amp; support</th><td><a href="mailto:support@sitetru.com">support@sitetru.com</a></td></tr>
+        <tr><th>Billing &amp; refunds</th><td><a href="mailto:support@sitetru.com">support@sitetru.com</a></td></tr>
+        <tr><th>Privacy &amp; data requests</th><td><a href="mailto:support@sitetru.com">support@sitetru.com</a></td></tr>
+        <tr><th>Phone</th><td>+91 91500 03570</td></tr>
+        <tr><th>Hours</th><td>Mon–Fri, 10:00–18:00 IST</td></tr>
+      </table>
+
+      <h2>Grievance Officer</h2>
+      <p>In accordance with the Information Technology Act, 2000 and rules thereunder, and India’s Digital Personal Data Protection Act, 2023, the Grievance Officer is:</p>
+      <table>
+        <tr><th>Name</th><td>B Gowtham</td></tr>
+        <tr><th>Email</th><td><a href="mailto:support@sitetru.com">support@sitetru.com</a></td></tr>
+        <tr><th>Address</th><td>271 East Marret Street, Madurai, Tamil Nadu, India</td></tr>
+      </table>
+      <p>We aim to acknowledge grievances within the timeframe required by applicable law.</p>
+    </div>
+
+    <footer>
+      © <span id="yr"></span> Sitetru ·
+      <a href="/terms.html">Terms</a> ·
+      <a href="/privacy.html">Privacy</a> ·
+      <a href="/refund.html">Cancellation &amp; Refund</a> ·
+      <a href="/shipping.html">Shipping &amp; Delivery</a> ·
+      <a href="/">Back to app</a>
+    </footer>
+  </div>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>
