@@ -258,6 +258,33 @@ export const CostManagement: React.FC<CostManagementProps> = ({
     taskId: "",
   });
 
+  // Inline insight for the cost-entry form: for an Actual spend against a task,
+  // say how it lands versus that task's planned budget so the user sees an
+  // overrun before saving, not in a report next week.
+  const entryInsight = useMemo(() => {
+    const amount = newEntry.amount || 0;
+    const taskId = newEntry.taskId;
+    if (!taskId || amount <= 0 || newEntry.type !== "Actual") return null;
+    const totals = getTaskTotals(taskId);
+    const planned = totals?.totalPlanned || 0;
+    const actual = totals?.totalActual || 0;
+    if (planned <= 0) return null;
+    const inr = (n: number) =>
+      `₹${Math.abs(Math.round(n)).toLocaleString("en-IN")}`;
+    const remaining = planned - actual;
+    if (amount > remaining) {
+      return {
+        tone: "bad" as const,
+        text: `Puts this task ${inr(actual + amount - planned)} over its ${inr(planned)} budget (${inr(Math.max(0, remaining))} left).`,
+      };
+    }
+    const pct = (amount / planned) * 100;
+    return {
+      tone: "good" as const,
+      text: `${pct.toFixed(1)}% of this task's ${inr(planned)} budget · ${inr(remaining - amount)} would remain.`,
+    };
+  }, [newEntry.amount, newEntry.taskId, newEntry.type, getTaskTotals]);
+
   const flattenedTasks = useMemo(() => {
     const result: { id: string; name: string; level: number }[] = [];
     const buildFlatList = (
@@ -2220,6 +2247,24 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           })
                         }
                       />
+                      {/* Inline budget insight for this task: how this spend sits
+                          against what was planned, before it's saved. */}
+                      {entryInsight && (
+                        <p
+                          className={`text-[11px] font-semibold flex items-start gap-1.5 ml-1 ${
+                            entryInsight.tone === "bad"
+                              ? "text-danger"
+                              : entryInsight.tone === "good"
+                                ? "text-success"
+                                : "text-ink-muted"
+                          }`}
+                        >
+                          <span aria-hidden>
+                            {entryInsight.tone === "bad" ? "▲" : entryInsight.tone === "good" ? "▼" : "•"}
+                          </span>
+                          <span>{entryInsight.text}</span>
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
