@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "../i18n";
 import { BrandLogo } from "../components/BrandLogo";
 import { TERMS_URL, PRIVACY_URL, REFUND_URL, SHIPPING_URL, CONTACT_URL, stashPendingConsent } from "../lib/legal";
+import { useAuthStore } from "../store";
 import {
   ArrowRight,
   CircleNotch as Loader2,
@@ -186,6 +187,40 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
   const [consentOpen, setConsentOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+
+  // Email/password auth (alongside Google) inside the consent gate.
+  const loginWithEmail = useAuthStore((s) => s.loginWithEmail);
+  const signUpWithEmail = useAuthStore((s) => s.signUpWithEmail);
+  const resetPassword = useAuthStore((s) => s.resetPassword);
+  const setLoginError = useAuthStore((s) => s.setLoginError);
+  const [authMode, setAuthMode] = useState<"signin" | "signup" | "reset">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [resetMsg, setResetMsg] = useState<string | null>(null);
+
+  const switchMode = (m: "signin" | "signup" | "reset") => {
+    setAuthMode(m);
+    setResetMsg(null);
+    setLoginError(null);
+  };
+
+  const submitEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetMsg(null);
+    if (authMode === "reset") {
+      const ok = await resetPassword(email);
+      if (ok) setResetMsg("If an account exists for that email, a reset link is on its way.");
+      return;
+    }
+    if (!agreed) {
+      setLoginError("Please accept the Terms & Privacy Policy to continue.");
+      return;
+    }
+    stashPendingConsent();
+    if (authMode === "signup") await signUpWithEmail(email, password, name);
+    else await loginWithEmail(email, password);
+  };
 
   // All sign-in entry points route through a consent gate: the user must accept
   // the Terms and Privacy Policy before we start Google auth. The acceptance is
@@ -656,7 +691,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
 
               <h3 className="font-display font-bold text-2xl tracking-tight mb-2">Continue to Sitetru</h3>
               <p className="text-sm text-ink-muted leading-relaxed mb-6">
-                You'll sign in securely with Google. Before you continue, please review and accept our terms.
+                Sign in with Google or your email. Before you continue, please review and accept our terms.
               </p>
 
               <label className="flex items-start gap-3 mb-6 cursor-pointer select-none">
@@ -689,6 +724,90 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                   </>
                 )}
               </button>
+
+              <div className="flex items-center gap-3 my-5">
+                <div className="h-px bg-divider flex-1" />
+                <span className="text-[11px] font-bold uppercase tracking-widest text-ink-muted">or</span>
+                <div className="h-px bg-divider flex-1" />
+              </div>
+
+              <form onSubmit={submitEmail} className="space-y-3">
+                {authMode === "signup" && (
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    autoComplete="name"
+                    className="w-full bg-surface/60 border border-divider rounded-2xl px-4 py-3.5 outline-none focus:bg-surface focus:border-primary/40 apple-transition font-medium text-[15px]"
+                  />
+                )}
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email address"
+                  autoComplete="email"
+                  className="w-full bg-surface/60 border border-divider rounded-2xl px-4 py-3.5 outline-none focus:bg-surface focus:border-primary/40 apple-transition font-medium text-[15px]"
+                />
+                {authMode !== "reset" && (
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                    autoComplete={authMode === "signup" ? "new-password" : "current-password"}
+                    className="w-full bg-surface/60 border border-divider rounded-2xl px-4 py-3.5 outline-none focus:bg-surface focus:border-primary/40 apple-transition font-medium text-[15px]"
+                  />
+                )}
+                <button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="w-full inline-flex items-center justify-center gap-2 font-bold text-[15px] px-6 py-3.5 rounded-2xl bg-onyx text-white hover:bg-onyx/85 apple-transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoggingIn ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : authMode === "signup" ? (
+                    "Create account"
+                  ) : authMode === "reset" ? (
+                    "Send reset link"
+                  ) : (
+                    "Sign in"
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-3 flex items-center justify-between text-[13px]">
+                {authMode === "signin" && (
+                  <>
+                    <button onClick={() => switchMode("signup")} className="font-semibold text-primary hover:underline">
+                      Create an account
+                    </button>
+                    <button onClick={() => switchMode("reset")} className="font-medium text-ink-muted hover:text-ink">
+                      Forgot password?
+                    </button>
+                  </>
+                )}
+                {authMode === "signup" && (
+                  <button onClick={() => switchMode("signin")} className="font-medium text-ink-muted hover:text-ink">
+                    Already have an account? <span className="text-primary font-semibold">Sign in</span>
+                  </button>
+                )}
+                {authMode === "reset" && (
+                  <button onClick={() => switchMode("signin")} className="font-medium text-ink-muted hover:text-ink">
+                    ← Back to sign in
+                  </button>
+                )}
+              </div>
+
+              {resetMsg && (
+                <div className="mt-4 flex items-start gap-2 text-[13px] font-medium text-primary bg-primary/8 p-3 rounded-xl border border-primary/20">
+                  <Check className="w-5 h-5 shrink-0 mt-0.5" />
+                  <p>{resetMsg}</p>
+                </div>
+              )}
 
               {loginError && (
                 <div className="mt-4 flex items-start gap-2 text-[13px] font-medium text-danger bg-danger/10 p-3 rounded-xl border border-danger/20">
