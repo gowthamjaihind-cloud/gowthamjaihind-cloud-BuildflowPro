@@ -402,8 +402,30 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                        {lineItems.map((item, i) => {
                           const poLine = po.lineItems.find(p => p.itemId === item.poLineRef);
                           const remaining = poLine ? poLine.orderedQty - (poLine.receivedQty || 0) : 0;
+                          // Inline delivery insight: flag over-delivery against the
+                          // outstanding PO balance, a short delivery, or rejected
+                          // material — so the storekeeper sees the discrepancy while
+                          // the truck is still at the gate.
+                          const open = Math.max(0, remaining);
+                          const recd = item.receivedQty || 0;
+                          const rej = item.rejectedQty || 0;
+                          const unit = poLine?.unit || "";
+                          const fmt = (n: number) => `${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}${unit ? ` ${unit}` : ""}`;
+                          let insight: { tone: "bad" | "good" | "info"; text: string } | null = null;
+                          if (recd > 0 && open > 0 && recd > open) {
+                             insight = { tone: "bad", text: `Over-delivery: ${fmt(recd - open)} more than the ${fmt(open)} still open on this PO. Confirm before accepting.` };
+                          } else if (recd > 0 && open > 0 && recd < open) {
+                             insight = { tone: "info", text: `Short delivery: ${fmt(open - recd)} of ${fmt(open)} will stay open on this PO.` };
+                          } else if (recd > 0 && open > 0 && recd === open) {
+                             insight = { tone: "good", text: `Completes this line — the PO balance closes at ${fmt(open)}.` };
+                          }
+                          if (rej > 0) {
+                             const pct = recd > 0 ? (rej / recd) * 100 : 0;
+                             insight = { tone: "bad", text: `${fmt(rej)} rejected (${pct.toFixed(0)}% of this delivery)${insight && insight.tone !== "bad" ? ` · ${insight.text}` : ""}` };
+                          }
                           return (
-                             <tr key={item.poLineRef} className="border-b border-divider/50 last:border-none">
+                             <React.Fragment key={item.poLineRef}>
+                             <tr className="border-b border-divider/50 last:border-none">
                                 <td className="p-4">{item.name}</td>
                                 <td className="p-4 text-right font-mono text-ink-muted">
                                    {poLine?.orderedQty || 0}
@@ -437,6 +459,15 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                                    {item.rejectedQty > 0 ? item.rejectedQty : "-"}
                                 </td>
                              </tr>
+                             {insight && (
+                                <tr key={`${item.poLineRef}-insight`} className="border-b border-divider/50 last:border-none">
+                                   <td colSpan={6} className={`px-4 pb-3 pt-0 text-[11px] font-semibold ${insight.tone === "bad" ? "text-danger" : insight.tone === "good" ? "text-success" : "text-ink-muted"}`}>
+                                      <span aria-hidden className="mr-1.5">{insight.tone === "bad" ? "▲" : insight.tone === "good" ? "✓" : "•"}</span>
+                                      {insight.text}
+                                   </td>
+                                </tr>
+                             )}
+                             </React.Fragment>
                           )
                        })}
                     </tbody>

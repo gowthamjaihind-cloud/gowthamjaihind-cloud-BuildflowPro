@@ -9,6 +9,7 @@ import {
   FloppyDisk as Save,
 } from "@phosphor-icons/react";
 import { useProjectData } from "../../hooks/useProjectData";
+import { useProjectCostTotals } from "../../hooks/useProjectCostTotals";
 import { useAuthStore } from "../../store";
 import { Vendor, InventoryItem, POLineItem, LaborRateCard, PurchaseOrder } from "../../types";
 import { collection, doc, setDoc, updateDoc, runTransaction } from "firebase/firestore";
@@ -55,6 +56,9 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
   const { data: laborCards = [] } = useProjectData<LaborRateCard>(projectId, "labor_rate_cards");
 
   const selectedVendor = useMemo(() => vendors.find(v => v.id === vendorId), [vendors, vendorId]);
+
+  // Budget context for the inline "what does this PO do to my budget" insight.
+  const { stats } = useProjectCostTotals(projectId);
   
   const handleItemSelect = (index: number, invItemId: string) => {
     const invItem = inventory.find(i => i.id === invItemId);
@@ -102,6 +106,27 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
     (Number(charges.transport) || 0) +
     (Number(charges.other) || 0);
   const totalAmount = materialTotal + chargesTotal;
+
+  // What this PO does to the project budget: how much headroom is left, and a
+  // hard warning if committing it would push actual spend past the budget.
+  const budgetInsight = useMemo(() => {
+    const budget = stats?.totalBudgeted || 0;
+    const actual = stats?.totalActual || 0;
+    if (budget <= 0 || totalAmount <= 0) return null;
+    const remaining = budget - actual;
+    const inr = (n: number) => `₹${Math.abs(Math.round(n)).toLocaleString("en-IN")}`;
+    const pctOfBudget = (totalAmount / budget) * 100;
+    if (totalAmount > remaining) {
+      return {
+        tone: "bad" as const,
+        text: `This PO is ${inr(totalAmount - remaining)} more than the ${inr(remaining)} left in the project budget — it would put you over by ${inr(actual + totalAmount - budget)}.`,
+      };
+    }
+    return {
+      tone: "info" as const,
+      text: `Uses ${pctOfBudget.toFixed(1)}% of the project budget · ${inr(remaining - totalAmount)} would remain of ${inr(budget)}.`,
+    };
+  }, [stats, totalAmount]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -260,10 +285,15 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                 // Inline price insight: compare the entered rate against the
                 // material's known average cost so a buyer sees, right there,
                 // whether they're paying more (red) or less (green) than before.
-                const inv = item.itemId ? inventory.find(i => i.id === item.itemId) : undefined;
-                const refRate = inv ? ((inv.avgUnitCost && inv.avgUnitCost > 0) ? inv.avgUnitCost : inv.unitCost) : 0;
+                const isLabor = selectedVendor?.type === "Labor";
+                const inv = !isLabor && item.itemId ? inventory.find(i => i.id === item.itemId) : undefined;
+                const card = isLabor && item.itemId ? laborCards.find(l => l.id === item.itemId) : undefined;
+                const refRate = isLabor
+                  ? (card?.rate || 0)
+                  : (inv ? ((inv.avgUnitCost && inv.avgUnitCost > 0) ? inv.avgUnitCost : inv.unitCost) : 0);
+                const refLabel = isLabor ? "rate card" : "last average";
                 const rate = item.rate || 0;
-                const showDelta = selectedVendor?.type !== "Labor" && refRate > 0 && rate > 0;
+                const showDelta = refRate > 0 && rate > 0;
                 const diff = rate - refRate;
                 const pct = refRate > 0 ? (diff / refRate) * 100 : 0;
                 const inr = (n: number) => `₹${Math.abs(n).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -324,10 +354,10 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                   <div className={`px-4 pb-1 text-[11px] font-semibold flex items-center gap-1.5 ${diff > 0 ? "text-danger" : diff < 0 ? "text-success" : "text-ink-muted"}`}>
                     <span aria-hidden>{diff > 0 ? "▲" : diff < 0 ? "▼" : "="}</span>
                     {diff === 0 ? (
-                      <span>Same as the last average price ({inr(refRate)}).</span>
+                      <span>Matches the {refLabel} ({inr(refRate)}).</span>
                     ) : (
                       <span>
-                        {inr(rate)} is {inr(diff)} {diff > 0 ? "above" : "below"} the last average of {inr(refRate)}{" "}
+                        {inr(rate)} is {inr(diff)} {diff > 0 ? "above" : "below"} the {refLabel} of {inr(refRate)}{" "}
                         ({diff > 0 ? "+" : "−"}{Math.abs(pct).toFixed(1)}%)
                       </span>
                     )}
@@ -397,6 +427,14 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                      ₹{totalAmount.toLocaleString("en-IN")}
                   </span>
                </div>
+               {/* Inline budget insight: what this PO does to the project budget,
+                   shown before the buyer commits. */}
+               {budgetInsight && (
+                  <div className={`pt-2 text-[11px] font-semibold flex items-start gap-1.5 ${budgetInsight.tone === "bad" ? "text-danger" : "text-[#B85F3B]"}`}>
+                     <span aria-hidden>{budgetInsight.tone === "bad" ? "▲" : "•"}</span>
+                     <span>{budgetInsight.text}</span>
+                  </div>
+               )}
             </div>
 
             <div className="mt-auto pt-6 border-t border-divider">
