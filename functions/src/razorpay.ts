@@ -213,9 +213,11 @@ async function activateOrgFromOrder(orderId: string): Promise<boolean> {
   );
   // Link the buyer into the org — a self-serve pay-now org is created unlinked
   // (no access) until payment lands, so this is what grants them access.
+  // role: "Owner" mirrors the org members map onto the user profile so the
+  // security rules (which read the profile role) let them create projects.
   if (o.uid) {
     await db.doc(`users/${o.uid}`).set(
-      { currentOrgId: o.orgId, orgIds: FieldValue.arrayUnion(o.orgId) },
+      { currentOrgId: o.orgId, orgIds: FieldValue.arrayUnion(o.orgId), role: "Owner" },
       { merge: true },
     );
   }
