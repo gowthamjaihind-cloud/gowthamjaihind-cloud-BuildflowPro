@@ -1,7 +1,7 @@
 // Single source of truth for legal document versions and links.
 // Bump TERMS_VERSION whenever the Terms or Privacy Policy change materially so
 // that recorded consent can be compared against the current version.
-export const TERMS_VERSION = "2026-08-15";
+export const TERMS_VERSION = "2026-08-25";
 
 export const TERMS_URL = "/terms.html";
 export const PRIVACY_URL = "/privacy.html";
