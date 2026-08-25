@@ -39,7 +39,10 @@ import {
   CircleNotch as Loader2,
 } from "@phosphor-icons/react";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+// html2canvas-pro (drop-in) supports modern CSS color functions (oklch,
+// color-mix) that Tailwind v4 emits; the original html2canvas throws on them,
+// which is why the reports PDF export silently failed.
+import html2canvas from "html2canvas-pro";
 
 interface ProgressReportsViewProps {
   projectId: string;
