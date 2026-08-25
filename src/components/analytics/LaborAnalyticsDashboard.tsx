@@ -17,6 +17,12 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
   const dark = useUIStore((s) => s.darkMode);
   const { stats } = useProjectCostTotals(projectId);
   const { data: laborLogs = [] } = useProjectDataQuery<DailyLaborLog>(projectId, "labor_logs");
+  // Labour also arrives through the daily log (the DPR / Telegram field path),
+  // which stores labour[] as { roleId, roleName, headcount } and is costed from
+  // the rate cards — same as useProjectCostTotals does for the cost KPIs. Read
+  // both, otherwise these breakdowns look empty for projects that log from site.
+  const { data: dailyLogs = [] } = useProjectDataQuery<any>(projectId, "dailyLogs");
+  const { data: laborRates = [] } = useProjectDataQuery<any>(projectId, "labor_rate_cards");
   const [view, setView] = useState<ViewId>("byRole");
 
   const S = dark
@@ -30,16 +36,37 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
   const overBudget = variance > 0;
 
   // Detail from the structured labour logs.
-  const { byRole, manpower, headcountDays } = useMemo(() => {
+  const { byRole, manpower, headcountDays, trendData } = useMemo(() => {
     const roleCost = new Map<string, number>();
     const byDate = new Map<string, number>();
+    const byMonth = new Map<string, number>();
     let hcDays = 0;
     for (const log of laborLogs as DailyLaborLog[]) {
       for (const it of log.items || []) {
         roleCost.set(it.role || "—", (roleCost.get(it.role || "—") || 0) + (it.cost || 0));
         const hc = it.headcount || 0;
         hcDays += hc * (it.shifts || 1);
-        if (log.date) byDate.set(log.date, (byDate.get(log.date) || 0) + hc);
+        if (log.date) {
+          byDate.set(log.date, (byDate.get(log.date) || 0) + hc);
+          const m = log.date.slice(0, 7);
+          byMonth.set(m, (byMonth.get(m) || 0) + (it.cost || 0));
+        }
+      }
+    }
+    // Daily-log labour: cost each line from its rate card, mirroring the cost hook.
+    for (const log of dailyLogs as any[]) {
+      const date = log.workDate || log.date;
+      for (const l of log.labour || []) {
+        const rate = laborRates.find((r: any) => r.id === l.roleId)?.rate || 0;
+        const hc = l.headcount || 0;
+        const name = l.roleName || "—";
+        roleCost.set(name, (roleCost.get(name) || 0) + hc * rate);
+        hcDays += hc;
+        if (date) {
+          byDate.set(date, (byDate.get(date) || 0) + hc);
+          const m = String(date).slice(0, 7);
+          byMonth.set(m, (byMonth.get(m) || 0) + hc * rate);
+        }
       }
     }
     const byRole = Array.from(roleCost.entries())
@@ -49,8 +76,16 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
     const manpower = Array.from(byDate.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([date, workers]) => ({ date, workers }));
-    return { byRole, manpower, headcountDays: hcDays };
-  }, [laborLogs]);
+    // Cumulative labour spend by month, across both logging paths.
+    let cum = 0;
+    const trendData = Array.from(byMonth.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([month, v]) => {
+        cum += v;
+        return { month, spend: Math.round(cum) };
+      });
+    return { byRole, manpower, headcountDays: hcDays, trendData };
+  }, [laborLogs, dailyLogs, laborRates]);
 
   const statusColor = consumedPct >= 100 ? S.over : consumedPct >= 90 ? S.amber : S.under;
   const hasData = budget > 0 || actual > 0 || byRole.length > 0;
@@ -141,27 +176,16 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
             ) : <div className="py-8 text-center text-ink-muted text-sm font-bold">{t("an.noTrend")}</div>}
           </div>
         )}
-        {view === "trend" && <LaborTrend logs={laborLogs} budget={budget} S={S} dark={dark} t={t} />}
+        {view === "trend" && <LaborTrend data={trendData} S={S} dark={dark} t={t} />}
       </div>
     </div>
   );
 };
 
-const LaborTrend: React.FC<any> = ({ logs, budget, S, dark, t }) => {
+const LaborTrend: React.FC<any> = ({ data, S, dark, t }) => {
   const axis = dark ? "#A99E92" : "#786F67";
   const grid = dark ? "rgba(169,158,146,.15)" : "rgba(120,111,103,.12)";
-  const data = useMemo(() => {
-    const byMonth = new Map<string, number>();
-    for (const l of (logs as DailyLaborLog[]).filter((x) => x.date)) {
-      const m = l.date.slice(0, 7);
-      byMonth.set(m, (byMonth.get(m) || 0) + (l.totalCost || 0));
-    }
-    let cum = 0;
-    return Array.from(byMonth.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([month, v]) => {
-      cum += v; return { month, spend: Math.round(cum) };
-    });
-  }, [logs]);
-  if (data.length < 2) return <div className="py-8 text-center text-ink-muted text-sm font-bold">{t("an.noTrend")}</div>;
+  if (!data || data.length < 2) return <div className="py-8 text-center text-ink-muted text-sm font-bold">{t("an.noTrend")}</div>;
   return (
     <div className="space-y-4">
       <h4 className="text-xs font-black uppercase tracking-widest text-ink-muted">{t("an.trendTitle")}</h4>
