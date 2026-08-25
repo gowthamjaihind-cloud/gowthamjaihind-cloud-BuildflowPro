@@ -56,7 +56,7 @@ export const PrivacyPanel: React.FC<{ currentUser: UserProfile }> = ({ currentUs
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (e: any) {
-      setExportError(e?.message || L("Couldn't prepare your export. Please try again.", "உங்கள் ஏற்றுமதியைத் தயாரிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்."));
+      setExportError(e?.message || L("Couldn't prepare your export. Please try again.", "உங்கள் எக்ஸ்போர்ட்டைத் தயாரிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்."));
     } finally {
       setExporting(false);
     }
@@ -135,13 +135,13 @@ export const PrivacyPanel: React.FC<{ currentUser: UserProfile }> = ({ currentUs
       {/* Export */}
       <section className="soft-card p-8 squircle-24">
         <h3 className="text-xl font-bold text-ink mb-1 flex items-center gap-2">
-          <DownloadSimple className="w-6 h-6 text-primary" /> {L("Export my data", "என் தரவை ஏற்றுமதி செய்")}
+          <DownloadSimple className="w-6 h-6 text-primary" /> {L("Export my data", "என் தரவை எக்ஸ்போர்ட் செய்")}
         </h3>
         <p className="text-ink-muted text-sm mb-6 leading-relaxed">
           {L("Download a machine-readable (JSON) copy of your profile", "உங்கள் சுயவிவரத்தின் இயந்திரம்-படிக்கக்கூடிய (JSON) நகலைப் பதிவிறக்கவும்")}
           {isOwner || myRole === "Admin"
             ? L(" and your organization's data, including projects and their records.", " மற்றும் செயல்திட்டங்கள் மற்றும் அவற்றின் பதிவுகள் உட்பட உங்கள் நிறுவனத்தின் தரவு.")
-            : L(". A full organization export is available to Owners and Admins.", ". முழு நிறுவன ஏற்றுமதி உரிமையாளர்கள் மற்றும் நிர்வாகிகளுக்கு கிடைக்கும்.")}
+            : L(". A full organization export is available to Owners and Admins.", ". முழு நிறுவன எக்ஸ்போர்ட் உரிமையாளர்கள் மற்றும் நிர்வாகிகளுக்கு கிடைக்கும்.")}
         </p>
         {exportError && (
           <div className="mb-4 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
@@ -172,7 +172,7 @@ export const PrivacyPanel: React.FC<{ currentUser: UserProfile }> = ({ currentUs
           <AlertCircle className="w-6 h-6" /> {L("Danger zone", "ஆபத்து மண்டலம்")}
         </h3>
         <p className="text-ink-muted text-sm mb-6">
-          {L("These actions are permanent and cannot be undone. Export your data first if you might need it.", "இந்தச் செயல்கள் நிரந்தரமானவை, மீட்டெடுக்க முடியாது. தேவைப்படலாம் எனில் முதலில் உங்கள் தரவை ஏற்றுமதி செய்யவும்.")}
+          {L("These actions are permanent and cannot be undone. Export your data first if you might need it.", "இந்தச் செயல்கள் நிரந்தரமானவை, மீட்டெடுக்க முடியாது. தேவைப்படலாம் எனில் முதலில் உங்கள் தரவை எக்ஸ்போர்ட் செய்யவும்.")}
         </p>
 
         {/* Delete organization — Owner only */}
