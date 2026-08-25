@@ -319,7 +319,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="e.g. 29ABCDE1234F1Z5"
                     />
                     <p className="text-[10px] text-ink-muted mt-1.5">
-                      {L("Used to validate vendor invoices and split CGST/SGST vs IGST.","விற்பனையாளர் விலைப்பட்டியல்களைச் சரிபார்க்கவும், CGST/SGST vs IGST ஐப் பிரிக்கவும் பயன்படுகிறது.")}
+                      {L("Used to validate vendor invoices and split CGST/SGST vs IGST.","சப்ளையர் விலைப்பட்டியல்களைச் சரிபார்க்கவும், CGST/SGST vs IGST ஐப் பிரிக்கவும் பயன்படுகிறது.")}
                       {draftGstin.length >= 2 && ` ${L("State code","மாநிலக் குறியீடு")}: ${draftGstin.slice(0, 2)}.`}
                     </p>
                   </div>

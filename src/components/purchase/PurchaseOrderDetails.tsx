@@ -140,14 +140,14 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
              <button
                onClick={handleExportCSV}
                className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
-               title={L("Export CSV","CSV ஏற்றுமதி")}
+               title={L("Export CSV","CSV எக்ஸ்போர்ட்")}
              >
                <Download className="w-3.5 h-3.5 text-ink/80" /> CSV
              </button>
              <button
                onClick={handleExportPDF}
                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
-               title={L("Export PDF","PDF ஏற்றுமதி")}
+               title={L("Export PDF","PDF எக்ஸ்போர்ட்")}
              >
                <Download className="w-3.5 h-3.5" /> PDF
              </button>

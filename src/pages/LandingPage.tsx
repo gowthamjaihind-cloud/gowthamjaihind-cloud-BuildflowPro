@@ -41,33 +41,33 @@ interface LandingPageProps {
 
 const features = [
   { icon: TreeStructure, title: "WBS & Scheduling", taTitle: "பணிப் பிரிவு & அட்டவணை", body: "Break projects into a work-breakdown structure with a live Gantt, dependencies and auto-shifting dates.", taBody: "செயல்திட்டங்களை நேரடி Gantt, சார்புகள் மற்றும் தானாக மாறும் தேதிகளுடன் பணிப் பிரிவு அமைப்பாகப் பிரிக்கவும்." },
-  { icon: Truck, title: "Procurement & GRN", taTitle: "கொள்முதல் & GRN", body: "Raise purchase orders, record goods receipts, and keep vendor ledgers and inventory in perfect step.", taBody: "கொள்முதல் ஆணைகளை உருவாக்கி, பொருள் ரசீதுகளைப் பதிவு செய்து, விற்பனையாளர் லெட்ஜர்களையும் சரக்கையும் சரியாக ஒத்திசைக்கவும்." },
-  { icon: Users, title: "Labor Tracking", taTitle: "தொழிலாளர் கண்காணிப்பு", body: "Log daily manpower by trade and task, with rate cards, billing and per-task consumption rollups.", taBody: "விலை அட்டைகள், பில்லிங் மற்றும் பணி வாரியான நுகர்வுடன் தினசரி மனித சக்தியைத் தொழில் மற்றும் பணி வாரியாகப் பதிவு செய்யவும்." },
+  { icon: Truck, title: "Procurement & GRN", taTitle: "கொள்முதல் & GRN", body: "Raise purchase orders, record goods receipts, and keep vendor ledgers and inventory in perfect step.", taBody: "கொள்முதல் ஆணைகளை உருவாக்கி, பொருள் ரசீதுகளைப் பதிவு செய்து, சப்ளையர் லெட்ஜர்களையும் ஸ்டாக்கையும் சரியாக ஒத்திசைக்கவும்." },
+  { icon: Users, title: "Labor Tracking", taTitle: "தொழிலாளர் கண்காணிப்பு", body: "Log daily manpower by trade and task, with rate cards, billing and per-task consumption rollups.", taBody: "விலை அட்டைகள், பில்லிங் மற்றும் பணி வாரியான பயன்பாட்டுடன் தினசரி மனித சக்தியைத் தொழில் மற்றும் பணி வாரியாகப் பதிவு செய்யவும்." },
   { icon: CurrencyInr, title: "Cost Management", taTitle: "செலவு மேலாண்மை", body: "Track budgeted vs actual in real time, with CPI, forecasts and an AI-assisted cost analysis.", taBody: "CPI, முன்னறிவிப்புகள் மற்றும் AI உதவி செலவு பகுப்பாய்வுடன் பட்ஜெட் vs உண்மையை நிகழ்நேரத்தில் கண்காணிக்கவும்." },
-  { icon: FileText, title: "Daily Logs & Reports", taTitle: "தினசரி பதிவுகள் & அறிக்கைகள்", body: "Site diaries with progress, materials, labour and photos — exportable as clean PDF reports.", taBody: "முன்னேற்றம், பொருட்கள், தொழிலாளர் மற்றும் புகைப்படங்களுடன் தள நாட்குறிப்புகள் — சுத்தமான PDF அறிக்கைகளாக ஏற்றுமதி செய்யலாம்." },
-  { icon: Calculator, title: "Client Estimates", taTitle: "வாடிக்கையாளர் மதிப்பீடுகள்", body: "Build estimates, track change orders, and compare against your live budget at any moment.", taBody: "மதிப்பீடுகளை உருவாக்கி, மாற்ற ஆணைகளைக் கண்காணித்து, எந்த நேரத்திலும் உங்கள் நேரடி பட்ஜெட்டுடன் ஒப்பிடவும்." },
-  { icon: FolderLock, title: "Document Vault", taTitle: "ஆவண களஞ்சியம்", body: "Keep drawings, approvals and compliance docs organised and access-controlled per project.", taBody: "வரைபடங்கள், அனுமதிகள் மற்றும் இணக்க ஆவணங்களை ஒவ்வொரு செயல்திட்டத்திற்கும் ஒழுங்குபடுத்தி அணுகல் கட்டுப்பாட்டுடன் வைத்திருங்கள்." },
+  { icon: FileText, title: "Daily Logs & Reports", taTitle: "தினசரி பதிவுகள் & அறிக்கைகள்", body: "Site diaries with progress, materials, labour and photos — exportable as clean PDF reports.", taBody: "முன்னேற்றம், பொருட்கள், தொழிலாளர் மற்றும் புகைப்படங்களுடன் தள நாட்குறிப்புகள் — சுத்தமான PDF அறிக்கைகளாக எக்ஸ்போர்ட் செய்யலாம்." },
+  { icon: Calculator, title: "Client Estimates", taTitle: "வாடிக்கையாளர் எஸ்டிமேட்", body: "Build estimates, track change orders, and compare against your live budget at any moment.", taBody: "மதிப்பீடுகளை உருவாக்கி, மாற்ற ஆணைகளைக் கண்காணித்து, எந்த நேரத்திலும் உங்கள் நேரடி பட்ஜெட்டுடன் ஒப்பிடவும்." },
+  { icon: FolderLock, title: "Document Vault", taTitle: "ஆவணங்கள்", body: "Keep drawings, approvals and compliance docs organised and access-controlled per project.", taBody: "வரைபடங்கள், அனுமதிகள் மற்றும் இணக்க ஆவணங்களை ஒவ்வொரு செயல்திட்டத்திற்கும் ஒழுங்குபடுத்தி அணுகல் கட்டுப்பாட்டுடன் வைத்திருங்கள்." },
   { icon: ChartLineUp, title: "Portfolio View", taTitle: "போர்ட்ஃபோலியோ காட்சி", body: "See every active project's health, completion and risk from one executive dashboard.", taBody: "ஒரே நிர்வாக டாஷ்போர்டில் இருந்து ஒவ்வொரு செயலில் உள்ள செயல்திட்டத்தின் ஆரோக்கியம், நிறைவு மற்றும் ஆபத்தைப் பார்க்கவும்." },
 ];
 
 const steps = [
   { n: "01", title: "Set up your project", taTitle: "உங்கள் செயல்திட்டத்தை அமைக்கவும்", body: "Create the workspace, add your WBS, tasks and team in minutes.", taBody: "நிமிடங்களில் பணியிடத்தை உருவாக்கி, உங்கள் WBS, பணிகள் மற்றும் அணியைச் சேர்க்கவும்." },
-  { n: "02", title: "Log from the field", taTitle: "களத்திலிருந்து பதிவு செய்யுங்கள்", body: "Site teams record progress, materials and labour — from the app or Telegram.", taBody: "தள அணிகள் முன்னேற்றம், பொருட்கள் மற்றும் தொழிலாளரை — பயன்பாடு அல்லது டெலிகிராம் மூலம் பதிவு செய்கின்றன." },
+  { n: "02", title: "Log from the field", taTitle: "களத்திலிருந்து பதிவு செய்யுங்கள்", body: "Site teams record progress, materials and labour — from the app or Telegram.", taBody: "தள அணிகள் முன்னேற்றம், பொருட்கள் மற்றும் தொழிலாளரை — ஆப் அல்லது டெலிகிராம் மூலம் பதிவு செய்கின்றன." },
   { n: "03", title: "Stay in control", taTitle: "கட்டுப்பாட்டில் இருங்கள்", body: "Watch cost, schedule and procurement update live across your whole portfolio.", taBody: "உங்கள் முழு போர்ட்ஃபோலியோ முழுவதும் செலவு, அட்டவணை மற்றும் கொள்முதல் நேரடியாகப் புதுப்பிப்பதைப் பாருங்கள்." },
 ];
 
 const audience = [
   { icon: Buildings, title: "Building contractors", taTitle: "கட்டிட ஒப்பந்தக்காரர்கள்", body: "Residential & commercial. Keep every site's schedule, cost and labour in one place.", taBody: "குடியிருப்பு & வணிக. ஒவ்வொரு தளத்தின் அட்டவணை, செலவு மற்றும் தொழிலாளரை ஒரே இடத்தில் வைத்திருங்கள்." },
-  { icon: RoadHorizon, title: "Civil & infrastructure", taTitle: "சிவில் & உள்கட்டமைப்பு", body: "Roads, water and structures. Track RA bills, GRNs and vendor ledgers without the paperwork.", taBody: "சாலைகள், நீர் மற்றும் கட்டமைப்புகள். காகிதப்பணி இல்லாமல் RA பில்கள், GRN மற்றும் விற்பனையாளர் லெட்ஜர்களைக் கண்காணிக்கவும்." },
+  { icon: RoadHorizon, title: "Civil & infrastructure", taTitle: "சிவில் & உள்கட்டமைப்பு", body: "Roads, water and structures. Track RA bills, GRNs and vendor ledgers without the paperwork.", taBody: "சாலைகள், நீர் மற்றும் கட்டமைப்புகள். காகிதப்பணி இல்லாமல் RA பில்கள், GRN மற்றும் சப்ளையர் லெட்ஜர்களைக் கண்காணிக்கவும்." },
   { icon: HouseLine, title: "Developers & builders", taTitle: "டெவலப்பர்கள் & பில்டர்கள்", body: "See the health of every project in your portfolio from one executive dashboard.", taBody: "ஒரே நிர்வாக டாஷ்போர்டில் இருந்து உங்கள் போர்ட்ஃபோலியோவில் உள்ள ஒவ்வொரு செயல்திட்டத்தின் ஆரோக்கியத்தைப் பார்க்கவும்." },
-  { icon: ClipboardText, title: "PMCs & consultants", taTitle: "PMC & ஆலோசகர்கள்", body: "Run multiple clients' sites with role-based access and clean, exportable reports.", taBody: "பங்கு அடிப்படையிலான அணுகல் மற்றும் சுத்தமான, ஏற்றுமதி செய்யக்கூடிய அறிக்கைகளுடன் பல வாடிக்கையாளர்களின் தளங்களை நிர்வகிக்கவும்." },
+  { icon: ClipboardText, title: "PMCs & consultants", taTitle: "PMC & ஆலோசகர்கள்", body: "Run multiple clients' sites with role-based access and clean, exportable reports.", taBody: "பங்கு அடிப்படையிலான அணுகல் மற்றும் சுத்தமான, எக்ஸ்போர்ட் செய்யக்கூடிய அறிக்கைகளுடன் பல வாடிக்கையாளர்களின் தளங்களை நிர்வகிக்கவும்." },
   { icon: PaintRoller, title: "Interior & fit-out", taTitle: "உள்ளமைப்பு & ஃபிட்-அவுட்", body: "Manage procurement, labour and change orders on fast-moving jobs.", taBody: "வேகமாக நகரும் வேலைகளில் கொள்முதல், தொழிலாளர் மற்றும் மாற்ற ஆணைகளை நிர்வகிக்கவும்." },
 ];
 
 const whySitetru = [
-  { icon: TelegramLogo, title: "The field logs itself, over Telegram", taTitle: "களம் தானாகவே பதிவு செய்கிறது, டெலிகிராம் மூலம்", body: "No app to train the crew on — foremen report progress, materials and labour from a chat, and it lands live in your dashboards.", taBody: "பணியாளர்களுக்குப் பயிற்சி அளிக்க பயன்பாடு இல்லை — மேற்பார்வையாளர்கள் ஒரு அரட்டையிலிருந்து முன்னேற்றம், பொருட்கள் மற்றும் தொழிலாளரை அறிக்கையிடுகிறார்கள், அது உங்கள் டாஷ்போர்டுகளில் நேரடியாக வந்து சேரும்." },
+  { icon: TelegramLogo, title: "The field logs itself, over Telegram", taTitle: "களம் தானாகவே பதிவு செய்கிறது, டெலிகிராம் மூலம்", body: "No app to train the crew on — foremen report progress, materials and labour from a chat, and it lands live in your dashboards.", taBody: "பணியாளர்களுக்குப் பயிற்சி அளிக்க ஆப் தேவையில்லை — மேற்பார்வையாளர்கள் ஒரு அரட்டையிலிருந்து முன்னேற்றம், பொருட்கள் மற்றும் தொழிலாளரை அறிக்கையிடுகிறார்கள், அது உங்கள் டாஷ்போர்டுகளில் நேரடியாக வந்து சேரும்." },
   { icon: FlowArrow, title: "Everything is connected", taTitle: "அனைத்தும் இணைக்கப்பட்டுள்ளன", body: "Schedule, procurement, labour and cost update each other in real time. Change one, and the rest follows.", taBody: "அட்டவணை, கொள்முதல், தொழிலாளர் மற்றும் செலவு ஒன்றையொன்று நிகழ்நேரத்தில் புதுப்பிக்கின்றன. ஒன்றை மாற்றினால், மற்றவை பின்தொடரும்." },
-  { icon: Sparkle, title: "AI that reads your paperwork", taTitle: "உங்கள் காகிதப்பணியைப் படிக்கும் AI", body: "Scan a vendor invoice and Sitetru matches it to the PO, flags rate and quantity discrepancies, and updates inventory.", taBody: "விற்பனையாளர் விலைப்பட்டியலை ஸ்கேன் செய்யுங்கள், Sitetru அதை POவுடன் பொருத்தி, விலை மற்றும் அளவு முரண்பாடுகளைக் குறித்து, சரக்கைப் புதுப்பிக்கிறது." },
+  { icon: Sparkle, title: "AI that reads your paperwork", taTitle: "உங்கள் காகிதப்பணியைப் படிக்கும் AI", body: "Scan a vendor invoice and Sitetru matches it to the PO, flags rate and quantity discrepancies, and updates inventory.", taBody: "சப்ளையர் விலைப்பட்டியலை ஸ்கேன் செய்யுங்கள், Sitetru அதை POவுடன் பொருத்தி, விலை மற்றும் அளவு முரண்பாடுகளைக் குறித்து, ஸ்டாக்கைப் புதுப்பிக்கிறது." },
   { icon: CurrencyInr, title: "Made for Indian construction", taTitle: "இந்திய கட்டுமானத்திற்காக உருவாக்கப்பட்டது", body: "GST-aware invoices, INR costing, RA bills, GRNs and CGST/SGST/IGST — not a foreign tool bent to fit.", taBody: "GST அறிந்த விலைப்பட்டியல்கள், INR செலவு, RA பில்கள், GRN மற்றும் CGST/SGST/IGST — பொருந்த வளைக்கப்பட்ட வெளிநாட்டு கருவி அல்ல." },
   { icon: Stack, title: "One source of truth", taTitle: "ஒரே உண்மை மூலம்", body: "Replace five spreadsheets, three WhatsApp groups and a paper diary with a single workspace.", taBody: "ஐந்து விரிதாள்கள், மூன்று WhatsApp குழுக்கள் மற்றும் ஒரு காகித நாட்குறிப்பை ஒரே பணியிடத்தால் மாற்றவும்." },
 ];
@@ -75,8 +75,8 @@ const whySitetru = [
 const solutions = [
   { icon: TreeStructure, pain: "Schedule slipping?", taPain: "அட்டவணை பின்தங்குகிறதா?", fix: "Live WBS + Gantt with dependencies and auto-shifting dates.", taFix: "சார்புகள் மற்றும் தானாக மாறும் தேதிகளுடன் நேரடி WBS + Gantt." },
   { icon: ChartLineUp, pain: "Costs overrunning?", taPain: "செலவுகள் மிகுதியாகின்றனவா?", fix: "Budget vs. actual in real time, CPI, forecasts and AI cost analysis.", taFix: "நிகழ்நேரத்தில் பட்ஜெட் vs உண்மை, CPI, முன்னறிவிப்புகள் மற்றும் AI செலவு பகுப்பாய்வு." },
-  { icon: Truck, pain: "Procurement leaking?", taPain: "கொள்முதல் கசிகிறதா?", fix: "POs, goods receipts, vendor ledgers and AI invoice-matching that keep inventory honest.", taFix: "சரக்கை நேர்மையாக வைத்திருக்கும் PO, பொருள் ரசீதுகள், விற்பனையாளர் லெட்ஜர்கள் மற்றும் AI விலைப்பட்டியல் பொருத்தம்." },
-  { icon: Users, pain: "Labour untracked?", taPain: "தொழிலாளர் கண்காணிக்கப்படவில்லையா?", fix: "Daily manpower by trade and task, rate cards and per-task consumption.", taFix: "தொழில் மற்றும் பணி வாரியாக தினசரி மனித சக்தி, விலை அட்டைகள் மற்றும் பணி வாரியான நுகர்வு." },
+  { icon: Truck, pain: "Procurement leaking?", taPain: "கொள்முதல் கசிகிறதா?", fix: "POs, goods receipts, vendor ledgers and AI invoice-matching that keep inventory honest.", taFix: "ஸ்டாக்கை நேர்மையாக வைத்திருக்கும் PO, பொருள் ரசீதுகள், சப்ளையர் லெட்ஜர்கள் மற்றும் AI விலைப்பட்டியல் பொருத்தம்." },
+  { icon: Users, pain: "Labour untracked?", taPain: "தொழிலாளர் கண்காணிக்கப்படவில்லையா?", fix: "Daily manpower by trade and task, rate cards and per-task consumption.", taFix: "தொழில் மற்றும் பணி வாரியாக தினசரி மனித சக்தி, விலை அட்டைகள் மற்றும் பணி வாரியான பயன்பாடு." },
   { icon: DeviceMobile, pain: "Blind to the site?", taPain: "தளம் தெரியவில்லையா?", fix: "Daily logs with photos, a portfolio health view, and Telegram field updates.", taFix: "புகைப்படங்களுடன் தினசரி பதிவுகள், போர்ட்ஃபோலியோ ஆரோக்கியக் காட்சி மற்றும் டெலிகிராம் கள புதுப்பிப்புகள்." },
 ];
 
@@ -106,7 +106,7 @@ const plans = [
     annualTotal: "₹9,990 billed yearly", taAnnualTotal: "₹9,990 ஆண்டுதோறும்",
     tag: "For small contractors", taTag: "சிறிய ஒப்பந்தக்காரர்களுக்கு",
     features: ["Up to 5 active projects", "10 users", "Procurement, labour & cost", "GRN & vendor ledgers", "150 AI invoice scans / mo"],
-    taFeatures: ["5 செயலில் செயல்திட்டங்கள் வரை", "10 பயனர்கள்", "கொள்முதல், தொழிலாளர் & செலவு", "GRN & விற்பனையாளர் லெட்ஜர்கள்", "150 AI விலைப்பட்டியல் ஸ்கேன்கள் / மாதம்"],
+    taFeatures: ["5 செயலில் செயல்திட்டங்கள் வரை", "10 பயனர்கள்", "கொள்முதல், தொழிலாளர் & செலவு", "GRN & சப்ளையர் லெட்ஜர்கள்", "150 AI விலைப்பட்டியல் ஸ்கேன்கள் / மாதம்"],
     cta: "Start 14-day trial", taCta: "14-நாள் சோதனையைத் தொடங்கு",
     highlight: false,
   },
@@ -118,7 +118,7 @@ const plans = [
     annualTotal: "₹17,990 billed yearly", taAnnualTotal: "₹17,990 ஆண்டுதோறும்",
     tag: "For growing firms", taTag: "வளரும் நிறுவனங்களுக்கு",
     features: ["Up to 10 active projects", "25 users", "Everything in Starter", "AI cost analysis & insights", "400 AI invoice scans / mo"],
-    taFeatures: ["10 செயலில் செயல்திட்டங்கள் வரை", "25 பயனர்கள்", "Starter இல் உள்ள அனைத்தும்", "AI செலவு பகுப்பாய்வு & நுண்ணறிவுகள்", "400 AI விலைப்பட்டியல் ஸ்கேன்கள் / மாதம்"],
+    taFeatures: ["10 செயலில் செயல்திட்டங்கள் வரை", "25 பயனர்கள்", "Starter இல் உள்ள அனைத்தும்", "AI செலவு பகுப்பாய்வு & பகுப்பாய்வு", "400 AI விலைப்பட்டியல் ஸ்கேன்கள் / மாதம்"],
     cta: "Get started", taCta: "தொடங்குங்கள்",
     highlight: true,
   },
@@ -130,7 +130,7 @@ const plans = [
     annualTotal: "₹29,990 billed yearly", taAnnualTotal: "₹29,990 ஆண்டுதோறும்",
     tag: "For established firms", taTag: "நிலைபெற்ற நிறுவனங்களுக்கு",
     features: ["Up to 20 active projects", "60 users", "Everything in Growth", "Client estimates & document vault", "1,000 AI scans / mo", "Priority support"],
-    taFeatures: ["20 செயலில் செயல்திட்டங்கள் வரை", "60 பயனர்கள்", "Growth இல் உள்ள அனைத்தும்", "வாடிக்கையாளர் மதிப்பீடுகள் & ஆவண களஞ்சியம்", "1,000 AI ஸ்கேன்கள் / மாதம்", "முன்னுரிமை ஆதரவு"],
+    taFeatures: ["20 செயலில் செயல்திட்டங்கள் வரை", "60 பயனர்கள்", "Growth இல் உள்ள அனைத்தும்", "வாடிக்கையாளர் எஸ்டிமேட் & ஆவணங்கள்", "1,000 AI ஸ்கேன்கள் / மாதம்", "முன்னுரிமை ஆதரவு"],
     cta: "Get started", taCta: "தொடங்குங்கள்",
     highlight: false,
   },
@@ -499,7 +499,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <p className="text-white/70 font-medium leading-relaxed mb-8">
               {L(
                 "No app to train the crew on. Foremen log progress, materials, labour and photos straight from a chat — and it lands live in your dashboards, cost sheets and inventory.",
-                "பணியாளர்களுக்குப் பயிற்சி அளிக்க பயன்பாடு இல்லை. மேற்பார்வையாளர்கள் முன்னேற்றம், பொருட்கள், தொழிலாளர் மற்றும் புகைப்படங்களை நேரடியாக ஒரு அரட்டையிலிருந்து பதிவு செய்கிறார்கள் — அது உங்கள் டாஷ்போர்டுகள், செலவுத் தாள்கள் மற்றும் சரக்கில் நேரடியாக வந்து சேரும்.",
+                "பணியாளர்களுக்குப் பயிற்சி அளிக்க ஆப் தேவையில்லை. மேற்பார்வையாளர்கள் முன்னேற்றம், பொருட்கள், தொழிலாளர் மற்றும் புகைப்படங்களை நேரடியாக ஒரு அரட்டையிலிருந்து பதிவு செய்கிறார்கள் — அது உங்கள் டாஷ்போர்டுகள், செலவுத் தாள்கள் மற்றும் ஸ்டாக்கில் நேரடியாக வந்து சேரும்.",
               )}
             </p>
             <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-[#B85F3B]" />
@@ -509,7 +509,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               { t: "/log", s: "Start a progress update", sTa: "முன்னேற்றப் புதுப்பிப்பைத் தொடங்கு" },
               { t: "Excavation → 80%", s: "Pick a task, set progress", sTa: "பணியைத் தேர்ந்தெடு, முன்னேற்றத்தை அமை" },
               { t: "📦 Cement · 50 bags", s: "Add materials & labour", sTa: "பொருட்கள் & தொழிலாளர் சேர்" },
-              { t: "✅ Logged", s: "Synced to cost, WBS & inventory", sTa: "செலவு, WBS & சரக்குடன் ஒத்திசைக்கப்பட்டது" },
+              { t: "✅ Logged", s: "Synced to cost, WBS & inventory", sTa: "செலவு, WBS & ஸ்டாக்குடன் ஒத்திசைக்கப்பட்டது" },
             ].map((m, i) => (
               <div key={i} className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3">
                 <div className="bg-[#229ED9] w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
