@@ -15,7 +15,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ---- Navigation ----
     "nav.dashboard": "Dashboard",
-    "nav.insights": "AI Insights",
+    "nav.insights": "Project Insights",
     "nav.wbs": "WBS",
     "nav.dailylogs": "Daily Logs",
     "nav.labor": "Labor & Billing",
@@ -83,7 +83,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.recentActivity": "Recent Activity",
     "dashboard.quickActions": "Quick Actions",
     "dashboard.eyebrow": "Project Dashboard",
-    "dashboard.heroTitle": "Project Intelligence",
+    "dashboard.heroTitle": "Project Dashboard",
     "dashboard.heroSubtitle":
       "Real-time synchronization of project tasks and critical path analysis.",
     "dashboard.sessionUser": "Session User",
@@ -130,7 +130,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "reports.pdfFailed": "Couldn't generate the PDF. Please try again.",
 
     // ---- AI Insights ----
-    "insights.title": "AI Project Insights",
+    "insights.title": "Project Insights",
     "insights.subtitle":
       "A model reads this project's costs, schedule, and daily logs to produce a cost-variance read, schedule-slippage flags, an executive digest, and a shareable site report.",
     "insights.lastGenerated": "Last generated {when}",
@@ -531,7 +531,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ---- Navigation ----
     "nav.dashboard": "டாஷ்போர்டு",
-    "nav.insights": "AI நுண்ணறிவு",
+    "nav.insights": "செயல்திட்ட நுண்ணறிவு",
     "nav.wbs": "பணிப் பிரிவு",
     "nav.dailylogs": "தினசரி பதிவுகள்",
     "nav.labor": "தொழிலாளர் & பில்லிங்",
@@ -599,7 +599,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.recentActivity": "சமீபத்திய செயல்பாடு",
     "dashboard.quickActions": "விரைவு செயல்கள்",
     "dashboard.eyebrow": "செயல்திட்ட டாஷ்போர்டு",
-    "dashboard.heroTitle": "செயல்திட்ட நுண்ணறிவு",
+    "dashboard.heroTitle": "செயல்திட்ட டாஷ்போர்டு",
     "dashboard.heroSubtitle":
       "செயல்திட்ட பணிகள் மற்றும் முக்கியப் பாதை பகுப்பாய்வின் நிகழ்நேர ஒத்திசைவு.",
     "dashboard.sessionUser": "அமர்வு பயனர்",
@@ -646,7 +646,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "reports.pdfFailed": "PDF ஐ உருவாக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
 
     // ---- AI Insights ----
-    "insights.title": "AI செயல்திட்ட நுண்ணறிவு",
+    "insights.title": "செயல்திட்ட நுண்ணறிவு",
     "insights.subtitle":
       "இந்த செயல்திட்டத்தின் செலவுகள், அட்டவணை மற்றும் தினசரி பதிவுகளை AI படித்து, செலவு வேறுபாடு, அட்டவணை தாமதக் குறிப்புகள், நிர்வாகச் சுருக்கம் மற்றும் பகிரக்கூடிய தள அறிக்கையை உருவாக்குகிறது.",
     "insights.lastGenerated": "கடைசியாக உருவாக்கப்பட்டது {when}",
