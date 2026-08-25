@@ -212,6 +212,23 @@ export const callVerifyRazorpayPayment = async (args: {
   return res.data;
 };
 
+// Owner/Admin: schedule a downgrade to a lower plan, effective at the end of
+// the current paid cycle. The org keeps its current plan until then.
+export const callScheduleDowngrade = async (args: { targetPlan: string; orgId?: string }) => {
+  const fn = httpsCallable<typeof args, { scheduled: boolean; targetPlan: string; effectiveAt: number }>(
+    getFunctionsInstance(), 'scheduleDowngrade');
+  const res = await fn(args);
+  return res.data;
+};
+
+// Owner/Admin: cancel a scheduled downgrade — the org keeps its current plan.
+export const callCancelScheduledPlanChange = async (args: { orgId?: string } = {}) => {
+  const fn = httpsCallable<typeof args, { canceled: boolean }>(
+    getFunctionsInstance(), 'cancelScheduledPlanChange');
+  const res = await fn(args);
+  return res.data;
+};
+
 // ---- Data-subject rights (export / erasure) ----
 
 // Download a machine-readable copy of the caller's profile and (for Owners/

@@ -4,6 +4,11 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { useAuthStore } from "../store";
 import { OVERAGE_RATE } from "../lib/plans";
 
+export interface PendingPlanChange {
+  plan: string;        // target plan the org will move to
+  effectiveAt: number; // epoch ms — when the downgrade applies
+}
+
 export interface OrgPlan {
   loading: boolean;
   plan?: string;                     // free | starter | growth | business | enterprise
@@ -11,6 +16,9 @@ export interface OrgPlan {
   userLimit?: number | null;
   aiQuota?: number | null;
   overageRate: number;
+  subscriptionStatus?: string;
+  currentPeriodEnd?: number;         // epoch ms; end of the paid cycle
+  pendingPlanChange?: PendingPlanChange | null; // scheduled end-of-cycle downgrade
 }
 
 // Realtime plan/capacity for the signed-in user's current org. Absent
@@ -36,6 +44,9 @@ export function usePlan(): OrgPlan {
           userLimit: d.userLimit,
           aiQuota: d.aiQuota,
           overageRate: Number(d.overageRate) || OVERAGE_RATE,
+          subscriptionStatus: d.subscriptionStatus,
+          currentPeriodEnd: typeof d.currentPeriodEnd === "number" ? d.currentPeriodEnd : undefined,
+          pendingPlanChange: d.pendingPlanChange || null,
         });
       },
       () => setState({ loading: false, overageRate: OVERAGE_RATE }),

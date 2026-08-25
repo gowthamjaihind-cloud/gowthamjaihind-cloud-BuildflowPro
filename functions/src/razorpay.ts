@@ -202,7 +202,13 @@ async function activateOrgFromOrder(orderId: string): Promise<boolean> {
   // Clear the pay-now sweep markers so the abandoned-checkout cleanup leaves
   // this (now-paid) org alone.
   await db.doc(`organizations/${o.orgId}`).set(
-    { ...planPatch(o.plan as PlanId, months), pendingPayment: FieldValue.delete(), pendingPlan: FieldValue.delete() },
+    {
+      ...planPatch(o.plan as PlanId, months),
+      pendingPayment: FieldValue.delete(),
+      pendingPlan: FieldValue.delete(),
+      // Paying for a plan supersedes any scheduled end-of-cycle downgrade.
+      pendingPlanChange: FieldValue.delete(),
+    },
     { merge: true },
   );
   // Link the buyer into the org — a self-serve pay-now org is created unlinked
