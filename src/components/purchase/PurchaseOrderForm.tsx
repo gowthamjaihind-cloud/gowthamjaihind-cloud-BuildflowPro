@@ -256,8 +256,20 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                  </button>
               </div>
 
-              {items.map((item, idx) => (
-                <div key={idx} className="flex flex-col sm:flex-row gap-3 items-end p-4 bg-panel rounded-xl group/row">
+              {items.map((item, idx) => {
+                // Inline price insight: compare the entered rate against the
+                // material's known average cost so a buyer sees, right there,
+                // whether they're paying more (red) or less (green) than before.
+                const inv = item.itemId ? inventory.find(i => i.id === item.itemId) : undefined;
+                const refRate = inv ? ((inv.avgUnitCost && inv.avgUnitCost > 0) ? inv.avgUnitCost : inv.unitCost) : 0;
+                const rate = item.rate || 0;
+                const showDelta = selectedVendor?.type !== "Labor" && refRate > 0 && rate > 0;
+                const diff = rate - refRate;
+                const pct = refRate > 0 ? (diff / refRate) * 100 : 0;
+                const inr = (n: number) => `₹${Math.abs(n).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+                return (
+                <div key={idx} className="space-y-1">
+                <div className="flex flex-col sm:flex-row gap-3 items-end p-4 bg-panel rounded-xl group/row">
                   <div className="flex-1 w-full space-y-1.5">
                     <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest ml-1">Item</label>
                     <select
@@ -308,7 +320,21 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                     </button>
                   )}
                 </div>
-              ))}
+                {showDelta && (
+                  <div className={`px-4 pb-1 text-[11px] font-semibold flex items-center gap-1.5 ${diff > 0 ? "text-danger" : diff < 0 ? "text-success" : "text-ink-muted"}`}>
+                    <span aria-hidden>{diff > 0 ? "▲" : diff < 0 ? "▼" : "="}</span>
+                    {diff === 0 ? (
+                      <span>Same as the last average price ({inr(refRate)}).</span>
+                    ) : (
+                      <span>
+                        {inr(rate)} is {inr(diff)} {diff > 0 ? "above" : "below"} the last average of {inr(refRate)}{" "}
+                        ({diff > 0 ? "+" : "−"}{Math.abs(pct).toFixed(1)}%)
+                      </span>
+                    )}
+                  </div>
+                )}
+                </div>
+              );})}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4 pt-6 border-t border-divider">
