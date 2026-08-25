@@ -12,6 +12,10 @@ export const InventoryAnalyticsDashboard: React.FC<{ projectId: string }> = ({ p
   const { t } = useTranslation();
   const dark = useUIStore((s) => s.darkMode);
   const { data: items = [] } = useProjectDataQuery<InventoryItem>(projectId, "inventory");
+  // Consumption is derived from the material-issue records, which every daily
+  // log writes. The inventory item's `consumed` field is only back-filled by a
+  // Cloud Function, so relying on it alone left this view empty.
+  const { data: issues = [] } = useProjectDataQuery<any>(projectId, "material_issues");
   const [view, setView] = useState<ViewId>("stock");
   const bar = dark ? "#2A86C4" : "#0F79B8";
 
@@ -20,10 +24,23 @@ export const InventoryAnalyticsDashboard: React.FC<{ projectId: string }> = ({ p
     const stockRows: { name: string; value: number }[] = [];
     const consRows: { name: string; value: number }[] = [];
     const lowRows: InventoryItem[] = [];
+    // Issued value per material, from the authoritative issue records.
+    const issuedByItem = new Map<string, number>();
+    for (const iss of issues as any[]) {
+      for (const li of iss.items || []) {
+        const key = li.itemId || li.materialId;
+        if (!key) continue;
+        const val = li.totalPrice != null
+          ? li.totalPrice
+          : (li.quantity || 0) * (li.unitCost || 0);
+        issuedByItem.set(key, (issuedByItem.get(key) || 0) + (val || 0));
+      }
+    }
     for (const it of items as InventoryItem[]) {
       const cost = it.unitCost || it.avgUnitCost || 0;
       const sv = (it.quantity || 0) * cost;
-      const cv = (it.consumed || 0) * cost;
+      // Prefer the issue records; fall back to the denormalised `consumed`.
+      const cv = issuedByItem.get(it.id) ?? (it.consumed || 0) * cost;
       stockValue += sv; consumedValue += cv;
       if (sv > 0) stockRows.push({ name: it.name, value: Math.round(sv) });
       if (cv > 0) consRows.push({ name: it.name, value: Math.round(cv) });
@@ -35,7 +52,7 @@ export const InventoryAnalyticsDashboard: React.FC<{ projectId: string }> = ({ p
       stockValue, itemsCount: (items as InventoryItem[]).length, lowCount, consumedValue,
       stockRows: stockRows.slice(0, 10), consRows: consRows.slice(0, 10), lowRows,
     };
-  }, [items]);
+  }, [items, issues]);
 
   if ((items as InventoryItem[]).length === 0) {
     return (
