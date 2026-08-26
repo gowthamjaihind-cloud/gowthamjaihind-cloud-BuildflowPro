@@ -902,6 +902,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               Vendor ecosystem and tracking.
             </p>
           </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <button
             onClick={() => {
               setIsEditingVendor(false);
@@ -921,6 +922,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           >
             <span>From master{masters.length ? ` (${masters.length})` : ""}</span>
           </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
