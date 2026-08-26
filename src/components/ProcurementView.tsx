@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { useTranslation } from "../i18n";
+import { demoRequested } from "../demo";
+import {
+  demoCollections,
+} from "@demo";
 import {
   listMasterVendors,
   saveMasterVendor,
@@ -274,6 +278,17 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   });
 
   useEffect(() => {
+    // This screen subscribes to Firestore directly rather than going through
+    // the shared query layer, so demo mode has to be handled here too.
+    if (__DEMO__ && demoRequested()) {
+      setVendors((demoCollections.suppliers || []) as any);
+      setReceipts((demoCollections.receipts || []) as any);
+      setLedger((demoCollections.ledger || []) as any);
+      setInventory((demoCollections.inventory || []) as any);
+      setPurchaseOrders((demoCollections.purchase_orders || []) as any);
+      setGrns((demoCollections.goodsReceiptNotes || []) as any);
+      return;
+    }
     const vendorsPath = `${basePath}/suppliers`;
     const receiptsPath = `${basePath}/receipts`;
     const ledgerPath = `${basePath}/ledger`;

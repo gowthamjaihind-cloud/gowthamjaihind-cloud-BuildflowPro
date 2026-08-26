@@ -9,3 +9,4 @@ coverage/
 .env*
 !.env.example
 .firebase/
+dist-demo

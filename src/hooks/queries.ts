@@ -5,6 +5,8 @@ import { useEffect } from "react";
 import { Project, Task } from "../types";
 import { useAuthStore } from "../store";
 import { getProjectBasePath, getProjectSubCollectionPath } from "../utils/projectPath";
+import { demoRequested } from "../demo";
+import { demoCollections, demoProjects, demoTasks, DEMO_PROJECT_ID } from "@demo";
 
 export function useProjectDataQuery<T>(
   projectId: string,
@@ -18,6 +20,7 @@ export function useProjectDataQuery<T>(
   return useQuery({
     queryKey: ['projectData', projectId, type, orderByField, orderDirection],
     queryFn: async () => {
+      if (__DEMO__ && demoRequested()) return (demoCollections[type] || []) as T[];
       try {
         const path = `${basePath}/${type}`;
         let queryObj = query(collection(db, path));
@@ -43,6 +46,7 @@ export function useProjectsQuery() {
   return useQuery({
     queryKey: queryKeys.projects,
     queryFn: async () => {
+      if (__DEMO__ && demoRequested()) return demoProjects as any as Project[];
       if (!user) return [];
       
       const projectsList: Project[] = [];
@@ -99,6 +103,9 @@ export function useProjectQuery(projectId: string) {
   return useQuery({
     queryKey: queryKeys.project(projectId),
     queryFn: async () => {
+      if (__DEMO__ && demoRequested()) {
+        return (demoProjects.find((p) => p.id === projectId) || demoProjects[0]) as any as Project;
+      }
       if (!user || !projectId) return null;
       
       // Try tenant path first if user has currentOrgId
@@ -137,6 +144,7 @@ export function useTasksQuery(projectId: string) {
   // other) reflect immediately — the initial getDocs below just paints fast
   // from cache on mount, then the snapshot takes over and never goes stale.
   useEffect(() => {
+    if (__DEMO__ && demoRequested()) return; // no Firestore subscription in demo mode
     if (!user || !projectId) return;
     const tenantPath = getProjectSubCollectionPath(projectId, "tasks");
     const unsubscribe = onSnapshot(
@@ -155,6 +163,9 @@ export function useTasksQuery(projectId: string) {
   return useQuery({
     queryKey: queryKeys.tasks(projectId),
     queryFn: async () => {
+      if (__DEMO__ && demoRequested()) {
+        return (projectId === DEMO_PROJECT_ID ? demoTasks : []) as any as Task[];
+      }
       if (!user || !projectId) return [];
       const tenantPath = getProjectSubCollectionPath(projectId, "tasks");
       const snapshot = await getDocs(query(collection(db, tenantPath)));

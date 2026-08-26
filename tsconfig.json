@@ -18,10 +18,14 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@demo": [
+        "./src/demo/demoData.ts"
       ]
     },
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": "."
   },
   "exclude": [
     "dist",
