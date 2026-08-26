@@ -12,12 +12,30 @@ import {
 import { UserProfile } from "../types";
 import { useAuthStore } from "../store";
 import { readPendingConsent, clearPendingConsent, TERMS_VERSION } from "../lib/legal";
+import { demoRequested } from "../demo";
 
 export function useAuthInit() {
   const setUser = useAuthStore((state) => state.setUser);
   const setLoading = useAuthStore((state) => state.setLoading);
 
   useEffect(() => {
+    if (__DEMO__ && demoRequested()) {
+      // Written inline rather than imported: with __DEMO__ folded to false the
+      // minifier deletes this block outright, so nothing here can reach a
+      // production bundle. An import would survive as a live binding.
+      setUser({
+        uid: "demo-user",
+        email: "demo@sitetru.com",
+        displayName: "Demo Owner",
+        role: "Owner",
+        currentOrgId: "demo-org",
+        orgIds: ["demo-org"],
+        legal: { termsVersion: "2026-08-25", acceptedAt: "2026-08-26T00:00:00.000Z" },
+      } as any);
+      setLoading(false);
+      return;
+    }
+
     let unsubscribeUser: (() => void) | undefined;
 
     const unsubscribeAuth = auth.onAuthStateChanged(async (firebaseUser) => {

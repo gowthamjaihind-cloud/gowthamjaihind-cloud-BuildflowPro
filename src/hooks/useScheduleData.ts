@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { demoRequested } from "../demo";
+import { demoTasks, DEMO_PROJECT_ID } from "@demo";
 import { query, onSnapshot, doc, setDoc } from "firebase/firestore";
 import { collection, db } from "../firebase";
 import { useAuthStore } from "../store";
@@ -40,6 +42,65 @@ export function useScheduleData(projectId: string) {
   const user = useAuthStore(state => state.user);
 
   useEffect(() => {
+    if (__DEMO__ && demoRequested()) {
+      // Build the same ScheduleTask shape the Firestore parser produces —
+      // including rawTask, which ScheduleView hands straight to the Gantt.
+      setTasks(
+        (projectId === DEMO_PROJECT_ID ? demoTasks : [])
+          .filter((t: any) => !t.isSystemGenerated)
+          .map((t: any) => {
+            let status: TaskStatus = "scheduled";
+            if (t.status === "Completed" || t.progress === 100) status = "done";
+            else if (t.status === "Delayed" || t.status === "Blocked") status = "blocked";
+            else if (t.progress > 0 || t.status === "In Progress") status = "in_progress";
+            return {
+              id: t.id,
+              projectId: t.projectId || projectId,
+              phaseId: t.phase || "Phase 1",
+              title: t.name || "Unnamed Task",
+              assigneeName: t.assignedTo,
+              startDate: new Date(t.startDate),
+              endDate: new Date(t.endDate),
+              progress: t.progress || 0,
+              status,
+              blockedReason: undefined,
+              dependsOnTaskIds: t.dependencies || [],
+              rawTask: t,
+            };
+          }) as any,
+      );
+      // Phases are grouped the same way the live parser groups them, so the
+      // phase strip and the Gantt agree.
+      const demoParsed = (projectId === DEMO_PROJECT_ID ? demoTasks : []).filter(
+        (t: any) => !t.isSystemGenerated,
+      );
+      const groups = demoParsed.reduce((acc: Record<string, any[]>, t: any) => {
+        const pid = t.phase || "Phase 1";
+        (acc[pid] ||= []).push(t);
+        return acc;
+      }, {});
+      setPhases(
+        Object.keys(groups).map((phaseName) => {
+          const pt = groups[phaseName];
+          const minStart = new Date(Math.min(...pt.map((t: any) => new Date(t.startDate).getTime())));
+          const maxEnd = new Date(Math.max(...pt.map((t: any) => new Date(t.endDate).getTime())));
+          const totalProg = pt.reduce((sum: number, t: any) => sum + (t.progress || 0), 0) / (pt.length || 1);
+          const behind = totalProg < 30 && minStart < new Date();
+          return {
+            id: phaseName,
+            name: phaseName,
+            startDate: minStart,
+            endDate: maxEnd,
+            progress: Math.round(totalProg),
+            unitsLabel: "All Units",
+            scheduleHealth: behind ? "behind" : "on_schedule",
+            healthLabel: behind ? "Behind Schedule" : "On Track",
+          };
+        }) as any,
+      );
+      setLoading(false);
+      return;
+    }
     if (!user || !projectId) {
       setLoading(false);
       return;
