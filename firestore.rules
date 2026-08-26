@@ -82,6 +82,15 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // ---- Organisation master data ----
+      // Shared across every project in the org, so it is created once and
+      // reused. Any member may read (pickers need it); only an Admin or
+      // Manager may change a master.
+      match /wbs_templates/{templateId} {
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && isAdminOrManager();
+      }
+
       match /projects/{projectId} {
         allow read: if isOrgMember(orgId);
         allow write: if isOrgMember(orgId) && isAdminOrManager();

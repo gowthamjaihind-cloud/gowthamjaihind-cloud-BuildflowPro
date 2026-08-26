@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X,
@@ -18,6 +18,12 @@ import {
   templateTaskCount,
   templateCalendarDays,
 } from "../../../lib/wbsTemplates";
+import {
+  listSavedTemplates,
+  asTemplate,
+  deleteTemplate,
+  SavedWbsTemplate,
+} from "../../../services/wbsTemplateService";
 import { collection, doc, writeBatch } from "firebase/firestore";
 import { db } from "../../../firebase";
 import { getProjectSubCollectionPath } from "../../../utils/projectPath";
@@ -37,6 +43,31 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   const L = useL();
   // Optional WBS starter structure. "" = start with an empty breakdown.
   const [templateId, setTemplateId] = useState<string>("");
+  // The org's own saved structures sit alongside the built-in starters, and
+  // come first — a customer's real breakdown beats a generic one.
+  const [saved, setSaved] = useState<SavedWbsTemplate[]>([]);
+  useEffect(() => {
+    if (!isOpen) return;
+    let alive = true;
+    listSavedTemplates().then((rows) => { if (alive) setSaved(rows); });
+    return () => { alive = false; };
+  }, [isOpen]);
+  const allTemplates = useMemo(
+    () => [...saved.map(asTemplate), ...WBS_TEMPLATES],
+    [saved],
+  );
+
+  // Saved templates need a way out, or the picker silently fills with junk.
+  const removeSaved = async (savedId: string, name: string) => {
+    if (!window.confirm(L(`Delete the template "${name}"? Projects already created from it are not affected.`, `"${name}" டெம்ப்ளேட்டை நீக்கவா? அதிலிருந்து ஏற்கனவே உருவாக்கின செயல்திட்டங்கள் பாதிக்கப்படாது.`))) return;
+    try {
+      await deleteTemplate(savedId);
+      setSaved((rows) => rows.filter((r) => r.id !== savedId));
+      setTemplateId((cur) => (cur === `saved:${savedId}` ? "" : cur));
+    } catch {
+      alert(L("Couldn't delete that template.", "அந்த டெம்ப்ளேட்டை நீக்க முடியல."));
+    }
+  };
   const [newProject, setNewProject] = useState({
     name: "",
     description: "",
@@ -94,7 +125,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   // are created first so each child can carry its parentId; everything goes in
   // one batch so a project is never left half-seeded.
   const seedWbs = async (projectId: string) => {
-    const template = WBS_TEMPLATES.find((x) => x.id === templateId);
+    const template = allTemplates.find((x) => x.id === templateId);
     if (!template) return;
     const start = newProject.startDate ? new Date(newProject.startDate) : new Date();
     const planned = planFromTemplate(template, isNaN(start.getTime()) ? new Date() : start);
@@ -365,7 +396,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     {L("Build the WBS yourself", "நீங்களே WBS உருவாக்குங்க")}
                   </p>
                 </button>
-                {WBS_TEMPLATES.map((tpl) => {
+                {allTemplates.map((tpl) => {
                   const on = templateId === tpl.id;
                   return (
                     <button
@@ -380,8 +411,23 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     >
                       <div className="flex items-center justify-between gap-2">
                         <p className="font-bold text-ink text-sm">{tpl.name}</p>
-                        <span className="text-[9px] font-black uppercase tracking-wider text-ink-muted shrink-0">
-                          {tpl.category}
+                        <span className="flex items-center gap-1.5 shrink-0">
+                          <span className={`text-[9px] font-black uppercase tracking-wider ${tpl.category === "Saved" ? "text-primary" : "text-ink-muted"}`}>
+                            {tpl.category === "Saved" ? L("Yours", "உங்களது") : tpl.category}
+                          </span>
+                          {tpl.id.startsWith("saved:") && (
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              aria-label={L("Delete template", "டெம்ப்ளேட்டை நீக்கு")}
+                              onClick={(e) => { e.stopPropagation(); removeSaved(tpl.id.slice(6), tpl.name); }}
+                              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); removeSaved(tpl.id.slice(6), tpl.name); } }}
+                              className="text-ink-muted hover:text-danger apple-transition cursor-pointer text-sm leading-none px-1"
+                              title={L("Delete template", "டெம்ப்ளேட்டை நீக்கு")}
+                            >
+                              ×
+                            </span>
+                          )}
                         </span>
                       </div>
                       <p className="text-[12px] text-ink-muted mt-0.5">{tpl.description}</p>

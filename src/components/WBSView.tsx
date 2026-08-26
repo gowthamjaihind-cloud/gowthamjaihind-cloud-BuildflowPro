@@ -45,6 +45,7 @@ import {
   CurrencyInr as IndianRupee,
   Pulse as Activity,
   ArrowsClockwise as RefreshCw,
+  BookmarkSimple,
   Users,
   Cube as Box,
   FileText,
@@ -70,6 +71,8 @@ import { calculateCPM, autoShiftTasks } from "../services/schedulingService";
 import { RoleGuard } from "./RoleGuard";
 import { useTaskStore, useProjectDataStore } from "../store";
 import { useTasksQuery } from "../hooks/queries";
+import { tasksToTemplateNodes } from "../lib/wbsTemplates";
+import { saveTemplate, countLeaves } from "../services/wbsTemplateService";
 
 import { useAuthStore } from "../store";
 import { useProjectData } from "../hooks/useProjectData";
@@ -254,6 +257,46 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
       }));
     }
   }, [isAdding, tasks]);
+
+  // Save this project's breakdown as a reusable org template. Keeps the
+  // hierarchy, names and durations; drops dates, progress and costs.
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const handleSaveAsTemplate = async () => {
+    const nodes = tasksToTemplateNodes(tasks as any);
+    const leaves = countLeaves(nodes);
+    if (!nodes.length || !leaves) {
+      alert("There's no breakdown to save yet — add some tasks first.");
+      return;
+    }
+    const name = window.prompt(
+      `Save this breakdown as a template?\n\n${nodes.length} phases, ${leaves} tasks. It will be available on every new project in your organisation.\n\nName:`,
+      "",
+    );
+    if (name === null) return;
+    if (!name.trim()) {
+      alert("Give the template a name so you can recognise it later.");
+      return;
+    }
+    setSavingTemplate(true);
+    try {
+      await saveTemplate({
+        name,
+        nodes,
+        projectId,
+        projectName: (tasks as any[])[0]?.projectName,
+      });
+      alert(`Saved. "${name.trim()}" will now appear when you create a project.`);
+    } catch (err: any) {
+      console.error("Save template failed", err);
+      alert(
+        err?.code === "permission-denied"
+          ? "Only an Owner, Admin or Manager can save a template."
+          : "Couldn't save the template. Please try again.",
+      );
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1121,6 +1164,14 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                   title="Recalculate all dates"
                 >
                   <RefreshCw className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleSaveAsTemplate}
+                  disabled={savingTemplate}
+                  className="p-2 text-ink-muted hover:text-primary hover:bg-surface hover:shadow-sm rounded-xl transition-all disabled:opacity-40"
+                  title="Save this breakdown as a reusable template"
+                >
+                  <BookmarkSimple className="w-4 h-4" />
                 </button>
               </div>
             </div>
