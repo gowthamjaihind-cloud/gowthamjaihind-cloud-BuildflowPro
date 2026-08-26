@@ -19,6 +19,7 @@ import {
   PencilSimple as Edit2,
   TelegramLogo,
   LockKey,
+  Database,
 } from "@phosphor-icons/react";
 import { Project, UserProfile } from "../types";
 import { EnterpriseAuthView } from "./EnterpriseAuthView";
@@ -26,6 +27,7 @@ import { useUIStore } from "../store";
 import { useOrgSettings } from "../hooks/useOrgSettings";
 import { callSetupOrganization } from "../services/firebaseFunctions";
 import { TeamPanel } from "./settings/TeamPanel";
+import { MastersPanel } from "./settings/MastersPanel";
 import { OperatorPanel } from "./settings/OperatorPanel";
 import { PrivacyPanel } from "./settings/PrivacyPanel";
 import { PlanSummary } from "./settings/PlanSummary";
@@ -49,6 +51,7 @@ type SettingsSection =
   | "operator"
   | "appearance"
   | "privacy"
+  | "masters"
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   onBack,
@@ -111,6 +114,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 icon: LayoutDashboard,
               },
               { id: "team", label: t("settings.tabTeam"), icon: Users },
+              { id: "masters", label: L("Master data", "மாஸ்டர் தரவு"), icon: Database },
               { id: "telegram", label: t("settings.tabTelegram"), icon: TelegramLogo },
               ...(SUPER_ADMIN_EMAILS.includes((currentUser?.email || "").toLowerCase())
                 ? [{ id: "operator", label: t("settings.tabOperator"), icon: Shield }]
@@ -149,6 +153,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
 
             {activeTab === "team" && <TeamPanel />}
+
+            {activeTab === "masters" && <MastersPanel />}
 
             {activeTab === "privacy" && <PrivacyPanel currentUser={currentUser} />}
 
