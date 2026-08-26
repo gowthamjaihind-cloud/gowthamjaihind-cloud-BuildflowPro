@@ -4,12 +4,14 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
+  writeBatch,
   query,
   orderBy,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import { InventoryItem } from "../types";
+import { round2, round3 } from "../utils/num";
 
 // Organisation material master.
 //
@@ -119,4 +121,49 @@ export function toProjectInventoryItem(
     unitCost: master.indicativeRate || 0,
     minThreshold: master.minThreshold ?? 0,
   };
+}
+
+// ---------------------------------------------------------------------------
+// One-off tidy for records written before rates were rounded at source.
+// ---------------------------------------------------------------------------
+
+/** Masters whose stored numbers carry more precision than we display. */
+export function findUntidyMaterials(masters: MasterMaterial[]): MasterMaterial[] {
+  return masters.filter((m) => {
+    const rate = m.indicativeRate;
+    const min = m.minThreshold;
+    const rateOff = rate != null && Number.isFinite(Number(rate)) && round2(rate) !== rate;
+    const minOff = min != null && Number.isFinite(Number(min)) && round3(min) !== min;
+    return rateOff || minOff;
+  });
+}
+
+/**
+ * Rewrite the untidy masters with rounded values. Only the numeric fields are
+ * touched, so nothing else about the record changes. Idempotent — running it
+ * again finds nothing to do.
+ */
+export async function tidyMasterMaterials(
+  masters: MasterMaterial[],
+): Promise<{ updated: number }> {
+  const path = mastersPath();
+  if (!path) throw new Error("No organisation selected.");
+  const untidy = findUntidyMaterials(masters);
+  if (!untidy.length) return { updated: 0 };
+
+  // Batches cap at 500 writes; chunk so a large master list still succeeds.
+  let updated = 0;
+  for (let i = 0; i < untidy.length; i += 400) {
+    const slice = untidy.slice(i, i + 400);
+    const batch = writeBatch(db);
+    for (const m of slice) {
+      const patch: Record<string, number> = {};
+      if (m.indicativeRate != null) patch.indicativeRate = round2(m.indicativeRate);
+      if (m.minThreshold != null) patch.minThreshold = round3(m.minThreshold);
+      batch.set(doc(db, path, m.id), patch, { merge: true });
+    }
+    await batch.commit();
+    updated += slice.length;
+  }
+  return { updated };
 }
