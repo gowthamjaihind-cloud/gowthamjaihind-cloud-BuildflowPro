@@ -91,6 +91,15 @@ service cloud.firestore {
         allow write: if isOrgMember(orgId) && isAdminOrManager();
       }
 
+      // Vendor master — the supplier's DEFINITION only (name, GSTIN, contact).
+      // Balances, ledgers and purchase orders stay project-scoped; a project
+      // vendor is created by copying from here, so the financial paths are
+      // untouched by this collection.
+      match /vendors/{vendorId} {
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && isAdminOrManager();
+      }
+
       match /projects/{projectId} {
         allow read: if isOrgMember(orgId);
         allow write: if isOrgMember(orgId) && isAdminOrManager();
