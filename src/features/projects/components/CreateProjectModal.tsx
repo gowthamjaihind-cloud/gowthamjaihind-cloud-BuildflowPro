@@ -11,7 +11,16 @@ import { usePlan } from "../../../hooks/usePlan";
 import { projectCapState } from "../../../lib/plans";
 import { UserProfile } from "../../../types";
 import { AddCapacityModal } from "../../../components/AddCapacityModal";
-import { useTranslation } from "../../../i18n";
+import { useTranslation, useL } from "../../../i18n";
+import {
+  WBS_TEMPLATES,
+  planFromTemplate,
+  templateTaskCount,
+  templateCalendarDays,
+} from "../../../lib/wbsTemplates";
+import { collection, doc, writeBatch } from "firebase/firestore";
+import { db } from "../../../firebase";
+import { getProjectSubCollectionPath } from "../../../utils/projectPath";
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -25,6 +34,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   user,
 }) => {
   const { t } = useTranslation();
+  const L = useL();
+  // Optional WBS starter structure. "" = start with an empty breakdown.
+  const [templateId, setTemplateId] = useState<string>("");
   const [newProject, setNewProject] = useState({
     name: "",
     description: "",
@@ -78,14 +90,58 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
   // The actual create. Called directly when within cap, or after the user adds
   // capacity (buys slots / upgrades) from the AddCapacityModal.
+  // Write the chosen template's phases and tasks into the new project. Parents
+  // are created first so each child can carry its parentId; everything goes in
+  // one batch so a project is never left half-seeded.
+  const seedWbs = async (projectId: string) => {
+    const template = WBS_TEMPLATES.find((x) => x.id === templateId);
+    if (!template) return;
+    const start = newProject.startDate ? new Date(newProject.startDate) : new Date();
+    const planned = planFromTemplate(template, isNaN(start.getTime()) ? new Date() : start);
+    const path = getProjectSubCollectionPath(projectId, "tasks");
+    const batch = writeBatch(db);
+    const ids: string[] = planned.map(() => doc(collection(db, path)).id);
+    planned.forEach((node, i) => {
+      batch.set(doc(db, path, ids[i]), {
+        projectId,
+        parentId: node.parentIndex === -1 ? null : ids[node.parentIndex],
+        name: node.name,
+        type: node.type,
+        phase: node.phase,
+        startDate: node.startDate,
+        endDate: node.endDate,
+        duration: node.duration,
+        progress: 0,
+        status: "Pending",
+        dependencies: [],
+        budgetedCost: 0,
+        createdAt: new Date().toISOString(),
+      });
+    });
+    await batch.commit();
+  };
+
   const doCreate = async () => {
-    await projectService.createProject(
+    const newId = await projectService.createProject(
       {
         ...newProject,
         strictDataEntry: true,
       },
       user.uid
     );
+    if (newId && templateId) {
+      try {
+        await seedWbs(newId);
+      } catch (err) {
+        // The project exists either way — surface the seeding failure without
+        // losing it, so the user can add the breakdown manually.
+        console.error("WBS template seeding failed", err);
+        alert(L(
+          "The project was created, but the task breakdown could not be added. You can add it from the WBS tab.",
+          "செயல்திட்டம் உருவாக்கப்பட்டது, ஆனா பணிப் பட்டியலைச் சேர்க்க முடியல. WBS தாவல்ல சேர்த்துக்கலாம்."
+        ));
+      }
+    }
 
     setNewProject({
       name: "",
@@ -278,6 +334,63 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     setNewProject({ ...newProject, endDate: e.target.value })
                   }
                 />
+              </div>
+            </div>
+
+            {/* WBS starter template — seeds the breakdown so a new project
+                doesn't open empty. Every task stays editable afterwards. */}
+            <div className="mt-8 relative z-10 space-y-3">
+              <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                <label className="text-[13px] font-bold text-ink-muted ml-1">
+                  {L("Start from a template", "டெம்ப்ளேட்டில் இருந்து தொடங்கு")}
+                </label>
+                <span className="text-[11px] text-ink-muted">
+                  {L("Optional · every task stays editable", "விருப்பம் · எல்லா பணியும் மாற்றக்கூடியது")}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setTemplateId("")}
+                  className={`text-left p-4 rounded-2xl border apple-transition ${
+                    templateId === ""
+                      ? "border-primary/50 ring-1 ring-primary/25 bg-primary/5"
+                      : "border-divider bg-surface/50 hover:bg-surface"
+                  }`}
+                >
+                  <p className="font-bold text-ink text-sm">
+                    {L("Empty breakdown", "காலி பட்டியல்")}
+                  </p>
+                  <p className="text-[12px] text-ink-muted mt-0.5">
+                    {L("Build the WBS yourself", "நீங்களே WBS உருவாக்குங்க")}
+                  </p>
+                </button>
+                {WBS_TEMPLATES.map((tpl) => {
+                  const on = templateId === tpl.id;
+                  return (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => setTemplateId(tpl.id)}
+                      className={`text-left p-4 rounded-2xl border apple-transition ${
+                        on
+                          ? "border-primary/50 ring-1 ring-primary/25 bg-primary/5"
+                          : "border-divider bg-surface/50 hover:bg-surface"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-bold text-ink text-sm">{tpl.name}</p>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-ink-muted shrink-0">
+                          {tpl.category}
+                        </span>
+                      </div>
+                      <p className="text-[12px] text-ink-muted mt-0.5">{tpl.description}</p>
+                      <p className="text-[11px] font-mono text-primary mt-1.5">
+                        {templateTaskCount(tpl)} {L("tasks", "பணிகள்")} · ~{templateCalendarDays(tpl)} {L("days", "நாட்கள்")}
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
