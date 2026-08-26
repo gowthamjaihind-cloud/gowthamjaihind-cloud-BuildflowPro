@@ -1022,7 +1022,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
   return (
     <div className="space-y-6 md:space-y-12 pb-24 md:pb-32">
       <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 md:gap-8 bg-panel p-4 md:p-6 rounded-[24px] md:rounded-[32px] border border-divider shadow-sm">
-        <div className="flex gap-2 bg-panel/50 p-1 md:p-1.5 rounded-xl md:rounded-2xl w-full md:w-fit overflow-x-auto scrollbar-hide ring-1 ring-slate-200/50 shadow-inner">
+        <div className="flex gap-2 bg-panel/50 p-1 md:p-1.5 rounded-xl md:rounded-2xl w-full md:w-auto md:min-w-0 md:flex-1 overflow-x-auto scrollbar-hide ring-1 ring-slate-200/50 shadow-inner">
           {(["rates", "billing"] as Tab[]).map((tab) => (
             <button
               key={tab}
@@ -1034,7 +1034,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
           ))}
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto md:shrink-0">
           <button
             onClick={handleExportCSV}
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-surface-dark text-white px-4 md:px-5 py-2.5 md:py-3 rounded-lg md:rounded-2xl text-[10px] md:text-[10px] font-black uppercase tracking-[0.15em] hover:bg-[#3A4F5F] apple-transition shadow-lg shadow-drab/10"
