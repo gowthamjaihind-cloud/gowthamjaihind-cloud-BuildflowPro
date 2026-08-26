@@ -135,6 +135,49 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     }
   };
 
+  // Bulk lift: every party on this project that isn't in the master yet — the
+  // path for a project whose parties are already entered.
+  const promoteAllVendors = async () => {
+    const missing = (vendors || []).filter(
+      (v: any) => findDuplicates(v, masters).length === 0,
+    );
+    if (!missing.length) {
+      alert("Every party on this project is already in your master list.");
+      return;
+    }
+    if (!window.confirm(
+      `Save ${missing.length} part${missing.length === 1 ? "y" : "ies"} to your organisation master?\n\n` +
+      missing.slice(0, 12).map((v: any) => `• ${v.name}`).join("\n") +
+      (missing.length > 12 ? `\n…and ${missing.length - 12} more` : "") +
+      `\n\nOnly contact details are shared — balances and ledgers stay with this project. Parties already in the master are skipped.`,
+    )) return;
+    setMasterBusy(true);
+    let ok = 0;
+    const failed: string[] = [];
+    try {
+      for (const v of missing) {
+        try {
+          await saveMasterVendor({
+            name: v.name,
+            type: v.type || "Material",
+            gstin: (v as any).gstin || "",
+            contactPerson: v.contactPerson || "",
+            email: v.email || "",
+            phone: v.phone || "",
+            address: v.address || "",
+          });
+          ok++;
+        } catch { failed.push(v.name); }
+      }
+      setMasters(await listMasterVendors());
+      alert(
+        failed.length
+          ? `Saved ${ok}. Couldn't save ${failed.length}: ${failed.slice(0, 5).join(", ")}${failed.length > 5 ? "…" : ""}`
+          : `Saved ${ok} part${ok === 1 ? "y" : "ies"} to your master list.`,
+      );
+    } finally { setMasterBusy(false); }
+  };
+
   // Promote a project party up to the organisation master so other projects
   // can reuse it. Only the definition travels — never the balance.
   const promoteToMaster = async (v: any) => {
@@ -921,6 +964,14 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             title="Reuse a party already saved for your organisation"
           >
             <span>From master{masters.length ? ` (${masters.length})` : ""}</span>
+          </button>
+          <button
+            onClick={promoteAllVendors}
+            disabled={masterBusy || !vendors.length}
+            className="w-full sm:w-auto bg-panel border border-divider text-ink px-5 md:px-6 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-surface apple-transition text-[10px] disabled:opacity-40"
+            title="Add this project's parties to your organisation master"
+          >
+            <BookmarkSimple className="w-3.5 h-3.5" /> <span>Save to master</span>
           </button>
           </div>
         </div>
