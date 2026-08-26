@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { useTranslation } from "../i18n";
+import {
+  listMasterVendors,
+  saveMasterVendor,
+  findDuplicates,
+  toProjectVendor,
+  MasterVendor,
+} from "../services/masterVendorService";
 import { PurchaseOrderTab } from "./purchase/PurchaseOrderTab";
 import { GoodsReceiptTab } from "./purchase/GoodsReceiptTab";
 import { MaterialReceiptForm } from "./purchase/MaterialReceiptForm";
@@ -37,6 +44,7 @@ import {
   Trash as Trash2,
   PencilSimple as Edit2,
   X,
+  BookmarkSimple,
   FileText,
   ArrowUpRight,
   ArrowDownRight,
@@ -96,6 +104,73 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
 
   // Modals
   const [isAddingVendor, setIsAddingVendor] = useState(false);
+  // ---- Organisation vendor master (definitions shared across projects) ----
+  // Picking a master COPIES it into this project's suppliers, so every existing
+  // ledger, PO and GRN path keeps working on the project document as before.
+  const [masters, setMasters] = useState<MasterVendor[]>([]);
+  const [showMasterPicker, setShowMasterPicker] = useState(false);
+  const [masterBusy, setMasterBusy] = useState(false);
+  useEffect(() => {
+    listMasterVendors().then(setMasters);
+  }, []);
+
+  const addFromMaster = async (master: MasterVendor) => {
+    const already = (vendors || []).find(
+      (v: any) => v.masterVendorId === master.id ||
+        (v.name || "").trim().toLowerCase() === master.name.trim().toLowerCase(),
+    );
+    if (already) {
+      alert(`"${master.name}" is already a party on this project.`);
+      return;
+    }
+    setMasterBusy(true);
+    try {
+      await addDoc(collection(db, `${basePath}/suppliers`), toProjectVendor(master, projectId));
+      setShowMasterPicker(false);
+    } catch (err) {
+      console.error("Add from master failed", err);
+      alert("Couldn't add that party to the project. Please try again.");
+    } finally {
+      setMasterBusy(false);
+    }
+  };
+
+  // Promote a project party up to the organisation master so other projects
+  // can reuse it. Only the definition travels — never the balance.
+  const promoteToMaster = async (v: any) => {
+    const dupes = findDuplicates(v, masters);
+    if (dupes.length) {
+      if (!window.confirm(
+        `"${dupes[0].name}" already looks like the same party in your master list.\n\nSave "${v.name}" anyway as a separate entry?`,
+      )) return;
+    } else if (!window.confirm(
+      `Save "${v.name}" to your organisation master?\n\nOnly the contact details are shared — the balance and ledger stay with this project.`,
+    )) return;
+    setMasterBusy(true);
+    try {
+      await saveMasterVendor({
+        name: v.name,
+        type: v.type || "Material",
+        gstin: v.gstin || "",
+        contactPerson: v.contactPerson || "",
+        email: v.email || "",
+        phone: v.phone || "",
+        address: v.address || "",
+      });
+      setMasters(await listMasterVendors());
+      alert(`"${v.name}" is now available on every project in your organisation.`);
+    } catch (err: any) {
+      console.error("Promote to master failed", err);
+      alert(
+        err?.code === "permission-denied"
+          ? "Only an Owner, Admin or Manager can update the organisation master."
+          : "Couldn't save to the master list. Please try again.",
+      );
+    } finally {
+      setMasterBusy(false);
+    }
+  };
+
   const [isEditingVendor, setIsEditingVendor] = useState(false);
   const [isAddingReceipt, setIsAddingReceipt] = useState(false);
   const [isAddingPayment, setIsAddingPayment] = useState(false);
@@ -839,6 +914,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />{" "}
             <span>Add Party</span>
           </button>
+          <button
+            onClick={() => setShowMasterPicker(true)}
+            className="w-full sm:w-auto bg-panel border border-divider text-ink px-5 md:px-6 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-surface apple-transition text-[10px]"
+            title="Reuse a party already saved for your organisation"
+          >
+            <span>From master{masters.length ? ` (${masters.length})` : ""}</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -921,6 +1003,22 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         className="p-1.5 md:p-2 text-ink-muted hover:text-rust-strong apple-transition"
                       >
                         <Edit2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                      </button>
+                      <button
+                        onClick={() => promoteToMaster(vendor)}
+                        disabled={masterBusy}
+                        className={`p-1.5 md:p-2 apple-transition disabled:opacity-40 ${
+                          (vendor as any).masterVendorId
+                            ? "text-primary"
+                            : "text-ink-muted hover:text-primary"
+                        }`}
+                        title={
+                          (vendor as any).masterVendorId
+                            ? "Linked to your organisation master"
+                            : "Save this party to your organisation master"
+                        }
+                      >
+                        <BookmarkSimple className="w-3.5 h-3.5 md:w-5 md:h-5" />
                       </button>
                       <button
                         onClick={() => setIsDeletingVendor(vendor.id)}
@@ -1804,6 +1902,66 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
 
       {/* Modals with responsive widths */}
       <AnimatePresence>
+        {showMasterPicker && (
+          <div className="fixed inset-0 bg-onyx/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+            <div className="bg-surface w-full max-w-lg rounded-[28px] overflow-hidden flex flex-col max-h-[80vh] shadow-2xl">
+              <div className="p-6 border-b border-divider flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-black text-ink tracking-tight">Add from master</h3>
+                  <p className="text-xs text-ink-muted mt-1">
+                    Parties saved for your organisation. Adding one copies its details here —
+                    the balance and ledger start fresh on this project.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowMasterPicker(false)}
+                  className="p-2 hover:bg-divider rounded-full text-ink shrink-0"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                {masters.length === 0 ? (
+                  <p className="text-sm text-ink-muted text-center py-10">
+                    No parties saved yet. Use the bookmark icon on any party to add it to your master list.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {masters.map((m) => {
+                      const used = (vendors || []).some(
+                        (v: any) => v.masterVendorId === m.id ||
+                          (v.name || "").trim().toLowerCase() === m.name.trim().toLowerCase(),
+                      );
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={() => !used && addFromMaster(m)}
+                          disabled={used || masterBusy}
+                          className={`text-left p-4 rounded-2xl border apple-transition ${
+                            used
+                              ? "border-divider bg-panel opacity-55 cursor-not-allowed"
+                              : "border-divider bg-panel hover:bg-surface"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="font-bold text-ink text-sm">{m.name}</p>
+                            <span className="text-[9px] font-black uppercase tracking-wider text-ink-muted shrink-0">
+                              {used ? "Already added" : m.type}
+                            </span>
+                          </div>
+                          <p className="text-[12px] text-ink-muted mt-0.5">
+                            {[m.phone, m.gstin, m.address].filter(Boolean).join(" · ") || "No contact details"}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {isAddingVendor && (
           <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
