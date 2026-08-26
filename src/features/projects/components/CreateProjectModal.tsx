@@ -28,6 +28,15 @@ import { collection, doc, writeBatch } from "firebase/firestore";
 import { db } from "../../../firebase";
 import { getProjectSubCollectionPath } from "../../../utils/projectPath";
 
+// Order the built-in groups the way a contractor would scan them.
+const CATEGORY_ORDER = [
+  "Residential",
+  "Multi-storey",
+  "Commercial",
+  "Industrial",
+  "Interior",
+] as const;
+
 interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -55,6 +64,11 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   const allTemplates = useMemo(
     () => [...saved.map(asTemplate), ...WBS_TEMPLATES],
     [saved],
+  );
+
+  const chosenTemplate = useMemo(
+    () => allTemplates.find((x) => x.id === templateId) || null,
+    [allTemplates, templateId],
   );
 
   // Saved templates need a way out, or the picker silently fills with junk.
@@ -372,72 +386,65 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 doesn't open empty. Every task stays editable afterwards. */}
             <div className="mt-8 relative z-10 space-y-3">
               <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                <label className="text-[13px] font-bold text-ink-muted ml-1">
+                <label htmlFor="wbs-template" className="text-[13px] font-bold text-ink-muted ml-1">
                   {L("Start from a template", "டெம்ப்ளேட்டில் இருந்து தொடங்கு")}
                 </label>
                 <span className="text-[11px] text-ink-muted">
                   {L("Optional · every task stays editable", "விருப்பம் · எல்லா பணியும் மாற்றக்கூடியது")}
                 </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setTemplateId("")}
-                  className={`text-left p-4 rounded-2xl border apple-transition ${
-                    templateId === ""
-                      ? "border-primary/50 ring-1 ring-primary/25 bg-primary/5"
-                      : "border-divider bg-surface/50 hover:bg-surface"
-                  }`}
-                >
-                  <p className="font-bold text-ink text-sm">
-                    {L("Empty breakdown", "காலி பட்டியல்")}
-                  </p>
-                  <p className="text-[12px] text-ink-muted mt-0.5">
-                    {L("Build the WBS yourself", "நீங்களே WBS உருவாக்குங்க")}
-                  </p>
-                </button>
-                {allTemplates.map((tpl) => {
-                  const on = templateId === tpl.id;
+
+              <select
+                id="wbs-template"
+                value={templateId}
+                onChange={(e) => setTemplateId(e.target.value)}
+                className="w-full bg-surface/50 border border-divider rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition font-bold text-ink"
+              >
+                <option value="">{L("Empty breakdown — build the WBS yourself", "காலி பட்டியல் — நீங்களே WBS உருவாக்குங்க")}</option>
+                {saved.length > 0 && (
+                  <optgroup label={L("Your saved templates", "உங்கள் சேமித்த டெம்ப்ளேட்கள்")}>
+                    {saved.map((sv) => (
+                      <option key={sv.id} value={`saved:${sv.id}`}>
+                        {sv.name} — {sv.taskCount} {L("tasks", "பணிகள்")}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {CATEGORY_ORDER.map((cat) => {
+                  const inCat = WBS_TEMPLATES.filter((x) => x.category === cat);
+                  if (!inCat.length) return null;
                   return (
-                    <button
-                      key={tpl.id}
-                      type="button"
-                      onClick={() => setTemplateId(tpl.id)}
-                      className={`text-left p-4 rounded-2xl border apple-transition ${
-                        on
-                          ? "border-primary/50 ring-1 ring-primary/25 bg-primary/5"
-                          : "border-divider bg-surface/50 hover:bg-surface"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-bold text-ink text-sm">{tpl.name}</p>
-                        <span className="flex items-center gap-1.5 shrink-0">
-                          <span className={`text-[9px] font-black uppercase tracking-wider ${tpl.category === "Saved" ? "text-primary" : "text-ink-muted"}`}>
-                            {tpl.category === "Saved" ? L("Yours", "உங்களது") : tpl.category}
-                          </span>
-                          {tpl.id.startsWith("saved:") && (
-                            <span
-                              role="button"
-                              tabIndex={0}
-                              aria-label={L("Delete template", "டெம்ப்ளேட்டை நீக்கு")}
-                              onClick={(e) => { e.stopPropagation(); removeSaved(tpl.id.slice(6), tpl.name); }}
-                              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); removeSaved(tpl.id.slice(6), tpl.name); } }}
-                              className="text-ink-muted hover:text-danger apple-transition cursor-pointer text-sm leading-none px-1"
-                              title={L("Delete template", "டெம்ப்ளேட்டை நீக்கு")}
-                            >
-                              ×
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                      <p className="text-[12px] text-ink-muted mt-0.5">{tpl.description}</p>
-                      <p className="text-[11px] font-mono text-primary mt-1.5">
-                        {templateTaskCount(tpl)} {L("tasks", "பணிகள்")} · ~{templateCalendarDays(tpl)} {L("days", "நாட்கள்")}
-                      </p>
-                    </button>
+                    <optgroup key={cat} label={cat}>
+                      {inCat.map((tpl) => (
+                        <option key={tpl.id} value={tpl.id}>
+                          {tpl.name} — {templateTaskCount(tpl)} {L("tasks", "பணிகள்")}, ~{templateCalendarDays(tpl)} {L("days", "நாட்கள்")}
+                        </option>
+                      ))}
+                    </optgroup>
                   );
                 })}
-              </div>
+              </select>
+
+              {/* What the chosen template will do, and a way to remove a saved one. */}
+              {chosenTemplate && (
+                <div className="flex items-start justify-between gap-3 px-4 py-3 rounded-2xl bg-primary/5 border border-primary/25">
+                  <p className="text-[12px] text-ink-muted">
+                    {chosenTemplate.description}
+                    <span className="block font-mono text-[11px] text-primary mt-1">
+                      {L("Adds", "சேர்க்கும்")} {templateTaskCount(chosenTemplate)} {L("tasks", "பணிகள்")} · ~{templateCalendarDays(chosenTemplate)} {L("days", "நாட்கள்")}
+                    </span>
+                  </p>
+                  {templateId.startsWith("saved:") && (
+                    <button
+                      type="button"
+                      onClick={() => removeSaved(templateId.slice(6), chosenTemplate.name)}
+                      className="text-[11px] font-bold text-ink-muted hover:text-danger apple-transition shrink-0"
+                    >
+                      {L("Delete", "நீக்கு")}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-6 mt-16 relative z-10">
