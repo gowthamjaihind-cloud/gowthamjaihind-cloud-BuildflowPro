@@ -9,6 +9,7 @@ import {
   doc,
   deleteDoc,
   setDoc,
+  writeBatch,
   handleFirestoreError,
   OperationType,
 } from "../firebase";
@@ -36,7 +37,7 @@ import {
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import { RoleGuard } from "./RoleGuard";
-import { round2 } from "../utils/num";
+import { round2, round3 } from "../utils/num";
 import {
   listMasterMaterials,
   saveMasterMaterial,
@@ -290,6 +291,52 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
     } finally {
       setMasterBusy(false);
     }
+  };
+
+  // Stored numbers written before rounding was applied at source still carry
+  // float noise (a weighted average is a division). Display already rounds, so
+  // this only repairs what is stored. Checked against rawItems — the live
+  // `items` overlay is already rounded, so it would report nothing to do.
+  const untidyItems = (rawItems || []).filter((i: any) => {
+    const m2 = (v: any) => v != null && Number.isFinite(Number(v)) && round2(v) !== v;
+    const m3 = (v: any) => v != null && Number.isFinite(Number(v)) && round3(v) !== v;
+    return m2(i.unitCost) || m2(i.avgUnitCost) || m3(i.quantity) || m3(i.consumed) || m3(i.minThreshold);
+  });
+
+  const tidyStoredNumbers = async () => {
+    if (!untidyItems.length) return;
+    if (!window.confirm(
+      `Round stored numbers on ${untidyItems.length} item${untidyItems.length === 1 ? "" : "s"}?\n\n` +
+      `Costs go to 2 decimals, quantities to 3. Only these numeric fields change — ` +
+      `no stock movement is recorded and nothing else about the item is touched.`,
+    )) return;
+    setMasterBusy(true);
+    try {
+      // Chunked: Firestore batches cap at 500 writes.
+      for (let start = 0; start < untidyItems.length; start += 400) {
+        const slice = untidyItems.slice(start, start + 400);
+        const batch = writeBatch(db);
+        for (const i of slice) {
+          const patch: Record<string, number> = {};
+          if (i.unitCost != null) patch.unitCost = round2(i.unitCost);
+          if (i.avgUnitCost != null) patch.avgUnitCost = round2(i.avgUnitCost);
+          if (i.quantity != null) patch.quantity = round3(i.quantity);
+          if (i.consumed != null) patch.consumed = round3(i.consumed);
+          if (i.minThreshold != null) patch.minThreshold = round3(i.minThreshold);
+          batch.set(doc(db, `${basePath}/inventory`, i.id), patch, { merge: true });
+        }
+        await batch.commit();
+      }
+      invalidateData();
+      alert(`Tidied ${untidyItems.length} item${untidyItems.length === 1 ? "" : "s"}.`);
+    } catch (err: any) {
+      console.error("Tidy stored numbers failed", err);
+      alert(
+        err?.code === "permission-denied"
+          ? "You don't have permission to change stock records."
+          : "Couldn't tidy those values. Please try again.",
+      );
+    } finally { setMasterBusy(false); }
   };
 
   // Lift a project material up to the organisation master. Only the definition
@@ -764,6 +811,25 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
           </RoleGuard>
         </div>
       </div>
+
+      {untidyItems.length > 0 && (
+        <div className="flex items-start justify-between gap-3 p-4 rounded-2xl bg-primary/8 border border-primary/25">
+          <p className="text-[13px] text-ink">
+            {untidyItems.length} item{untidyItems.length === 1 ? "" : "s"} store a cost or quantity with
+            extra decimal places, from before rounding was applied.
+            <span className="block text-ink-muted mt-0.5">
+              Displayed values are already rounded — this cleans what's stored. No stock movement is recorded.
+            </span>
+          </p>
+          <button
+            onClick={tidyStoredNumbers}
+            disabled={masterBusy}
+            className="shrink-0 px-4 py-2 rounded-xl bg-primary text-white text-[11px] font-bold uppercase tracking-widest disabled:opacity-50"
+          >
+            {masterBusy ? "Working…" : "Tidy"}
+          </button>
+        </div>
+      )}
 
       {/* Inventory Grid */}
       <div className="bg-surface rounded-2xl shadow-sm border border-divider overflow-hidden">
