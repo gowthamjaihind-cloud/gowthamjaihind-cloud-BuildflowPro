@@ -23,7 +23,7 @@ export interface WbsTemplate {
   id: string;
   name: string;
   /** Grouping shown in the picker. */
-  category: "Residential" | "Multi-storey" | "Commercial" | "Industrial" | "Interior";
+  category: "Residential" | "Multi-storey" | "Commercial" | "Industrial" | "Interior" | "Saved";
   /** One line explaining who it's for. */
   description: string;
   nodes: WbsNode[];
@@ -623,58 +623,102 @@ const addDays = (d: Date, n: number) => {
  */
 export function planFromTemplate(template: WbsTemplate, startDate: Date): PlannedTask[] {
   const out: PlannedTask[] = [];
-  let prevStart = new Date(startDate);
-  let prevDuration = 0;
 
-  template.nodes.forEach((phase, pi) => {
-    // Where this phase begins, allowing for overlap with the previous one.
-    const phaseStart =
-      pi === 0
-        ? new Date(startDate)
-        : addDays(prevStart, Math.round(prevDuration * (phase.startAfter ?? 1)));
+  // Walk a level of siblings. Each sibling starts once `startAfter` of the
+  // previous sibling has elapsed (default 1 = strictly after it), so leaves lay
+  // back-to-back and phases can overlap. Recursion keeps this working at any
+  // depth — the built-ins are two levels, but a template saved from a real
+  // project can nest deeper.
+  const walk = (nodes: WbsNode[], parentIndex: number, from: Date, phaseName: string | null) => {
+    let prevStart: Date | null = null;
+    let prevDuration = 0;
+    let lastEnd = new Date(from);
 
-    const phaseIndex = out.length;
-    out.push({
-      name: phase.name,
-      type: "Summary",
-      parentIndex: -1,
-      startDate: iso(phaseStart),
-      endDate: iso(phaseStart),
-      duration: 1,
-      phase: phase.name,
-    });
+    for (const node of nodes) {
+      const nodeStart =
+        prevStart === null
+          ? new Date(from)
+          : addDays(prevStart, Math.round(prevDuration * (node.startAfter ?? 1)));
 
-    let cursor = new Date(phaseStart);
-    let phaseEnd = new Date(phaseStart);
-    for (const child of phase.children || []) {
-      const days = Math.max(1, child.days || 1);
-      const s = new Date(cursor);
-      const e = addDays(s, days - 1);
+      const isParent = !!(node.children && node.children.length);
+      const index = out.length;
+      const phase = phaseName ?? node.name;
+
       out.push({
-        name: child.name,
-        type: "Task",
-        parentIndex: phaseIndex,
-        startDate: iso(s),
-        endDate: iso(e),
-        duration: days,
-        phase: phase.name,
+        name: node.name,
+        type: isParent ? "Summary" : "Task",
+        parentIndex,
+        startDate: iso(nodeStart),
+        endDate: iso(nodeStart),
+        duration: 1,
+        phase,
       });
-      cursor = addDays(e, 1);
-      phaseEnd = e;
+
+      let nodeEnd: Date;
+      if (isParent) {
+        nodeEnd = walk(node.children!, index, nodeStart, phase);
+      } else {
+        nodeEnd = addDays(nodeStart, Math.max(1, node.days || 1) - 1);
+      }
+
+      const duration = Math.max(
+        1,
+        Math.round((nodeEnd.getTime() - nodeStart.getTime()) / 86400000) + 1,
+      );
+      out[index].endDate = iso(nodeEnd);
+      out[index].duration = duration;
+
+      prevStart = nodeStart;
+      prevDuration = duration;
+      if (nodeEnd > lastEnd) lastEnd = nodeEnd;
     }
 
-    const dur = Math.max(
-      1,
-      Math.round((phaseEnd.getTime() - phaseStart.getTime()) / 86400000) + 1,
-    );
-    out[phaseIndex].endDate = iso(phaseEnd);
-    out[phaseIndex].duration = dur;
+    return lastEnd;
+  };
 
-    prevStart = phaseStart;
-    prevDuration = dur;
-  });
-
+  walk(template.nodes, -1, new Date(startDate), null);
   return out;
+}
+
+/**
+ * Turn a project's live task list back into a reusable template tree: keep the
+ * hierarchy, names and durations; drop dates, progress, costs and anything
+ * else specific to that job. System-generated tasks are excluded.
+ */
+export function tasksToTemplateNodes(
+  tasks: Array<{
+    id: string;
+    parentId?: string | null;
+    name: string;
+    duration?: number;
+    startDate?: string;
+    isSystemGenerated?: boolean;
+  }>,
+): WbsNode[] {
+  const usable = tasks.filter((t) => !t.isSystemGenerated && (t.name || "").trim());
+  const byParent = new Map<string, typeof usable>();
+  for (const t of usable) {
+    const key = t.parentId || "__root__";
+    if (!byParent.has(key)) byParent.set(key, []);
+    byParent.get(key)!.push(t);
+  }
+  // Preserve the order the planner reads: earliest start first.
+  for (const list of byParent.values()) {
+    list.sort((a, b) => (a.startDate || "").localeCompare(b.startDate || ""));
+  }
+
+  const build = (parentKey: string, depth: number): WbsNode[] => {
+    if (depth > 6) return []; // guard against a cycle in bad data
+    return (byParent.get(parentKey) || []).map((t) => {
+      const children = build(t.id, depth + 1);
+      const node: WbsNode = { name: t.name.trim() };
+      if (children.length) node.children = children;
+      else node.days = Math.max(1, Math.round(Number(t.duration) || 1));
+      return node;
+    });
+  };
+
+  return build("__root__", 0);
 }
 
 /**
