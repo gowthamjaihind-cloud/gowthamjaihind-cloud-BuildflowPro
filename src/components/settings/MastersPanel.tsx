@@ -20,6 +20,7 @@ import {
   SavedWbsTemplate,
 } from "../../services/wbsTemplateService";
 import { useL } from "../../i18n";
+import { round2, money } from "../../utils/num";
 
 // Organisation master data. These records are shared by every project, so they
 // belong with the organisation's settings rather than inside one project.
@@ -123,7 +124,7 @@ export const MastersPanel: React.FC = () => {
     setMForm({
       name: m.name || "", code: m.code || "", category: m.category || "Material",
       unit: m.unit || "Nos", hsn: m.hsn || "", gstRate: m.gstRate ?? 18,
-      indicativeRate: m.indicativeRate ?? 0, minThreshold: m.minThreshold ?? 0,
+      indicativeRate: round2(m.indicativeRate ?? 0), minThreshold: m.minThreshold ?? 0,
     });
     setMEditingId(m.id); setShowMForm(true); setError(null);
   };
@@ -140,7 +141,10 @@ export const MastersPanel: React.FC = () => {
     }
     setBusy(true); setError(null);
     try {
-      await saveMasterMaterial(mForm, mEditingId || undefined);
+      await saveMasterMaterial(
+        { ...mForm, indicativeRate: round2(mForm.indicativeRate) },
+        mEditingId || undefined,
+      );
       setShowMForm(false);
       await reload();
     } catch (err: any) {
@@ -389,7 +393,7 @@ export const MastersPanel: React.FC = () => {
                         m.category,
                         m.hsn ? `HSN ${m.hsn}` : "",
                         m.gstRate != null ? `GST ${m.gstRate}%` : "",
-                        m.indicativeRate ? `~₹${m.indicativeRate.toLocaleString("en-IN")}` : "",
+                        m.indicativeRate ? `~₹${money(m.indicativeRate)}` : "",
                       ].filter(Boolean).join(" · ") || L("No details", "விவரம் இல்ல")}
                     </p>
                   </div>

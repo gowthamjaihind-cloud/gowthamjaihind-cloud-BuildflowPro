@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { money } from "../utils/num";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { useTranslation } from "../i18n";
 import { motion } from "motion/react";
@@ -447,7 +448,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       ]);
       exportToPDF(
         `CLIENT ESTIMATE: ${selectedEstimate.estimateNumber}`,
-        `Client: ${selectedEstimate.clientName || "N/A"} | Date: ${new Date(selectedEstimate.dateCreated).toLocaleDateString()} | Total: ₹${selectedEstimate.totalAmount.toLocaleString("en-IN")}`,
+        `Client: ${selectedEstimate.clientName || "N/A"} | Date: ${new Date(selectedEstimate.dateCreated).toLocaleDateString()} | Total: ₹${money(selectedEstimate.totalAmount)}`,
         headers,
         rows,
         `Estimate_${selectedEstimate.estimateNumber}`

@@ -11,6 +11,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { updateDoc } from "firebase/firestore";
+import { round2 } from "../utils/num";
 import { UserProfile, VendorBill } from "../types";
 
 const tenantPathFor = (user: any, projectId: string) =>
@@ -203,11 +204,11 @@ export async function postInvoiceReceipt({ user, projectId, bill, sourceFile, dr
       const lines = grnLines.filter((l) => l.poLineRef === matId);
       const qNew = lines.reduce((a, l) => a + l.acceptedQty, 0);
       const taxableNew = lines.reduce((a, l) => a + l.acceptedQty * (l.rate || 0), 0);
-      const cNew = qNew > 0 ? taxableNew / qNew : 0; // ex-GST unit cost
+      const cNew = round2(qNew > 0 ? taxableNew / qNew : 0); // ex-GST unit cost
       const qExisting = data.quantity || 0;
       const cExisting = data.avgUnitCost || data.unitCost || 0;
       const totalQty = qExisting + qNew;
-      const newAvg = totalQty > 0 ? (qExisting * cExisting + qNew * cNew) / totalQty : cExisting;
+      const newAvg = round2(totalQty > 0 ? (qExisting * cExisting + qNew * cNew) / totalQty : cExisting);
       const fields: any = { quantity: totalQty, avgUnitCost: newAvg };
       if (!data.unitCost) fields.unitCost = newAvg;
       transaction.update(snap.ref, fields);

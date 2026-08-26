@@ -11,6 +11,7 @@ import { doc, setDoc, runTransaction, updateDoc, collection } from "firebase/fir
 import { db, handleFirestoreError, OperationType } from "../../firebase";
 import { PurchaseOrder, GoodsReceiptNote, GRNLineItem } from "../../types";
 import { useAuthStore } from "../../store";
+import { round2 } from "../../utils/num";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { compressImage } from "../../utils/imageCompressor";
 import { useQueryClient } from "@tanstack/react-query";
@@ -266,7 +267,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
              const totalQty = qExisting + qNew;
              let newAvgUnitCost = cExisting;
              if (totalQty > 0) {
-               newAvgUnitCost = ((qExisting * cExisting) + (qNew * cNew)) / totalQty;
+               newAvgUnitCost = round2(((qExisting * cExisting) + (qNew * cNew)) / totalQty);
              }
              
              const updateFields: any = {

@@ -14,6 +14,7 @@ import { useAuthStore } from "../../store";
 import { Vendor, InventoryItem, POLineItem, LaborRateCard, PurchaseOrder } from "../../types";
 import { collection, doc, setDoc, updateDoc, runTransaction } from "firebase/firestore";
 import { db } from "../../firebase";
+import { money } from "../../utils/num";
 
 interface PurchaseOrderFormProps {
   projectId: string;
@@ -341,7 +342,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                   </div>
                   <div className="w-full sm:w-28 text-right pb-2 shrink-0">
                     <span className="text-xs font-mono font-bold text-ink">
-                      ₹{((item.orderedQty || 0) * (item.rate || 0)).toLocaleString("en-IN")}
+                      ₹{money((item.orderedQty || 0) * (item.rate || 0))}
                     </span>
                   </div>
                   {items.length > 1 && (
@@ -413,7 +414,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
             <div className="mt-4 mb-4 p-6 bg-[#F7E4DB] border border-[#F7E4DB]/50 rounded-[20px] space-y-2">
                <div className="flex justify-between text-xs font-bold text-[#B85F3B]/80">
                   <span>Materials</span>
-                  <span className="font-mono">₹{materialTotal.toLocaleString("en-IN")}</span>
+                  <span className="font-mono">₹{money(materialTotal)}</span>
                </div>
                {chargesTotal > 0 && (
                   <div className="flex justify-between text-xs font-bold text-[#B85F3B]/80">
