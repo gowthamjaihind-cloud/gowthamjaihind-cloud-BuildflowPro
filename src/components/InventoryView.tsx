@@ -35,6 +35,11 @@ import {
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import { RoleGuard } from "./RoleGuard";
+import {
+  listMasterMaterials,
+  toProjectInventoryItem,
+  MasterMaterial,
+} from "../services/masterMaterialService";
 import { CountUp } from "./motion";
 import { VirtualTable } from "./VirtualTable";
 import { useAuthStore } from "../store";
@@ -249,6 +254,38 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
   const invalidateData = () => {
     queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
+  };
+
+  // ---- Organisation material master ----
+  // Picking a master COPIES its definition in and opens the stock at zero, so
+  // quantity and landed cost remain this project's own.
+  const [masterMaterials, setMasterMaterials] = useState<MasterMaterial[]>([]);
+  const [showMaterialPicker, setShowMaterialPicker] = useState(false);
+  const [masterBusy, setMasterBusy] = useState(false);
+  useEffect(() => {
+    listMasterMaterials().then(setMasterMaterials);
+  }, []);
+
+  const addMaterialFromMaster = async (m: MasterMaterial) => {
+    const already = (rawItems || []).find(
+      (i: any) => i.masterMaterialId === m.id ||
+        (i.name || "").trim().toLowerCase() === m.name.trim().toLowerCase(),
+    );
+    if (already) {
+      alert(`"${m.name}" is already stocked on this project.`);
+      return;
+    }
+    setMasterBusy(true);
+    try {
+      await addDoc(collection(db, `${basePath}/inventory`), toProjectInventoryItem(m, projectId));
+      invalidateData();
+      setShowMaterialPicker(false);
+    } catch (err) {
+      console.error("Add material from master failed", err);
+      alert("Couldn't add that material. Please try again.");
+    } finally {
+      setMasterBusy(false);
+    }
   };
 
   const handleAddItem = async (e: React.FormEvent) => {
@@ -626,12 +663,21 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               </button>
             }
           >
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => setShowMaterialPicker(true)}
+              className="bg-panel border border-divider text-ink w-full sm:w-auto px-5 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-surface apple-transition"
+              title="Reuse a material saved for your organisation"
+            >
+              <span>From master{masterMaterials.length ? ` (${masterMaterials.length})` : ""}</span>
+            </button>
             <button
               onClick={() => setIsAdding(true)}
               className="bg-primary text-white w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#B85F3B] apple-transition shadow-lg shadow-primary/20"
             >
               <Plus className="w-3 h-3" /> <span>Add Item</span>
             </button>
+            </div>
           </RoleGuard>
         </div>
       </div>
@@ -1297,6 +1343,67 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       </div>
 
       {/* Modals */}
+      {showMaterialPicker && (
+        <div className="fixed inset-0 bg-onyx/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+          <div className="bg-surface w-full max-w-lg rounded-[28px] overflow-hidden flex flex-col max-h-[80vh] shadow-2xl">
+            <div className="p-6 border-b border-divider flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-black text-ink tracking-tight">Add from master</h3>
+                <p className="text-xs text-ink-muted mt-1">
+                  Materials saved for your organisation. Adding one copies its details here and
+                  opens the stock at zero — quantity and cost stay this project's own.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowMaterialPicker(false)}
+                className="p-2 hover:bg-divider rounded-full text-ink shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              {masterMaterials.length === 0 ? (
+                <p className="text-sm text-ink-muted text-center py-10">
+                  No materials saved yet. Add them in Settings → Master data.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {masterMaterials.map((m) => {
+                    const used = (rawItems || []).some(
+                      (i: any) => i.masterMaterialId === m.id ||
+                        (i.name || "").trim().toLowerCase() === m.name.trim().toLowerCase(),
+                    );
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => !used && addMaterialFromMaster(m)}
+                        disabled={used || masterBusy}
+                        className={`text-left p-4 rounded-2xl border apple-transition ${
+                          used
+                            ? "border-divider bg-panel opacity-55 cursor-not-allowed"
+                            : "border-divider bg-panel hover:bg-surface"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-bold text-ink text-sm">{m.name}</p>
+                          <span className="text-[9px] font-black uppercase tracking-wider text-ink-muted shrink-0">
+                            {used ? "Already stocked" : m.unit}
+                          </span>
+                        </div>
+                        <p className="text-[12px] text-ink-muted mt-0.5">
+                          {[m.code, m.category, m.hsn ? `HSN ${m.hsn}` : "", m.gstRate != null ? `GST ${m.gstRate}%` : ""]
+                            .filter(Boolean).join(" · ") || "No details"}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <AnimatePresence>
         {itemToDelete && (
           <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">

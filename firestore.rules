@@ -100,6 +100,14 @@ service cloud.firestore {
         allow write: if isOrgMember(orgId) && isAdminOrManager();
       }
 
+      // Material master — the item's DEFINITION only (name, code, unit, HSN,
+      // GST rate). Stock quantity and landed cost stay project-scoped, because
+      // material exists at a site, not in an organisation.
+      match /materials/{materialId} {
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && isAdminOrManager();
+      }
+
       match /projects/{projectId} {
         allow read: if isOrgMember(orgId);
         allow write: if isOrgMember(orgId) && isAdminOrManager();

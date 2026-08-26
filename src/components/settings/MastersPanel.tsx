@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Trash as Trash2, PencilSimple, Truck, TreeStructure, CircleNotch } from "@phosphor-icons/react";
+import { Plus, Trash as Trash2, PencilSimple, Truck, TreeStructure, Package, CircleNotch } from "@phosphor-icons/react";
 import {
   listMasterVendors,
   saveMasterVendor,
@@ -7,6 +7,13 @@ import {
   findDuplicates,
   MasterVendor,
 } from "../../services/masterVendorService";
+import {
+  listMasterMaterials,
+  saveMasterMaterial,
+  deleteMasterMaterial,
+  findDuplicateMaterials,
+  MasterMaterial,
+} from "../../services/masterMaterialService";
 import {
   listSavedTemplates,
   deleteTemplate,
@@ -19,7 +26,18 @@ import { useL } from "../../i18n";
 // Projects consume them (e.g. "From master" on the Parties screen); this is
 // where they are created and maintained.
 
-type Tab = "vendors" | "templates";
+type Tab = "vendors" | "materials" | "templates";
+
+const emptyMaterial = {
+  name: "",
+  code: "",
+  category: "Material",
+  unit: "Nos",
+  hsn: "",
+  gstRate: 18,
+  indicativeRate: 0,
+  minThreshold: 0,
+};
 
 const emptyVendor = {
   name: "",
@@ -36,6 +54,10 @@ export const MastersPanel: React.FC = () => {
   const [tab, setTab] = useState<Tab>("vendors");
 
   const [vendors, setVendors] = useState<MasterVendor[]>([]);
+  const [materials, setMaterials] = useState<MasterMaterial[]>([]);
+  const [mForm, setMForm] = useState(emptyMaterial);
+  const [mEditingId, setMEditingId] = useState<string | null>(null);
+  const [showMForm, setShowMForm] = useState(false);
   const [templates, setTemplates] = useState<SavedWbsTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -45,8 +67,13 @@ export const MastersPanel: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const reload = async () => {
-    const [v, t] = await Promise.all([listMasterVendors(), listSavedTemplates()]);
+    const [v, m, t] = await Promise.all([
+      listMasterVendors(),
+      listMasterMaterials(),
+      listSavedTemplates(),
+    ]);
     setVendors(v);
+    setMaterials(m);
     setTemplates(t);
     setLoading(false);
   };
@@ -91,6 +118,51 @@ export const MastersPanel: React.FC = () => {
     } finally { setBusy(false); }
   };
 
+  const startAddM = () => { setMForm(emptyMaterial); setMEditingId(null); setShowMForm(true); setError(null); };
+  const startEditM = (m: MasterMaterial) => {
+    setMForm({
+      name: m.name || "", code: m.code || "", category: m.category || "Material",
+      unit: m.unit || "Nos", hsn: m.hsn || "", gstRate: m.gstRate ?? 18,
+      indicativeRate: m.indicativeRate ?? 0, minThreshold: m.minThreshold ?? 0,
+    });
+    setMEditingId(m.id); setShowMForm(true); setError(null);
+  };
+
+  const submitM = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mForm.name.trim()) { setError(L("Enter a name.", "பெயரைக் கொடுங்க.")); return; }
+    if (!mEditingId) {
+      const dupes = findDuplicateMaterials(mForm, materials);
+      if (dupes.length && !window.confirm(
+        L(`"${dupes[0].name}" already looks like the same item. Add "${mForm.name}" anyway?`,
+          `"${dupes[0].name}" ஏற்கனவே இதே பொருள் மாதிரி இருக்கு. இருந்தாலும் சேர்க்கவா?`),
+      )) return;
+    }
+    setBusy(true); setError(null);
+    try {
+      await saveMasterMaterial(mForm, mEditingId || undefined);
+      setShowMForm(false);
+      await reload();
+    } catch (err: any) {
+      setError(
+        err?.code === "permission-denied"
+          ? L("Only an Owner, Admin or Manager can change master data.", "உரிமையாளர், நிர்வாகி அல்லது மேலாளர் மட்டுமே மாற்ற முடியும்.")
+          : L("Couldn't save. Please try again.", "சேமிக்க முடியல. மீண்டும் முயற்சிக்கவும்."),
+      );
+    } finally { setBusy(false); }
+  };
+
+  const removeMaterial = async (m: MasterMaterial) => {
+    if (!window.confirm(L(
+      `Delete "${m.name}" from your master list? Projects already stocking it keep their own record and are not affected.`,
+      `"${m.name}" ஐ மாஸ்டர் பட்டியலிலிருந்து நீக்கவா? ஏற்கனவே ஸ்டாக் வெச்சிருக்கிற செயல்திட்டங்கள் பாதிக்கப்படாது.`,
+    ))) return;
+    setBusy(true);
+    try { await deleteMasterMaterial(m.id); await reload(); }
+    catch { setError(L("Couldn't delete.", "நீக்க முடியல.")); }
+    finally { setBusy(false); }
+  };
+
   const removeVendor = async (v: MasterVendor) => {
     if (!window.confirm(L(
       `Delete "${v.name}" from your master list? Projects already using it keep their own copy and are not affected.`,
@@ -132,6 +204,7 @@ export const MastersPanel: React.FC = () => {
       <div className="flex gap-2">
         {([
           { id: "vendors" as Tab, label: L("Parties", "பார்ட்டிகள்"), icon: Truck, n: vendors.length },
+          { id: "materials" as Tab, label: L("Materials", "பொருட்கள்"), icon: Package, n: materials.length },
           { id: "templates" as Tab, label: L("WBS templates", "WBS டெம்ப்ளேட்கள்"), icon: TreeStructure, n: templates.length },
         ]).map((x) => (
           <button
@@ -228,6 +301,105 @@ export const MastersPanel: React.FC = () => {
                       <PencilSimple className="w-4 h-4" />
                     </button>
                     <button onClick={() => removeVendor(v)} disabled={busy}
+                      className="p-2 text-ink-muted hover:text-danger apple-transition disabled:opacity-40"
+                      title={L("Delete", "நீக்கு")}>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : tab === "materials" ? (
+        <div className="space-y-3">
+          {!showMForm && (
+            <button
+              onClick={startAddM}
+              className="inline-flex items-center gap-2 bg-surface-dark text-white px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:opacity-90 apple-transition"
+            >
+              <Plus className="w-4 h-4" /> {L("Add material", "பொருள் சேர்")}
+            </button>
+          )}
+
+          {showMForm && (
+            <form onSubmit={submitM} className="bg-panel border border-divider rounded-2xl p-5 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input className={field} placeholder={L("Name *", "பெயர் *")} value={mForm.name}
+                  onChange={(e) => setMForm({ ...mForm, name: e.target.value })} />
+                <input className={field} placeholder={L("Item code", "பொருள் குறியீடு")} value={mForm.code}
+                  onChange={(e) => setMForm({ ...mForm, code: e.target.value })} />
+                <input className={field} placeholder={L("Unit (Bag, MT, Nos, Cum)", "அலகு (Bag, MT, Nos)")} value={mForm.unit}
+                  onChange={(e) => setMForm({ ...mForm, unit: e.target.value })} />
+                <input className={field} placeholder={L("Category", "வகை")} value={mForm.category}
+                  onChange={(e) => setMForm({ ...mForm, category: e.target.value })} />
+                <input className={field} placeholder="HSN / SAC" value={mForm.hsn}
+                  onChange={(e) => setMForm({ ...mForm, hsn: e.target.value })} />
+                <select className={field} value={mForm.gstRate}
+                  onChange={(e) => setMForm({ ...mForm, gstRate: Number(e.target.value) })}>
+                  {[0, 5, 12, 18, 28].map((r) => (
+                    <option key={r} value={r}>{L(`GST ${r}%`, `GST ${r}%`)}</option>
+                  ))}
+                </select>
+                <input className={field} type="number" step="0.01" placeholder={L("Indicative rate (₹)", "குறிப்பு விலை (₹)")}
+                  value={mForm.indicativeRate || ""}
+                  onChange={(e) => setMForm({ ...mForm, indicativeRate: parseFloat(e.target.value) || 0 })} />
+                <input className={field} type="number" placeholder={L("Low-stock alert at", "குறைந்த ஸ்டாக் எச்சரிக்கை")}
+                  value={mForm.minThreshold || ""}
+                  onChange={(e) => setMForm({ ...mForm, minThreshold: parseFloat(e.target.value) || 0 })} />
+              </div>
+              <p className="text-[11px] text-ink-muted">
+                {L(
+                  "The indicative rate is a reference only — actual cost always comes from your goods receipts.",
+                  "குறிப்பு விலை ஒரு reference மட்டும் — உண்மையான செலவு எப்பவும் goods receipt-ல இருந்துதான் வரும்.",
+                )}
+              </p>
+              <div className="flex gap-2 justify-end pt-1">
+                <button type="button" onClick={() => setShowMForm(false)}
+                  className="px-5 py-2.5 text-xs font-bold text-ink-muted hover:text-ink apple-transition">
+                  {L("Cancel", "ரத்து")}
+                </button>
+                <button type="submit" disabled={busy}
+                  className="px-6 py-2.5 rounded-xl bg-primary text-white text-xs font-bold uppercase tracking-widest disabled:opacity-50">
+                  {busy ? L("Saving…", "சேமிக்கிறது…") : mEditingId ? L("Update", "புதுப்பி") : L("Save", "சேமி")}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {materials.length === 0 && !showMForm ? (
+            <p className="text-sm text-ink-muted py-8 text-center">
+              {L(
+                "No materials yet. Add the items you buy on most sites — cement, steel, sand — and they'll be one click away on every project.",
+                "இன்னும் பொருட்கள் இல்ல. எல்லா சைட்டிலும் வாங்குறதை — சிமெண்ட், ஸ்டீல், மணல் — சேர்த்து வெச்சா, எல்லா செயல்திட்டத்திலும் ஒரு கிளிக்ல கிடைக்கும்.",
+              )}
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {materials.map((m) => (
+                <div key={m.id} className="bg-panel border border-divider rounded-2xl p-4 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-ink text-sm">{m.name}</p>
+                      <span className="text-[9px] font-black uppercase tracking-wider text-ink-muted">{m.unit}</span>
+                    </div>
+                    <p className="text-[12px] text-ink-muted mt-0.5 break-words">
+                      {[
+                        m.code,
+                        m.category,
+                        m.hsn ? `HSN ${m.hsn}` : "",
+                        m.gstRate != null ? `GST ${m.gstRate}%` : "",
+                        m.indicativeRate ? `~₹${m.indicativeRate.toLocaleString("en-IN")}` : "",
+                      ].filter(Boolean).join(" · ") || L("No details", "விவரம் இல்ல")}
+                    </p>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => startEditM(m)} disabled={busy}
+                      className="p-2 text-ink-muted hover:text-primary apple-transition disabled:opacity-40"
+                      title={L("Edit", "திருத்து")}>
+                      <PencilSimple className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => removeMaterial(m)} disabled={busy}
                       className="p-2 text-ink-muted hover:text-danger apple-transition disabled:opacity-40"
                       title={L("Delete", "நீக்கு")}>
                       <Trash2 className="w-4 h-4" />
