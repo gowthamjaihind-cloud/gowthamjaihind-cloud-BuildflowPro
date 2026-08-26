@@ -1804,7 +1804,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   return (
     <div className="space-y-6 md:space-y-12 pb-24 md:pb-32">
       <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 md:gap-8 bg-panel p-4 md:p-6 rounded-2xl border border-divider shadow-sm">
-        <div className="flex gap-2 bg-panel/50 p-1 md:p-1.5 rounded-xl md:rounded-2xl w-full md:w-fit overflow-x-auto scrollbar-hide ring-1 ring-slate-200/50">
+        <div className="flex gap-2 bg-panel/50 p-1 md:p-1.5 rounded-xl md:rounded-2xl w-full md:w-auto md:min-w-0 md:flex-1 overflow-x-auto scrollbar-hide ring-1 ring-slate-200/50">
           {(
             [
               "purchase_orders",
@@ -1835,14 +1835,14 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           ))}
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-3 w-full md:w-auto md:shrink-0">
           <div className="hidden sm:flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 bg-[#F7E4DB] rounded-lg md:rounded-2xl">
             <Users className="w-3.5 h-3.5 text-rust-strong" />
             <span className="text-[10px] md:text-[10px] font-black text-rust-strong uppercase tracking-widest">
               {vendors.length} Partners
             </span>
           </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto md:shrink-0">
           <button
             onClick={() => setShowScanInvoice(true)}
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#6E8CA0] text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#5C7889] apple-transition shadow-sm"
