@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { orderTasksByWbs } from "../lib/wbsOrder";
+import { demoRequested } from "../demo";
+import { demoCollections } from "@demo";
 import { money } from "../utils/num";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { useTranslation } from "../i18n";
@@ -67,6 +69,11 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
   const [estimates, setEstimates] = useState<ClientEstimate[]>([]);
 
   useEffect(() => {
+    // This screen subscribes to Firestore directly, so demo mode is handled here.
+    if (__DEMO__ && demoRequested()) {
+      setEstimates((demoCollections.estimates || []) as any);
+      return;
+    }
     const q = query(
       collection(db, `${basePath}/estimates`),
       orderBy("dateCreated", "desc"),
