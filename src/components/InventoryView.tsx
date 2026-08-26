@@ -36,6 +36,7 @@ import {
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import { RoleGuard } from "./RoleGuard";
+import { round2 } from "../utils/num";
 import {
   listMasterMaterials,
   saveMasterMaterial,
@@ -95,7 +96,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         totalCost += seedQty * seedUnitCost;
       }
 
-      const computedAvg = totalQty > 0 ? totalCost / totalQty : (item.unitCost || 0);
+      const computedAvg = round2(totalQty > 0 ? totalCost / totalQty : (item.unitCost || 0));
       const effectiveUnitCost = item.unitCost > 0 ? item.unitCost : computedAvg;
 
       return {
@@ -302,7 +303,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
     gstRate: item.gstRate ?? 18,
     // The item's own cost is a landed cost for THIS site, so it is carried up
     // only as an indicative reference.
-    indicativeRate: item.avgUnitCost || item.unitCost || 0,
+    indicativeRate: round2(item.avgUnitCost || item.unitCost || 0),
     minThreshold: item.minThreshold ?? 0,
   });
 

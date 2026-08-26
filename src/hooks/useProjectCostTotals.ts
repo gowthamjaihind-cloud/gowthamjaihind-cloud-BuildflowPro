@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Task, CostEntry, InventoryItem, DailyLaborLog } from "../types";
 import { useProjectDataQuery } from "./queries";
+import { round2 } from "../utils/num";
 
 export const useProjectCostTotals = (projectId: string) => {
   const { data: entries = [] } = useProjectDataQuery<CostEntry>(projectId, "costs");
@@ -40,7 +41,7 @@ export const useProjectCostTotals = (projectId: string) => {
         totalCost += seedQty * seedUnitCost;
       }
 
-      const computedAvg = totalQty > 0 ? totalCost / totalQty : (item.unitCost || 0);
+      const computedAvg = round2(totalQty > 0 ? totalCost / totalQty : (item.unitCost || 0));
       const effectiveUnitCost = item.unitCost > 0 ? item.unitCost : computedAvg;
 
       return {

@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { money } from "../../utils/num";
 import React, { useState } from "react";
 import { exportToCSV, exportToPDF } from "../../utils/exportUtils";
 import { motion, AnimatePresence } from "motion/react";
@@ -110,7 +111,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
       `₹${Number(r[3]).toLocaleString("en-IN")}`,
       `₹${Number(r[4]).toLocaleString("en-IN")}`
     ]);
-    exportToPDF(`PURCHASE ORDER: ${po.poNumber}`, `Vendor: ${po.vendorName} | Date: ${po.orderDate} | Total: ₹${po.totalAmount.toLocaleString("en-IN")}`, headers, formattedRows, `PO_${po.poNumber}`);
+    exportToPDF(`PURCHASE ORDER: ${po.poNumber}`, `Vendor: ${po.vendorName} | Date: ${po.orderDate} | Total: ₹${money(po.totalAmount)}`, headers, formattedRows, `PO_${po.poNumber}`);
   };
 
   return (
@@ -205,8 +206,8 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                               <td className="p-4">{item.name}</td>
                               <td className="p-4 text-right font-mono">{item.orderedQty} {item.unit}</td>
                               <td className="p-4 text-right font-mono text-success font-bold">{item.receivedQty || 0} {item.unit}</td>
-                              <td className="p-4 text-right font-mono">₹{item.rate.toLocaleString("en-IN")}</td>
-                              <td className="p-4 text-right font-mono text-ink">₹{item.amount.toLocaleString("en-IN")}</td>
+                              <td className="p-4 text-right font-mono">₹{money(item.rate)}</td>
+                              <td className="p-4 text-right font-mono text-ink">₹{money(item.amount)}</td>
                            </tr>
                         ))}
                      </tbody>
