@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { orderTasksByWbs, wbsOptionLabel } from "../lib/wbsOrder";
+import { demoRequested } from "../demo";
+import { demoCollections } from "@demo";
 import { useTranslation } from "../i18n";
 import {
   db,
@@ -90,6 +92,12 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
   ];
 
   useEffect(() => {
+    // Direct Firestore subscriptions, so demo mode is handled here too.
+    if (__DEMO__ && demoRequested()) {
+      setDocs((demoCollections.documents || []) as any);
+      setTasks((demoCollections.tasks || []) as any);
+      return;
+    }
     const path = `${basePath}/documents`;
     const q = query(collection(db, path));
     const unsubDocs = onSnapshot(
