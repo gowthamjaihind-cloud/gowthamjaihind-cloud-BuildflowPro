@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { orderTasksByWbs, wbsOptionLabel } from "../lib/wbsOrder";
 import { useTranslation } from "../i18n";
 import {
   db,
@@ -419,9 +420,9 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
             onChange={(e) => setFilterTaskId(e.target.value)}
           >
             <option value="">All Tasks</option>
-            {tasks.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
+            {orderTasksByWbs(tasks).map((row) => (
+              <option key={row.id} value={row.id}>
+                {wbsOptionLabel(row)}
               </option>
             ))}
           </select>
@@ -562,9 +563,9 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 }
               >
                 <option value="">No Link</option>
-                {tasks.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
+                {orderTasksByWbs(tasks).map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {wbsOptionLabel(row)}
                   </option>
                 ))}
               </select>
@@ -761,9 +762,9 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                           }
                         >
                           <option value="">No Task Linked</option>
-                          {tasks.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.name}
+                          {orderTasksByWbs(tasks).map((row) => (
+                            <option key={row.id} value={row.id}>
+                              {wbsOptionLabel(row)}
                             </option>
                           ))}
                         </select>

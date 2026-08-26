@@ -14,6 +14,7 @@ import {
 } from "../firebase";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { useTranslation } from "../i18n";
+import { orderTasksByWbs } from "../lib/wbsOrder";
 import {
   CostEntry,
   Task,
@@ -285,26 +286,18 @@ export const CostManagement: React.FC<CostManagementProps> = ({
     };
   }, [newEntry.amount, newEntry.taskId, newEntry.type, getTaskTotals]);
 
-  const flattenedTasks = useMemo(() => {
-    const result: { id: string; name: string; level: number }[] = [];
-    const buildFlatList = (
-      parentId: string | null | undefined,
-      level: number,
-    ) => {
-      tasks
-        .filter(
-          (t) =>
-            (t.parentId || null) === (parentId || null) && !t.isSystemGenerated,
-        )
-        .sort((a, b) => (a.startDate || "").localeCompare(b.startDate || ""))
-        .forEach((task) => {
-          result.push({ id: task.id, name: task.name, level });
-          buildFlatList(task.id, level + 1);
-        });
-    };
-    buildFlatList(null, 0);
-    return result;
-  }, [tasks]);
+  // Shared with every other task picker, so ordering and the phase/location
+  // label stay consistent across the app.
+  const flattenedTasks = useMemo(
+    () =>
+      orderTasksByWbs(tasks).map((row) => ({
+        id: row.id,
+        name: row.name,
+        level: row.level,
+        context: row.context,
+      })),
+    [tasks],
+  );
 
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();

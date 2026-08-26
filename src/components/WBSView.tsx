@@ -71,6 +71,7 @@ import { calculateCPM, autoShiftTasks } from "../services/schedulingService";
 import { RoleGuard } from "./RoleGuard";
 import { useTaskStore, useProjectDataStore } from "../store";
 import { useTasksQuery } from "../hooks/queries";
+import { orderTasksByWbs, wbsOptionLabel } from "../lib/wbsOrder";
 import { tasksToTemplateNodes } from "../lib/wbsTemplates";
 import { saveTemplate, countLeaves } from "../services/wbsTemplateService";
 
@@ -1890,9 +1891,9 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                       <option value="">
                                         -- Root (No Parent) --
                                       </option>
-                                      {validParents.map((t) => (
-                                        <option key={t.id} value={t.id}>
-                                          {t.name}
+                                      {orderTasksByWbs(validParents).map((row) => (
+                                        <option key={row.id} value={row.id}>
+                                          {wbsOptionLabel(row)}
                                         </option>
                                       ))}
                                     </select>
@@ -2327,15 +2328,15 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                     <option value="">
                                       + Add Dependency...
                                     </option>
-                                    {tasks
-                                      .filter(
+                                    {orderTasksByWbs(
+                                      tasks.filter(
                                         (t) => t.id !== (editingTask?.id || ""),
-                                      )
-                                      .map((t) => (
-                                        <option key={t.id} value={t.id}>
-                                          {t.name}
-                                        </option>
-                                      ))}
+                                      ),
+                                    ).map((row) => (
+                                      <option key={row.id} value={row.id}>
+                                        {wbsOptionLabel(row)}
+                                      </option>
+                                    ))}
                                   </select>
                                   <div className="space-y-2 max-h-[150px] overflow-y-auto">
                                     {(

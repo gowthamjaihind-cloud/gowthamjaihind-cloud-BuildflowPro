@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { orderTasksByWbs } from "../lib/wbsOrder";
 import { motion, AnimatePresence } from "motion/react";
 import {
   useSaveDailyLog,
@@ -465,16 +466,17 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     <option value="">
                       {!selectedLocation ? t("dlog.chooseLocationFirst") : t("dlog.chooseTask")}
                     </option>
-                    {tasks
-                      .filter((t) => {
+                    {orderTasksByWbs(
+                      tasks.filter((t) => {
                         const loc = t.location || "General / Site-wide";
                         return loc === selectedLocation;
-                      })
-                      .map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name} (wbs: {t.phase})
-                        </option>
-                      ))}
+                      }),
+                    ).map((row) => (
+                      <option key={row.id} value={row.id}>
+                        {row.indentedName}
+                        {row.context ? ` — ${row.context}` : ""}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

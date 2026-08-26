@@ -222,6 +222,44 @@ export const demoLedger = [
   { id: "l4", projectId: DEMO_PROJECT_ID, vendorId: "v2", date: d(-6), type: "DEBIT", amount: 151000, referenceType: "PAYMENT", description: "Cheque 004512" },
 ];
 
+// --- Client estimates & documents ------------------------------------------
+export const demoEstimates = [
+  {
+    id: "e1", projectId: DEMO_PROJECT_ID, estimateNumber: "EST-2026-004",
+    dateCreated: d(-118), dateValidUntil: d(-88), status: "Approved",
+    subTotal: 10850000, taxRatePercent: 18, taxAmount: 1953000, totalAmount: 12803000,
+    clientNotes: "Rates hold for 30 days. Excludes compound wall and landscaping.",
+    items: [
+      { id: "ei1", taskId: "p1", taskName: "Substructure", description: "Excavation, PCC, footings and plinth beam", quantity: 1, unit: "LS", rate: 1785000, totalAmount: 1785000 },
+      { id: "ei2", taskId: "p2", taskName: "Ground floor", description: "RCC frame, blockwork and first floor slab", quantity: 3200, unit: "Sq ft", rate: 690, totalAmount: 2208000 },
+      { id: "ei3", taskId: "p3", taskName: "First floor", description: "RCC frame, blockwork and second floor slab", quantity: 3200, unit: "Sq ft", rate: 690, totalAmount: 2208000 },
+      { id: "ei4", taskId: "p4", taskName: "Second floor", description: "RCC frame, blockwork and roof slab", quantity: 3200, unit: "Sq ft", rate: 602, totalAmount: 1926400 },
+      { id: "ei5", taskId: "p5", taskName: "MEP — first fix", description: "Electrical conduiting, plumbing and drainage", quantity: 1, unit: "LS", rate: 619000, totalAmount: 619000 },
+      { id: "ei6", taskId: "p6", taskName: "Finishing", description: "Plastering, flooring, painting and joinery", quantity: 1, unit: "LS", rate: 1795000, totalAmount: 1795000 },
+      { id: "ei7", taskId: "p7", taskName: "Handover", description: "Snagging, cleaning and statutory connections", quantity: 1, unit: "LS", rate: 308600, totalAmount: 308600 },
+    ],
+  },
+  {
+    id: "e2", projectId: DEMO_PROJECT_ID, estimateNumber: "EST-2026-011",
+    dateCreated: d(-12), dateValidUntil: d(18), status: "Sent to Client",
+    subTotal: 486000, taxRatePercent: 18, taxAmount: 87480, totalAmount: 573480,
+    clientNotes: "Change order — upgraded flooring and additional bathroom on first floor.",
+    items: [
+      { id: "ei8", taskId: "t20", taskName: "Flooring — vitrified tiles", description: "Upgrade to 800x800 double-charge vitrified", quantity: 1600, unit: "Sq ft", rate: 185, totalAmount: 296000, isChangeOrder: true },
+      { id: "ei9", taskId: "t17", taskName: "Plumbing — water supply", description: "Additional bathroom — first floor", quantity: 1, unit: "LS", rate: 190000, totalAmount: 190000, isChangeOrder: true },
+    ],
+  },
+];
+
+export const demoDocuments = [
+  { id: "doc1", projectId: DEMO_PROJECT_ID, name: "Approved plan — Madurai Corporation.pdf", type: "application/pdf", url: "#", uploadedBy: "Demo Owner", uploadedAt: d(-152), accessLevel: "Internal", category: "Approvals", tags: ["sanction"] },
+  { id: "doc2", projectId: DEMO_PROJECT_ID, name: "Soil investigation report.pdf", type: "application/pdf", url: "#", uploadedBy: "Demo Owner", uploadedAt: d(-155), accessLevel: "Internal", category: "Reports" },
+  { id: "doc3", projectId: DEMO_PROJECT_ID, name: "Structural drawings — R2.pdf", type: "application/pdf", url: "#", uploadedBy: "Demo Owner", uploadedAt: d(-140), accessLevel: "Internal", category: "Drawings", tags: ["structural"] },
+  { id: "doc4", projectId: DEMO_PROJECT_ID, name: "Client agreement — signed.pdf", type: "application/pdf", url: "#", uploadedBy: "Demo Owner", uploadedAt: d(-149), accessLevel: "Confidential", category: "Contracts" },
+  { id: "doc5", projectId: DEMO_PROJECT_ID, name: "Cube test results — 28 day.pdf", type: "application/pdf", url: "#", uploadedBy: "Demo Owner", uploadedAt: d(-96), accessLevel: "Internal", category: "Quality" },
+  { id: "doc6", projectId: DEMO_PROJECT_ID, name: "Site photos — first floor slab.zip", type: "application/zip", url: "#", uploadedBy: "Demo Owner", uploadedAt: d(-36), accessLevel: "Internal", category: "Photos" },
+];
+
 /** Collection name → fixture. Anything not listed renders as empty, which is fine. */
 export const demoCollections: Record<string, any[]> = {
   // useProjectCostTotals reads tasks through the generic query, not useTasksQuery.
@@ -237,9 +275,9 @@ export const demoCollections: Record<string, any[]> = {
   material_issues: demoMaterialIssues,
   labor_logs: [],
   ra_bills: [],
-  documents: [],
   equipment: [],
   client_payments: [],
   receipts: [],
-  estimates: [],
+  estimates: demoEstimates,
+  documents: demoDocuments,
 };
