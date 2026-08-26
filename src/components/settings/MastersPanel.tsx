@@ -12,6 +12,8 @@ import {
   saveMasterMaterial,
   deleteMasterMaterial,
   findDuplicateMaterials,
+  findUntidyMaterials,
+  tidyMasterMaterials,
   MasterMaterial,
 } from "../../services/masterMaterialService";
 import {
@@ -152,6 +154,29 @@ export const MastersPanel: React.FC = () => {
         err?.code === "permission-denied"
           ? L("Only an Owner, Admin or Manager can change master data.", "உரிமையாளர், நிர்வாகி அல்லது மேலாளர் மட்டுமே மாற்ற முடியும்.")
           : L("Couldn't save. Please try again.", "சேமிக்க முடியல. மீண்டும் முயற்சிக்கவும்."),
+      );
+    } finally { setBusy(false); }
+  };
+
+  // Records written before rates were rounded at source still carry long
+  // decimals. This offers a one-click cleanup and then disappears, so there is
+  // no permanent button for a one-off job.
+  const untidy = findUntidyMaterials(materials);
+  const tidyNow = async () => {
+    if (!window.confirm(L(
+      `Round ${untidy.length} stored value${untidy.length === 1 ? "" : "s"} to 2 decimals? Only the numbers change.`,
+      `${untidy.length} சேமித்த மதிப்பை 2 புள்ளிக்கு மாற்றவா? எண்கள் மட்டும் மாறும்.`,
+    ))) return;
+    setBusy(true); setError(null);
+    try {
+      const { updated } = await tidyMasterMaterials(materials);
+      await reload();
+      alert(L(`Tidied ${updated} record${updated === 1 ? "" : "s"}.`, `${updated} பதிவு சரிசெய்யப்பட்டது.`));
+    } catch (err: any) {
+      setError(
+        err?.code === "permission-denied"
+          ? L("Only an Owner, Admin or Manager can change master data.", "உரிமையாளர், நிர்வாகி அல்லது மேலாளர் மட்டுமே மாற்ற முடியும்.")
+          : L("Couldn't tidy those values.", "அந்த மதிப்புகளைச் சரிசெய்ய முடியல."),
       );
     } finally { setBusy(false); }
   };
@@ -317,6 +342,26 @@ export const MastersPanel: React.FC = () => {
         </div>
       ) : tab === "materials" ? (
         <div className="space-y-3">
+          {untidy.length > 0 && (
+            <div className="flex items-start justify-between gap-3 p-4 rounded-2xl bg-primary/8 border border-primary/25">
+              <p className="text-[13px] text-ink">
+                {L(
+                  `${untidy.length} material${untidy.length === 1 ? "" : "s"} still store a rate with more than 2 decimals, from before rounding was applied.`,
+                  `${untidy.length} பொருள் இன்னும் 2 புள்ளிக்கு மேல விலை வெச்சிருக்கு.`,
+                )}
+                <span className="block text-ink-muted mt-0.5">
+                  {L("Displayed values are already rounded; this cleans what's stored.", "காட்டப்படுவது ஏற்கனவே சரி; இது சேமித்ததைச் சரிசெய்யும்.")}
+                </span>
+              </p>
+              <button
+                onClick={tidyNow}
+                disabled={busy}
+                className="shrink-0 px-4 py-2 rounded-xl bg-primary text-white text-[11px] font-bold uppercase tracking-widest disabled:opacity-50"
+              >
+                {busy ? L("Working…", "நடக்குது…") : L("Tidy", "சரிசெய்")}
+              </button>
+            </div>
+          )}
           {!showMForm && (
             <button
               onClick={startAddM}
