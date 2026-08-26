@@ -67,6 +67,10 @@ export const PortfolioPage: React.FC = () => {
     return false;
   });
 
+  // Past a handful of projects the cards tighten and the grid gains a column,
+  // so a growing portfolio stays scannable instead of stretching down the page.
+  const dense = visibleProjects.length > 6;
+
   const activeCount = visibleProjects.filter(
     (p) => p.status === "Active",
   ).length;
@@ -121,8 +125,8 @@ export const PortfolioPage: React.FC = () => {
       img.src = event.target?.result as string;
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 256;
-        const MAX_HEIGHT = 256;
+        const MAX_WIDTH = 900;
+        const MAX_HEIGHT = 600;
         let width = img.width;
         let height = img.height;
         if (width > height) {
@@ -140,7 +144,7 @@ export const PortfolioPage: React.FC = () => {
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         if (ctx) ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
         updateProjectImage(projectId, dataUrl);
       };
     };
@@ -153,7 +157,11 @@ export const PortfolioPage: React.FC = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.2, 0, 0, 1] }}
-          className="relative overflow-hidden rounded-[28px] sm:rounded-[36px] md:rounded-[44px] bg-surface-dark text-white mb-8 sm:mb-12 md:mb-16 px-6 py-8 sm:px-10 sm:py-12 md:px-16 md:py-14 shadow-xl shadow-drab/30"
+          className={`relative overflow-hidden rounded-[28px] sm:rounded-[36px] md:rounded-[44px] bg-surface-dark text-white shadow-xl shadow-drab/30 ${
+            dense
+              ? "mb-6 sm:mb-8 px-6 py-6 sm:px-10 sm:py-8"
+              : "mb-8 sm:mb-12 md:mb-14 px-6 py-8 sm:px-10 sm:py-12 md:px-16 md:py-12"
+          }`}
         >
           {/* Ambient palette mesh (animated, motion-safe) */}
           <div className="brand-mesh" aria-hidden="true" />
@@ -170,7 +178,7 @@ export const PortfolioPage: React.FC = () => {
 
           <div className="relative z-10">
             {/* Top control row */}
-            <div className="flex items-center justify-between gap-3 mb-8 sm:mb-12 md:mb-16">
+            <div className={`flex items-center justify-between gap-3 ${dense ? "mb-6 sm:mb-8" : "mb-8 sm:mb-10 md:mb-12"}`}>
               <div className="flex items-center gap-2.5 sm:gap-3">
                 <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
                   <HardHat
@@ -291,34 +299,38 @@ export const PortfolioPage: React.FC = () => {
           project={projectToEdit}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 md:gap-10 pb-[100px] sm:pb-0">
+        <div
+          className={`grid grid-cols-1 sm:grid-cols-2 pb-[100px] sm:pb-0 ${
+            dense
+              ? "lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5"
+              : "lg:grid-cols-3 gap-6 sm:gap-7"
+          }`}
+        >
           {visibleProjects.map((project, i) => (
             <motion.div
               key={project.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: Math.min(i, 8) * 0.05 }}
               onClick={() => setActiveProject(project)}
               {...cardTilt}
-              className="group soft-card-interactive p-6 sm:p-8 md:p-12 rounded-[24px] sm:squircle-24 relative overflow-hidden [transform-style:preserve-3d]"
+              className="group soft-card-interactive rounded-[24px] relative overflow-hidden flex flex-col [transform-style:preserve-3d]"
             >
-              <div className="flex justify-between items-start mb-6 md:mb-8 relative z-10">
-                <div className="relative bg-surface-dark text-white p-3 sm:p-4 md:p-5 rounded-[16px] sm:rounded-[20px] md:rounded-[24px] group-hover:bg-primary apple-transition shadow-lg shadow-drab/20 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 overflow-hidden shrink-0">
-                  {project.imageUrl ? (
-                    <img
-                      src={project.imageUrl}
-                      alt={project.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <ImageIcon
-                      weight="duotone"
-                      className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10"
-                    />
-                  )}
+              {/* Cover image, when one has been uploaded. Previously the photo
+                  only ever appeared inside the small avatar square, so a cover
+                  looked like it had not been applied at all. */}
+              {project.imageUrl && (
+                <div className={`relative w-full overflow-hidden shrink-0 ${dense ? "h-24" : "h-28 sm:h-32"}`}>
+                  <img
+                    src={project.imageUrl}
+                    alt=""
+                    className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-onyx/55 via-onyx/10 to-transparent" />
                   <label
-                    className="absolute inset-0 bg-onyx/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white"
+                    className="absolute inset-0 bg-onyx/45 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white"
                     onClick={(e) => e.stopPropagation()}
+                    title={t("cpm.uploadCover")}
                   >
                     <ImageIcon weight="duotone" className="w-6 h-6" />
                     <input
@@ -328,10 +340,8 @@ export const PortfolioPage: React.FC = () => {
                       onChange={(e) => handleUpdateImage(e, project.id)}
                     />
                   </label>
-                </div>
-                <div className="flex flex-col items-end shrink-0">
                   <span
-                    className={`text-[10px] md:text-[12px] font-bold px-3 py-1.5 md:px-4 md:py-2 rounded-full mb-2 md:mb-3 uppercase tracking-widest ${statusPillClasses(
+                    className={`absolute top-3 right-3 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest ${statusPillClasses(
                       project.status,
                     )}`}
                   >
@@ -339,48 +349,77 @@ export const PortfolioPage: React.FC = () => {
                       ? t(`status.${project.status.replace(/\s+/g, "").replace(/^./, (c) => c.toLowerCase())}`)
                       : t("status.planning")}
                   </span>
-                  <div className="flex gap-1">
+                </div>
+              )}
+
+              <div className={`flex flex-col flex-1 relative z-10 ${dense ? "p-4 sm:p-5" : "p-5 sm:p-6"}`}>
+                <div className="flex justify-between items-start gap-3 mb-4">
+                  {/* Without a cover the avatar carries the upload affordance. */}
+                  {!project.imageUrl && (
+                    <div className={`relative bg-surface-dark text-white rounded-[16px] group-hover:bg-primary apple-transition shadow-lg shadow-drab/20 flex items-center justify-center overflow-hidden shrink-0 ${dense ? "w-11 h-11" : "w-12 h-12 sm:w-14 sm:h-14"}`}>
+                      <ImageIcon weight="duotone" className="w-6 h-6" />
+                      <label
+                        className="absolute inset-0 bg-onyx/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white"
+                        onClick={(e) => e.stopPropagation()}
+                        title={t("cpm.uploadCover")}
+                      >
+                        <ImageIcon weight="duotone" className="w-5 h-5" />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleUpdateImage(e, project.id)}
+                        />
+                      </label>
+                    </div>
+                  )}
+
+                  <div className={`flex items-center gap-1 ${project.imageUrl ? "ml-auto" : "ml-auto"}`}>
+                    {!project.imageUrl && (
+                      <span
+                        className={`text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest mr-1 ${statusPillClasses(
+                          project.status,
+                        )}`}
+                      >
+                        {project.status
+                          ? t(`status.${project.status.replace(/\s+/g, "").replace(/^./, (c) => c.toLowerCase())}`)
+                          : t("status.planning")}
+                      </span>
+                    )}
                     {(user?.role === "Admin" || user?.role === "Owner") && (
                       <button
                         onClick={(e) => handleEditProjectClick(e, project)}
-                        className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-ink-muted hover:text-primary hover:bg-page apple-transition"
+                        className="flex items-center justify-center w-9 h-9 rounded-xl text-ink-muted hover:text-primary hover:bg-page apple-transition"
                         title={t("portfolio.editProject")}
                       >
-                        <PencilSimple
-                          weight="duotone"
-                          className="w-4 h-4 md:w-5 md:h-5"
-                        />
+                        <PencilSimple weight="duotone" className="w-4 h-4" />
                       </button>
                     )}
                     <button
                       onClick={(e) => handleDeleteProjectClick(e, project.id)}
-                      className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-ink-muted hover:text-danger hover:bg-danger/8 apple-transition"
+                      className="flex items-center justify-center w-9 h-9 rounded-xl text-ink-muted hover:text-danger hover:bg-danger/8 apple-transition"
                       title={t("portfolio.deleteProject")}
                     >
-                      <Trash
-                        weight="duotone"
-                        className="w-4 h-4 md:w-5 md:h-5"
-                      />
+                      <Trash weight="duotone" className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-              </div>
 
-              <div className="relative z-10">
-                <h3 className="text-xl sm:text-2xl md:text-[28px] font-bold text-ink mb-2 sm:mb-3 group-hover:text-primary apple-transition tracking-tight">
+                <h3 className={`font-bold text-ink group-hover:text-primary apple-transition tracking-tight mb-1.5 ${dense ? "text-lg" : "text-xl sm:text-[22px]"}`}>
                   {project.name}
                 </h3>
-                <p className="text-[14px] md:text-[15px] text-ink-muted font-medium line-clamp-2 md:line-clamp-3 lg:line-clamp-2 leading-relaxed mb-6 sm:mb-8 md:mb-10 min-h-[42px]">
-                  {project.description}
-                </p>
-              </div>
+                {project.description && (
+                  <p className="text-[13.5px] text-ink-muted font-medium line-clamp-2 leading-relaxed">
+                    {project.description}
+                  </p>
+                )}
 
-              <div className="flex items-center justify-end pt-6 md:pt-8 border-t border-divider/60 relative z-10">
-                <div className="bg-surface-dark text-white p-2.5 md:p-3 rounded-xl md:rounded-2xl lg:translate-x-4 lg:opacity-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 transition-all duration-300 shadow-md">
-                  <ArrowRight
-                    weight="bold"
-                    className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6"
-                  />
+                {/* Pushed to the bottom so cards in a row align without a fixed
+                    height reserving empty space when a description is short. */}
+                <div className="mt-auto pt-4 flex items-center justify-end">
+                  <div className="bg-surface-dark text-white p-2 rounded-xl lg:translate-x-3 lg:opacity-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 transition-all duration-300 shadow-md">
+                    <ArrowRight weight="bold" className="w-4 h-4" />
+                  </div>
                 </div>
               </div>
             </motion.div>

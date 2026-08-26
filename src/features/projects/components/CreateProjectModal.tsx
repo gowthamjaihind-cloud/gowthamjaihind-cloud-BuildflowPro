@@ -100,8 +100,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement("canvas");
-          const MAX_WIDTH = 256;
-          const MAX_HEIGHT = 256;
+          const MAX_WIDTH = 900;
+          const MAX_HEIGHT = 600;
           let width = img.width;
           let height = img.height;
           if (width > height) {
@@ -121,7 +121,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           if (ctx) ctx.drawImage(img, 0, 0, width, height);
           setNewProject({
             ...newProject,
-            imageUrl: canvas.toDataURL("image/jpeg", 0.85),
+            imageUrl: canvas.toDataURL("image/jpeg", 0.82),
           });
         };
       };
