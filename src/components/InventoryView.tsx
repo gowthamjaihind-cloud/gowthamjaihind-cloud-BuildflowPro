@@ -24,6 +24,7 @@ import {
   CurrencyInr as IndianRupee,
   Trash as Trash2,
   PencilSimple as Edit2,
+  BookmarkSimple,
   X,
   CheckCircle as CheckCircle2,
   Funnel as Filter,
@@ -37,6 +38,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { RoleGuard } from "./RoleGuard";
 import {
   listMasterMaterials,
+  saveMasterMaterial,
+  findDuplicateMaterials,
   toProjectInventoryItem,
   MasterMaterial,
 } from "../services/masterMaterialService";
@@ -286,6 +289,77 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
     } finally {
       setMasterBusy(false);
     }
+  };
+
+  // Lift a project material up to the organisation master. Only the definition
+  // travels — stock, average cost and consumption stay with the project.
+  const definitionOf = (item: any) => ({
+    name: item.name,
+    code: item.code || item.materialId || "",
+    category: item.category || "Material",
+    unit: item.unit || "Nos",
+    hsn: item.hsn || "",
+    gstRate: item.gstRate ?? 18,
+    // The item's own cost is a landed cost for THIS site, so it is carried up
+    // only as an indicative reference.
+    indicativeRate: item.avgUnitCost || item.unitCost || 0,
+    minThreshold: item.minThreshold ?? 0,
+  });
+
+  const promoteMaterial = async (item: any) => {
+    const dupes = findDuplicateMaterials(definitionOf(item), masterMaterials);
+    if (dupes.length) {
+      if (!window.confirm(
+        `"${dupes[0].name}" already looks like the same item in your master list.\n\nSave "${item.name}" anyway as a separate entry?`,
+      )) return;
+    } else if (!window.confirm(
+      `Save "${item.name}" to your organisation master?\n\nOnly the definition is shared — stock and cost stay with this project.`,
+    )) return;
+    setMasterBusy(true);
+    try {
+      await saveMasterMaterial(definitionOf(item));
+      setMasterMaterials(await listMasterMaterials());
+      alert(`"${item.name}" is now available on every project in your organisation.`);
+    } catch (err: any) {
+      alert(
+        err?.code === "permission-denied"
+          ? "Only an Owner, Admin or Manager can update the organisation master."
+          : "Couldn't save to the master list. Please try again.",
+      );
+    } finally { setMasterBusy(false); }
+  };
+
+  // Bulk lift: everything on this project that isn't in the master yet. This is
+  // the path for a project that already has its materials entered.
+  const promoteAllMaterials = async () => {
+    const missing = (rawItems || []).filter(
+      (i: any) => findDuplicateMaterials(definitionOf(i), masterMaterials).length === 0,
+    );
+    if (!missing.length) {
+      alert("Every material on this project is already in your master list.");
+      return;
+    }
+    if (!window.confirm(
+      `Save ${missing.length} material${missing.length === 1 ? "" : "s"} to your organisation master?\n\n` +
+      missing.slice(0, 12).map((i: any) => `• ${i.name}`).join("\n") +
+      (missing.length > 12 ? `\n…and ${missing.length - 12} more` : "") +
+      `\n\nOnly definitions are shared — stock and cost stay with this project. Items already in the master are skipped.`,
+    )) return;
+    setMasterBusy(true);
+    let ok = 0;
+    const failed: string[] = [];
+    try {
+      for (const item of missing) {
+        try { await saveMasterMaterial(definitionOf(item)); ok++; }
+        catch { failed.push(item.name); }
+      }
+      setMasterMaterials(await listMasterMaterials());
+      alert(
+        failed.length
+          ? `Saved ${ok}. Couldn't save ${failed.length}: ${failed.slice(0, 5).join(", ")}${failed.length > 5 ? "…" : ""}`
+          : `Saved ${ok} material${ok === 1 ? "" : "s"} to your master list.`,
+      );
+    } finally { setMasterBusy(false); }
   };
 
   const handleAddItem = async (e: React.FormEvent) => {
@@ -672,6 +746,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               <span>From master{masterMaterials.length ? ` (${masterMaterials.length})` : ""}</span>
             </button>
             <button
+              onClick={promoteAllMaterials}
+              disabled={masterBusy || !rawItems.length}
+              className="bg-panel border border-divider text-ink w-full sm:w-auto px-5 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-surface apple-transition disabled:opacity-40"
+              title="Add this project's materials to your organisation master"
+            >
+              <BookmarkSimple className="w-3.5 h-3.5" /> <span>Save to master</span>
+            </button>
+            <button
               onClick={() => setIsAdding(true)}
               className="bg-primary text-white w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#B85F3B] apple-transition shadow-lg shadow-primary/20"
             >
@@ -854,6 +936,20 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         <div className="flex gap-1 shrink-0 ml-2">
                           <button onClick={() => setEditingItem(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-primary transition-colors">
                             <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => promoteMaterial(item)}
+                            disabled={masterBusy}
+                            className={`p-2 bg-panel rounded-lg transition-colors disabled:opacity-40 ${
+                              (item as any).masterMaterialId ? "text-primary" : "text-ink-muted hover:text-primary"
+                            }`}
+                            title={
+                              (item as any).masterMaterialId
+                                ? "Linked to your organisation master"
+                                : "Save this material to your organisation master"
+                            }
+                          >
+                            <BookmarkSimple className="w-3.5 h-3.5" />
                           </button>
                           <button onClick={() => setItemToDelete(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-danger transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
