@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { orderTasksByWbs } from "../lib/wbsOrder";
 import { money } from "../utils/num";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { useTranslation } from "../i18n";
@@ -1074,14 +1075,13 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {projectTasks
-                      .filter((t) => !t.isSystemGenerated)
-                      .map((task) => {
-                        // Don't show summary / milestones directly maybe, or do? Let's show all for now.
+                    {orderTasksByWbs(projectTasks).map((row) => {
+                        const task = row.task;
                         const isSelected = selectedTaskIds.has(task.id);
                         return (
                           <div
                             key={task.id}
+                            style={{ marginLeft: row.level * 18 }}
                             className={`flex items-center gap-3 p-3 rounded-xl border ${isSelected ? "bg-primary/5 border-primary/30" : "bg-panel border-white/10 hover:border-white/20"} cursor-pointer transition-colors`}
                             onClick={() => {
                               const newSet = new Set(selectedTaskIds);
@@ -1102,7 +1102,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                                 {task.name}
                               </p>
                               <p className="text-xs text-ink-muted/80">
-                                {task.type} • Budget: ₹{task.budgetedCost || 0}
+                                {row.context || task.type} • Budget: ₹{task.budgetedCost || 0}
                               </p>
                             </div>
                           </div>
