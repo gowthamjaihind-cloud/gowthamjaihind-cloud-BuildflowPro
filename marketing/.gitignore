@@ -1,0 +1,3 @@
+# Rendered output: MP4s, frame JPEGs, generated HTML, preview PNGs.
+# The inputs (screens/, scripts, narration) are tracked; the renders are not.
+out/

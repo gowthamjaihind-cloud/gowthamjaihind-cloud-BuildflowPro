@@ -1,0 +1,75 @@
+SITETRU — WALKTHROUGH NARRATION (TAMIL)
+Natural spoken register: Tamil grammar with the English terms contractors
+actually say, in Tamil script. NOT literary Tamil — this must sound like one
+contractor talking to another.
+
+Approx 90 seconds. Six beats, matching the six screens.
+
+────────────────────────────────────────────────────────
+OPEN — the pain  (0:00–0:12)
+"உங்க சைட்ல இன்னிக்கு என்ன நடந்ததுன்னு தெரிஞ்சுக்க எத்தனை பேருக்கு
+கால் பண்ணனும்? மாச கடைசில கணக்கு பார்க்கும்போது, காசு எங்க போச்சுன்னு
+தெரியுமா?"
+
+  On screen: "எத்தனை கால்? எத்தனை ரிஜிஸ்டர்?"
+
+────────────────────────────────────────────────────────
+1 · WBS — plan it once  (0:12–0:28)
+"மதுரை ஒத்தக்கடையில ஒரு G+2 வீடு. வேலையை காகிதத்துல எழுதுற மாதிரியே
+பிரிச்சு வையுங்க — அஸ்திவாரம், தரை தளம், முதல் தளம். ஒவ்வொரு பணிக்கும்
+நாளும் பட்ஜெட்டும் ஒரு தடவை போட்டா போதும்."
+
+  On screen: "ஒரு தடவை போடுங்க"
+
+────────────────────────────────────────────────────────
+2 · Daily Logs — the site reports  (0:28–0:44)
+"சைட்ல இருந்து இன்ஜினியர் அனுப்புற தினசரி அப்டேட் — எவ்ளோ முன்னேற்றம்,
+எத்தனை ஆள், என்ன பொருள் — நேரா இங்க வந்து சேரும். டெலிகிராம்ல
+அனுப்பினாலும் வரும். புது ஆப் கத்துக்க வேணாம்."
+
+  On screen: "டெலிகிராம்ல அனுப்பினா போதும்"
+
+────────────────────────────────────────────────────────
+3 · Procurement — buy material  (0:44–0:58)
+"பர்ச்சேஸ் ஆர்டர் போடுங்க. பொருள் வந்ததும் ரிசீவ் பண்ணுங்க. ஸ்டாக்கும்
+சப்ளையர் கணக்கும் தானா நகரும். விலை முன்னாடி விட ஏறியிருந்தா, ஆர்டர்
+போடும்போதே சிவப்புல தெரியும்."
+
+  On screen: "▲ கடைசி விலையை விட ₹30 அதிகம்"
+
+────────────────────────────────────────────────────────
+4 · Cost — watch the money  (0:58–1:12)
+"ஒவ்வொரு பணிக்கும் பட்ஜெட் எவ்ளோ, உண்மையான செலவு எவ்ளோ — நேரடியா.
+பட்ஜெட்டைத் தாண்டினா, இப்பவே தெரியும். அடுத்த மாசம் இல்ல."
+
+  On screen: "43% முடிஞ்சது · ₹53.7L செலவு"
+
+────────────────────────────────────────────────────────
+5 · Estimates — bill the client  (1:12–1:24)
+"அதே பிரிவுலயே இருந்து வாடிக்கையாளருக்கு எஸ்டிமேட். மாற்றங்கள்
+தனியா பதிவாகும். GST சேர்த்து, சுத்தமா."
+
+  On screen: "எஸ்டிமேட் · மாற்ற ஆணை"
+
+────────────────────────────────────────────────────────
+6 · Dashboard + close  (1:24–1:35)
+"ஒரே இடத்துல — எவ்ளோ கட்டி முடிஞ்சது, எவ்ளோ காசு போச்சு, எது ரிஸ்க்ல
+இருக்கு. ஒரு தடவை பதிவு செய்யுங்க, மீதி எல்லாம் தானா அப்டேட் ஆகும்."
+
+"இலவசமா ஆரம்பிங்க. 14 நாள் ட்ரையல், கார்டு வேணாம்."
+
+  On screen: "Sitetru — தளத்திலிருந்து வரும் உண்மை"
+             "sitetru.com · ₹999/மாதம் முதல்"
+
+────────────────────────────────────────────────────────
+NOTES FOR PRODUCTION
+· Read it conversationally, not as an announcement. Slightly slower than the
+  English cut — Tamil sentences carry more syllables per idea.
+· Keep the English product words as English inside Tamil sentences
+  (பர்ச்சேஸ் ஆர்டர், ஸ்டாக், பட்ஜெட், எஸ்டிமேட், டெலிகிராம், GST). A
+  contractor says these in English; translating them makes it sound foreign.
+· On-screen Tamil must be large — this is watched muted on a phone.
+· Beat 4's on-screen figure must match whatever the cost screen actually
+  shows. It read ₹6.4L when this script was first written; the demo dataset
+  was later expanded and the screen now reads ₹53.7L of ₹1.08Cr. Re-check it
+  against marketing/video/screens/m-09-cost-management.png before recording.
