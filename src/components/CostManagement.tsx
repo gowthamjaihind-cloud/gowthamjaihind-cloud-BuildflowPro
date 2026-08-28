@@ -1284,18 +1284,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   key={idx}
                   className="bg-surface border border-divider p-6 rounded-3xl shadow-sm hover:shadow-md apple-transition"
                 >
-                  <div className="flex justify-between items-center gap-2 mb-6">
-                    <h4 className="min-w-0 text-[15px] font-bold text-ink flex items-center gap-2">
+                  <div className="flex flex-wrap justify-between items-center gap-2 mb-6">
+                    <h4 className="text-[15px] font-bold text-ink flex items-center gap-2">
                       <stat.icon className="w-5 h-5 text-ink-muted shrink-0" />
-                      <span className="truncate">{stat.title}</span>
-                      {stat.title === "Labor Cost" && (
-                        <span
-                          className="text-[8px] md:text-[10px] text-[#C0653F] bg-[#C0653F]/10 border border-[#C0653F]/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-widest whitespace-nowrap"
-                          title="Legacy source — pending labour-cost trigger"
-                        >
-                          (legacy source)
-                        </span>
-                      )}
+                      <span>{stat.title}</span>
                     </h4>
                     {actualOnly ? (
                       <span className="shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-ice text-[#56778E] border border-divider">
@@ -1332,23 +1324,27 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       </div>
                     ) : (
                       <>
-                        <div className="flex justify-between items-end">
-                          <div>
+                        {/* Always stacked. A rupee figure like Rs 1,07,61,000
+                            is twelve characters; two of them never fit across a
+                            quarter-width card, at any breakpoint, and they
+                            collided with the actual clipped. */}
+                        <div className="grid grid-cols-1 gap-y-2">
+                          <div className="min-w-0">
                             <div className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1">
                               Planned
                             </div>
-                            <div className="text-xl font-bold text-ink tracking-tight">
+                            <div className="text-base lg:text-lg xl:text-xl font-bold text-ink tracking-tight tabular-nums">
                               ₹
                               {stat.planned.toLocaleString("en-IN", {
                                 maximumFractionDigits: 0,
                               })}
                             </div>
                           </div>
-                          <div className="text-right">
+                          <div className="min-w-0">
                             <div className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1">
                               Actual
                             </div>
-                            <div className="text-xl font-bold text-primary tracking-tight">
+                            <div className="text-base lg:text-lg xl:text-xl font-bold text-primary tracking-tight tabular-nums">
                               ₹
                               {stat.actual.toLocaleString("en-IN", {
                                 maximumFractionDigits: 0,
@@ -1618,13 +1614,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       className="p-3 text-center border-l border-white/10 hidden md:table-cell"
                       colSpan={2}
                     >
-                      Labor Costs{" "}
-                      <span
-                        className="text-[8px] text-[#C0653F] uppercase tracking-tighter"
-                        title="Legacy source — pending labour-cost trigger"
-                      >
-                        (legacy source)
-                      </span>
+                      Labor Costs
                     </th>
                     <th
                       className="p-3 text-center border-l border-white/10 hidden xl:table-cell"
@@ -1882,13 +1872,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </div>
             <div className="bg-panel p-4 md:p-6 rounded-2xl border">
               <div className="text-[10px] font-bold uppercase opacity-50 mb-2 flex justify-between items-center">
-                Labor{" "}
-                <span
-                  className="text-[8px] text-[#C0653F] normal-case bg-[#C0653F]/10 border border-[#C0653F]/20 px-1 py-0.5 rounded ml-2"
-                  title="Legacy source — pending labour-cost trigger"
-                >
-                  (legacy source)
-                </span>
+                Labor
               </div>
               <div className="flex justify-between items-end">
                 <div>
@@ -1968,13 +1952,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     Material (P/A)
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
-                    Labor (P/A){" "}
-                    <span
-                      className="text-[8px] text-[#C0653F] block normal-case"
-                      title="Legacy source — pending labour-cost trigger"
-                    >
-                      (legacy source)
-                    </span>
+                    Labor (P/A)
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
                     Equipment (Actual)
