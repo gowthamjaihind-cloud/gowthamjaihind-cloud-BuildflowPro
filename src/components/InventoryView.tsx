@@ -593,6 +593,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
     const lowStock = items.filter(
       (item) => item.quantity - (item.consumed || 0) <= item.minThreshold,
     ).length;
+    // Consumption is summed from daily logs and is never checked against what
+    // was received, so an item can go negative. That is not a bad log -- it
+    // means goods receipts were not entered. Surface the cause rather than
+    // leaving an unexplained negative valuation on screen.
+    const overConsumed = items.filter(
+      (item) => item.quantity - (item.consumed || 0) < 0,
+    ).length;
 
     const rootTasks = tasks.filter((t) => !t.parentId);
     const allocatedCost = rootTasks.reduce((acc, task) => {
@@ -603,7 +610,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       return acc + taskResCost;
     }, 0);
 
-    return { totalValue, lowStock, allocatedCost };
+    return { totalValue, lowStock, allocatedCost, overConsumed };
   }, [items, tasks]);
 
   return (
@@ -650,6 +657,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                 format={(n) => money(n)}
               />
             </h3>
+            {stats.overConsumed > 0 && (
+              <p className="mt-2 text-[10px] md:text-[11px] font-bold text-amber-300 leading-snug">
+                {stats.overConsumed} item{stats.overConsumed > 1 ? "s" : ""} logged
+                more usage than stock received — record the missing goods receipts.
+              </p>
+            )}
           </div>
         </div>
 

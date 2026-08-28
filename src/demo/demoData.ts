@@ -133,13 +133,13 @@ export const demoVendors = [
 
 // --- Stock -----------------------------------------------------------------
 export const demoInventory = [
-  { id: "i1", projectId: DEMO_PROJECT_ID, materialId: "CEM-OPC53", name: "OPC 53 Grade Cement", category: "Material", code: "CEM-OPC53", quantity: 420, consumed: 1860, unit: "Bag", unitCost: 412, avgUnitCost: 408.75, minThreshold: 150 },
-  { id: "i2", projectId: DEMO_PROJECT_ID, materialId: "STL-TMT12", name: "TMT Bar 12mm", category: "Material", code: "STL-TMT12", quantity: 3.42, consumed: 18.6, unit: "MT", unitCost: 64290, avgUnitCost: 64150, minThreshold: 2 },
-  { id: "i3", projectId: DEMO_PROJECT_ID, materialId: "STL-TMT16", name: "TMT Bar 16mm", category: "Material", code: "STL-TMT16", quantity: 2.1, consumed: 12.4, unit: "MT", unitCost: 63800, avgUnitCost: 63920, minThreshold: 2 },
-  { id: "i4", projectId: DEMO_PROJECT_ID, materialId: "AGG-MSAND", name: "M-Sand", category: "Material", code: "AGG-MSAND", quantity: 86, consumed: 312, unit: "Unit", unitCost: 2450, avgUnitCost: 2410, minThreshold: 40 },
-  { id: "i5", projectId: DEMO_PROJECT_ID, materialId: "AGG-20MM", name: "20mm Blue Metal", category: "Material", code: "AGG-20MM", quantity: 34, consumed: 208, unit: "Unit", unitCost: 1980, avgUnitCost: 1965, minThreshold: 30 },
-  { id: "i6", projectId: DEMO_PROJECT_ID, materialId: "BLK-AAC", name: "AAC Block 600x200x150", category: "Material", code: "BLK-AAC", quantity: 640, consumed: 4120, unit: "Nos", unitCost: 62, avgUnitCost: 61.5, minThreshold: 400 },
-  { id: "i7", projectId: DEMO_PROJECT_ID, materialId: "ELE-CON25", name: "PVC Conduit 25mm", category: "Consumable", code: "ELE-CON25", quantity: 180, consumed: 420, unit: "Nos", unitCost: 96, avgUnitCost: 94.2, minThreshold: 100 },
+  { id: "i1", projectId: DEMO_PROJECT_ID, materialId: "CEM-OPC53", name: "OPC 53 Grade Cement", category: "Material", code: "CEM-OPC53", quantity: 2280, consumed: 1860, unit: "Bag", unitCost: 412, avgUnitCost: 408.75, minThreshold: 150 },
+  { id: "i2", projectId: DEMO_PROJECT_ID, materialId: "STL-TMT12", name: "TMT Bar 12mm", category: "Material", code: "STL-TMT12", quantity: 22.02, consumed: 18.6, unit: "MT", unitCost: 64290, avgUnitCost: 64150, minThreshold: 2 },
+  { id: "i3", projectId: DEMO_PROJECT_ID, materialId: "STL-TMT16", name: "TMT Bar 16mm", category: "Material", code: "STL-TMT16", quantity: 14.5, consumed: 12.4, unit: "MT", unitCost: 63800, avgUnitCost: 63920, minThreshold: 2 },
+  { id: "i4", projectId: DEMO_PROJECT_ID, materialId: "AGG-MSAND", name: "M-Sand", category: "Material", code: "AGG-MSAND", quantity: 398, consumed: 312, unit: "Unit", unitCost: 2450, avgUnitCost: 2410, minThreshold: 40 },
+  { id: "i5", projectId: DEMO_PROJECT_ID, materialId: "AGG-20MM", name: "20mm Blue Metal", category: "Material", code: "AGG-20MM", quantity: 242, consumed: 208, unit: "Unit", unitCost: 1980, avgUnitCost: 1965, minThreshold: 30 },
+  { id: "i6", projectId: DEMO_PROJECT_ID, materialId: "BLK-AAC", name: "AAC Block 600x200x150", category: "Material", code: "BLK-AAC", quantity: 4760, consumed: 4120, unit: "Nos", unitCost: 62, avgUnitCost: 61.5, minThreshold: 400 },
+  { id: "i7", projectId: DEMO_PROJECT_ID, materialId: "ELE-CON25", name: "PVC Conduit 25mm", category: "Consumable", code: "ELE-CON25", quantity: 600, consumed: 420, unit: "Nos", unitCost: 96, avgUnitCost: 94.2, minThreshold: 100 },
 ];
 
 // --- Purchase orders & receipts --------------------------------------------
