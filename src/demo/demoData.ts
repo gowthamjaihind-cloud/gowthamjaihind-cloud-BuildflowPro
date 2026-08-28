@@ -261,6 +261,38 @@ export const demoDocuments = [
 ];
 
 /** Collection name → fixture. Anything not listed renders as empty, which is fine. */
+// Project Insights fixture. The panel reads the last generated result from
+// Firestore, so without this the demo shows an empty state for one of the
+// twelve modules. Written to match the demo project's actual numbers.
+export const demoInsights = {
+  generatedAt: new Date(Date.now() - 6 * 3600 * 1000).toISOString(),
+  model: "demo",
+  insights: {
+    executiveDigest:
+      "Ramkumar Residence is **43% built** with **50% of the budget drawn**, so spend is running a little ahead of progress but stays inside the sanctioned amount.\n\n" +
+      "- Substructure and ground floor are closed out and paid for.\n" +
+      "- First floor blockwork is the active front at 65%, with 22 workers on site yesterday.\n" +
+      "- Labour is the one head running over: **₹9.06L spent against ₹3.34L planned**.\n" +
+      "- Material is comfortably under at **₹48.35L against ₹66.72L planned**.",
+    costVariance:
+      "Total actual is **₹53.66L against a ₹1.08Cr budget**, leaving **₹54.0L** uncommitted.\n\n" +
+      "- **Labour is over by ₹5.72L.** Blockwork has drawn more mason-days than estimated; the ground-floor slab also ran two extra shifts.\n" +
+      "- **Material is under by ₹12.98L**, largely because second-floor steel has not been ordered yet — expect this gap to close.\n" +
+      "- Cement landed at **₹412/bag against ₹408.75 average**, a small rise worth watching on the next order.",
+    scheduleSlippage:
+      "No task is past its end date today.\n\n" +
+      "- First floor is tracking at **67%** against a Jul–Sep window.\n" +
+      "- Second floor has not started and is scheduled Sep–Nov.\n" +
+      "- Float on the blockwork chain is **0 days**, so any slip there moves the finish date directly.",
+    siteReport:
+      "**Site report — first floor**\n\n" +
+      "- Blockwork advanced from 61% to **65%**.\n" +
+      "- Deployed: **8 masons, 14 helpers**.\n" +
+      "- Consumed: **770 AAC blocks**, 150 bags cement over the week.\n" +
+      "- No safety incidents or stoppages reported.",
+  },
+};
+
 export const demoCollections: Record<string, any[]> = {
   // useProjectCostTotals reads tasks through the generic query, not useTasksQuery.
   tasks: demoTasks,

@@ -132,7 +132,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // ---- AI Insights ----
     "insights.title": "Project Insights",
     "insights.subtitle":
-      "A model reads this project's costs, schedule, and daily logs to produce a cost-variance read, schedule-slippage flags, an executive digest, and a shareable site report.",
+      "Reads your costs, schedule and daily logs, then flags what needs attention.",
     "insights.lastGenerated": "Last generated {when}",
     "insights.analyzing": "Analyzing…",
     "insights.regenerate": "Regenerate",
@@ -648,7 +648,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // ---- AI Insights ----
     "insights.title": "செயல்திட்ட பகுப்பாய்வு",
     "insights.subtitle":
-      "இந்த செயல்திட்டத்தின் செலவுகள், அட்டவணை மற்றும் தினசரி பதிவுகளை AI படித்து, செலவு வேறுபாடு, அட்டவணை தாமதக் குறிப்புகள், நிர்வாகச் சுருக்கம் மற்றும் பகிரக்கூடிய தள அறிக்கையை உருவாக்குகிறது.",
+      "உங்க செலவு, அட்டவணை, தினசரி பதிவுகளைப் படிச்சு கவனிக்க வேண்டியதைக் காட்டும்.",
     "insights.lastGenerated": "கடைசியாக உருவாக்கப்பட்டது {when}",
     "insights.analyzing": "பகுப்பாய்வு செய்கிறது…",
     "insights.regenerate": "மீண்டும் உருவாக்கு",

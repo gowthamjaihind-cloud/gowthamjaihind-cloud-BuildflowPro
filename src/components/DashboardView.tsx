@@ -9,6 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { CountUp, PageHero } from "./motion";
 import { useTasksQuery } from "../hooks/queries";
+import { globalProgress, tasksAtRisk as calcTasksAtRisk } from "../lib/projectMetrics";
 import { Task } from "../types";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
 import { useUIStore } from "../store";
@@ -41,36 +42,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     loading: scheduleLoading,
   } = useScheduleData(activeProjectId);
 
-  const calculateGlobalProgress = () => {
-    const activeTasks = legacyTasks.filter(
-      (tk) => tk.type === "Task" && !tk.isSystemGenerated,
-    );
-    if (activeTasks.length === 0) return 0;
-    const totalDuration = activeTasks.reduce(
-      (acc, tk) => acc + (Number(tk.duration) || 1),
-      0,
-    );
-    const weightedProgress = activeTasks.reduce(
-      (acc, tk) => acc + (Number(tk.progress) || 0) * (Number(tk.duration) || 1),
-      0,
-    );
-    return Math.round(weightedProgress / (totalDuration || 1));
-  };
 
-  const calculateTasksAtRisk = () => {
-    const validTasks = scheduleTasks.filter((tk) => !tk.isSystemGenerated);
-    const today = new Date().toISOString().split("T")[0];
-    const atRisk = validTasks.filter(
-      (tk) =>
-        (tk.endDate && tk.endDate < today && tk.status !== "Completed") ||
-        tk.status === "Delayed",
-    );
-    const criticalCount = atRisk.filter((tk) => tk.isCritical).length;
-    return { count: atRisk.length, criticalCount };
-  };
 
-  const completionPercentage = calculateGlobalProgress();
-  const tasksAtRisk = calculateTasksAtRisk();
+  const completionPercentage = globalProgress(legacyTasks);
+  const tasksAtRisk = calcTasksAtRisk(scheduleTasks);
 
   const totalBudget = stats.totalBudgeted || 0;
   const totalActual = stats.totalActual || 0;
@@ -105,7 +80,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-5 md:space-y-7">
       <PageHero
-        eyebrow={t("dashboard.eyebrow")}
         title={t("dashboard.heroTitle")}
         subtitle={t("dashboard.heroSubtitle")}
         icon={<Construction weight="duotone" className="w-4 h-4 sm:w-5 sm:h-5 text-white" />}

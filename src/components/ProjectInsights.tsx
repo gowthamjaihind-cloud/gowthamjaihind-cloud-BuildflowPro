@@ -11,6 +11,8 @@ import {
 import { useTasksQuery } from "../hooks/queries";
 import { useProjectDailyLogsQuery } from "../hooks/useDailyLogs";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
+import { globalProgress, tasksAtRisk as calcTasksAtRisk } from "../lib/projectMetrics";
+import { moneyShort } from "../utils/num";
 import {
   callGenerateProjectInsights,
   ProjectInsightsResult,
@@ -20,7 +22,72 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getProjectSubCollectionPath } from "../utils/projectPath";
 import { useProjectStore } from "../store";
 import { useTranslation } from "../i18n";
+import { demoRequested } from "../demo";
+import { demoInsights, DEMO_PROJECT_ID } from "@demo";
 import { AnalyticsTabs } from "./analytics/AnalyticsTabs";
+
+/**
+ * The figures the executive digest discusses, read straight from project data
+ * rather than from model prose. The digest explains; this shows.
+ */
+const DigestMetrics: React.FC<{
+  completion: number;
+  budgetPct: number;
+  variance: number;
+  atRisk: number;
+  logs7d: number;
+}> = ({ completion, budgetPct, variance, atRisk, logs7d }) => {
+  const overspent = variance < 0;
+  const bar = (pct: number, tone: string) => (
+    <div className="h-1.5 w-full rounded-full bg-ink/10 overflow-hidden mt-1.5">
+      <div
+        className={`h-full rounded-full ${tone}`}
+        style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
+      />
+    </div>
+  );
+  return (
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+      <div className="rounded-xl border border-divider bg-panel p-3">
+        <div className="text-[9px] font-black uppercase tracking-widest text-ink-muted">
+          Built
+        </div>
+        <div className="text-xl font-black text-ink tabular-nums">{completion}%</div>
+        {bar(completion, "bg-primary")}
+      </div>
+      <div className="rounded-xl border border-divider bg-panel p-3">
+        <div className="text-[9px] font-black uppercase tracking-widest text-ink-muted">
+          Budget used
+        </div>
+        <div className="text-xl font-black text-ink tabular-nums">{budgetPct}%</div>
+        {bar(budgetPct, budgetPct > completion + 10 ? "bg-danger" : "bg-success")}
+      </div>
+      <div className="rounded-xl border border-divider bg-panel p-3">
+        <div className="text-[9px] font-black uppercase tracking-widest text-ink-muted">
+          {overspent ? "Over budget" : "Under budget"}
+        </div>
+        <div
+          className={`text-lg font-black tabular-nums ${overspent ? "text-danger" : "text-success"}`}
+        >
+          ₹{moneyShort(Math.abs(variance))}
+        </div>
+      </div>
+      <div className="rounded-xl border border-divider bg-panel p-3">
+        <div className="text-[9px] font-black uppercase tracking-widest text-ink-muted">
+          At risk
+        </div>
+        <div
+          className={`text-xl font-black tabular-nums ${atRisk > 0 ? "text-danger" : "text-success"}`}
+        >
+          {atRisk}
+        </div>
+        <div className="text-[10px] text-ink-muted mt-0.5">
+          {logs7d} log{logs7d === 1 ? "" : "s"} this week
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface ProjectInsightsProps {
   projectId: string;
@@ -95,6 +162,21 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
   const { data: tasks = [] } = useTasksQuery(projectId);
   const { data: dailyLogs = [] } = useProjectDailyLogsQuery(projectId);
   const { stats, getTaskTotals } = useProjectCostTotals(projectId);
+
+  // Figures for the digest strip. Same definitions the dashboard uses, so the
+  // two screens never quote different numbers for one project.
+  const digestMetrics = useMemo(() => {
+    const budgeted = stats.totalBudgeted || 0;
+    const actual = stats.totalActual || 0;
+    const cutoff = new Date(Date.now() - 7 * 864e5).toISOString().split("T")[0];
+    return {
+      completion: globalProgress(tasks as any[]),
+      budgetPct: budgeted > 0 ? Math.round((actual / budgeted) * 100) : 0,
+      variance: budgeted - actual,
+      atRisk: calcTasksAtRisk(tasks as any[]).count,
+      logs7d: dailyLogs.filter((l: any) => (l.workDate || "") >= cutoff).length,
+    };
+  }, [stats, tasks, dailyLogs]);
   const activeProject = useProjectStore((s) => s.activeProject);
 
   const [loading, setLoading] = useState(false);
@@ -107,6 +189,14 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (__DEMO__ && demoRequested()) {
+        // The panel reads its last result from Firestore; in a demo build there
+        // is none, so the module rendered empty.
+        if (!cancelled && projectId === DEMO_PROJECT_ID && demoInsights) {
+          setResult(demoInsights as ProjectInsightsResult);
+        }
+        return;
+      }
       try {
         const snap = await getDoc(doc(db, analyticsPath, "projectInsights"));
         if (!cancelled && snap.exists()) {
@@ -285,6 +375,9 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
                 </h3>
               </div>
               <div className="p-5">
+                {s.key === "executiveDigest" && (
+                  <DigestMetrics {...digestMetrics} />
+                )}
                 <InsightText text={result.insights[s.key]} />
               </div>
             </div>

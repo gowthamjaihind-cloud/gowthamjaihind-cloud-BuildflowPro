@@ -36,3 +36,19 @@ export const moneyCompact = (n: unknown): string =>
 /** Quantity for display: up to 3 decimals, no trailing zeros forced. */
 export const qty = (n: unknown): string =>
   round3(n).toLocaleString("en-IN", { maximumFractionDigits: 3 });
+
+/**
+ * Short money for tight spaces: lakh / crore notation, the way the figure is
+ * actually said. A grouped rupee value like ₹53,95,183 is ten characters and
+ * does not fit a summary tile.
+ */
+export const moneyShort = (n: unknown): string => {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "0";
+  const abs = Math.abs(v);
+  const sign = v < 0 ? "-" : "";
+  if (abs >= 1e7) return `${sign}${round2(abs / 1e7)}Cr`;
+  if (abs >= 1e5) return `${sign}${round2(abs / 1e5)}L`;
+  if (abs >= 1e3) return `${sign}${round2(abs / 1e3)}K`;
+  return `${sign}${round2(abs)}`;
+};

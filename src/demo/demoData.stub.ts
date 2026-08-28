@@ -9,3 +9,4 @@ export const DEMO_PROJECT_ID = "";
 export const demoProjects: any[] = [];
 export const demoTasks: any[] = [];
 export const demoCollections: Record<string, any[]> = {};
+export const demoInsights: any = null;
