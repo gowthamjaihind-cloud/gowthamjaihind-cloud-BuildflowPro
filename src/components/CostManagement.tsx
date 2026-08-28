@@ -1188,7 +1188,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
   return (
     <div className="space-y-10 pb-32">
       <div className="soft-card p-5 md:p-6 rounded-2xl flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
-        <div className="flex gap-2 bg-surface/30 p-1 rounded-xl w-full md:w-fit max-w-full overflow-x-auto scrollbar-hide ring-1 ring-white/20 shadow-inner">
+        <div className="flex gap-2 bg-surface/30 p-1 rounded-xl w-full md:w-fit max-w-full md:flex-wrap overflow-x-auto md:overflow-visible scrollbar-hide ring-1 ring-white/20 shadow-inner">
           {(
             ["dashboard", "wbs", "direct_costs", "report", "payments"] as const
           ).map((mode) => (

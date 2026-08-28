@@ -90,7 +90,7 @@ export const ScheduleView: React.FC<{
           <button
             role="tab"
             aria-selected={mobileView === 'timeline'}
-            className={`px-6 py-1.5 rounded-full text-xs font-bold transition-all ${
+            className={`inline-flex items-center justify-center min-h-[40px] sm:min-h-[32px] px-6 py-1.5 rounded-full text-xs font-bold transition-all ${
               mobileView === 'timeline' 
                 ? 'bg-[var(--acc)] text-[var(--bg)] shadow-md' 
                 : 'text-[var(--muted)]'
@@ -102,7 +102,7 @@ export const ScheduleView: React.FC<{
           <button
             role="tab"
             aria-selected={mobileView === 'minigantt'}
-            className={`px-6 py-1.5 rounded-full text-xs font-bold transition-all ${
+            className={`inline-flex items-center justify-center min-h-[40px] sm:min-h-[32px] px-6 py-1.5 rounded-full text-xs font-bold transition-all ${
               mobileView === 'minigantt' 
                 ? 'bg-[var(--acc)] text-[var(--bg)] shadow-md' 
                 : 'text-[var(--muted)]'
