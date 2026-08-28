@@ -1,6 +1,7 @@
-name: Deploy Firestore Rules
+name: Deploy Firestore & Storage Rules
 
-# Deploys Firestore security rules (project: jewel-ledger) to the app's NAMED
+# Deploys Firestore AND Cloud Storage security rules (project: jewel-ledger).
+# Firestore rules go to the app's NAMED
 # database — not "(default)" — as configured in firebase.json under "firestore".
 # MANUAL trigger only (Actions tab -> "Deploy Firestore Rules" -> Run workflow,
 # from the GitHub mobile app or web). Rules are security-sensitive and the first
@@ -37,5 +38,5 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Deploy Firestore rules
-        run: npx firebase-tools@latest deploy --only firestore:rules --project jewel-ledger --non-interactive --force
+      - name: Deploy Firestore and Storage rules
+        run: npx firebase-tools@latest deploy --only firestore:rules,storage --project jewel-ledger --non-interactive --force

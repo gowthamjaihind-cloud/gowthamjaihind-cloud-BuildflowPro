@@ -209,10 +209,25 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
         category: "Progress Photos",
         tags: [],
       });
-    } catch (error) {
+    } catch (error: any) {
       setIsUploadingFile(false);
       console.error("Upload failed", error);
-      alert("Failed to upload document. Please try again.");
+      // A bare "failed" leaves the user with nothing to act on and hides
+      // whether the fault is theirs or ours. storage/unauthorized in
+      // particular means the bucket rejected the write -- a rules deploy
+      // problem, not a bad file -- so name it rather than blaming the file.
+      const code = error?.code || error?.name || "unknown";
+      const hint =
+        code === "storage/unauthorized"
+          ? "The file store rejected the upload. That is a configuration problem on our side, not a problem with your file."
+          : code === "storage/quota-exceeded"
+            ? "The file store is out of space."
+            : code === "storage/retry-limit-exceeded"
+              ? "The upload timed out. Check your connection and try again."
+              : code === "storage/unauthenticated"
+                ? "Your session expired. Sign in again and retry."
+                : "Please try again.";
+      alert(`Failed to upload document (${code}). ${hint}`);
       handleFirestoreError(error, OperationType.CREATE, path);
     }
   };
