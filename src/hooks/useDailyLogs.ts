@@ -6,6 +6,8 @@ import { DailyLogEntry, Task, AuditLog } from "../types";
 import { queryKeys } from "../lib/react-query";
 import { runTransaction } from "firebase/firestore";
 import { getProjectSubCollectionPath } from "../utils/projectPath";
+import { demoRequested } from "../demo";
+import { demoCollections, DEMO_PROJECT_ID } from "@demo";
 
 export const getTenantPath = (user: any, projectId: string, subPath: string) => {
   if (!user || !projectId) return null;
@@ -24,6 +26,18 @@ export const canEditOrDeleteLog = (user: any, log: DailyLogEntry) => {
   return false;
 };
 
+// Demo mode reads fixtures instead of Firestore. Sorted the same way the
+// Firestore path sorts so the UI is identical in both builds.
+const demoLogs = (projectId: string): DailyLogEntry[] => {
+  if (projectId !== DEMO_PROJECT_ID) return [];
+  const rows = (demoCollections.dailyLogs ?? []) as DailyLogEntry[];
+  return [...rows].sort(
+    (a, b) =>
+      b.workDate.localeCompare(a.workDate) ||
+      (b.createdAt || "").localeCompare(a.createdAt || ""),
+  );
+};
+
 export const dailyLogKeys = {
   all: (projectId: string) => ["dailyLogs", projectId] as const,
   byTask: (projectId: string, taskId: string) => [...dailyLogKeys.all(projectId), "task", taskId] as const,
@@ -38,6 +52,9 @@ export function useDailyLogsQuery(projectId: string, taskId: string) {
   return useQuery({
     queryKey: dailyLogKeys.byTask(projectId, taskId),
     queryFn: async () => {
+      if (__DEMO__ && demoRequested()) {
+        return demoLogs(projectId).filter((l) => l.taskId === taskId);
+      }
       const parentPath = getTenantPath(user, projectId, "dailyLogs");
       if (!parentPath) return [];
 
@@ -59,6 +76,10 @@ export function useProjectDailyLogsQuery(projectId: string, date?: string) {
   return useQuery({
     queryKey: date ? dailyLogKeys.byDate(projectId, date) : dailyLogKeys.all(projectId),
     queryFn: async () => {
+      if (__DEMO__ && demoRequested()) {
+        const rows = demoLogs(projectId);
+        return date ? rows.filter((l) => l.workDate === date) : rows;
+      }
       const parentPath = getTenantPath(user, projectId, "dailyLogs");
       if (!parentPath) return [];
 
@@ -81,6 +102,12 @@ export function useDateRangeLogsQuery(projectId: string, startDate?: string, end
   return useQuery({
     queryKey: startDate && endDate ? dailyLogKeys.byDateRange(projectId, startDate, endDate) : dailyLogKeys.all(projectId),
     queryFn: async () => {
+      if (__DEMO__ && demoRequested()) {
+        const rows = demoLogs(projectId);
+        return startDate && endDate
+          ? rows.filter((l) => l.workDate >= startDate && l.workDate <= endDate)
+          : rows;
+      }
       const parentPath = getTenantPath(user, projectId, "dailyLogs");
       if (!parentPath) return [];
 

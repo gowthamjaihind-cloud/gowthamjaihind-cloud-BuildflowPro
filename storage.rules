@@ -1,8 +1,58 @@
 rules_version = '2';
+
+// Cloud Storage rules.
+//
+// These were `allow read, write: if true` -- the bucket was readable and
+// writable by anyone on the internet, signed in or not, including every
+// uploaded drawing, invoice and site photo. Nothing deployed them, so the
+// production bucket ran whatever was last set by hand in the console.
+//
+// NOTE ON TENANT ISOLATION: Storage rules cannot read Firestore, and this
+// project sets no custom auth claims, so org membership cannot be verified
+// here. Any signed-in user can therefore still reach another organisation's
+// objects if they know the path. Closing that needs an orgId custom claim
+// minted on sign-in (and on org switch), then an
+// `request.auth.token.orgId == orgId` check below.
 service firebase.storage {
   match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // 25 MB ceiling: large enough for a drawing set or a scanned bill,
+    // small enough that a runaway client cannot fill the bucket.
+    function sizeOk() {
+      return request.resource.size < 25 * 1024 * 1024;
+    }
+
+    // The app only ever uploads photos, PDFs, office documents and CSVs.
+    function typeOk() {
+      return request.resource.contentType.matches('image/.*')
+          || request.resource.contentType.matches('application/pdf')
+          || request.resource.contentType.matches('application/msword')
+          || request.resource.contentType.matches('application/vnd\\..*')
+          || request.resource.contentType.matches('text/.*');
+    }
+
+    // Document Vault, daily-log photos, goods-receipt scans, vendor bills.
+    match /organizations/{orgId}/projects/{projectId}/{allPaths=**} {
+      allow read:          if signedIn();
+      allow create, update: if signedIn() && sizeOk() && typeOk();
+      allow delete:        if signedIn();
+    }
+
+    // Legacy projects created before organisations existed. Same shape.
+    match /projects/{projectId}/{allPaths=**} {
+      allow read:          if signedIn();
+      allow create, update: if signedIn() && sizeOk() && typeOk();
+      allow delete:        if signedIn();
+    }
+
+    // Everything else is denied. Cloud Functions use the Admin SDK, which
+    // bypasses these rules, so server-side writes are unaffected.
     match /{allPaths=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

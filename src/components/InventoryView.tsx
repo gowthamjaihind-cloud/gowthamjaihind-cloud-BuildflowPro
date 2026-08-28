@@ -37,7 +37,7 @@ import {
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import { RoleGuard } from "./RoleGuard";
-import { round2, round3 } from "../utils/num";
+import { round2, round3, money, qty } from "../utils/num";
 import {
   listMasterMaterials,
   saveMasterMaterial,
@@ -647,12 +647,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               ₹
               <CountUp
                 value={stats.totalValue}
-                format={(n) =>
-                  n.toLocaleString("en-IN", {
-                    minimumFractionDigits: 1,
-                    maximumFractionDigits: 1,
-                  })
-                }
+                format={(n) => money(n)}
               />
             </h3>
           </div>
@@ -675,12 +670,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               ₹
               <CountUp
                 value={stats.allocatedCost}
-                format={(n) =>
-                  n.toLocaleString("en-IN", {
-                    minimumFractionDigits: 1,
-                    maximumFractionDigits: 1,
-                  })
-                }
+                format={(n) => money(n)}
               />
             </h3>
           </div>
@@ -742,7 +732,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             />
           </div>
         </div>
-        <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
+        <div className="flex items-center gap-2 w-full lg:flex-1 lg:min-w-0 lg:flex-wrap lg:justify-end overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 scrollbar-hide">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -915,13 +905,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         <div
                           className={`text-xs md:text-base font-bold ${item.quantity - (item.consumed || 0) <= item.minThreshold ? "text-danger" : "text-ink"}`}
                         >
-                          {(item.quantity - (item.consumed || 0)).toLocaleString(
-                            undefined,
-                            {
-                              minimumFractionDigits: 1,
-                              maximumFractionDigits: 1,
-                            },
-                          )}
+                          {qty(item.quantity - (item.consumed || 0))}
                         </div>
                       ),
                     },
@@ -934,10 +918,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       render: (item) => (
                         <span className="text-[10px] md:text-xs font-mono text-ink-muted">
                           ₹
-                          {item.unitCost.toLocaleString("en-IN", {
-                            minimumFractionDigits: 1,
-                            maximumFractionDigits: 1,
-                          })}
+                          {money(item.unitCost)}
                         </span>
                       ),
                     },
@@ -951,10 +932,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       render: (item) => (
                         <div className="font-bold text-ink text-xs md:text-base font-mono">
                           ₹
-                          {(
-                            (item.quantity - (item.consumed || 0)) *
-                            item.unitCost
-                          ).toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                          {money((item.quantity - (item.consumed || 0)) * item.unitCost)}
                         </div>
                       ),
                     },
@@ -1026,15 +1004,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       <div className="flex gap-3 pt-3 border-t border-divider/60">
                         <div className="flex-1">
                           <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-0.5">Stock</p>
-                          <p className="text-[13px] font-mono font-black text-ink">{(item.quantity - (item.consumed || 0)).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} {item.unit}</p>
+                          <p className="text-[13px] font-mono font-black text-ink">{qty(item.quantity - (item.consumed || 0))} {item.unit}</p>
                         </div>
                         <div className="flex-1">
                           <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-0.5">Unit Cost</p>
-                          <p className="text-[13px] font-mono font-black text-ink">₹{item.unitCost.toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</p>
+                          <p className="text-[13px] font-mono font-black text-ink">₹{money(item.unitCost)}</p>
                         </div>
                         <div className="flex-1">
                           <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-0.5">Value</p>
-                          <p className="text-[13px] font-mono font-black text-ink">₹{((item.quantity - (item.consumed || 0)) * item.unitCost).toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</p>
+                          <p className="text-[13px] font-mono font-black text-ink">₹{money((item.quantity - (item.consumed || 0)) * item.unitCost)}</p>
                         </div>
                       </div>
                     </div>

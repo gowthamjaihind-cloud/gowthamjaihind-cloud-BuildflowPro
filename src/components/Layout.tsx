@@ -18,6 +18,7 @@ import {
   Calculator,
   CheckCircle as CheckCircle2,
   Sparkle as Sparkles,
+  FolderOpen,
 } from "@phosphor-icons/react";
 import { BrandLogo } from "./BrandLogo";
 import { SyncStatus } from "./SyncStatus";
@@ -63,7 +64,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: "costs", label: t("nav.costs"), icon: IndianRupee },
     { id: "estimates", label: t("nav.estimates"), icon: Calculator },
     { id: "reports", label: t("nav.reports"), icon: FileText },
-    { id: "documents", label: t("nav.documents"), icon: FileText },
+    { id: "documents", label: t("nav.documents"), icon: FolderOpen },
   ];
 
   const bottomNavIds = ["dashboard", "dailylogs", "procurement", "costs"];
@@ -94,6 +95,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               setActiveTab(item.id);
               setIsMobileMenuOpen(false);
             }}
+            // Collapsed, these are icon-only. Without a name they are twelve
+            // unlabelled buttons to a screen reader, so label them always and
+            // show a tooltip when the text label is hidden.
+            aria-label={item.label}
+            aria-current={activeTab === item.id ? "page" : undefined}
+            title={showLabels ? undefined : item.label}
             className={`flex items-center apple-transition group ${
               showLabels
                 ? "w-full gap-4 md:gap-5 px-4 md:px-5 py-3 md:py-4"
@@ -190,6 +197,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="flex items-center gap-3 sm:gap-5">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+              aria-expanded={isSidebarOpen}
+              title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
               className={`hidden md:block p-2 sm:p-3 hover:bg-surface/40 rounded-[10px] sm:rounded-[12px] apple-transition active:scale-95 ${uiMode === "site" ? "!p-2" : ""}`}
             >
               {isSidebarOpen ? (

@@ -209,10 +209,25 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
         category: "Progress Photos",
         tags: [],
       });
-    } catch (error) {
+    } catch (error: any) {
       setIsUploadingFile(false);
       console.error("Upload failed", error);
-      alert("Failed to upload document. Please try again.");
+      // A bare "failed" leaves the user with nothing to act on and hides
+      // whether the fault is theirs or ours. storage/unauthorized in
+      // particular means the bucket rejected the write -- a rules deploy
+      // problem, not a bad file -- so name it rather than blaming the file.
+      const code = error?.code || error?.name || "unknown";
+      const hint =
+        code === "storage/unauthorized"
+          ? "The file store rejected the upload. That is a configuration problem on our side, not a problem with your file."
+          : code === "storage/quota-exceeded"
+            ? "The file store is out of space."
+            : code === "storage/retry-limit-exceeded"
+              ? "The upload timed out. Check your connection and try again."
+              : code === "storage/unauthenticated"
+                ? "Your session expired. Sign in again and retry."
+                : "Please try again.";
+      alert(`Failed to upload document (${code}). ${hint}`);
       handleFirestoreError(error, OperationType.CREATE, path);
     }
   };
@@ -658,7 +673,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   setSelectedFile(null);
                 }}
                 disabled={isUploadingFile}
-                className="px-8 py-4 rounded-2xl text-ink-muted hover:bg-panel transition-colors disabled:opacity-50"
+                className="px-4 lg:px-6 py-3 lg:py-4 rounded-2xl text-ink-muted hover:bg-panel transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -688,7 +703,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
           <table className="w-full text-left min-w-[900px]">
             <thead>
               <tr className="bg-panel border-b">
-                <th className="px-8 py-5 w-12">
+                <th className="px-4 lg:px-6 py-3 lg:py-5 w-12">
                   <button
                     onClick={toggleSelectAll}
                     className="text-ink-muted hover:text-primary transition-colors"
@@ -701,22 +716,22 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                     )}
                   </button>
                 </th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                <th className="px-4 lg:px-6 py-3 lg:py-5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
                   Document Name
                 </th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                <th className="px-4 lg:px-6 py-3 lg:py-5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
                   Linked WBS Task
                 </th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                <th className="px-4 lg:px-6 py-3 lg:py-5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
                   Type
                 </th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                <th className="px-4 lg:px-6 py-3 lg:py-5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
                   Access
                 </th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                <th className="px-4 lg:px-6 py-3 lg:py-5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
                   Category
                 </th>
-                <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                <th className="px-4 lg:px-6 py-3 lg:py-5 text-right text-[10px] font-black uppercase tracking-widest text-ink-muted">
                   Actions
                 </th>
               </tr>
@@ -730,7 +745,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                     key={docItem.id}
                     className={`hover:bg-panel transition-colors group ${isSelected ? "bg-[#F7E4DB]/50" : ""}`}
                   >
-                    <td className="px-8 py-6">
+                    <td className="px-4 lg:px-6 py-4 lg:py-6">
                       <button
                         onClick={() => toggleSelect(docItem.id)}
                         className={`transition-colors ${isSelected ? "text-primary" : "text-ink-muted group-hover:text-ink-muted"}`}
@@ -742,7 +757,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         )}
                       </button>
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 lg:px-6 py-4 lg:py-6">
                       <div className="flex items-center gap-4">
                         <div className="p-3 bg-[#F7E4DB] text-primary rounded-2xl group-hover:bg-[#F7E4DB] transition-colors">
                           <FileText className="w-5 h-5" />
@@ -757,13 +772,16 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 lg:px-6 py-4 lg:py-6">
                       <div className="flex items-center gap-2">
                         <LinkIcon
                           className={`w-3.5 h-3.5 ${task ? "text-primary" : "text-ink-muted"}`}
                         />
+                        {/* WBS labels carry the full phase/location path, so an
+                            unconstrained select sizes to its longest option and
+                            pushed the Actions column off screen. */}
                         <select
-                          className="bg-transparent border-none text-xs font-bold text-ink focus:ring-0 cursor-pointer hover:text-primary"
+                          className="max-w-[150px] lg:max-w-[220px] truncate bg-transparent border-none text-xs font-bold text-ink focus:ring-0 cursor-pointer hover:text-primary"
                           value={docItem.taskId || ""}
                           onChange={(e) =>
                             handleUpdateTaskLink(docItem.id, e.target.value)
@@ -778,12 +796,12 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         </select>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 lg:px-6 py-4 lg:py-6">
                       <span className="px-3 py-1 bg-panel text-ink rounded-full text-[10px] font-black tracking-widest uppercase border">
                         {docItem.type}
                       </span>
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 lg:px-6 py-4 lg:py-6">
                       <div className="flex items-center gap-2 text-xs font-bold">
                         <Shield
                           className={`w-4 h-4 ${
@@ -799,12 +817,12 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 lg:px-6 py-4 lg:py-6">
                       <span className="text-xs font-bold text-ink bg-panel px-2 py-1 rounded-lg border border-divider">
                         {docItem.category || "Uncategorized"}
                       </span>
                     </td>
-                    <td className="px-8 py-6 text-right">
+                    <td className="px-4 lg:px-6 py-4 lg:py-6 text-right">
                       <a
                         href={docItem.url || "#"}
                         target="_blank"
