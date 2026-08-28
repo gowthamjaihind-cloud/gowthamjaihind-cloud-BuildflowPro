@@ -194,7 +194,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <header
           className={`soft-card rounded-none sm:rounded-[24px] px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 flex items-center justify-between z-20 shrink-0 ${uiMode === "site" ? "!rounded-none !bg-panel !border-b !border-divider !py-3" : ""}`}
         >
-          <div className="flex items-center gap-3 sm:gap-5">
+          <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-5">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
@@ -212,7 +212,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               className={`hidden sm:block h-6 w-px bg-surface/30 mx-1 lg:mx-2 ${uiMode === "site" ? "!bg-divider" : ""}`}
             />
             <div className="min-w-0 flex items-center gap-3 sm:gap-4">
-              <div>
+              <div className="min-w-0">
                 <h1
                   className={`font-bold text-lg sm:text-xl tracking-tight text-ink truncate ${uiMode === "site" ? "!text-lg" : ""}`}
                 >
@@ -241,7 +241,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <LanguageToggle />
             <div className="flex items-center gap-2">
               <SyncStatus />

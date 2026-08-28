@@ -1188,7 +1188,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
   return (
     <div className="space-y-10 pb-32">
       <div className="soft-card p-5 md:p-6 rounded-2xl flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
-        <div className="flex gap-2 bg-surface/30 p-1 rounded-xl w-full md:w-fit max-w-full md:flex-wrap overflow-x-auto md:overflow-visible scrollbar-hide ring-1 ring-white/20 shadow-inner">
+        <div className="flex gap-2 bg-surface/30 p-1 rounded-xl w-full md:w-fit max-w-full overflow-x-auto ring-1 ring-white/20 shadow-inner">
           {(
             ["dashboard", "wbs", "direct_costs", "report", "payments"] as const
           ).map((mode) => (
@@ -1284,10 +1284,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   key={idx}
                   className="bg-surface border border-divider p-6 rounded-3xl shadow-sm hover:shadow-md apple-transition"
                 >
-                  <div className="flex justify-between items-center mb-6">
-                    <h4 className="text-[15px] font-bold text-ink flex items-center gap-2">
-                      <stat.icon className="w-5 h-5 text-ink-muted" />
-                      {stat.title}
+                  <div className="flex justify-between items-center gap-2 mb-6">
+                    <h4 className="min-w-0 text-[15px] font-bold text-ink flex items-center gap-2">
+                      <stat.icon className="w-5 h-5 text-ink-muted shrink-0" />
+                      <span className="truncate">{stat.title}</span>
                       {stat.title === "Labor Cost" && (
                         <span
                           className="text-[8px] md:text-[10px] text-[#C0653F] bg-[#C0653F]/10 border border-[#C0653F]/20 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-widest whitespace-nowrap"
@@ -1298,12 +1298,12 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       )}
                     </h4>
                     {actualOnly ? (
-                      <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-ice text-[#56778E] border border-divider">
+                      <span className="shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-ice text-[#56778E] border border-divider">
                         Actuals
                       </span>
                     ) : (
                       <span
-                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                        className={`shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
                           isOver
                             ? "bg-danger/8 text-danger border border-danger/30"
                             : "bg-success/12 text-success border border-success/40"
