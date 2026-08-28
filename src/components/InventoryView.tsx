@@ -632,7 +632,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6">
         <div className="bg-surface-dark p-4 md:p-5 rounded-2xl text-white relative overflow-hidden group shadow-xl">
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-2 md:mb-6">
+            <div className="flex items-center justify-between gap-2 mb-2 md:mb-6">
               <div className="bg-onyx/40 p-2 md:p-3 rounded-xl border border-white/10">
                 <IndianRupee className="w-3.5 h-3.5 md:w-5 md:h-5 text-white" />
               </div>
@@ -643,7 +643,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             <p className="text-[8px] md:text-[10px] font-bold text-white/40 mb-0.5 md:mb-1 uppercase tracking-widest">
               Total Valuation
             </p>
-            <h3 className="text-lg md:text-3xl font-bold tracking-tight">
+            <h3 className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold tracking-tight tabular-nums">
               ₹
               <CountUp
                 value={stats.totalValue}
@@ -655,7 +655,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
         <div className="bg-surface p-4 md:p-5 rounded-2xl border border-divider shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-2 md:mb-6">
+            <div className="flex items-center justify-between gap-2 mb-2 md:mb-6">
               <div className="bg-success/12 p-2 md:p-3 rounded-xl shadow-sm text-success">
                 <TrendingUp className="w-3.5 h-3.5 md:w-5 md:h-5" />
               </div>
@@ -666,7 +666,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             <p className="text-[8px] md:text-[10px] font-bold text-ink-muted mb-0.5 md:mb-1 uppercase tracking-widest">
               Allocated
             </p>
-            <h3 className="text-lg md:text-3xl font-bold text-ink tracking-tight">
+            <h3 className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-ink tracking-tight tabular-nums">
               ₹
               <CountUp
                 value={stats.allocatedCost}
@@ -678,7 +678,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
         <div className="bg-surface p-4 md:p-5 rounded-2xl border border-divider shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-2 md:mb-6">
+            <div className="flex items-center justify-between gap-2 mb-2 md:mb-6">
               <div className="bg-danger/8 p-2 md:p-3 rounded-xl shadow-sm text-danger">
                 <AlertTriangle className="w-3.5 h-3.5 md:w-5 md:h-5" />
               </div>
@@ -689,7 +689,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             <p className="text-[8px] md:text-[10px] font-bold text-ink-muted mb-0.5 md:mb-1 uppercase tracking-widest">
               Low Stock
             </p>
-            <h3 className="text-lg md:text-3xl font-bold text-ink tracking-tight">
+            <h3 className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-ink tracking-tight tabular-nums">
               <CountUp value={stats.lowStock} />{" "}
               <span className="text-[10px] md:text-xs font-bold text-ink-muted ml-1">
                 Units
@@ -701,8 +701,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
       {/* Controls Section */}
       <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-panel p-3 md:p-4 rounded-2xl border border-divider shadow-sm">
-        <div className="flex flex-col md:flex-row gap-3 w-full lg:w-auto items-center">
-          <div className="flex bg-panel p-1 rounded-xl w-full md:w-auto border border-divider overflow-x-auto scrollbar-hide">
+        <div className="flex flex-col md:flex-row gap-3 w-full lg:w-auto lg:min-w-0 lg:flex-1 items-center">
+          <div className="flex bg-panel p-1 rounded-xl w-full md:flex-1 md:min-w-0 border border-divider overflow-x-auto">
             <button
               onClick={() => setViewMode("inventory")}
               className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "inventory" ? "bg-surface shadow-sm text-primary" : "text-ink-muted hover:text-ink"}`}

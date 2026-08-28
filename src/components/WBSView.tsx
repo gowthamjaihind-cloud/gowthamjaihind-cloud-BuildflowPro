@@ -895,7 +895,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-8 lg:gap-10 px-1 md:px-6 shrink-0 justify-end">
+          <div className="flex items-center gap-2 md:gap-4 lg:gap-6 px-1 md:px-4 shrink-0 justify-end">
             <div className="w-24 hidden xl:flex flex-col shrink-0 text-left">
               <span className="text-[10px] font-bold text-ink">
                 {formatDate(task.startDate)}
@@ -904,7 +904,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                 {formatDate(task.endDate)} ({task.duration}d)
               </span>
             </div>
-            <div className="w-16 hidden lg:block text-center shrink-0">
+            <div className="w-16 hidden xl:block text-center shrink-0">
               <span
                 className={`text-[10px] font-black ${task.freeFloat === 0 ? "text-danger" : "text-success"}`}
               >
@@ -1199,8 +1199,8 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
             </RoleGuard>
           </div>
 
-          <div className="bg-surface rounded-[40px] shadow-[0_20px_60px_rgba(0,0,0,0.03)] border border-divider/40 overflow-hidden">
-            <div className="bg-surface-dark text-white/75 flex items-center px-4 md:px-10 py-5 md:py-6 text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.3em] border-b border-white/10">
+          <div className="bg-surface rounded-[40px] shadow-[0_20px_60px_rgba(0,0,0,0.03)] border border-divider/40 overflow-x-auto overflow-y-hidden">
+            <div className="bg-surface-dark text-white/75 flex items-center px-4 md:px-6 py-5 md:py-6 text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.3em] border-b border-white/10">
               <div className="flex-1 min-w-[100px] md:min-w-[200px] text-white/80 flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -1217,9 +1217,9 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                 />
                 WBS
               </div>
-              <div className="flex items-center gap-1.5 md:gap-8 lg:gap-10 px-1.5 md:px-6 shrink-0">
+              <div className="flex items-center gap-1.5 md:gap-4 lg:gap-6 px-1.5 md:px-4 shrink-0">
                 <div className="w-24 hidden xl:block">Timeline</div>
-                <div className="w-16 hidden lg:block text-center">Float</div>
+                <div className="w-16 hidden xl:block text-center">Float</div>
                 <div className="w-14 sm:w-24 md:w-28 text-right">Budget</div>
                 <div className="w-14 sm:w-24 md:w-28 text-right">Actual</div>
                 <div className="w-14 sm:w-28 md:w-32 text-center text-white/80">
