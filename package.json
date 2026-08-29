@@ -14,7 +14,9 @@
     "verify:no-demo": "node scripts/verify-no-demo.mjs",
     "video": "node marketing/video/build.mjs both",
     "video:preview": "PREVIEW=1 node marketing/video/build.mjs",
-    "capture:screens": "node marketing/capture/capture-screens.mjs"
+    "capture:screens": "node marketing/capture/capture-screens.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
@@ -59,6 +61,7 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
-    "playwright-core": "^1.62.1"
+    "playwright-core": "^1.62.1",
+    "vitest": "^3.2.7"
   }
 }

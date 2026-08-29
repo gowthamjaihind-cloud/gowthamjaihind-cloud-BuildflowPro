@@ -30,8 +30,16 @@ export const money = (n: unknown): string =>
  * Money for display without forced decimals — whole rupees stay clean, and
  * anything with paise shows exactly two. Use for totals in dense tables.
  */
-export const moneyCompact = (n: unknown): string =>
-  round2(n).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+export const moneyCompact = (n: unknown): string => {
+  const v = round2(n);
+  // Whole rupees stay clean, but a value with paise shows BOTH decimals:
+  // "3,36,33,362.2" is not a money string, and a lone decimal reads as a
+  // different number.
+  return v.toLocaleString("en-IN", {
+    minimumFractionDigits: v % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+};
 
 /** Quantity for display: up to 3 decimals, no trailing zeros forced. */
 export const qty = (n: unknown): string =>
@@ -49,6 +57,7 @@ export const moneyShort = (n: unknown): string => {
   const sign = v < 0 ? "-" : "";
   if (abs >= 1e7) return `${sign}${round2(abs / 1e7)}Cr`;
   if (abs >= 1e5) return `${sign}${round2(abs / 1e5)}L`;
-  if (abs >= 1e3) return `${sign}${round2(abs / 1e3)}K`;
-  return `${sign}${round2(abs)}`;
+  // Below a lakh there is no spoken short form -- "1.23K" is not how the
+  // amount is said -- so fall back to grouped rupees.
+  return moneyCompact(v);
 };
