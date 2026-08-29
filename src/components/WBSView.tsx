@@ -1219,13 +1219,13 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
               </div>
               <div className="flex items-center gap-1.5 md:gap-4 lg:gap-6 px-1.5 md:px-4 shrink-0">
                 <div className="w-24 hidden xl:block">Timeline</div>
-                <div className="w-16 hidden xl:block text-center">Float</div>
+                <div className="w-16 hidden xl:block text-center">Spare days</div>
                 <div className="w-14 sm:w-24 md:w-28 text-right">Budget</div>
                 <div className="w-14 sm:w-24 md:w-28 text-right">Actual</div>
                 <div className="w-14 sm:w-28 md:w-32 text-center text-white/80">
                   Progress
                 </div>
-                <div className="w-16 md:w-24 text-center">Ops</div>
+                <div className="w-16 md:w-24 text-center">Actions</div>
               </div>
             </div>
 

@@ -630,7 +630,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             {t("views.stockInventory")}
           </h2>
           <p className="text-ink-muted font-medium mt-1 text-[10px] md:text-sm">
-            Monitor and manage material logistics and resource orchestration.
+            {t("inventory.subtitle")}
           </p>
         </div>
       </div>

@@ -375,7 +375,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
               {t("views.laborMatrix")}
             </h2>
             <p className="text-ink-muted font-bold text-xs md:text-sm tracking-tight uppercase tracking-[0.1em]">
-              Pricing indexes mapped to active vendors.
+              {t("labor.subtitle")}
             </p>
           </div>
           <button
@@ -1079,7 +1079,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                     Rate Card
                   </h3>
                   <p className="text-white/40 text-[10px] md:text-xs mt-1 uppercase tracking-widest font-bold">
-                    Labor Matrix Index
+                    {t("views.laborMatrix")}
                   </p>
                 </div>
                 <button
