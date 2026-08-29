@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import {
   db,
   collection,
@@ -73,6 +74,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
   projectId,
 }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
 
@@ -592,7 +594,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       ...r.slice(1).map((v) => `₹${Number(v).toLocaleString("en-IN")}`),
     ]);
     const dateStr = new Date().toISOString().split("T")[0];
-    exportToPDF("Project Cost Management Report", `Project ID: ${projectId}`, headers, formattedRows, `Project_Cost_Report_${dateStr}`);
+    exportToPDF("Project Cost Management Report", `Project: ${projectLabel}`, headers, formattedRows, `Project_Cost_Report_${dateStr}`);
   };
 
   const startEditing = (task: Task) => {

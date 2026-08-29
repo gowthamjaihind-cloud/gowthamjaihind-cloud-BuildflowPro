@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { round2, round3 } from "../utils/num";
 import { useTranslation } from "../i18n";
 import { demoRequested } from "../demo";
 import {
@@ -90,6 +92,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   projectId,
 }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
@@ -739,6 +742,71 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         r.items.map((i) => `${i.name} (Qty: ${i.quantity})`).join("; "),
         r.totalAmount,
       ]);
+    } else if (activeTab === "purchase_orders") {
+      title = "Purchase Orders";
+      baseFileName = `purchase_orders_${dateSuffix}`;
+      headers = ["PO Number", "Date", "Vendor", "Items", "Status", "Amount (₹)"];
+      dataToExport = purchaseOrders.map((po) => [
+        po.poNumber,
+        po.orderDate,
+        po.vendorName,
+        (po.lineItems || []).length,
+        po.status,
+        po.totalAmount,
+      ]);
+    } else if (activeTab === "goods_receipt") {
+      title = "Goods Receipts";
+      baseFileName = `goods_receipts_${dateSuffix}`;
+      headers = [
+        "GRN Number",
+        "Date",
+        "Vendor",
+        "Against PO",
+        "Accepted Qty",
+        "Rejected Qty",
+        "Value (₹)",
+      ];
+      dataToExport = grns.map((g) => {
+        const items = g.lineItems || [];
+        const accepted = items.reduce((a, i) => a + (Number(i.acceptedQty) || 0), 0);
+        const rejected = items.reduce((a, i) => a + (Number(i.rejectedQty) || 0), 0);
+        // GRNs carry no stored total, so value is the accepted quantity priced
+        // at the line rate -- the same basis the receipt posts to the ledger.
+        const value = items.reduce(
+          (a, i) => a + (Number(i.acceptedQty) || 0) * (Number(i.rate) || 0),
+          0,
+        );
+        return [
+          g.grnNumber,
+          g.receiptDate,
+          g.vendorName,
+          g.poNumber || "-",
+          round3(accepted),
+          round3(rejected),
+          round2(value),
+        ];
+      });
+    } else if (activeTab === "bills") {
+      title = "Vendor Bills";
+      baseFileName = `vendor_bills_${dateSuffix}`;
+      headers = [
+        "Invoice Number",
+        "Date",
+        "Vendor",
+        "Against PO",
+        "Taxable (₹)",
+        "GST (₹)",
+        "Total (₹)",
+      ];
+      dataToExport = bills.map((b) => [
+        b.invoiceNumber,
+        b.invoiceDate,
+        b.vendorName,
+        b.poNumber || "-",
+        round2(b.subtotalTaxable),
+        round2((b.totalCGST || 0) + (b.totalSGST || 0) + (b.totalIGST || 0)),
+        round2(b.grandTotal),
+      ]);
     } else if (activeTab === "ledger") {
       const filteredLedger = selectedVendor
         ? ledger.filter((e) => e.vendorId === selectedVendor.id)
@@ -772,7 +840,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     const formattedRows = dataToExport.map((row) =>
       row.map((val) => typeof val === "number" ? `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : val)
     );
-    exportToPDF(title, `Project ID: ${projectId}`, headers, formattedRows, baseFileName);
+    exportToPDF(title, `Project: ${projectLabel}`, headers, formattedRows, baseFileName);
   };
 
   // Net of the vendor's ledger rows (credits - debits) — the same figure the

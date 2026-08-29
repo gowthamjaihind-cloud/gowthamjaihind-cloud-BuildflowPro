@@ -84,6 +84,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   };
   const [newProject, setNewProject] = useState({
     name: "",
+    projectCode: "",
     description: "",
     startDate: "",
     endDate: "",
@@ -190,6 +191,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
     setNewProject({
       name: "",
+      projectCode: "",
       description: "",
       startDate: "",
       endDate: "",
@@ -277,6 +279,23 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     setNewProject({ ...newProject, name: e.target.value })
                   }
                 />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-widest text-ink-muted mb-2">
+                  {t("cpm.projectCode")}
+                </label>
+                <input
+                  className="w-full bg-surface/50 border border-divider rounded-2xl p-3 md:p-4 focus:bg-surface outline-none apple-transition font-bold"
+                  placeholder={t("cpm.projectCodePlaceholder")}
+                  value={newProject.projectCode}
+                  onChange={(e) =>
+                    setNewProject({ ...newProject, projectCode: e.target.value })
+                  }
+                />
+                <p className="text-[11px] text-ink-muted mt-1.5">
+                  {t("cpm.projectCodeHint")}
+                </p>
               </div>
               <div className="md:col-span-2 space-y-3">
                 <label className="text-[13px] font-bold text-ink-muted ml-1">

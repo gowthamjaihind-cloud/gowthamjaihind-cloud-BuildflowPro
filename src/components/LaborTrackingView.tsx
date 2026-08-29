@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import {
   db,
   collection,
@@ -71,6 +72,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
   projectId,
 }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
@@ -1016,7 +1018,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     const formattedRows = rows.map((r) =>
       r.map((val) => typeof val === "number" ? `₹${val.toLocaleString("en-IN")}` : val)
     );
-    exportToPDF(`Labor ${activeTab === "rates" ? "Pricing Matrix" : "RA Billing"} Report`, `Project ID: ${projectId}`, headers, formattedRows, `Labor_${activeTab}_Report`);
+    exportToPDF(`Labor ${activeTab === "rates" ? "Pricing Matrix" : "RA Billing"} Report`, `Project: ${projectLabel}`, headers, formattedRows, `Labor_${activeTab}_Report`);
   };
 
   return (

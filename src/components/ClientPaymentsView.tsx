@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { useTranslation } from "../i18n";
 import {
@@ -36,6 +37,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
   costEntries,
 }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -227,7 +229,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
     const dateStr = new Date().toISOString().split("T")[0];
     exportToPDF(
       "INTEGRATED CASH BOOK LEDGER",
-      `Project ID: ${projectId} | Inward: ₹${totalClientReceived.toLocaleString("en-IN")} | Outward: ₹${(totalVendorPaid + totalDirectCosts).toLocaleString("en-IN")}`,
+      `Project: ${projectLabel} | Inward: ₹${totalClientReceived.toLocaleString("en-IN")} | Outward: ₹${(totalVendorPaid + totalDirectCosts).toLocaleString("en-IN")}`,
       headers,
       rows,
       `Cash_Book_Ledger_${dateStr}`

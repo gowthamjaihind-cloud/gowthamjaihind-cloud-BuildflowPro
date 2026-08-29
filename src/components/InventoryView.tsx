@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import {
   db,
   collection,
@@ -59,6 +60,7 @@ interface InventoryViewProps {
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
 
@@ -517,10 +519,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         item.name || "",
         item.category || "Material",
         item.groupCode || "-",
-        avail,
+        // Numbers, not formatted strings, so a spreadsheet can still total
+        // them -- but rounded, or the float noise from the subtraction shows
+        // up as 297.79999999999995.
+        round3(avail),
         item.unit || "MT",
-        cost,
-        avail * cost,
+        round2(cost),
+        round2(avail * cost),
         item.minThreshold || 0,
       ];
     });
@@ -545,16 +550,16 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         item.materialId || "-",
         item.name || "",
         item.category || "Material",
-        avail,
+        qty(avail),
         item.unit || "MT",
-        `₹${cost.toLocaleString("en-IN")}`,
-        `₹${(avail * cost).toLocaleString("en-IN")}`,
+        `₹${money(cost)}`,
+        `₹${money(avail * cost)}`,
       ];
     });
     const dateStr = new Date().toISOString().split("T")[0];
     exportToPDF(
       "SITE INVENTORY STOCK REPORT",
-      `Project ID: ${projectId} | Total Items: ${filteredItems.length}`,
+      `Project: ${projectLabel} | Total Items: ${filteredItems.length}`,
       headers,
       rows,
       `Inventory_Stock_${dateStr}`
