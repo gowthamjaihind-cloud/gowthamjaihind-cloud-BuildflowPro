@@ -42,11 +42,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # `vite build` does not typecheck, so a type error would otherwise ship.
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Tests
+        run: npm test
+
       - name: Build frontend
         run: npx vite build
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+
+      # The demo build ships fixture data; this asserts none of it reached the
+      # production bundle before that bundle goes live.
+      - name: Verify no demo fixtures in the bundle
+        run: npm run verify:no-demo
 
       - name: Deploy to Firebase Hosting (live)
         uses: FirebaseExtended/action-hosting-deploy@v0
