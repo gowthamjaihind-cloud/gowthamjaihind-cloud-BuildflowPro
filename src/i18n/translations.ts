@@ -604,7 +604,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.eyebrow": "செயல்திட்ட டாஷ்போர்டு",
     "dashboard.heroTitle": "செயல்திட்ட டாஷ்போர்டு",
     "dashboard.heroSubtitle":
-      "இன்னிக்கு வேலை எங்க இருக்கு — முன்னேற்றம், செலவு, தாமதம்.",
+      "செயல்திட்டத்தின் இன்றைய நிலை — முன்னேற்றம், செலவு, தாமதம்.",
     "dashboard.sessionUser": "தற்போதைய பயனர்",
     "dashboard.projectDirector": "செயல்திட்ட இயக்குநர்",
     "dashboard.tasks": "பணிகள்",
@@ -621,7 +621,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ---- Reports ----
     "reports.title": "முன்னேற்ற அறிக்கைகள்",
-    "reports.subtitle": "தினசரி பதிவுகளை அனுப்பக்கூடிய ரிப்போர்ட்டா மாத்துங்க.",
+    "reports.subtitle": "தினசரி பதிவுகளிலிருந்து பகிரக்கூடிய அறிக்கை.",
     "reports.daily": "தினசரி",
     "reports.weekly": "வாராந்திர",
     "reports.monthly": "மாதாந்திர",
@@ -651,7 +651,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // ---- AI Insights ----
     "insights.title": "செயல்திட்ட பகுப்பாய்வு",
     "insights.subtitle":
-      "உங்க செலவு, அட்டவணை, தினசரி பதிவுகளைப் படிச்சு கவனிக்க வேண்டியதைக் காட்டும்.",
+      "உங்கள் செலவு, அட்டவணை மற்றும் தினசரி பதிவுகளைப் படித்து, கவனிக்க வேண்டியதைக் காட்டுகிறது.",
     "insights.lastGenerated": "கடைசியாக உருவாக்கப்பட்டது {when}",
     "insights.analyzing": "பகுப்பாய்வு செய்கிறது…",
     "insights.regenerate": "மீண்டும் உருவாக்கு",
@@ -906,9 +906,9 @@ export const translations: Record<Language, Record<string, string>> = {
     // ---- WBS ----
     "wbs.title": "WBS",
     "wbs.subtitle": "வேலைப் பிரிவு",
-    "inventory.subtitle": "என்ன ஸ்டாக் இருக்கு, எது தீர்ந்துடுச்சு.",
-    "estimates.subtitle": "வாடிக்கையாளருக்கு அனுப்பின எஸ்டிமேட், அவங்க ஒப்புக்கிட்டது.",
-    "labor.subtitle": "ஒவ்வொரு கான்ட்ராக்டருக்கும் கூலி ரேட்.",
+    "inventory.subtitle": "என்ன ஸ்டாக் உள்ளது, எது குறைகிறது.",
+    "estimates.subtitle": "வாடிக்கையாளருக்கு அனுப்பிய எஸ்டிமேட்டுகளும் ஒப்புதல் நிலையும்.",
+    "labor.subtitle": "ஒப்பந்ததாரர் வாரியாக கூலி விகிதங்கள்.",
     "wbs.addTask": "பணி சேர்",
     "wbs.createNewTask": "புதிய பணியை உருவாக்கு",
     "wbs.newTask": "புதிய பணி",
