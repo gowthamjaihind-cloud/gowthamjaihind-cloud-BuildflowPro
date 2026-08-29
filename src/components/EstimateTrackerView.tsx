@@ -1147,7 +1147,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
         <div>
           <h2 className="text-2xl font-bold text-ink">{t("views.clientEstimates")}</h2>
           <p className="text-ink-muted text-sm mt-1">
-            Track estimates and approvals with the client.
+            {t("estimates.subtitle")}
           </p>
         </div>
         <button

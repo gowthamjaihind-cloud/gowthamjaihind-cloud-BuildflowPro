@@ -18,7 +18,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.insights": "Project Insights",
     "nav.wbs": "WBS",
     "nav.dailylogs": "Daily Logs",
-    "nav.labor": "Labor & Billing",
+    "nav.labor": "Labour & Billing",
     "nav.inventory": "Inventory",
     "nav.procurement": "Procurement",
     "nav.consumption": "Consumption History",
@@ -85,7 +85,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.eyebrow": "Project Dashboard",
     "dashboard.heroTitle": "Project Dashboard",
     "dashboard.heroSubtitle":
-      "Real-time synchronization of project tasks and critical path analysis.",
+      "Where the job stands today — progress, spend, and what's slipping.",
     "dashboard.sessionUser": "Session User",
     "dashboard.projectDirector": "Project Director",
     "dashboard.tasks": "Tasks",
@@ -102,7 +102,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ---- Reports ----
     "reports.title": "Progress Reports",
-    "reports.subtitle": "Generate project updates from daily logs.",
+    "reports.subtitle": "Turn daily logs into a report you can send.",
     "reports.daily": "Daily",
     "reports.weekly": "Weekly",
     "reports.monthly": "Monthly",
@@ -152,7 +152,7 @@ export const translations: Record<Language, Record<string, string>> = {
       "AI-generated from your project data — review figures before acting on them.",
 
     // ---- Module view titles ----
-    "views.laborMatrix": "Labor Matrix",
+    "views.laborMatrix": "Labour rates",
     "views.raBillSummaries": "RA Bill Summaries",
     "views.archive": "Archive",
     "views.stockInventory": "Stock Inventory",
@@ -207,8 +207,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "dlog.addMaterial": "Add Material",
     "dlog.selectMaterial": "Select Material...",
     "dlog.qty": "Qty",
-    "dlog.laborDeployed": "Labor Deployed",
-    "dlog.addLabor": "Add Labor",
+    "dlog.laborDeployed": "Labour deployed",
+    "dlog.addLabor": "Add labour",
     "dlog.selectRole": "Select Role...",
     "dlog.count": "Count",
     "dlog.equipmentUsed": "Equipment Used",
@@ -281,7 +281,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "dlh.loggedBy": "Logged by {name}",
     "dlh.cumProgress": "Cum. Progress",
     "dlh.materials": "Materials",
-    "dlh.labor": "Labor",
+    "dlh.labor": "Labour",
     "dlh.equipment": "Equipment",
     "dlh.deleteTitle": "Delete Log Entry?",
     "dlh.deleteBody":
@@ -384,7 +384,10 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ---- WBS ----
     "wbs.title": "WBS",
-    "wbs.subtitle": "Project Breakdown Structure",
+    "wbs.subtitle": "Work breakdown",
+    "inventory.subtitle": "What's in stock, what's running out.",
+    "estimates.subtitle": "Estimates sent to the client, and what they've approved.",
+    "labor.subtitle": "Labour rates by contractor.",
     "wbs.addTask": "Add Task",
     "wbs.createNewTask": "Create New Task",
     "wbs.newTask": "New Task",
@@ -422,7 +425,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ---- Analytics dashboards ----
     "an.moduleCost": "Cost",
-    "an.moduleLabor": "Labor",
+    "an.moduleLabor": "Labour",
     "an.moduleProcurement": "Procurement",
     "an.moduleInventory": "Inventory",
     "an.moduleProgress": "Progress",
@@ -443,7 +446,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "an.viewByCategory": "By category",
     "an.viewVariance": "Variance %",
     "an.catMaterial": "Material",
-    "an.catLabor": "Labor",
+    "an.catLabor": "Labour",
     "an.catEquipment": "Equipment",
     "an.catDirectCost": "Direct Cost",
     "an.comingSoon": "Visual analytics coming soon",
@@ -601,7 +604,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.eyebrow": "செயல்திட்ட டாஷ்போர்டு",
     "dashboard.heroTitle": "செயல்திட்ட டாஷ்போர்டு",
     "dashboard.heroSubtitle":
-      "செயல்திட்ட பணிகள் மற்றும் முக்கியப் பாதை பகுப்பாய்வின் நேரடி அப்டேட்.",
+      "செயல்திட்டத்தின் இன்றைய நிலை — முன்னேற்றம், செலவு, தாமதம்.",
     "dashboard.sessionUser": "தற்போதைய பயனர்",
     "dashboard.projectDirector": "செயல்திட்ட இயக்குநர்",
     "dashboard.tasks": "பணிகள்",
@@ -618,7 +621,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ---- Reports ----
     "reports.title": "முன்னேற்ற அறிக்கைகள்",
-    "reports.subtitle": "தினசரி பதிவுகளிலிருந்து செயல்திட்ட புதுப்பிப்புகளை உருவாக்கவும்.",
+    "reports.subtitle": "தினசரி பதிவுகளிலிருந்து பகிரக்கூடிய அறிக்கை.",
     "reports.daily": "தினசரி",
     "reports.weekly": "வாராந்திர",
     "reports.monthly": "மாதாந்திர",
@@ -648,7 +651,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // ---- AI Insights ----
     "insights.title": "செயல்திட்ட பகுப்பாய்வு",
     "insights.subtitle":
-      "உங்க செலவு, அட்டவணை, தினசரி பதிவுகளைப் படிச்சு கவனிக்க வேண்டியதைக் காட்டும்.",
+      "உங்கள் செலவு, அட்டவணை மற்றும் தினசரி பதிவுகளைப் படித்து, கவனிக்க வேண்டியதைக் காட்டுகிறது.",
     "insights.lastGenerated": "கடைசியாக உருவாக்கப்பட்டது {when}",
     "insights.analyzing": "பகுப்பாய்வு செய்கிறது…",
     "insights.regenerate": "மீண்டும் உருவாக்கு",
@@ -902,7 +905,10 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ---- WBS ----
     "wbs.title": "WBS",
-    "wbs.subtitle": "செயல்திட்டப் பிரிவு அமைப்பு",
+    "wbs.subtitle": "வேலைப் பிரிவு",
+    "inventory.subtitle": "என்ன ஸ்டாக் உள்ளது, எது குறைகிறது.",
+    "estimates.subtitle": "வாடிக்கையாளருக்கு அனுப்பிய எஸ்டிமேட்டுகளும் ஒப்புதல் நிலையும்.",
+    "labor.subtitle": "ஒப்பந்ததாரர் வாரியாக கூலி விகிதங்கள்.",
     "wbs.addTask": "பணி சேர்",
     "wbs.createNewTask": "புதிய பணியை உருவாக்கு",
     "wbs.newTask": "புதிய பணி",
