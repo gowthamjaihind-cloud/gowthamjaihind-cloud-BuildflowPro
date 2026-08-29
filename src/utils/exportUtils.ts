@@ -14,7 +14,10 @@ export function exportToCSV(
       r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")
     ),
   ];
-  const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+  // Excel on Windows ignores the MIME charset for a downloaded file and falls
+  // back to the system codepage, which turns Tamil into mojibake. The BOM is
+  // what makes it read the file as UTF-8.
+  const blob = new Blob(["\ufeff" + csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.setAttribute("href", url);
@@ -25,10 +28,37 @@ export function exportToCSV(
   URL.revokeObjectURL(url);
 }
 
+
+// jsPDF's built-in fonts (Helvetica and friends) are Latin-only, so any Tamil
+// in an export came out as boxes -- silently, with no error. Noto Sans Tamil
+// is fetched and embedded only when the content actually contains Tamil, so an
+// English-only export carries no extra weight.
+const TAMIL_RANGE = /[\u0B80-\u0BFF]/;
+let tamilFontPromise: Promise<string | null> | null = null;
+
+async function loadTamilFont(): Promise<string | null> {
+  if (!tamilFontPromise) {
+    tamilFontPromise = fetch("/fonts/NotoSansTamil-Regular.ttf")
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+      .then((buf) => {
+        const bytes = new Uint8Array(buf);
+        let bin = "";
+        for (let i = 0; i < bytes.length; i += 1) bin += String.fromCharCode(bytes[i]);
+        return btoa(bin);
+      })
+      .catch((e) => {
+        // Fall back to Helvetica rather than failing the export outright.
+        console.warn("Tamil PDF font unavailable, falling back to Helvetica", e);
+        return null;
+      });
+  }
+  return tamilFontPromise;
+}
+
 /**
  * Generates and downloads a clean, formatted PDF table report.
  */
-export function exportToPDF(
+export async function exportToPDF(
   title: string,
   subtitle: string,
   headers: string[],
@@ -36,6 +66,24 @@ export function exportToPDF(
   fileName: string
 ) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+  let FONT = "helvetica";
+  const hasTamil =
+    TAMIL_RANGE.test(title) ||
+    TAMIL_RANGE.test(subtitle) ||
+    headers.some((h) => TAMIL_RANGE.test(String(h ?? ""))) ||
+    rows.some((r) => r.some((c) => TAMIL_RANGE.test(String(c ?? ""))));
+  if (hasTamil) {
+    const b64 = await loadTamilFont();
+    if (b64) {
+      doc.addFileToVFS("NotoSansTamil.ttf", b64);
+      doc.addFont("NotoSansTamil.ttf", "NotoSansTamil", "normal");
+      FONT = "NotoSansTamil";
+    }
+  }
+  // The Tamil subset ships one weight, so bold falls back to regular there.
+  const setF = (style: "bold" | "normal") =>
+    doc.setFont(FONT, FONT === "helvetica" ? style : "normal");
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 12;
@@ -44,13 +92,13 @@ export function exportToPDF(
   doc.setFillColor(15, 23, 42); // slate-900
   doc.rect(0, 0, pageWidth, 20, "F");
 
-  doc.setFont("helvetica", "bold");
+  setF("bold");
   doc.setFontSize(11);
   doc.setTextColor(255, 255, 255);
   doc.text(title.toUpperCase(), margin, 12);
 
   if (subtitle) {
-    doc.setFont("helvetica", "normal");
+    setF("normal");
     doc.setFontSize(8);
     doc.setTextColor(203, 213, 225);
     doc.text(subtitle, margin, 17);
@@ -80,7 +128,7 @@ export function exportToPDF(
   const renderTableHeader = (y: number) => {
     doc.setFillColor(241, 245, 249);
     doc.rect(margin, y, usableWidth, 7, "F");
-    doc.setFont("helvetica", "bold");
+    setF("bold");
     doc.setFontSize(7);
     doc.setTextColor(51, 65, 85);
 
@@ -93,7 +141,7 @@ export function exportToPDF(
   renderTableHeader(startY);
   startY += 7;
 
-  doc.setFont("helvetica", "normal");
+  setF("normal");
   doc.setFontSize(7);
   doc.setTextColor(30, 41, 59);
 
@@ -110,7 +158,7 @@ export function exportToPDF(
       startY = 12;
       renderTableHeader(startY);
       startY += 7;
-      doc.setFont("helvetica", "normal");
+      setF("normal");
       doc.setFontSize(7);
       doc.setTextColor(30, 41, 59);
     }
