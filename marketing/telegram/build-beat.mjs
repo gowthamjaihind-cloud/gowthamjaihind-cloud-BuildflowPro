@@ -63,16 +63,19 @@ Brickwork / blockwork — 65%
     ),
 );
 
-const page = (w, h, stack) => `<!doctype html><html><head><meta charset="utf-8">
+// `standalone` is for the screen-recording walkthrough, which cuts to this
+// full frame with nothing over it. The other two variants leave room at the
+// foot for Remotion's caption band; used full-frame that reads as dead space.
+const page = (w, h, stack, standalone = false) => `<!doctype html><html><head><meta charset="utf-8">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{width:${w}px;height:${h}px;overflow:hidden}
   body{background:#324755;font-family:Manrope,system-ui,sans-serif;
     display:flex;align-items:center;justify-content:center;
-    gap:${stack ? 34 : 96}px;flex-direction:${stack ? "column" : "row"};
-    padding:${stack ? "40px 50px 230px" : "10px 70px 210px"}}
-  .phone{width:${stack ? 640 : 600}px;background:#0E1621;border-radius:34px;
+    gap:${stack ? 34 : (standalone ? 120 : 96)}px;flex-direction:${stack ? "column" : "row"};
+    padding:${stack ? "40px 50px 230px" : (standalone ? "60px 90px" : "10px 70px 210px")}}
+  .phone{width:${stack ? 640 : (standalone ? 720 : 600)}px;background:#0E1621;border-radius:34px;
     overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.45);flex:0 0 auto}
   .bar{background:#17212B;padding:16px 18px;display:flex;align-items:center;gap:12px}
   .av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#D97D54,#B85F3B);
@@ -96,13 +99,14 @@ const page = (w, h, stack) => `<!doctype html><html><head><meta charset="utf-8">
 </style></head><body>${menu}${done}</body></html>`;
 
 const b = await chromium.launch({ executablePath: CHROME, args: ["--no-sandbox"] });
-for (const [w, h, name, stack] of [
-  [1920, 1080, "telegram-beat-16x9.png", false],
-  [1080, 1920, "telegram-beat-9x16.png", true],
+for (const [w, h, name, stack, standalone] of [
+  [1920, 1080, "telegram-beat-16x9.png", false, false],
+  [1080, 1920, "telegram-beat-9x16.png", true, false],
+  [1920, 1080, "telegram-beat-full.png", false, true],
 ]) {
   const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
   const p = await ctx.newPage();
-  await p.setContent(page(w, h, stack), { waitUntil: "networkidle" });
+  await p.setContent(page(w, h, stack, standalone), { waitUntil: "networkidle" });
   await p.waitForTimeout(1200);
   await p.screenshot({ path: join(OUT, name) });
   console.log("  wrote", name);

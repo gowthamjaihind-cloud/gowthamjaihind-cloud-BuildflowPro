@@ -173,6 +173,10 @@ export const demoLaborRates = [
 const dayLog = (n: number, taskId: string, pct: number, mason: number, helper: number, bender: number) => ({
   id: `dl${n}`, projectId: DEMO_PROJECT_ID, taskId, workDate: d(-n),
   progressPercent: pct, notes: "", createdAt: `${d(-n)}T09:00:00.000Z`,
+  // Every real log has an author -- these come off the site engineer's phone
+  // via the bot. Without a name the log card renders "Logged by" and nothing.
+  createdByUid: "demo-engineer",
+  createdByName: "Suresh · Site Engineer",
   labour: [
     { roleId: "lr1", roleName: "Mason", headcount: mason },
     { roleId: "lr2", roleName: "Helper", headcount: helper },

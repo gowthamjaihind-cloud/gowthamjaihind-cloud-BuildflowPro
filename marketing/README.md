@@ -154,3 +154,57 @@ overruns a 2000px-tall screenshot.
 
 Captions are one full-bleed band across the foot of the frame. Text is never set
 in a coloured chip, and nothing decorative is laid over a screen.
+
+## walkthrough/ — the screen recording
+
+A narrated tour of the real app, driven in a browser and captured as video. The
+Remotion cut above is composed from stills; this one is the product actually
+running, clicked through in order.
+
+```bash
+npm run build:demo
+node marketing/capture/serve-demo.mjs &      # serves dist-demo on :4173
+npm run walkthrough
+```
+
+Three files land in `walkthrough/out/` (untracked, like every render here):
+`walkthrough.mp4`, `walkthrough.srt`, and `walkthrough.md` — a time-stamped
+voiceover script to hand to whoever records the audio.
+
+### Timings are measured, not written
+
+Each beat carries its narration and the steps that drive the app. The runner
+records when each beat actually started and finished, and the subtitles, the
+script and the composited cut-aways are all built from those measurements. A
+beat that runs long moves its own caption, so the script cannot drift out of
+sync with the picture.
+
+The clock starts when the page is created, because that is when recording
+begins — not when the first beat runs. Anchoring it any later shifts every
+subtitle earlier than the picture by however long start-up took, which is
+around ten seconds.
+
+### Cut-aways
+
+A beat may declare `cutTo: "<file in remotion/public>"`. That still is
+composited full-frame over exactly the window the beat occupied, with a short
+fade either side. Telegram uses this: it is the one part of the product that
+does not happen in the browser, and a project has no Telegram screen to
+navigate to (Telegram lives in Settings, reachable only from the portfolio).
+`telegram-beat-full.png` is the variant built for this — the other two reserve
+space at the foot for Remotion's caption band, which reads as dead space when
+the frame is used on its own.
+
+### Fonts
+
+`walkthrough/fonts/` holds Manrope and JetBrains Mono, served to the page from
+disk during a recording. Left to the network they are a render-blocking
+third-party request that has stalled a page load here before, and falling back
+to a system face would put the wrong type on every frame.
+
+### The pointer
+
+Playwright moves a real mouse but paints no pointer, so a raw recording looks
+like the UI is operating itself. The runner draws a cursor, glides it with
+easing, and pings a ring on each click. Scrolling is eased for the same reason:
+a jump cut mid-page reads as a glitch.
