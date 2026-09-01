@@ -16,7 +16,8 @@
     "video:preview": "PREVIEW=1 node marketing/video/build.mjs",
     "capture:screens": "node marketing/capture/capture-screens.mjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:demo:hosted": "VITE_DEMO=1 vite build --outDir dist-demo --base=/demo/"
   },
   "dependencies": {
     "@fontsource/noto-sans-tamil": "^5.3.0",

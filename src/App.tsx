@@ -1,4 +1,6 @@
 import React, { useState, useEffect, Component } from "react";
+import { demoRequested } from "./demo";
+import { DemoBanner } from "./demo/DemoBanner";
 import {
   auth,
   db,
@@ -244,6 +246,8 @@ function AppContent() {
     <>
       {page}
       {access.isTrial && access.allowed && <TrialBanner daysLeft={access.daysLeft} />}
+      {/* Folds away entirely in the production bundle. */}
+      {__DEMO__ && demoRequested() && <DemoBanner />}
     </>
   );
 }

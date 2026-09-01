@@ -280,6 +280,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <a href="#solutions" className="hover:text-ink apple-transition">{t("land.navSolutions")}</a>
             <a href="#features" className="hover:text-ink apple-transition">{t("land.navFeatures")}</a>
             <a href="#pricing" className="hover:text-ink apple-transition">{t("land.navPricing")}</a>
+            <a
+              href="/demo/?demo=1"
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-1.5 text-primary hover:text-[#B85F3B] apple-transition font-bold"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />
+              {t("land.navDemo")}
+            </a>
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -300,6 +309,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <a href="#solutions" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navSolutions")}</a>
             <a href="#features" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navFeatures")}</a>
             <a href="#pricing" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navPricing")}</a>
+            <a
+              href="/demo/?demo=1"
+              target="_blank"
+              rel="noopener"
+              onClick={() => setMenuOpen(false)}
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-primary py-1"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />
+              {t("land.navDemo")}
+            </a>
             <CTA label={t("land.getStarted")} full className="bg-primary text-white text-sm px-5 py-3 rounded-xl mt-1" />
           </div>
         )}
