@@ -1,0 +1,17 @@
+{
+  "name": "sitetru-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Programmatic launch videos for Sitetru. Kept separate from the app so its React/Remotion versions cannot collide with the product build.",
+  "scripts": {
+    "studio": "remotion studio",
+    "render:hero": "remotion render Hero out/sitetru-hero.mp4",
+    "render:social": "remotion render Social out/sitetru-social.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.290",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.290"
+  }
+}

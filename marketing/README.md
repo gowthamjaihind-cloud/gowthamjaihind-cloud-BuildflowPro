@@ -112,3 +112,45 @@ edit both.
 On-screen figures must match whatever the screenshots actually show. Beat 4
 already drifted once: it read ₹6.4L while the cost screen showed ₹53.7L,
 because the demo dataset grew after the script was written.
+
+## remotion/ — programmatic launch videos
+
+Two compositions, both built from the same screenshots in `../video/screens`:
+
+- **Hero** — 1920x1080, 81s. The site and YouTube cut.
+- **Social** — 1080x1920, 30s. WhatsApp status, Instagram, Shorts.
+
+```
+cd marketing/remotion
+npm install
+npm run studio          # preview and scrub in the browser
+npm run render:hero
+npm run render:social
+```
+
+Rendering needs a Chromium. This environment ships one, and Remotion passes the
+old `--headless` flag that current Chrome builds reject, so point it at the
+headless shell instead:
+
+```
+npx remotion render Hero out/sitetru-hero.mp4 \
+  --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell
+```
+
+### Why this exists alongside video/build.mjs
+
+`video/build.mjs` renders frames from hand-written HTML. Remotion is React, so a
+beat is a component and the timeline is data — easier to retime, restyle and
+re-cut into other aspect ratios.
+
+### The crop model
+
+`Screen.tsx` takes a focus point (centre and width in source pixels; screens are
+3200x2000) and derives the crop height from the composition's aspect ratio, so a
+region always fills the frame exactly — never letterboxed, never floating,
+never clipped at an edge by accident. Vertical needs its own narrower focus
+values: at 9:16 the height is width x 16/9, so anything wider than ~1125px
+overruns a 2000px-tall screenshot.
+
+Captions are one full-bleed band across the foot of the frame. Text is never set
+in a coloured chip, and nothing decorative is laid over a screen.
