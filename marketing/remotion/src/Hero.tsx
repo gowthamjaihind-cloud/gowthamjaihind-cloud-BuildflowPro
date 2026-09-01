@@ -1,6 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Sequence } from "remotion";
 import { Screen } from "./Screen";
+import { Still } from "./Still";
 import { Caption, EndCard, TypeCard } from "./Type";
 import { C, Focus } from "./theme";
 
@@ -44,13 +45,14 @@ export const HERO_BEATS = {
   hook: [0, 175],
   wbs: [175, 505],
   logsA: [505, 745],
-  telegram: [745, 900],
-  logsB: [900, 1140],
-  proc: [1140, 1420],
-  cost: [1420, 1730],
-  est: [1730, 1990],
-  dash: [1990, 2165],
-  end: [2165, 2430],
+  telegramWord: [745, 865],
+  telegramPhones: [865, 1105],
+  logsB: [1105, 1285],
+  proc: [1285, 1555],
+  cost: [1555, 1845],
+  est: [1845, 2085],
+  dash: [2085, 2250],
+  end: [2250, 2500],
 } as const;
 
 const len = (b: readonly [number, number] | number[]) => b[1] - b[0];
@@ -84,11 +86,24 @@ export const Hero: React.FC = () => (
     </Sequence>
 
     {/* The differentiator, said plainly and on its own frame. */}
-    <Sequence from={HERO_BEATS.telegram[0]} durationInFrames={len(HERO_BEATS.telegram)}>
+    <Sequence from={HERO_BEATS.telegramWord[0]} durationInFrames={len(HERO_BEATS.telegramWord)}>
       <TypeCard
         lines={["Your engineer sends it", "on Telegram."]}
         sub="An app already on his phone. Nothing to install. Nobody to train."
         accentLine={1}
+      />
+    </Sequence>
+
+    {/* Show the bot's actual options rather than asserting they exist. */}
+    <Sequence
+      from={HERO_BEATS.telegramPhones[0]}
+      durationInFrames={len(HERO_BEATS.telegramPhones)}
+    >
+      <Still src="telegram-beat-16x9.png" />
+      <Caption
+        label="On Telegram"
+        title="He picks what to log. Nothing else."
+        note="Progress, labour, material, equipment, a photo or a note — then Save."
       />
     </Sequence>
 
@@ -138,11 +153,12 @@ export const Hero: React.FC = () => (
 /** A 30-second cutdown for social: the hook, the differentiator, the money, the offer. */
 export const Social: React.FC = () => {
   const B = {
-    hook: [0, 150],
-    telegram: [150, 330],
-    logs: [330, 510],
-    cost: [510, 700],
-    end: [700, 900],
+    hook: [0, 140],
+    telegram: [140, 290],
+    phones: [290, 500],
+    logs: [500, 660],
+    cost: [660, 830],
+    end: [830, 1050],
   } as const;
 
   return (
@@ -157,6 +173,11 @@ export const Social: React.FC = () => {
           sub="Already on his phone. Nothing to install."
           accentLine={1}
         />
+      </Sequence>
+
+      <Sequence from={B.phones[0]} durationInFrames={len(B.phones)}>
+        <Still src="telegram-beat-9x16.png" />
+        <Caption label="On Telegram" title="He picks what to log." />
       </Sequence>
 
       <Sequence from={B.logs[0]} durationInFrames={len(B.logs)}>
