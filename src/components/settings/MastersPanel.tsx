@@ -23,6 +23,7 @@ import {
 } from "../../services/wbsTemplateService";
 import { useL } from "../../i18n";
 import { round2, money } from "../../utils/num";
+import { confirmDialog, toast } from "../../lib/feedback";
 
 // Organisation master data. These records are shared by every project, so they
 // belong with the organisation's settings rather than inside one project.
@@ -102,10 +103,8 @@ export const MastersPanel: React.FC = () => {
     // naturally match itself.
     if (!editingId) {
       const dupes = findDuplicates(form, vendors);
-      if (dupes.length && !window.confirm(
-        L(`"${dupes[0].name}" already looks like the same party. Add "${form.name}" anyway?`,
-          `"${dupes[0].name}" ஏற்கனவே இதே பார்ட்டி மாதிரி இருக்கு. இருந்தாலும் "${form.name}" சேர்க்கவா?`),
-      )) return;
+      if (dupes.length && !(await confirmDialog({ title: L(`"${dupes[0].name}" already looks like the same party. Add "${form.name}" anyway?`,
+          `"${dupes[0].name}" ஏற்கனவே இதே பார்ட்டி மாதிரி இருக்கு. இருந்தாலும் "${form.name}" சேர்க்கவா?`), }))) return;
     }
     setBusy(true); setError(null);
     try {
@@ -136,10 +135,8 @@ export const MastersPanel: React.FC = () => {
     if (!mForm.name.trim()) { setError(L("Enter a name.", "பெயரைக் கொடுங்க.")); return; }
     if (!mEditingId) {
       const dupes = findDuplicateMaterials(mForm, materials);
-      if (dupes.length && !window.confirm(
-        L(`"${dupes[0].name}" already looks like the same item. Add "${mForm.name}" anyway?`,
-          `"${dupes[0].name}" ஏற்கனவே இதே பொருள் மாதிரி இருக்கு. இருந்தாலும் சேர்க்கவா?`),
-      )) return;
+      if (dupes.length && !(await confirmDialog({ title: L(`"${dupes[0].name}" already looks like the same item. Add "${mForm.name}" anyway?`,
+          `"${dupes[0].name}" ஏற்கனவே இதே பொருள் மாதிரி இருக்கு. இருந்தாலும் சேர்க்கவா?`), }))) return;
     }
     setBusy(true); setError(null);
     try {
@@ -163,15 +160,15 @@ export const MastersPanel: React.FC = () => {
   // no permanent button for a one-off job.
   const untidy = findUntidyMaterials(materials);
   const tidyNow = async () => {
-    if (!window.confirm(L(
+    if (!(await confirmDialog({ title: L(
       `Round ${untidy.length} stored value${untidy.length === 1 ? "" : "s"} to 2 decimals? Only the numbers change.`,
       `${untidy.length} சேமித்த மதிப்பை 2 புள்ளிக்கு மாற்றவா? எண்கள் மட்டும் மாறும்.`,
-    ))) return;
+    ) }))) return;
     setBusy(true); setError(null);
     try {
       const { updated } = await tidyMasterMaterials(materials);
       await reload();
-      alert(L(`Tidied ${updated} record${updated === 1 ? "" : "s"}.`, `${updated} பதிவு சரிசெய்யப்பட்டது.`));
+      toast.success(L(`Tidied ${updated} record${updated === 1 ? "" : "s"}.`, `${updated} பதிவு சரிசெய்யப்பட்டது.`));
     } catch (err: any) {
       setError(
         err?.code === "permission-denied"
@@ -182,10 +179,10 @@ export const MastersPanel: React.FC = () => {
   };
 
   const removeMaterial = async (m: MasterMaterial) => {
-    if (!window.confirm(L(
+    if (!(await confirmDialog({ title: L(
       `Delete "${m.name}" from your master list? Projects already stocking it keep their own record and are not affected.`,
       `"${m.name}" ஐ மாஸ்டர் பட்டியலிலிருந்து நீக்கவா? ஏற்கனவே ஸ்டாக் வெச்சிருக்கிற செயல்திட்டங்கள் பாதிக்கப்படாது.`,
-    ))) return;
+    ) }))) return;
     setBusy(true);
     try { await deleteMasterMaterial(m.id); await reload(); }
     catch { setError(L("Couldn't delete.", "நீக்க முடியல.")); }
@@ -193,10 +190,10 @@ export const MastersPanel: React.FC = () => {
   };
 
   const removeVendor = async (v: MasterVendor) => {
-    if (!window.confirm(L(
+    if (!(await confirmDialog({ title: L(
       `Delete "${v.name}" from your master list? Projects already using it keep their own copy and are not affected.`,
       `"${v.name}" ஐ மாஸ்டர் பட்டியலிலிருந்து நீக்கவா? ஏற்கனவே பயன்படுத்தும் செயல்திட்டங்கள் பாதிக்கப்படாது.`,
-    ))) return;
+    ) }))) return;
     setBusy(true);
     try { await deleteMasterVendor(v.id); await reload(); }
     catch { setError(L("Couldn't delete.", "நீக்க முடியல.")); }
@@ -204,10 +201,10 @@ export const MastersPanel: React.FC = () => {
   };
 
   const removeTemplate = async (t: SavedWbsTemplate) => {
-    if (!window.confirm(L(
+    if (!(await confirmDialog({ title: L(
       `Delete the template "${t.name}"? Projects already created from it are not affected.`,
       `"${t.name}" டெம்ப்ளேட்டை நீக்கவா? அதிலிருந்து உருவாக்கின செயல்திட்டங்கள் பாதிக்கப்படாது.`,
-    ))) return;
+    ) }))) return;
     setBusy(true);
     try { await deleteTemplate(t.id); await reload(); }
     catch { setError(L("Couldn't delete.", "நீக்க முடியல.")); }

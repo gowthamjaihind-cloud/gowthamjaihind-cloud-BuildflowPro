@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { round2 } from "../utils/num";
 import { useTranslation } from "../i18n";
 import { useProjectDataQuery, useTasksQuery } from "../hooks/queries";
 import { useProjectDailyLogsQuery } from "../hooks/useDailyLogs";
@@ -31,6 +33,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   projectId,
 }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   // Local Filter state for Active Material Tab
   const [localTaskSearch, setLocalTaskSearch] = useState("");
   const [localStartDate, setLocalStartDate] = useState("");
@@ -380,6 +383,44 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
     return { headers, rows };
   };
 
+  // The labour tab had its export buttons hidden outright, so the one screen
+  // that answers "what did we spend on people" could not leave the app.
+  const handleExportLabourCSV = () => {
+    const headers = ["Date", "Task", "Role", "Contractor", "Headcount", "Shifts", "Cost (₹)"];
+    const rows = filteredLaborRecords.map((r) => [
+      r.date,
+      r.taskName,
+      r.role,
+      r.vendorName,
+      r.headcount || 0,
+      r.shifts || 1,
+      round2(r.cost || 0),
+    ]);
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToCSV(`Labour_Consumption_${dateStr}`, headers, rows);
+  };
+
+  const handleExportLabourPDF = () => {
+    const headers = ["Date", "Task", "Role", "Contractor", "Headcount", "Shifts", "Cost (₹)"];
+    const rows = filteredLaborRecords.map((r) => [
+      r.date,
+      r.taskName,
+      r.role,
+      r.vendorName,
+      r.headcount || 0,
+      r.shifts || 1,
+      round2(r.cost || 0),
+    ]);
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToPDF(
+      "Labour Consumption Log",
+      `Project: ${projectLabel}`,
+      headers,
+      rows,
+      `Labour_Consumption_${dateStr}`,
+    );
+  };
+
   const handleExportCSV = (recordsToExport: any[]) => {
     const { headers, rows } = getExportData(recordsToExport);
     const dateStr = new Date().toISOString().split("T")[0];
@@ -389,7 +430,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   const handleExportPDF = (recordsToExport: any[]) => {
     const { headers, rows } = getExportData(recordsToExport);
     const dateStr = new Date().toISOString().split("T")[0];
-    exportToPDF("Material Consumption Log", `Project ID: ${projectId}`, headers, rows, `Material_Consumption_${activeTab === "advanced-filter" ? "Filtered" : activeTab.replace(/\s+/g, "_")}_${dateStr}`);
+    exportToPDF("Material Consumption Log", `Project: ${projectLabel}`, headers, rows, `Material_Consumption_${activeTab === "advanced-filter" ? "Filtered" : activeTab.replace(/\s+/g, "_")}_${dateStr}`);
   };
 
   const handleResetAdvancedFilters = () => {
@@ -429,6 +470,25 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
           </p>
         </div>
         
+        {activeTab === "labor" && filteredLaborRecords.length > 0 && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportLabourCSV}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-panel hover:bg-divider border border-divider rounded-xl text-xs font-bold uppercase tracking-wider text-ink transition duration-200 shadow-sm cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-primary" />
+              {t("common.exportCsv")}
+            </button>
+            <button
+              onClick={handleExportLabourPDF}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              {t("common.exportPdf")}
+            </button>
+          </div>
+        )}
+
         {allRecords.length > 0 && activeTab !== "labor" && (
           <div className="flex items-center gap-2">
             <button

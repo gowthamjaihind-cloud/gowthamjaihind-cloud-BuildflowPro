@@ -18,6 +18,7 @@ import {
 } from "@phosphor-icons/react";
 import { DailyLogEntryScreen } from "../DailyLogEntryScreen";
 import { useAuthStore } from "../../store";
+import { toast } from "../../lib/feedback";
 
 interface ProjectDailyLogsTabProps {
   projectId: string;
@@ -54,7 +55,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
       setLogToDelete(null);
     } catch (e) {
       console.error(e);
-      alert("Failed to delete log");
+      toast.error("Failed to delete log");
     }
   };
 

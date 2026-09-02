@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { round2, round3 } from "../utils/num";
 import { useTranslation } from "../i18n";
 import { demoRequested } from "../demo";
 import {
@@ -72,6 +74,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { useUIStore, useAuthStore } from "../store";
 import { useBreakpoint } from "../hooks/useBreakpoint";
+import { confirmDialog, toast } from "../lib/feedback";
 // Removed unused import
 
 interface ProcurementViewProps {
@@ -90,6 +93,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   projectId,
 }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
@@ -124,7 +128,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         (v.name || "").trim().toLowerCase() === master.name.trim().toLowerCase(),
     );
     if (already) {
-      alert(`"${master.name}" is already a party on this project.`);
+      toast.info(`"${master.name}" is already a party on this project.`);
       return;
     }
     setMasterBusy(true);
@@ -133,7 +137,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       setShowMasterPicker(false);
     } catch (err) {
       console.error("Add from master failed", err);
-      alert("Couldn't add that party to the project. Please try again.");
+      toast.error("Couldn't add that party to the project. Please try again.");
     } finally {
       setMasterBusy(false);
     }
@@ -146,15 +150,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       (v: any) => findDuplicates(v, masters).length === 0,
     );
     if (!missing.length) {
-      alert("Every party on this project is already in your master list.");
+      toast.info("Every party on this project is already in your master list.");
       return;
     }
-    if (!window.confirm(
-      `Save ${missing.length} part${missing.length === 1 ? "y" : "ies"} to your organisation master?\n\n` +
+    if (!(await confirmDialog({ title: `Save ${missing.length} part${missing.length === 1 ? "y" : "ies"} to your organisation master?\n\n` +
       missing.slice(0, 12).map((v: any) => `• ${v.name}`).join("\n") +
       (missing.length > 12 ? `\n…and ${missing.length - 12} more` : "") +
-      `\n\nOnly contact details are shared — balances and ledgers stay with this project. Parties already in the master are skipped.`,
-    )) return;
+      `\n\nOnly contact details are shared — balances and ledgers stay with this project. Parties already in the master are skipped.`, }))) return;
     setMasterBusy(true);
     let ok = 0;
     const failed: string[] = [];
@@ -174,11 +176,9 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         } catch { failed.push(v.name); }
       }
       setMasters(await listMasterVendors());
-      alert(
-        failed.length
+      toast.error(failed.length
           ? `Saved ${ok}. Couldn't save ${failed.length}: ${failed.slice(0, 5).join(", ")}${failed.length > 5 ? "…" : ""}`
-          : `Saved ${ok} part${ok === 1 ? "y" : "ies"} to your master list.`,
-      );
+          : `Saved ${ok} part${ok === 1 ? "y" : "ies"} to your master list.`,);
     } finally { setMasterBusy(false); }
   };
 
@@ -187,12 +187,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   const promoteToMaster = async (v: any) => {
     const dupes = findDuplicates(v, masters);
     if (dupes.length) {
-      if (!window.confirm(
-        `"${dupes[0].name}" already looks like the same party in your master list.\n\nSave "${v.name}" anyway as a separate entry?`,
-      )) return;
-    } else if (!window.confirm(
-      `Save "${v.name}" to your organisation master?\n\nOnly the contact details are shared — the balance and ledger stay with this project.`,
-    )) return;
+      if (!(await confirmDialog({ title: `"${dupes[0].name}" already looks like the same party in your master list.\n\nSave "${v.name}" anyway as a separate entry?`, }))) return;
+    } else if (!(await confirmDialog({ title: `Save "${v.name}" to your organisation master?\n\nOnly the contact details are shared — the balance and ledger stay with this project.`, }))) return;
     setMasterBusy(true);
     try {
       await saveMasterVendor({
@@ -205,14 +201,12 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         address: v.address || "",
       });
       setMasters(await listMasterVendors());
-      alert(`"${v.name}" is now available on every project in your organisation.`);
+      toast.success(`"${v.name}" is now available on every project in your organisation.`);
     } catch (err: any) {
       console.error("Promote to master failed", err);
-      alert(
-        err?.code === "permission-denied"
+      toast.error(err?.code === "permission-denied"
           ? "Only an Owner, Admin or Manager can update the organisation master."
-          : "Couldn't save to the master list. Please try again.",
-      );
+          : "Couldn't save to the master list. Please try again.",);
     } finally {
       setMasterBusy(false);
     }
@@ -739,6 +733,71 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         r.items.map((i) => `${i.name} (Qty: ${i.quantity})`).join("; "),
         r.totalAmount,
       ]);
+    } else if (activeTab === "purchase_orders") {
+      title = "Purchase Orders";
+      baseFileName = `purchase_orders_${dateSuffix}`;
+      headers = ["PO Number", "Date", "Vendor", "Items", "Status", "Amount (₹)"];
+      dataToExport = purchaseOrders.map((po) => [
+        po.poNumber,
+        po.orderDate,
+        po.vendorName,
+        (po.lineItems || []).length,
+        po.status,
+        po.totalAmount,
+      ]);
+    } else if (activeTab === "goods_receipt") {
+      title = "Goods Receipts";
+      baseFileName = `goods_receipts_${dateSuffix}`;
+      headers = [
+        "GRN Number",
+        "Date",
+        "Vendor",
+        "Against PO",
+        "Accepted Qty",
+        "Rejected Qty",
+        "Value (₹)",
+      ];
+      dataToExport = grns.map((g) => {
+        const items = g.lineItems || [];
+        const accepted = items.reduce((a, i) => a + (Number(i.acceptedQty) || 0), 0);
+        const rejected = items.reduce((a, i) => a + (Number(i.rejectedQty) || 0), 0);
+        // GRNs carry no stored total, so value is the accepted quantity priced
+        // at the line rate -- the same basis the receipt posts to the ledger.
+        const value = items.reduce(
+          (a, i) => a + (Number(i.acceptedQty) || 0) * (Number(i.rate) || 0),
+          0,
+        );
+        return [
+          g.grnNumber,
+          g.receiptDate,
+          g.vendorName,
+          g.poNumber || "-",
+          round3(accepted),
+          round3(rejected),
+          round2(value),
+        ];
+      });
+    } else if (activeTab === "bills") {
+      title = "Vendor Bills";
+      baseFileName = `vendor_bills_${dateSuffix}`;
+      headers = [
+        "Invoice Number",
+        "Date",
+        "Vendor",
+        "Against PO",
+        "Taxable (₹)",
+        "GST (₹)",
+        "Total (₹)",
+      ];
+      dataToExport = bills.map((b) => [
+        b.invoiceNumber,
+        b.invoiceDate,
+        b.vendorName,
+        b.poNumber || "-",
+        round2(b.subtotalTaxable),
+        round2((b.totalCGST || 0) + (b.totalSGST || 0) + (b.totalIGST || 0)),
+        round2(b.grandTotal),
+      ]);
     } else if (activeTab === "ledger") {
       const filteredLedger = selectedVendor
         ? ledger.filter((e) => e.vendorId === selectedVendor.id)
@@ -772,7 +831,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     const formattedRows = dataToExport.map((row) =>
       row.map((val) => typeof val === "number" ? `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : val)
     );
-    exportToPDF(title, `Project ID: ${projectId}`, headers, formattedRows, baseFileName);
+    exportToPDF(title, `Project: ${projectLabel}`, headers, formattedRows, baseFileName);
   };
 
   // Net of the vendor's ledger rows (credits - debits) — the same figure the

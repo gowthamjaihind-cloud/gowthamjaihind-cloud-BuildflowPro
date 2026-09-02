@@ -1,6 +1,10 @@
 export interface Project {
   id: string;
   name: string;
+  /** Optional code the customer chooses, e.g. "RR-2026-01". Shown on exported
+   *  reports in place of the Firestore document id, which means nothing to
+   *  the person receiving the PDF. */
+  projectCode?: string;
   description: string;
   startDate: string;
   endDate: string;

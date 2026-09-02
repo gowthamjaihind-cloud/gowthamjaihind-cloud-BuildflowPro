@@ -112,3 +112,99 @@ edit both.
 On-screen figures must match whatever the screenshots actually show. Beat 4
 already drifted once: it read ₹6.4L while the cost screen showed ₹53.7L,
 because the demo dataset grew after the script was written.
+
+## remotion/ — programmatic launch videos
+
+Two compositions, both built from the same screenshots in `../video/screens`:
+
+- **Hero** — 1920x1080, 81s. The site and YouTube cut.
+- **Social** — 1080x1920, 30s. WhatsApp status, Instagram, Shorts.
+
+```
+cd marketing/remotion
+npm install
+npm run studio          # preview and scrub in the browser
+npm run render:hero
+npm run render:social
+```
+
+Rendering needs a Chromium. This environment ships one, and Remotion passes the
+old `--headless` flag that current Chrome builds reject, so point it at the
+headless shell instead:
+
+```
+npx remotion render Hero out/sitetru-hero.mp4 \
+  --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell
+```
+
+### Why this exists alongside video/build.mjs
+
+`video/build.mjs` renders frames from hand-written HTML. Remotion is React, so a
+beat is a component and the timeline is data — easier to retime, restyle and
+re-cut into other aspect ratios.
+
+### The crop model
+
+`Screen.tsx` takes a focus point (centre and width in source pixels; screens are
+3200x2000) and derives the crop height from the composition's aspect ratio, so a
+region always fills the frame exactly — never letterboxed, never floating,
+never clipped at an edge by accident. Vertical needs its own narrower focus
+values: at 9:16 the height is width x 16/9, so anything wider than ~1125px
+overruns a 2000px-tall screenshot.
+
+Captions are one full-bleed band across the foot of the frame. Text is never set
+in a coloured chip, and nothing decorative is laid over a screen.
+
+## walkthrough/ — the screen recording
+
+A narrated tour of the real app, driven in a browser and captured as video. The
+Remotion cut above is composed from stills; this one is the product actually
+running, clicked through in order.
+
+```bash
+npm run build:demo
+node marketing/capture/serve-demo.mjs &      # serves dist-demo on :4173
+npm run walkthrough
+```
+
+Three files land in `walkthrough/out/` (untracked, like every render here):
+`walkthrough.mp4`, `walkthrough.srt`, and `walkthrough.md` — a time-stamped
+voiceover script to hand to whoever records the audio.
+
+### Timings are measured, not written
+
+Each beat carries its narration and the steps that drive the app. The runner
+records when each beat actually started and finished, and the subtitles, the
+script and the composited cut-aways are all built from those measurements. A
+beat that runs long moves its own caption, so the script cannot drift out of
+sync with the picture.
+
+The clock starts when the page is created, because that is when recording
+begins — not when the first beat runs. Anchoring it any later shifts every
+subtitle earlier than the picture by however long start-up took, which is
+around ten seconds.
+
+### Cut-aways
+
+A beat may declare `cutTo: "<file in remotion/public>"`. That still is
+composited full-frame over exactly the window the beat occupied, with a short
+fade either side. Telegram uses this: it is the one part of the product that
+does not happen in the browser, and a project has no Telegram screen to
+navigate to (Telegram lives in Settings, reachable only from the portfolio).
+`telegram-beat-full.png` is the variant built for this — the other two reserve
+space at the foot for Remotion's caption band, which reads as dead space when
+the frame is used on its own.
+
+### Fonts
+
+`walkthrough/fonts/` holds Manrope and JetBrains Mono, served to the page from
+disk during a recording. Left to the network they are a render-blocking
+third-party request that has stalled a page load here before, and falling back
+to a system face would put the wrong type on every frame.
+
+### The pointer
+
+Playwright moves a real mouse but paints no pointer, so a raw recording looks
+like the UI is operating itself. The runner draws a cursor, glides it with
+easing, and pings a ring on each click. Scrolling is eased for the same reason:
+a jump cut mid-page reads as a glitch.

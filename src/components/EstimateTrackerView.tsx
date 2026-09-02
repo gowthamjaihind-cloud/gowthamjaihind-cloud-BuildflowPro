@@ -41,6 +41,7 @@ import {
 import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
+import { toast } from "../lib/feedback";
 
 interface EstimateTrackerViewProps {
   projectId: string;
@@ -146,7 +147,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       setSelectedEstimateId(newEstRef.id);
     } catch (error) {
       console.error("Failed to create estimate", error);
-      alert("Failed to create estimate");
+      toast.error("Failed to create estimate");
     }
   };
 
@@ -189,7 +190,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       setEstimateToDelete(null);
     } catch (err) {
       console.error("Failed to delete estimate", err);
-      alert("Failed to delete estimate");
+      toast.error("Failed to delete estimate");
     } finally {
       setIsDeleting(false);
     }
@@ -204,7 +205,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       );
     } catch (err) {
       console.error("Failed to update estimate", err);
-      alert("Failed to update estimate");
+      toast.error("Failed to update estimate");
     }
   };
 
@@ -1006,9 +1007,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <button
                       onClick={() => {
                         if (!isAdminOrOwner)
-                          return alert(
-                            "Only Admins and Owners can approve estimates.",
-                          );
+                          return toast.info("Only Admins and Owners can approve estimates.",);
                         updateSelectedEstimate({ status: "Approved" });
                       }}
                       className="w-full bg-success hover:bg-success text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-green-500/20"
@@ -1018,9 +1017,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <button
                       onClick={() => {
                         if (!isAdminOrOwner)
-                          return alert(
-                            "Only Admins and Owners can reject estimates.",
-                          );
+                          return toast.info("Only Admins and Owners can reject estimates.",);
                         updateSelectedEstimate({ status: "Rejected" });
                       }}
                       className="w-full bg-danger hover:bg-danger text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-red-500/20"

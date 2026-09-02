@@ -55,9 +55,20 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
 
-      # The demo build ships fixture data; this asserts none of it reached the
-      # production bundle before that bundle goes live.
-      - name: Verify no demo fixtures in the bundle
+      # The public demo at sitetru.com/demo is its own bundle, built with the
+      # demo flag and dropped into dist/demo. Keeping it a separate bundle is
+      # what lets the production one stay free of fixtures.
+      - name: Build the public demo
+        run: |
+          npm run build:demo:hosted
+          rm -rf dist/demo
+          cp -r dist-demo dist/demo
+        env:
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+
+      # Asserts the production bundle carries no fixtures, and that the demo
+      # bundle does -- a demo that builds but opens empty is the worse failure.
+      - name: Verify the demo boundary
         run: npm run verify:no-demo
 
       - name: Deploy to Firebase Hosting (live)

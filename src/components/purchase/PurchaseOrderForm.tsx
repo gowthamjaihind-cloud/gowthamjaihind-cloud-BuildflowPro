@@ -15,6 +15,7 @@ import { Vendor, InventoryItem, POLineItem, LaborRateCard, PurchaseOrder } from 
 import { collection, doc, setDoc, updateDoc, runTransaction } from "firebase/firestore";
 import { db } from "../../firebase";
 import { money } from "../../utils/num";
+import { toast } from "../../lib/feedback";
 
 interface PurchaseOrderFormProps {
   projectId: string;
@@ -216,7 +217,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
        onClose();
     } catch (e) {
        console.error("Failed to save PO", e);
-       alert("Failed to save Purchase Order.");
+       toast.error("Failed to save Purchase Order.");
     } finally {
        setIsSubmitting(false);
     }

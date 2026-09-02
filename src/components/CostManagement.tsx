@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import {
   db,
   collection,
@@ -64,6 +65,7 @@ import { useProjectDataQuery } from "../hooks/queries";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
 import { useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "../lib/feedback";
 
 interface CostManagementProps {
   projectId: string;
@@ -73,6 +75,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
   projectId,
 }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
 
@@ -302,9 +305,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newEntry.category?.toLowerCase() === "material") {
-      alert(
-        "Material costs are tracked automatically from daily logs — log consumption via the Daily Log screen instead",
-      );
+      toast.info("Material costs are tracked automatically from daily logs — log consumption via the Daily Log screen instead",);
       return;
     }
     const path = `${basePath}/costs`;
@@ -592,7 +593,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       ...r.slice(1).map((v) => `₹${Number(v).toLocaleString("en-IN")}`),
     ]);
     const dateStr = new Date().toISOString().split("T")[0];
-    exportToPDF("Project Cost Management Report", `Project ID: ${projectId}`, headers, formattedRows, `Project_Cost_Report_${dateStr}`);
+    exportToPDF("Project Cost Management Report", `Project: ${projectLabel}`, headers, formattedRows, `Project_Cost_Report_${dateStr}`);
   };
 
   const startEditing = (task: Task) => {

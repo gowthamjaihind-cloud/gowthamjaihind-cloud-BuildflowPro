@@ -43,6 +43,7 @@ import {
   DownloadSimple as Download,
   ShieldCheck,
 } from "@phosphor-icons/react";
+import { confirmDialog, toast } from "../lib/feedback";
 
 interface DocumentVaultProps {
   projectId: string;
@@ -227,7 +228,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               : code === "storage/unauthenticated"
                 ? "Your session expired. Sign in again and retry."
                 : "Please try again.";
-      alert(`Failed to upload document (${code}). ${hint}`);
+      toast.error(`Failed to upload document (${code}). ${hint}`);
       handleFirestoreError(error, OperationType.CREATE, path);
     }
   };
@@ -271,9 +272,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
   const handleBulkDelete = async () => {
     if (!isAdminOrOwner) return;
     if (
-      !window.confirm(
-        `Are you sure you want to delete ${selectedDocIds.length} documents?`,
-      )
+      !(await confirmDialog({ title: `Are you sure you want to delete ${selectedDocIds.length} documents?`, }))
     )
       return;
     setIsBulkUpdating(true);

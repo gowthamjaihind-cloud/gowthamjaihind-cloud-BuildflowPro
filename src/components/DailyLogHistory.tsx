@@ -18,6 +18,7 @@ import { DailyLogEntryScreen } from "./DailyLogEntryScreen";
 import { DailyLogEntry } from "../types";
 import { useAuthStore } from "../store";
 import { useTranslation } from "../i18n";
+import { toast } from "../lib/feedback";
 
 interface DailyLogHistoryProps {
   projectId: string;
@@ -46,7 +47,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
       setLogToDelete(null);
     } catch (e) {
       console.error(e);
-      alert(t("dlh.failedDelete"));
+      toast.error(t("dlh.failedDelete"));
     }
   };
 

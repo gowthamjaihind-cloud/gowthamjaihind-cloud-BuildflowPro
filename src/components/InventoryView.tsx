@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import {
   db,
   collection,
@@ -52,6 +53,7 @@ import { useProjectData } from "../hooks/useProjectData";
 import { useTasksQuery } from "../hooks/queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBreakpoint } from "../hooks/useBreakpoint";
+import { confirmDialog, toast } from "../lib/feedback";
 
 interface InventoryViewProps {
   projectId: string;
@@ -59,6 +61,7 @@ interface InventoryViewProps {
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
 
@@ -277,7 +280,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         (i.name || "").trim().toLowerCase() === m.name.trim().toLowerCase(),
     );
     if (already) {
-      alert(`"${m.name}" is already stocked on this project.`);
+      toast.info(`"${m.name}" is already stocked on this project.`);
       return;
     }
     setMasterBusy(true);
@@ -287,7 +290,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       setShowMaterialPicker(false);
     } catch (err) {
       console.error("Add material from master failed", err);
-      alert("Couldn't add that material. Please try again.");
+      toast.error("Couldn't add that material. Please try again.");
     } finally {
       setMasterBusy(false);
     }
@@ -305,11 +308,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
   const tidyStoredNumbers = async () => {
     if (!untidyItems.length) return;
-    if (!window.confirm(
-      `Round stored numbers on ${untidyItems.length} item${untidyItems.length === 1 ? "" : "s"}?\n\n` +
+    if (!(await confirmDialog({ title: `Round stored numbers on ${untidyItems.length} item${untidyItems.length === 1 ? "" : "s"}?\n\n` +
       `Costs go to 2 decimals, quantities to 3. Only these numeric fields change — ` +
-      `no stock movement is recorded and nothing else about the item is touched.`,
-    )) return;
+      `no stock movement is recorded and nothing else about the item is touched.`, }))) return;
     setMasterBusy(true);
     try {
       // Chunked: Firestore batches cap at 500 writes.
@@ -328,14 +329,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         await batch.commit();
       }
       invalidateData();
-      alert(`Tidied ${untidyItems.length} item${untidyItems.length === 1 ? "" : "s"}.`);
+      toast.success(`Tidied ${untidyItems.length} item${untidyItems.length === 1 ? "" : "s"}.`);
     } catch (err: any) {
       console.error("Tidy stored numbers failed", err);
-      alert(
-        err?.code === "permission-denied"
+      toast.error(err?.code === "permission-denied"
           ? "You don't have permission to change stock records."
-          : "Couldn't tidy those values. Please try again.",
-      );
+          : "Couldn't tidy those values. Please try again.",);
     } finally { setMasterBusy(false); }
   };
 
@@ -357,23 +356,17 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
   const promoteMaterial = async (item: any) => {
     const dupes = findDuplicateMaterials(definitionOf(item), masterMaterials);
     if (dupes.length) {
-      if (!window.confirm(
-        `"${dupes[0].name}" already looks like the same item in your master list.\n\nSave "${item.name}" anyway as a separate entry?`,
-      )) return;
-    } else if (!window.confirm(
-      `Save "${item.name}" to your organisation master?\n\nOnly the definition is shared — stock and cost stay with this project.`,
-    )) return;
+      if (!(await confirmDialog({ title: `"${dupes[0].name}" already looks like the same item in your master list.\n\nSave "${item.name}" anyway as a separate entry?`, }))) return;
+    } else if (!(await confirmDialog({ title: `Save "${item.name}" to your organisation master?\n\nOnly the definition is shared — stock and cost stay with this project.`, }))) return;
     setMasterBusy(true);
     try {
       await saveMasterMaterial(definitionOf(item));
       setMasterMaterials(await listMasterMaterials());
-      alert(`"${item.name}" is now available on every project in your organisation.`);
+      toast.success(`"${item.name}" is now available on every project in your organisation.`);
     } catch (err: any) {
-      alert(
-        err?.code === "permission-denied"
+      toast.error(err?.code === "permission-denied"
           ? "Only an Owner, Admin or Manager can update the organisation master."
-          : "Couldn't save to the master list. Please try again.",
-      );
+          : "Couldn't save to the master list. Please try again.",);
     } finally { setMasterBusy(false); }
   };
 
@@ -384,15 +377,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       (i: any) => findDuplicateMaterials(definitionOf(i), masterMaterials).length === 0,
     );
     if (!missing.length) {
-      alert("Every material on this project is already in your master list.");
+      toast.info("Every material on this project is already in your master list.");
       return;
     }
-    if (!window.confirm(
-      `Save ${missing.length} material${missing.length === 1 ? "" : "s"} to your organisation master?\n\n` +
+    if (!(await confirmDialog({ title: `Save ${missing.length} material${missing.length === 1 ? "" : "s"} to your organisation master?\n\n` +
       missing.slice(0, 12).map((i: any) => `• ${i.name}`).join("\n") +
       (missing.length > 12 ? `\n…and ${missing.length - 12} more` : "") +
-      `\n\nOnly definitions are shared — stock and cost stay with this project. Items already in the master are skipped.`,
-    )) return;
+      `\n\nOnly definitions are shared — stock and cost stay with this project. Items already in the master are skipped.`, }))) return;
     setMasterBusy(true);
     let ok = 0;
     const failed: string[] = [];
@@ -402,11 +393,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         catch { failed.push(item.name); }
       }
       setMasterMaterials(await listMasterMaterials());
-      alert(
-        failed.length
+      toast.error(failed.length
           ? `Saved ${ok}. Couldn't save ${failed.length}: ${failed.slice(0, 5).join(", ")}${failed.length > 5 ? "…" : ""}`
-          : `Saved ${ok} material${ok === 1 ? "" : "s"} to your master list.`,
-      );
+          : `Saved ${ok} material${ok === 1 ? "" : "s"} to your master list.`,);
     } finally { setMasterBusy(false); }
   };
 
@@ -517,10 +506,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         item.name || "",
         item.category || "Material",
         item.groupCode || "-",
-        avail,
+        // Numbers, not formatted strings, so a spreadsheet can still total
+        // them -- but rounded, or the float noise from the subtraction shows
+        // up as 297.79999999999995.
+        round3(avail),
         item.unit || "MT",
-        cost,
-        avail * cost,
+        round2(cost),
+        round2(avail * cost),
         item.minThreshold || 0,
       ];
     });
@@ -545,16 +537,16 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         item.materialId || "-",
         item.name || "",
         item.category || "Material",
-        avail,
+        qty(avail),
         item.unit || "MT",
-        `₹${cost.toLocaleString("en-IN")}`,
-        `₹${(avail * cost).toLocaleString("en-IN")}`,
+        `₹${money(cost)}`,
+        `₹${money(avail * cost)}`,
       ];
     });
     const dateStr = new Date().toISOString().split("T")[0];
     exportToPDF(
       "SITE INVENTORY STOCK REPORT",
-      `Project ID: ${projectId} | Total Items: ${filteredItems.length}`,
+      `Project: ${projectLabel} | Total Items: ${filteredItems.length}`,
       headers,
       rows,
       `Inventory_Stock_${dateStr}`

@@ -29,14 +29,13 @@ export function exportToCSV(
 }
 
 
-// jsPDF's built-in fonts (Helvetica and friends) are Latin-only, so any Tamil
-// in an export came out as boxes -- silently, with no error. Noto Sans Tamil
-// is fetched and embedded only when the content actually contains Tamil, so an
-// English-only export carries no extra weight.
-const TAMIL_RANGE = /[\u0B80-\u0BFF]/;
+// jsPDF's built-in fonts are WinAnsi: no Tamil, and no rupee sign either, so
+// money reports rendered "\u20B9" as a superscript one and Tamil as boxes --
+// silently, with no error. Noto Sans Tamil carries Latin, digits, the rupee
+// sign and Tamil, so it is used for every export.
 let tamilFontPromise: Promise<string | null> | null = null;
 
-async function loadTamilFont(): Promise<string | null> {
+async function loadPdfFont(): Promise<string | null> {
   if (!tamilFontPromise) {
     tamilFontPromise = fetch("/fonts/NotoSansTamil-Regular.ttf")
       .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
@@ -102,26 +101,49 @@ export async function exportToPDF(
   rows: (string | number | boolean | null | undefined)[][],
   fileName: string,
 ) {
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const margin = 12;
+
+  // Always embed the font, not just for Tamil. jsPDF's built-in Helvetica is
+  // WinAnsi and has no U+20B9, so every rupee sign in every report came out as
+  // a superscript one. The same file also carries the Tamil glyphs.
+  const b64 = await loadPdfFont();
+  const applyFont = (d: jsPDF) => {
+    if (!b64) return "helvetica";
+    d.addFileToVFS("NotoSansTamil.ttf", b64);
+    d.addFont("NotoSansTamil.ttf", "NotoSansTamil", "normal");
+    return "NotoSansTamil";
+  };
+
+  // A cost report is eleven columns wide. Forced into A4 portrait that is 17mm
+  // a column, so headings truncated to "PLANNE..." and values ran together.
+  // Measure what the table actually needs, then pick the page to match it.
+  const BASE_FONT = 7.5;
+  const scratch = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const scratchFont = applyFont(scratch);
+  scratch.setFont(scratchFont, "normal");
+  scratch.setFontSize(BASE_FONT);
+  const natural = headers.map((h, i) => {
+    let w = scratch.getTextWidth(String(h ?? "").toUpperCase());
+    for (const r of rows.slice(0, 200)) w = Math.max(w, scratch.getTextWidth(String(r[i] ?? "")));
+    return w + 5;
+  });
+  const naturalTotal = natural.reduce((a, b) => a + b, 0);
+  const portraitUsable = 210 - margin * 2;
+  const landscape = naturalTotal > portraitUsable;
+
+  const doc = new jsPDF({
+    orientation: landscape ? "landscape" : "portrait",
+    unit: "mm",
+    format: "a4",
+  });
+  const FONT = applyFont(doc);
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 12;
   const usableWidth = pageWidth - margin * 2;
 
-  let FONT = "helvetica";
-  const hasTamil =
-    TAMIL_RANGE.test(title) ||
-    TAMIL_RANGE.test(subtitle) ||
-    headers.some((h) => TAMIL_RANGE.test(String(h ?? ""))) ||
-    rows.some((r) => r.some((c) => TAMIL_RANGE.test(String(c ?? ""))));
-  if (hasTamil) {
-    const b64 = await loadTamilFont();
-    if (b64) {
-      doc.addFileToVFS("NotoSansTamil.ttf", b64);
-      doc.addFont("NotoSansTamil.ttf", "NotoSansTamil", "normal");
-      FONT = "NotoSansTamil";
-    }
-  }
+  // If it still overflows the wider page, shrink the type rather than
+  // ellipsising every cell -- down to a floor where it stays readable.
+  const bodyFont = Math.max(5.4, Math.min(BASE_FONT, (usableWidth / naturalTotal) * BASE_FONT));
   // The Tamil subset ships one weight, so bold falls back to regular there.
   const setF = (style: "bold" | "normal") =>
     doc.setFont(FONT, FONT === "helvetica" ? style : "normal");
@@ -138,7 +160,7 @@ export async function exportToPDF(
 
   // --- column widths from actual content, not an equal split
   setF("normal");
-  doc.setFontSize(7.5);
+  doc.setFontSize(bodyFont);
   const widths = (() => {
     const sample = rows.slice(0, 200);
     const raw = headers.map((h, i) => {
@@ -211,7 +233,7 @@ export async function exportToPDF(
     doc.setFillColor(...BRAND.slate);
     doc.rect(margin, y, usableWidth, 7.5, "F");
     setF("bold");
-    doc.setFontSize(6.8);
+    doc.setFontSize(Math.max(5.2, bodyFont - 0.7));
     doc.setTextColor(255, 255, 255);
     headers.forEach((h, i) => drawCell(String(h ?? "").toUpperCase(), i, y + 5));
     return y + 7.5;
@@ -234,7 +256,7 @@ export async function exportToPDF(
   const bottom = pageHeight - 22;   // leave room for the totals band and footer
 
   setF("normal");
-  doc.setFontSize(7.5);
+  doc.setFontSize(bodyFont);
 
   rows.forEach((row, i) => {
     if (y + rowH > bottom) {
@@ -244,7 +266,7 @@ export async function exportToPDF(
       drawBanner();
       y = drawHead(32);
       setF("normal");
-      doc.setFontSize(7.5);
+      doc.setFontSize(bodyFont);
     }
     if (i % 2 === 1) {
       doc.setFillColor(...BRAND.ice);
@@ -270,7 +292,7 @@ export async function exportToPDF(
     doc.setFillColor(...BRAND.slate);
     doc.rect(margin, y, usableWidth, 8.5, "F");
     setF("bold");
-    doc.setFontSize(7.5);
+    doc.setFontSize(bodyFont);
     doc.setTextColor(255, 255, 255);
 
     const firstNumeric = numericCols.indexOf(true);

@@ -32,6 +32,7 @@ import {
 import { motion } from "motion/react";
 import { handleFirestoreError, OperationType } from "../firebase";
 import { useL } from "../i18n";
+import { toast } from "../lib/feedback";
 
 interface EnterpriseAuthViewProps {
   onBack: () => void;
@@ -63,7 +64,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       });
     } catch (err: any) {
       console.error("Error unlinking:", err);
-      alert(L("Failed to unlink bot","போட்டை இணைப்பு நீக்க முடியவில்லை"));
+      toast.error(L("Failed to unlink bot","போட்டை இணைப்பு நீக்க முடியவில்லை"));
     }
   };
 

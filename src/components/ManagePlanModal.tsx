@@ -7,6 +7,7 @@ import { useProjectsQuery } from "../hooks/queries";
 import { PLANS, PLAN_ORDER, PlanId } from "../lib/plans";
 import { callScheduleDowngrade, callCancelScheduledPlanChange } from "../services/firebaseFunctions";
 import { useL } from "../i18n";
+import { confirmDialog } from "../lib/feedback";
 
 interface Props {
   isOpen: boolean;
@@ -50,12 +51,10 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
             `\n\nஉங்களிடம் ${projects.length} செயல்திட்டங்கள் உள்ளன; ${PLANS[id].name} இல் ${cap} அடங்கும். கூடுதல் ${over} க்கு ₹${plan.overageRate}/செயல்திட்டம்/மாதம் கட்டணம் — எந்த செயல்திட்டமும் நீக்கப்படாது.`,
           )
         : "";
-    const ok = window.confirm(
-      L(
+    const ok = (await confirmDialog({ title: L(
         `Switch to ${PLANS[id].name} on ${when}? You keep your current plan until then.${overMsg}`,
         `${when} அன்று ${PLANS[id].name} க்கு மாறவா? அதுவரை உங்கள் தற்போதைய திட்டத்தை வைத்திருப்பீர்கள்.${overMsg}`,
-      ),
-    );
+      ), }));
     if (!ok) return;
     setBusy(true);
     setErr(null);

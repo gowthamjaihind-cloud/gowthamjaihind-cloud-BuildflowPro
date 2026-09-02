@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { ScheduleTask } from '../../hooks/useScheduleData';
 import { format, isToday, startOfDay, addDays, isWithinInterval } from 'date-fns';
+import { toast } from "../../lib/feedback";
 
 interface Props {
   tasks: ScheduleTask[];
@@ -61,7 +62,7 @@ export const VerticalTimeline: React.FC<Props> = ({ tasks }) => {
       case 'blocked':
         if (task.blockedByPoId) {
           return (
-            <button className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--risk)]/20 text-[var(--risk)]" onClick={() => alert(`Navigating to PO: ${task.blockedByPoId}`)}>
+            <button className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--risk)]/20 text-[var(--risk)]" onClick={() => toast.info(`Navigating to PO: ${task.blockedByPoId}`)}>
               Blocked · {task.blockedReason || 'PO pending'}
             </button>
           );

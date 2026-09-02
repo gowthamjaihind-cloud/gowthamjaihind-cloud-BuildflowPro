@@ -11,6 +11,7 @@ import { useAuthStore } from "../../store";
 import { doc, deleteDoc, runTransaction, addDoc, collection } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useQueryClient } from "@tanstack/react-query";
+import { confirmDialog, toast } from "../../lib/feedback";
 
 interface GoodsReceiptDetailsProps {
   grn: GoodsReceiptNote;
@@ -31,7 +32,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
 
   const handleDelete = async () => {
     if (!canEditOrDelete) return;
-    if (!confirm("Are you sure you want to delete this GRN? This will revert the received quantities on the PO and Inventory.")) return;
+    if (!(await confirmDialog({ title: "Are you sure you want to delete this GRN? This will revert the received quantities on the PO and Inventory." }))) return;
     setIsDeleting(true);
     try {
       await runTransaction(db, async (transaction) => {
@@ -144,7 +145,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
           context: "delete GRN"
         });
       } catch(logErr) {}
-      alert(e.message || JSON.stringify(e) || "Failed to delete GRN");
+      toast.error(e.message || JSON.stringify(e) || "Failed to delete GRN");
     } finally {
       setIsDeleting(false);
     }

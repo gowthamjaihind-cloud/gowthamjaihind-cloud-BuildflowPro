@@ -2,12 +2,21 @@ import React, { useEffect, useState } from "react";
 import {
   PaperPlaneTilt as Send,
 } from "@phosphor-icons/react";
+import { demoRequested } from "../demo";
 
 export const TelegramBotStatus: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
   const [botName, setBotName] = useState<string | null>(null);
 
   const checkBotStatus = async () => {
+    // The public demo has no functions backend, so the status probe falls
+    // through to the SPA shell and the badge would sit red on the very
+    // feature the product is sold on. Report the bot as up instead.
+    if (__DEMO__ && demoRequested()) {
+      setIsOnline(true);
+      setBotName("@SitetruBot");
+      return;
+    }
     try {
       const res = await fetch("/api/telegram-status");
       const data = await res.json();

@@ -86,11 +86,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </div>
 
       <nav
+        data-tour="nav"
         className={`flex-1 space-y-1.5 md:space-y-2 overflow-y-auto mt-2 md:mt-6 scrollbar-hide ${uiMode === "site" ? "pt-8" : ""} ${showLabels ? "px-4 md:px-6" : "px-2 md:px-0"}`}
       >
         {menuItems.map((item) => (
           <button
             key={item.id}
+            data-tour={`nav-${item.id}`}
             onClick={() => {
               setActiveTab(item.id);
               setIsMobileMenuOpen(false);
@@ -117,7 +119,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             />
             {showLabels && (
               <span
-                className={`font-semibold text-[15px] md:text-[17px] tracking-tight truncate ${uiMode === "site" ? "!text-sm" : ""}`}
+                className={`font-display font-bold text-[14px] md:text-[15px] tracking-tight truncate ${uiMode === "site" ? "!text-sm" : ""}`}
               >
                 {item.label}
               </span>
@@ -144,7 +146,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 md:w-4 md:h-4 bg-success border-2 border-white rounded-full shadow-sm" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-bold truncate text-ink text-[15px] md:text-[17px] tracking-tight">
+                <div className="font-display font-bold truncate text-ink text-[14px] md:text-[15px] tracking-tight">
                   {user.displayName}
                 </div>
                 <div className="text-[10px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest mt-0.5">
@@ -188,6 +190,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Main Content */}
       <main
+        data-tour="content"
         className={`flex-1 flex flex-col min-w-0 h-full sm:h-[calc(100vh-32px)] md:h-[calc(100vh-48px)] ${uiMode === "site" ? "!h-[100dvh] pb-16 md:pb-0" : ""}`}
       >
         {/* Top Bar Navigation */}
@@ -214,7 +217,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="min-w-0 flex items-center gap-3 sm:gap-4">
               <div className="min-w-0">
                 <h1
-                  className={`font-bold text-lg sm:text-xl tracking-tight text-ink truncate ${uiMode === "site" ? "!text-lg" : ""}`}
+                  className={`font-display font-bold text-base sm:text-lg tracking-tight text-ink truncate min-w-0 ${uiMode === "site" ? "!text-lg" : ""}`}
                 >
                   {activeProject?.name || t("header.portfolio")}
                 </h1>
