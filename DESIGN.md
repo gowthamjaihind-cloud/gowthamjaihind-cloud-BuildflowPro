@@ -8,11 +8,15 @@ Every token below is the one the app actually ships (`src/index.css`). Where a
 rule has a reason, the reason is here too — a value alone tells an agent *what*
 to emit but not how to decide the case this file never covered.
 
-**Provenance.** The palette and type are derived from the Stripe `DESIGN.md`
-in [VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md)
-(MIT) — itself an inspired-by reading of publicly observable patterns, not an
-official Stripe system. Geometry, spacing and the semantic status colours remain
-Sitetru's own. Contrast values below are measured, not quoted.
+**Provenance.** Three sources, all from
+[VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md)
+(MIT), all inspired-by readings of public patterns rather than official systems.
+**Stripe** gives the light palette, the indigo accent and the type features.
+**Wise** gives the status model — colour in the fill, a separate colour for the
+text on it — and the Manrope/Inter pairing, which is Wise's own documented
+substitute for its proprietary display face. **Linear** gives the dark surface
+ladder, and nothing else. Geometry, spacing, Indian number formatting and all
+Tamil handling are Sitetru's own. Every contrast value here is measured.
 
 ---
 
@@ -46,10 +50,10 @@ quiet everywhere else.
 --ink:          #0D253D;  /* Deep navy, never pure black. 15.57:1 */
 --ink-muted:    #5A6A82;  /* 5.1:1 on white, 4.6:1 on the tinted page */
 --divider:      #E3E8EE;  /* Hairline */
---success:      #059669;  /* Sitetru's own — Stripe documents no semantic palette */
---danger:       #EF4444;
---warning:      #B85F3B;
---info:         #6E8CA0;
+--success:      #046A4E;  /* 6.61 on white · 5.51 on its own 12% tint */
+--danger:       #B3261E;  /* 6.54 · 5.37 */
+--warning:      #9A4A22;  /* 6.22 · 5.21 */
+--info:         #4A6C82;  /* 5.59 · 4.75 */
 ```
 
 **Roles.**
@@ -60,36 +64,66 @@ quiet everywhere else.
   passes on every surface this app uses.
 - Stripe's file documents **no semantic palette** — error and success live only
   in its product UI. Sitetru cannot work that way: over-budget and at-risk are
-  the point of the product, so success/danger/warning/info are kept.
+  the point of the product.
+- **The status colours are text colours, so they must pass as text.** The
+  previous set did not — success 3.77, danger 3.76, warning 4.43, info 3.55,
+  every one below the 4.5 floor, across 269 `text-*` call sites. They are
+  darkened above with the hue preserved. Following Wise, a status chip puts the
+  colour in the fill and the same token in the text; both are checked.
+- The accent must stay **semantically empty**. Green means on-track, red means
+  over-budget, amber means behind schedule — an accent in any of those hues
+  makes the status colours ambiguous. This is why Wise's lime is not adopted
+  even though the rest of its model is: a green accent and a green "on track"
+  cannot coexist in a product whose job is flagging trouble.
 - Ruby `#ea2261` and the other gradient stops are decorative in the source
   system and are **not** adopted here; at 4.29:1 ruby is large-text-only.
 
-**Dark mode.** The base indigo is 2.20:1 on the dark panel — unreadable. Dark
-mode lifts it to `#9D91FF` (5.94:1 on panel). Never reuse the light primary on
-a dark surface.
+**Dark mode** follows Linear's surface ladder — a near-black canvas with four
+lifted steps, so depth reads from stacked greys and hairlines instead of shadow:
+
+```css
+--page:      #010102;  /* canvas */
+--surface-1: #0F1011;  /* cards */
+--surface-2: #141516;  /* hovered / nested */
+--surface-3: #18191A;  /* sub-nav, tertiary bands */
+--surface-4: #191A1B;  /* deepest lifted surface */
+--divider:   #23252A;  /* hairline */  --divider-strong: #34343A;
+--ink:       #F7F8F8;  --ink-muted: #8A8F98;  /* 6.42:1 on canvas */
+--primary:   #9D91FF;  /* lifted — the light indigo is 2.20:1 here */
+```
+
+Never reuse the light primary on a dark surface.
 
 ---
 
 ## 3. Typography rules
 
 ```css
---font-sans:    "Inter", ui-sans-serif, system-ui, sans-serif;
---font-display: "Inter";
+--font-sans:    "Inter", "Noto Sans Tamil", ui-sans-serif, system-ui, sans-serif;
+--font-display: "Manrope", "Noto Sans Tamil", ui-sans-serif, system-ui, sans-serif;
 --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 ```
 
-- **Inter** is the documented open-source stand-in for Sohne, which is
-  proprietary. Weights 300–700.
+- **Manrope for display, Inter for body.** This is Wise's own documented
+  substitute pairing for its proprietary faces, and Manrope was this app's
+  original display face. `h1`/`h2` and anything marked `font-display` take
+  Manrope; everything else takes Inter.
+- **Noto Sans Tamil is declared in both stacks.** It already shipped for PDF
+  export, but the interface named no Tamil face at all, leaving Tamil to the
+  operating system — fine on Android, unreliable elsewhere. No design file
+  covers this; it is specific to this product.
 - **`ss01` globally** on the body, and **`tnum` / tabular figures** on every
   cell that renders money or a count. Digits then line up down a column. This
   is the single best idea in the source system for an app that is mostly
   ledgers, and it costs nothing.
 - **Negative tracking on display sizes**, proportional: about -1.4px at 56px
   easing to -0.2px at 20px. Body sits at 0.
-- **Inter is wider than Manrope at the same size.** Nav labels moved 17px → 15px
-  when the face changed, because at 17px the sidebar lost "Cost Management" and
-  "Consumption History". Stripe's own body scale tops out at 15px, so this is
-  more on-system, not less. Re-check any fixed-width label after a type change.
+- **Nav labels are 15px in Manrope**, and this was arrived at by measurement,
+  not taste. Inter at 17px lost "Cost Management", "Client Estimates" and
+  "Consumption History" from the sidebar at 1024px. Manrope at 17px did not fix
+  it either — the sidebar is simply not that wide. 15px does. Re-measure the
+  sidebar at 1024 after any change to the face or the size; a mock-up at a
+  guessed width will tell you the wrong answer.
 - Weight 300 is the source brand's display signature. It is used sparingly here
   and **never below 15px**: thin type at small sizes is the first thing to fail
   on a phone in direct sunlight, which is where this product is read.
@@ -110,7 +144,7 @@ a dark surface.
 | **Secondary** | Transparent with `--divider` border, ink text |
 | **Card** | White on Canvas Soft, `rounded-2xl`, `shadow-sm`, 1px hairline border |
 | **Nav item** | `rounded-[18px]`; active = indigo fill, white text, ring; idle = ink-muted with panel hover. Label 15px — see §3 |
-| **Badge / pill** | `rounded-full`, 10px 800 uppercase, tinted background at ~10% with a 20% border |
+| **Status chip** | `rounded-full`, 10px 800 uppercase. Colour goes in the fill at ~12% and in the text; both are checked against each other, per Wise |
 | **Input** | White, hairline border, `rounded-xl`, indigo focus ring |
 | **Table header** | Brand Dark 900 bar, white small-caps labels, numeric columns right-aligned |
 

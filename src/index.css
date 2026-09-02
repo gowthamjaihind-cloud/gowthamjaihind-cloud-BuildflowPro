@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@100..800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700&family=JetBrains+Mono:wght@100..800&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -22,24 +22,37 @@
   /* Semantic status colors — one source of truth so success/danger/warning/info
      are identical everywhere and adapt to dark mode. Use with opacity for soft
      backgrounds, e.g. bg-success/10, text-success. */
-  --success: #059669;
-  --danger: #EF4444;
-  --warning: #B85F3B;
-  --info: #6E8CA0;
+  /* Every one of these used to fail AA as text on white -- success 3.77,
+     danger 3.76, warning 4.43, info 3.55 -- and they are used as `text-*` at
+     269 call sites. Darkened to pass both on white and on their own 12% tint,
+     which is how the status chips composite them. Hue is preserved. */
+  --success: #046A4E;   /* 6.61 on white, 5.51 on its own tint */
+  --danger:  #B3261E;   /* 6.54 / 5.37 */
+  --warning: #9A4A22;   /* 6.22 / 5.21 */
+  --info:    #4A6C82;   /* 5.59 / 4.75 */
 }
 
 .dark {
   /* The base indigo is 2.2:1 on the dark panel -- unreadable. Lifted to
      #9D91FF it is 5.15:1 on panel and 6.43:1 on page. */
-  --primary: #9D91FF; /* Indigo, lifted for dark bg */
+  /* Dark mode uses Linear's surface ladder: a near-black canvas with four
+     lifted steps above it, so depth reads from stacked greys and hairlines
+     rather than shadow. Previously one panel colour and one border did all
+     the separating. */
+  --primary: #9D91FF; /* Indigo, lifted -- the base is 2.20:1 here */
   --rust-strong: #9D91FF;
-  --page: #0B1526; /* Deep navy ground */
-  --panel: #16233A; /* Navy panel */
-  --surface-dark: #1C1E54; /* Brand Dark 900 */
-  --surface: #16233A;
-  --ink: #F6F9FC; /* Canvas Soft */
-  --ink-muted: #9BAAC2; /* lifted mute */
-  --divider: #27384F;
+  --page: #010102;    /* canvas */
+  --panel: #0F1011;   /* surface 1 -- cards */
+  --surface-1: #0F1011;
+  --surface-2: #141516; /* hovered / nested cards */
+  --surface-3: #18191A; /* sub-nav, tertiary bands */
+  --surface-4: #191A1B; /* deepest lifted surface */
+  --surface-dark: #1C1E54;
+  --surface: #0F1011;
+  --ink: #F7F8F8;
+  --ink-muted: #8A8F98; /* 6.42:1 on canvas */
+  --divider: #23252A;   /* hairline */
+  --divider-strong: #34343A;
   --success: #34D399;
   --danger: #F87171;
   --warning: #F0A882;
@@ -77,9 +90,9 @@
 @theme {
   /* Modern geometric sans across the whole product. One family (Manrope) with
      a weight-based hierarchy: body/UI at 400–600, display/brand at 700–800. */
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-brand: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", "Noto Sans Tamil", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Manrope", "Noto Sans Tamil", ui-sans-serif, system-ui, sans-serif;
+  --font-brand: "Manrope", "Noto Sans Tamil", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   --color-primary: var(--primary);
@@ -89,6 +102,10 @@
   --color-page: var(--page);
   --color-panel: var(--panel);
   --color-surface-dark: var(--surface-dark);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
   --color-surface: var(--surface);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
