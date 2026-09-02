@@ -61,6 +61,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTasksQuery, useProjectDataQuery } from "../hooks/queries";
 import { useProjectDailyLogsQuery } from "../hooks/useDailyLogs";
 import { useBreakpoint } from "../hooks/useBreakpoint";
+import { toast } from "../lib/feedback";
 
 interface LaborTrackingViewProps {
   projectId: string;
@@ -293,7 +294,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
       
       queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
       console.log("RA Bill generated", billNumber);
-      alert(`RA Bill ${billNumber} generated successfully!`);
+      toast.success(`RA Bill ${billNumber} generated successfully!`);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, `${basePath}/ra_bills`);
     } finally {

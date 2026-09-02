@@ -33,6 +33,7 @@ import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import { compressImage } from "../utils/imageCompressor";
 import { useTranslation } from "../i18n";
+import { toast } from "../lib/feedback";
 
 interface DailyLogEntryScreenProps {
   projectId: string;
@@ -157,7 +158,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition)
-      return alert(t("dlog.speechUnsupported"));
+      return toast.error(t("dlog.speechUnsupported"));
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
@@ -309,7 +310,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
       setShowNewEquipment(false);
     } catch (err) {
       console.error("Failed to add equipment", err);
-      alert(t("dlog.failedAddEquipment"));
+      toast.error(t("dlog.failedAddEquipment"));
     } finally {
       setSavingEquipment(false);
     }
@@ -385,7 +386,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
       }
     } catch (err) {
       console.error(err);
-      alert(t("dlog.failedSave"));
+      toast.error(t("dlog.failedSave"));
     }
   };
 

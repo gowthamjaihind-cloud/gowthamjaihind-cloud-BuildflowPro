@@ -27,6 +27,7 @@ import {
 import { collection, doc, writeBatch } from "firebase/firestore";
 import { db } from "../../../firebase";
 import { getProjectSubCollectionPath } from "../../../utils/projectPath";
+import { confirmDialog, toast } from "../../../lib/feedback";
 
 // Order the built-in groups the way a contractor would scan them.
 const CATEGORY_ORDER = [
@@ -73,13 +74,13 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
   // Saved templates need a way out, or the picker silently fills with junk.
   const removeSaved = async (savedId: string, name: string) => {
-    if (!window.confirm(L(`Delete the template "${name}"? Projects already created from it are not affected.`, `"${name}" டெம்ப்ளேட்டை நீக்கவா? அதிலிருந்து ஏற்கனவே உருவாக்கின செயல்திட்டங்கள் பாதிக்கப்படாது.`))) return;
+    if (!(await confirmDialog({ title: L(`Delete the template "${name}"? Projects already created from it are not affected.`, `"${name}" டெம்ப்ளேட்டை நீக்கவா? அதிலிருந்து ஏற்கனவே உருவாக்கின செயல்திட்டங்கள் பாதிக்கப்படாது.`) }))) return;
     try {
       await deleteTemplate(savedId);
       setSaved((rows) => rows.filter((r) => r.id !== savedId));
       setTemplateId((cur) => (cur === `saved:${savedId}` ? "" : cur));
     } catch {
-      alert(L("Couldn't delete that template.", "அந்த டெம்ப்ளேட்டை நீக்க முடியல."));
+      toast.error(L("Couldn't delete that template.", "அந்த டெம்ப்ளேட்டை நீக்க முடியல."));
     }
   };
   const [newProject, setNewProject] = useState({
@@ -182,7 +183,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         // The project exists either way — surface the seeding failure without
         // losing it, so the user can add the breakdown manually.
         console.error("WBS template seeding failed", err);
-        alert(L(
+        toast.error(L(
           "The project was created, but the task breakdown could not be added. You can add it from the WBS tab.",
           "செயல்திட்டம் உருவாக்கப்பட்டது, ஆனா பணிப் பட்டியலைச் சேர்க்க முடியல. WBS தாவல்ல சேர்த்துக்கலாம்."
         ));
@@ -204,12 +205,12 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProject.name.trim()) {
-      alert("Please enter a workspace name.");
+      toast.error("Please enter a workspace name.");
       return;
     }
 
     if (projects.some(p => p.name.trim().toLowerCase() === newProject.name.trim().toLowerCase())) {
-      alert("A workspace with this name already exists.");
+      toast.info("A workspace with this name already exists.");
       return;
     }
 
@@ -219,9 +220,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     const cap = projectCapState(plan, projects.length);
     if (cap.capped && cap.atOrOver) {
       if (cap.isFree) {
-        alert(
-          `Your Free plan includes ${cap.included} project. Upgrade to a paid plan to add more projects.`,
-        );
+        toast.info(`Your Free plan includes ${cap.included} project. Upgrade to a paid plan to add more projects.`,);
         return;
       }
       setShowCapacity(true);

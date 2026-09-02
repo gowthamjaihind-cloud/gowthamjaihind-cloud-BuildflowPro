@@ -20,6 +20,7 @@ import { collection, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
+import { confirmDialog, toast } from "../lib/feedback";
 
 interface PaymentsViewProps {
   projectId: string;
@@ -103,20 +104,16 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
     type: "CLIENT" | "VENDOR" | "DIRECT_COST",
   ) => {
     if (type === "VENDOR") {
-      alert(
-        "Vendor payments must be deleted from the Procurement / Ledger section.",
-      );
+      toast.success("Vendor payments must be deleted from the Procurement / Ledger section.",);
       return;
     }
     if (type === "DIRECT_COST") {
-      alert(
-        "Direct costs must be deleted from the Cost Management / Tasks section.",
-      );
+      toast.success("Direct costs must be deleted from the Cost Management / Tasks section.",);
       return;
     }
     if (type === "CLIENT" && !isAdminOrOwner) return;
 
-    if (!confirm("Are you sure you want to delete this payment record?"))
+    if (!(await confirmDialog({ title: "Are you sure you want to delete this payment record?" })))
       return;
     try {
       await deleteDoc(doc(db, `${basePath}/client_payments`, id));

@@ -22,6 +22,7 @@ import {
   OrgUsage,
 } from "../../services/firebaseFunctions";
 import { PLAN_ORDER, PLANS } from "../../lib/plans";
+import { confirmDialog } from "../../lib/feedback";
 
 // Operator-only console: create a new customer org (30-day trial) and manually
 // manage subscriptions until automated (Razorpay) checkout is wired.
@@ -110,7 +111,7 @@ export const OperatorPanel: React.FC = () => {
       // Offer an explicit override (no projects are deleted — the cap just goes
       // over until the customer archives/removes the excess).
       if (!force && /force to override/i.test(msg)) {
-        if (window.confirm(`${msg}\n\nApply the downgrade anyway? No projects are deleted — the org will simply be over its new cap.`)) {
+        if ((await confirmDialog({ title: `${msg}\n\nApply the downgrade anyway? No projects are deleted — the org will simply be over its new cap.` }))) {
           await applyPlan(true);
           return;
         }

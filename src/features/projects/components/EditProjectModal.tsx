@@ -8,6 +8,7 @@ import {
 import { useProjectStore } from "../../../store";
 import { Project } from "../../../types";
 import { useTranslation } from "../../../i18n";
+import { toast } from "../../../lib/feedback";
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -78,7 +79,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
   const handleUpdateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editedProject.name?.trim()) {
-      alert("Please enter a workspace name.");
+      toast.error("Please enter a workspace name.");
       return;
     }
 

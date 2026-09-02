@@ -83,6 +83,7 @@ import { DailyLogEntryScreen } from "./DailyLogEntryScreen";
 import { DailyLogHistory } from "./DailyLogHistory";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
+import { confirmDialog, toast } from "../lib/feedback";
 
 interface WBSViewProps {
   projectId: string;
@@ -266,7 +267,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
     const nodes = tasksToTemplateNodes(tasks as any);
     const leaves = countLeaves(nodes);
     if (!nodes.length || !leaves) {
-      alert("There's no breakdown to save yet — add some tasks first.");
+      toast.info("There's no breakdown to save yet — add some tasks first.");
       return;
     }
     const name = window.prompt(
@@ -275,7 +276,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
     );
     if (name === null) return;
     if (!name.trim()) {
-      alert("Give the template a name so you can recognise it later.");
+      toast.info("Give the template a name so you can recognise it later.");
       return;
     }
     setSavingTemplate(true);
@@ -286,14 +287,12 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
         projectId,
         projectName: (tasks as any[])[0]?.projectName,
       });
-      alert(`Saved. "${name.trim()}" will now appear when you create a project.`);
+      toast.success(`Saved. "${name.trim()}" will now appear when you create a project.`);
     } catch (err: any) {
       console.error("Save template failed", err);
-      alert(
-        err?.code === "permission-denied"
+      toast.error(err?.code === "permission-denied"
           ? "Only an Owner, Admin or Manager can save a template."
-          : "Couldn't save the template. Please try again.",
-      );
+          : "Couldn't save the template. Please try again.",);
     } finally {
       setSavingTemplate(false);
     }
@@ -496,7 +495,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
 
   const handleBulkDelete = async () => {
     if (selectedTaskIds.length === 0) return;
-    if (!window.confirm(`Are you sure you want to delete ${selectedTaskIds.length} tasks and their subtasks?`)) return;
+    if (!(await confirmDialog({ title: `Are you sure you want to delete ${selectedTaskIds.length} tasks and their subtasks?` }))) return;
 
     try {
       const getDescendants = (taskId: string, allTasks: Task[]): Task[] => {

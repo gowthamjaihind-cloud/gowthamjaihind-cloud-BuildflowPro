@@ -43,6 +43,7 @@ import jsPDF from "jspdf";
 // color-mix) that Tailwind v4 emits; the original html2canvas throws on them,
 // which is why the reports PDF export silently failed.
 import html2canvas from "html2canvas-pro";
+import { toast } from "../lib/feedback";
 
 interface ProgressReportsViewProps {
   projectId: string;
@@ -89,7 +90,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
         setLogToDelete(null);
     } catch (err) {
       console.error(err);
-      alert(`Failed to delete log: ${err.message || err}`);
+      toast.error(`Failed to delete log: ${err.message || err}`);
     }
   };
 
@@ -226,7 +227,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       try {
         const element = document.getElementById("report-printable-area");
         if (!element) {
-          alert(t("reports.pdfNoContent"));
+          toast.error(t("reports.pdfNoContent"));
           return;
         }
 
@@ -246,7 +247,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
           imgData = canvas.toDataURL("image/jpeg", 0.95);
         } catch (taintErr) {
           console.error("PDF canvas tainted", taintErr);
-          alert(t("reports.pdfTainted"));
+          toast.error(t("reports.pdfTainted"));
           return;
         }
 
@@ -276,7 +277,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
         );
       } catch (err) {
         console.error("PDF generation error", err);
-        alert(t("reports.pdfFailed"));
+        toast.error(t("reports.pdfFailed"));
       } finally {
         setIsGeneratingPdf(false);
       }

@@ -74,6 +74,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { useUIStore, useAuthStore } from "../store";
 import { useBreakpoint } from "../hooks/useBreakpoint";
+import { confirmDialog, toast } from "../lib/feedback";
 // Removed unused import
 
 interface ProcurementViewProps {
@@ -127,7 +128,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         (v.name || "").trim().toLowerCase() === master.name.trim().toLowerCase(),
     );
     if (already) {
-      alert(`"${master.name}" is already a party on this project.`);
+      toast.info(`"${master.name}" is already a party on this project.`);
       return;
     }
     setMasterBusy(true);
@@ -136,7 +137,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       setShowMasterPicker(false);
     } catch (err) {
       console.error("Add from master failed", err);
-      alert("Couldn't add that party to the project. Please try again.");
+      toast.error("Couldn't add that party to the project. Please try again.");
     } finally {
       setMasterBusy(false);
     }
@@ -149,15 +150,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       (v: any) => findDuplicates(v, masters).length === 0,
     );
     if (!missing.length) {
-      alert("Every party on this project is already in your master list.");
+      toast.info("Every party on this project is already in your master list.");
       return;
     }
-    if (!window.confirm(
-      `Save ${missing.length} part${missing.length === 1 ? "y" : "ies"} to your organisation master?\n\n` +
+    if (!(await confirmDialog({ title: `Save ${missing.length} part${missing.length === 1 ? "y" : "ies"} to your organisation master?\n\n` +
       missing.slice(0, 12).map((v: any) => `• ${v.name}`).join("\n") +
       (missing.length > 12 ? `\n…and ${missing.length - 12} more` : "") +
-      `\n\nOnly contact details are shared — balances and ledgers stay with this project. Parties already in the master are skipped.`,
-    )) return;
+      `\n\nOnly contact details are shared — balances and ledgers stay with this project. Parties already in the master are skipped.`, }))) return;
     setMasterBusy(true);
     let ok = 0;
     const failed: string[] = [];
@@ -177,11 +176,9 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         } catch { failed.push(v.name); }
       }
       setMasters(await listMasterVendors());
-      alert(
-        failed.length
+      toast.error(failed.length
           ? `Saved ${ok}. Couldn't save ${failed.length}: ${failed.slice(0, 5).join(", ")}${failed.length > 5 ? "…" : ""}`
-          : `Saved ${ok} part${ok === 1 ? "y" : "ies"} to your master list.`,
-      );
+          : `Saved ${ok} part${ok === 1 ? "y" : "ies"} to your master list.`,);
     } finally { setMasterBusy(false); }
   };
 
@@ -190,12 +187,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   const promoteToMaster = async (v: any) => {
     const dupes = findDuplicates(v, masters);
     if (dupes.length) {
-      if (!window.confirm(
-        `"${dupes[0].name}" already looks like the same party in your master list.\n\nSave "${v.name}" anyway as a separate entry?`,
-      )) return;
-    } else if (!window.confirm(
-      `Save "${v.name}" to your organisation master?\n\nOnly the contact details are shared — the balance and ledger stay with this project.`,
-    )) return;
+      if (!(await confirmDialog({ title: `"${dupes[0].name}" already looks like the same party in your master list.\n\nSave "${v.name}" anyway as a separate entry?`, }))) return;
+    } else if (!(await confirmDialog({ title: `Save "${v.name}" to your organisation master?\n\nOnly the contact details are shared — the balance and ledger stay with this project.`, }))) return;
     setMasterBusy(true);
     try {
       await saveMasterVendor({
@@ -208,14 +201,12 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         address: v.address || "",
       });
       setMasters(await listMasterVendors());
-      alert(`"${v.name}" is now available on every project in your organisation.`);
+      toast.success(`"${v.name}" is now available on every project in your organisation.`);
     } catch (err: any) {
       console.error("Promote to master failed", err);
-      alert(
-        err?.code === "permission-denied"
+      toast.error(err?.code === "permission-denied"
           ? "Only an Owner, Admin or Manager can update the organisation master."
-          : "Couldn't save to the master list. Please try again.",
-      );
+          : "Couldn't save to the master list. Please try again.",);
     } finally {
       setMasterBusy(false);
     }

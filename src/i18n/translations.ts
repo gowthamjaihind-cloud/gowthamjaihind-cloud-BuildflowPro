@@ -403,6 +403,12 @@ export const translations: Record<Language, Record<string, string>> = {
     "land.navFeatures": "Features",
     "land.navPricing": "Pricing",
     // ---- Demo tour (demo builds only) ----
+        // ---- Toasts and confirmations ----
+    "feedback.notifications": "Notifications",
+    "feedback.dismiss": "Dismiss",
+    "feedback.cancel": "Cancel",
+    "feedback.confirm": "Confirm",
+    "feedback.delete": "Delete",
     "demoTour.replay": "Replay tour",
     "demoTour.skip": "Skip",
     "demoTour.back": "Back",
@@ -946,6 +952,12 @@ export const translations: Record<Language, Record<string, string>> = {
     "land.navFeatures": "அம்சங்கள்",
     "land.navPricing": "விலை",
     // ---- Demo tour (demo builds only) ----
+        // ---- Toasts and confirmations ----
+    "feedback.notifications": "அறிவிப்புகள்",
+    "feedback.dismiss": "மூடு",
+    "feedback.cancel": "ரத்து",
+    "feedback.confirm": "உறுதிப்படுத்து",
+    "feedback.delete": "நீக்கு",
     "demoTour.replay": "சுற்றுப்பயணத்தை மீண்டும் பார்",
     "demoTour.skip": "தவிர்",
     "demoTour.back": "பின்",

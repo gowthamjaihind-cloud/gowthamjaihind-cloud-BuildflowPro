@@ -20,6 +20,7 @@ import { db } from "../../firebase";
 import { GoodsReceiptForm } from "./GoodsReceiptForm";
 import { GoodsReceiptDetails } from "./GoodsReceiptDetails";
 import { useL } from "../../i18n";
+import { confirmDialog, toast } from "../../lib/feedback";
 
 interface PurchaseOrderDetailsProps {
   po: PurchaseOrder;
@@ -62,7 +63,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
       onClose();
     } catch (e) {
       console.error(e);
-      alert(L("Failed to approve PO","கொள்முதல் ஆணையை அங்கீகரிக்க முடியவில்லை"));
+      toast.error(L("Failed to approve PO","கொள்முதல் ஆணையை அங்கீகரிக்க முடியவில்லை"));
     } finally {
       setIsApproving(false);
     }
@@ -70,7 +71,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
 
   const handleDelete = async () => {
     if (!canEditOrDelete) return;
-    if (!confirm(L("Delete this Purchase Order?","இந்த கொள்முதல் ஆணையை நீக்கவா?"))) return;
+    if (!(await confirmDialog({ title: L("Delete this Purchase Order?","இந்த கொள்முதல் ஆணையை நீக்கவா?") }))) return;
     setIsDeleting(true);
     try {
       await deleteDoc(poRef);
@@ -78,7 +79,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
       onClose();
     } catch (e) {
       console.error(e);
-      alert(L("Failed to delete PO","கொள்முதல் ஆணையை நீக்க முடியவில்லை"));
+      toast.error(L("Failed to delete PO","கொள்முதல் ஆணையை நீக்க முடியவில்லை"));
     } finally {
       setIsDeleting(false);
     }

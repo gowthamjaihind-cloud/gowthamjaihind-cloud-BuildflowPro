@@ -65,6 +65,7 @@ import { useProjectDataQuery } from "../hooks/queries";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
 import { useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "../lib/feedback";
 
 interface CostManagementProps {
   projectId: string;
@@ -304,9 +305,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newEntry.category?.toLowerCase() === "material") {
-      alert(
-        "Material costs are tracked automatically from daily logs — log consumption via the Daily Log screen instead",
-      );
+      toast.info("Material costs are tracked automatically from daily logs — log consumption via the Daily Log screen instead",);
       return;
     }
     const path = `${basePath}/costs`;
