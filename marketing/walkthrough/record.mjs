@@ -258,6 +258,17 @@ await ctx.route("**/__fonts/*.woff2", (r) =>
 await ctx.route("https://www.google.com/recaptcha/**", (r) =>
   r.fulfill({ status: 200, contentType: "text/javascript", body: "" }));
 
+// The guided tour opens over the demo and its backdrop swallows clicks, which
+// is right for a visitor and wrong for a scripted run -- it blocked every
+// navigation the first time this met it. Mark it seen before anything loads.
+await ctx.addInitScript(() => {
+  try {
+    localStorage.setItem("sitetru.demo.tour.done", "1");
+  } catch {
+    /* private mode: the tour will open and the run will report the failures */
+  }
+});
+
 const page = await ctx.newPage();
 // Recording begins the moment the page exists, so this -- not the first beat
 // -- is frame zero of the video. Measuring beats from anything later shifts
@@ -272,7 +283,9 @@ await page.waitForTimeout(3500);
 
 // The demo banner is a property of the demo, not of the product. Hide it so
 // the walkthrough shows the app as a customer would run it.
-await page.addStyleTag({ content: "[data-demo-banner]{display:none!important}" });
+await page.addStyleTag({
+  content: "[data-demo-banner],[data-demo-tour]{display:none!important}",
+});
 await page.evaluate(() => { document.body.style.paddingBottom = ""; });
 await page.evaluate(CURSOR_JS);
 await page.evaluate(([a, b]) => window.__cur?.(a, b), [mouse.x, mouse.y]);

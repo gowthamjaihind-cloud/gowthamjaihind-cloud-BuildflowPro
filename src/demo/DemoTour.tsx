@@ -162,6 +162,7 @@ export const DemoTour: React.FC = () => {
           setStep(0);
           setOpen(true);
         }}
+        data-demo-tour="pill"
         className="fixed bottom-20 right-4 z-[190] px-3.5 py-2 rounded-full bg-white text-surface-dark border border-divider text-[11px] font-black uppercase tracking-widest shadow-lg hover:bg-panel apple-transition"
       >
         {t("demoTour.replay")}
