@@ -178,15 +178,6 @@ const BEATS = [
     say: "Every day the site reports back. Progress, headcount, material used — logged against the task it belongs to.",
     async run(page) {
       await click(page, nav(page, "Daily Logs"), { settle: 2400 });
-      // The fixtures deliberately carry no entry for today, so the default
-      // view is empty. Step the date back to the most recent real log.
-      const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
-      const input = page.locator('input[type="date"]').first();
-      if (await input.count()) {
-        await input.fill(yesterday);
-        await input.dispatchEvent("change");
-        await page.evaluate(() => document.activeElement?.blur?.());
-      }
       await sleep(2600);
       await glideScroll(page, 300);
       await sleep(2200);

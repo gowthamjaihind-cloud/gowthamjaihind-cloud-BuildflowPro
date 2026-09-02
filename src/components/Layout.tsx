@@ -86,11 +86,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </div>
 
       <nav
+        data-tour="nav"
         className={`flex-1 space-y-1.5 md:space-y-2 overflow-y-auto mt-2 md:mt-6 scrollbar-hide ${uiMode === "site" ? "pt-8" : ""} ${showLabels ? "px-4 md:px-6" : "px-2 md:px-0"}`}
       >
         {menuItems.map((item) => (
           <button
             key={item.id}
+            data-tour={`nav-${item.id}`}
             onClick={() => {
               setActiveTab(item.id);
               setIsMobileMenuOpen(false);
@@ -188,6 +190,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Main Content */}
       <main
+        data-tour="content"
         className={`flex-1 flex flex-col min-w-0 h-full sm:h-[calc(100vh-32px)] md:h-[calc(100vh-48px)] ${uiMode === "site" ? "!h-[100dvh] pb-16 md:pb-0" : ""}`}
       >
         {/* Top Bar Navigation */}

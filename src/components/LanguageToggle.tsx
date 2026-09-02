@@ -16,7 +16,7 @@ export const LanguageToggle: React.FC = () => {
   ];
 
   return (
-    <div
+    <div data-tour="lang"
       className="flex items-center bg-surface/40 border border-divider rounded-full p-0.5 shadow-sm shrink-0"
       role="group"
       aria-label="Language"

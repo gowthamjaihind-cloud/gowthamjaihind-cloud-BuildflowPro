@@ -171,8 +171,11 @@ export const demoLaborRates = [
 ];
 
 const dayLog = (n: number, taskId: string, pct: number, mason: number, helper: number, bender: number) => ({
-  id: `dl${n}`, projectId: DEMO_PROJECT_ID, taskId, workDate: d(-n),
-  progressPercent: pct, notes: "", createdAt: `${d(-n)}T09:00:00.000Z`,
+  // n counts back from today, so dayLog(1) is today's entry. The series used
+  // to start at yesterday, which left Daily Logs -- a screen that defaults to
+  // today -- showing an empty state to everyone who opened the demo.
+  id: `dl${n}`, projectId: DEMO_PROJECT_ID, taskId, workDate: d(-(n - 1)),
+  progressPercent: pct, notes: "", createdAt: `${d(-(n - 1))}T09:00:00.000Z`,
   // Every real log has an author -- these come off the site engineer's phone
   // via the bot. Without a name the log card renders "Logged by" and nothing.
   createdByUid: "demo-engineer",
