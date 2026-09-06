@@ -629,7 +629,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                     }}
                   >
                     <div className="sticky left-0 flex items-center gap-2.5 px-3 sm:px-4 h-full">
-                      <Rows className="w-3.5 h-3.5 text-rust-strong shrink-0" />
+                      <Rows className="w-3.5 h-3.5 text-primary-strong shrink-0" />
                       <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-ink truncate">
                         {row.label}
                       </span>

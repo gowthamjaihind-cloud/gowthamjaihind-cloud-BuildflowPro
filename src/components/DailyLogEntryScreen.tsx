@@ -485,7 +485,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
 
             {taskId && currentTask && (
               <div className="bg-warning/12 p-4 rounded-xl border border-warning/25">
-                <span className="text-[10px] font-black uppercase tracking-widest text-rust-strong block mb-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-primary-strong block mb-1">
                   {t("dlog.loggingForTask")}
                 </span>
                 <span className="text-sm font-bold text-warning block">
@@ -515,7 +515,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
                   {t("dlog.cumulativeProgress")}
                 </label>
-                <span className="text-xl font-black text-rust-strong font-mono">
+                <span className="text-xl font-black text-primary-strong font-mono">
                   {markComplete ? 100 : progressPercent}%
                 </span>
               </div>
@@ -564,7 +564,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleAddMaterial}
-                  className="text-rust-strong text-xs font-bold hover:underline flex items-center gap-1"
+                  className="text-primary-strong text-xs font-bold hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> {t("dlog.addMaterial")}
                 </button>
@@ -618,7 +618,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleAddLabor}
-                  className="text-rust-strong text-xs font-bold hover:underline flex items-center gap-1"
+                  className="text-primary-strong text-xs font-bold hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> {t("dlog.addLabor")}
                 </button>
@@ -670,7 +670,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleAddEquipment}
-                  className="text-rust-strong text-xs font-bold hover:underline flex items-center gap-1"
+                  className="text-primary-strong text-xs font-bold hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> {t("dlog.addEquipment")}
                 </button>

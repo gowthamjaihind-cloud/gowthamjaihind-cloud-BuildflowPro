@@ -6,19 +6,17 @@
      follows without edits; only the values here change.
      Contrast measured against white: indigo 6.19:1, ink 15.57:1,
      ink-mute 4.75:1 — all AA at body size. */
-  --primary: #533AFD; /* Indigo — CTAs and the active state, used sparingly */
-  --primary-deep: #4434D4; /* gradient mid-stop */
-  --primary-press: #2E2B8C; /* pressed */
-  --rust-strong: #4434D4; /* kept as the name for small emphasis text (8.7:1) */
-  --page: #F6F9FC; /* Canvas Soft — the cool off-white band */
+  --primary: #1D4ED8; /* Cobalt — CTAs and the active state, used sparingly. 6.70 on white */
+  --primary-deep: #1A3FAF; /* hover, and small emphasis text. 8.85 */
+  --primary-press: #14307F; /* pressed. 11.94 */
+  --primary-strong: #1A3FAF; /* emphasis text; this token was --rust-strong */
+  --page: #F5F7FA; /* the cool off-white ground */
   --panel: #FFFFFF; /* Canvas */
-  --surface-dark: #1C1E54; /* Brand Dark 900 — inverted panels, headers */
+  --surface-dark: #12203F; /* deep navy — inverted panels, headers. 16.10 on white */
   --surface: #FFFFFF;
-  --ink: #0D253D; /* Deep navy, never pure black */
-  --ink-muted: #5A6A82; /* Ink Mute darkened: Stripe's #64748d is 4.49:1 on
-                           the tinted page, which fails. This is 4.6:1 there
-                           and 5.1:1 on white. */
-  --divider: #E3E8EE; /* Hairline */
+  --ink: #0F172A; /* near-navy, never pure black. 17.85 on white */
+  --ink-muted: #56637A; /* 6.07 on white, 5.65 on the page */
+  --divider: #E1E6EE; /* hairline */
   /* Semantic status colors — one source of truth so success/danger/warning/info
      are identical everywhere and adapt to dark mode. Use with opacity for soft
      backgrounds, e.g. bg-success/10, text-success. */
@@ -33,21 +31,22 @@
 }
 
 .dark {
-  /* The base indigo is 2.2:1 on the dark panel -- unreadable. Lifted to
-     #9D91FF it is 5.15:1 on panel and 6.43:1 on page. */
   /* Dark mode uses Linear's surface ladder: a near-black canvas with four
      lifted steps above it, so depth reads from stacked greys and hairlines
      rather than shadow. Previously one panel colour and one border did all
      the separating. */
-  --primary: #9D91FF; /* Indigo, lifted -- the base is 2.20:1 here */
-  --rust-strong: #9D91FF;
+  /* The base cobalt is unreadable here. Lifted to #5B87FF it is 5.76 on
+     surface-1 and 6.31 on the canvas. #3E70FF also clears 4.5, but only just,
+     leaving no headroom for a nested surface. */
+  --primary: #5B87FF;
+  --primary-strong: #5B87FF;
   --page: #010102;    /* canvas */
   --panel: #0F1011;   /* surface 1 -- cards */
   --surface-1: #0F1011;
   --surface-2: #141516; /* hovered / nested cards */
   --surface-3: #18191A; /* sub-nav, tertiary bands */
   --surface-4: #191A1B; /* deepest lifted surface */
-  --surface-dark: #1C1E54;
+  --surface-dark: #12203F;
   --surface: #0F1011;
   --ink: #F7F8F8;
   --ink-muted: #8A8F98; /* 6.42:1 on canvas */
@@ -98,7 +97,7 @@
   --color-primary: var(--primary);
   --color-primary-press: var(--primary-press);
   --color-primary-deep: var(--primary-deep);
-  --color-rust-strong: var(--rust-strong);
+  --color-primary-strong: var(--primary-strong);
   --color-page: var(--page);
   --color-panel: var(--panel);
   --color-surface-dark: var(--surface-dark);

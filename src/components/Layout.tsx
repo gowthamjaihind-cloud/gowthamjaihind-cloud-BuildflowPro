@@ -221,7 +221,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 >
                   {activeProject?.name || t("header.portfolio")}
                 </h1>
-                <div className="hidden sm:block text-[10px] font-black text-rust-strong uppercase tracking-widest mt-0.5">
+                <div className="hidden sm:block text-[10px] font-black text-primary-strong uppercase tracking-widest mt-0.5">
                   {uiMode === "site" ? t("header.siteModeLive") : t("header.controlCenter")}
                 </div>
               </div>

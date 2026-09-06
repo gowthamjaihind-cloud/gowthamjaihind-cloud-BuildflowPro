@@ -128,7 +128,7 @@ const Confirm: React.FC = () => {
             ref={primary}
             onClick={() => answer(true)}
             className={`px-4 py-2.5 rounded-xl text-white text-xs font-black uppercase tracking-wider apple-transition ${
-              destructive ? "bg-danger hover:brightness-110" : "bg-primary hover:bg-[#4434D4]"
+              destructive ? "bg-danger hover:brightness-110" : "bg-primary hover:bg-primary-deep"
             }`}
           >
             {affirm}

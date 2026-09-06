@@ -652,7 +652,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                       <span
                         className={`px-2.5 py-1 rounded-full text-[10px] md:text-[10px] font-black uppercase tracking-[0.12em] ${
                           bill.isChangeOrder
-                            ? "bg-primary/15 text-rust-strong"
+                            ? "bg-primary/15 text-primary-strong"
                             : "bg-[#87BCBF]/20 text-[#3E8388]"
                         }`}
                       >

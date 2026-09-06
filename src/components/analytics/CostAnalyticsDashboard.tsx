@@ -64,8 +64,8 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
   // 4-hue categorical set for the composition donut (order keeps the similar
   // orange/yellow non-adjacent, and every slice is directly labelled).
   const S = dark
-    ? { budget: "#2A86C4", actual: "#9D91FF", under: "#46B08C", over: "#FF8A80", amber: "#E0A63E" }
-    : { budget: "#0F79B8", actual: "#533AFD", under: "#2E8B6F", over: "#B3261E", amber: "#C0872A" };
+    ? { budget: "#2A86C4", actual: "#5B87FF", under: "#46B08C", over: "#FF8A80", amber: "#E0A63E" }
+    : { budget: "#0F79B8", actual: "#1D4ED8", under: "#2E8B6F", over: "#B3261E", amber: "#C0872A" };
   const CAT = dark
     ? ["#3987e5", "#d95926", "#199e70", "#c98500"]
     : ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];

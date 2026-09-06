@@ -11,7 +11,8 @@ to emit but not how to decide the case this file never covered.
 **Provenance.** Three sources, all from
 [VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md)
 (MIT), all inspired-by readings of public patterns rather than official systems.
-**Stripe** gives the light palette, the indigo accent and the type features.
+**Stripe** gives the light-palette structure and the type features; the accent
+is no longer its indigo — see below.
 **Wise** gives the status model — colour in the fill, a separate colour for the
 text on it — and the Manrope/Inter pairing, which is Wise's own documented
 substitute for its proprietary display face. **Linear** gives the dark surface
@@ -27,7 +28,7 @@ checking spend between site visits, often on a phone, often in sunlight. The
 interface should read like a well-kept ledger: dense where the numbers are,
 quiet everywhere else.
 
-- **Calm ground, one accent.** A cool off-white page with a single indigo
+- **Calm ground, one accent.** A cool off-white page with a single cobalt
   for anything actionable. Colour means something; nothing is coloured for
   decoration.
 - **Data over ornament.** No gradients behind numbers, no glassmorphism, no
@@ -41,27 +42,31 @@ quiet everywhere else.
 ## 2. Colour palette & roles
 
 ```css
---primary:      #533AFD;  /* Indigo — CTAs, active nav, emphasis. 6.19:1 on white */
---primary-deep: #4434D4;  /* gradient mid-stop, small emphasis text (8.7:1) */
---primary-press:#2E2B8C;  /* pressed */
---page:         #F6F9FC;  /* Canvas Soft — the cool off-white ground */
---panel:        #FFFFFF;  /* Canvas */
---surface-dark: #1C1E54;  /* Brand Dark 900 — inverted panels, headers */
---ink:          #0D253D;  /* Deep navy, never pure black. 15.57:1 */
---ink-muted:    #5A6A82;  /* 5.1:1 on white, 4.6:1 on the tinted page */
---divider:      #E3E8EE;  /* Hairline */
---success:      #046A4E;  /* 6.61 on white · 5.51 on its own 12% tint */
---danger:       #B3261E;  /* 6.54 · 5.37 */
---warning:      #9A4A22;  /* 6.22 · 5.21 */
---info:         #4A6C82;  /* 5.59 · 4.75 */
+--primary:        #1D4ED8;  /* Cobalt — CTAs, active nav, emphasis. 6.70 on white */
+--primary-deep:   #1A3FAF;  /* hover, and small emphasis text. 8.85 */
+--primary-press:  #14307F;  /* pressed. 11.94 */
+--primary-strong: #1A3FAF;  /* alias for emphasis text; formerly --rust-strong */
+--page:           #F5F7FA;  /* the cool off-white ground */
+--panel:          #FFFFFF;
+--surface-dark:   #12203F;  /* deep navy — inverted panels, table headers. 16.10 */
+--ink:            #0F172A;  /* near-navy, never pure black. 17.85 on white */
+--ink-muted:      #56637A;  /* 6.07 on white, 5.65 on the page */
+--divider:        #E1E6EE;  /* hairline */
+--success:        #046A4E;  /* 6.61 on white · 5.51 on its own 12% tint */
+--danger:         #B3261E;  /* 6.54 · 5.37 */
+--warning:        #9A4A22;  /* 6.22 · 5.21 */
+--info:           #4A6C82;  /* 5.59 · 4.75 */
 ```
 
 **Roles.**
-- Indigo is for what the user can act on and for current position. One filled
-  indigo control per band; never a background wash.
-- `--ink-muted` is **not** Stripe's `#64748d`. That value measures 4.49:1 on the
-  tinted page and 3.95:1 on cream — both fail AA. Darkened to `#5A6A82` it
-  passes on every surface this app uses.
+- Cobalt is for what the user can act on and for current position. One filled
+  cobalt control per band; never a background wash. It was chosen over the
+  Stripe indigo for legibility: higher ink contrast against its ground, and a
+  hue familiar enough that nobody has to learn it. Both pass AA; cobalt has
+  more headroom outdoors, which is where this product is read.
+- `--ink-muted` is **not** Stripe's `#64748d`, which measures 4.49:1 on a tinted
+  page and fails. The cobalt set uses `#56637A` — 6.07 on white, 5.65 on the
+  page.
 - Stripe's file documents **no semantic palette** — error and success live only
   in its product UI. Sitetru cannot work that way: over-budget and at-risk are
   the point of the product.
@@ -74,7 +79,8 @@ quiet everywhere else.
   over-budget, amber means behind schedule — an accent in any of those hues
   makes the status colours ambiguous. This is why Wise's lime is not adopted
   even though the rest of its model is: a green accent and a green "on track"
-  cannot coexist in a product whose job is flagging trouble.
+  cannot coexist in a product whose job is flagging trouble. Cobalt at 224° is
+  clear of all three.
 - Ruby `#ea2261` and the other gradient stops are decorative in the source
   system and are **not** adopted here; at 4.29:1 ruby is large-text-only.
 
@@ -89,7 +95,11 @@ lifted steps, so depth reads from stacked greys and hairlines instead of shadow:
 --surface-4: #191A1B;  /* deepest lifted surface */
 --divider:   #23252A;  /* hairline */  --divider-strong: #34343A;
 --ink:       #F7F8F8;  --ink-muted: #8A8F98;  /* 6.42:1 on canvas */
---primary:   #9D91FF;  /* lifted — the light indigo is 2.20:1 here */
+--primary:   #5B87FF;  /* lifted cobalt. 5.76 on surface-1, 6.31 on canvas.
+                          #3E70FF clears 4.5 but only just, leaving no
+                          headroom for a nested surface */
+--success:   #34D399;  --danger: #F87171;   /* 9.91 · 6.89 on surface-1 */
+--warning:   #F0A882;  --info:   #9BAAC2;   /* 9.64 · 8.09 */
 ```
 
 Never reuse the light primary on a dark surface.
@@ -140,12 +150,12 @@ Never reuse the light primary on a dark surface.
 
 | Component | Rules |
 |---|---|
-| **Primary button** | Indigo fill, white text, `rounded-xl`, 800 uppercase tracking-wider; pressed `#2E2B8C` |
+| **Primary button** | Cobalt fill, white text, `rounded-xl`, 800 uppercase tracking-wider; pressed `#2E2B8C` |
 | **Secondary** | Transparent with `--divider` border, ink text |
 | **Card** | White on Canvas Soft, `rounded-2xl`, `shadow-sm`, 1px hairline border |
-| **Nav item** | `rounded-[18px]`; active = indigo fill, white text, ring; idle = ink-muted with panel hover. Label 15px — see §3 |
+| **Nav item** | `rounded-[18px]`; active = cobalt fill, white text, ring; idle = ink-muted with panel hover. Label 15px — see §3 |
 | **Status chip** | `rounded-full`, 10px 800 uppercase. Colour goes in the fill at ~12% and in the text; both are checked against each other, per Wise |
-| **Input** | White, hairline border, `rounded-xl`, indigo focus ring |
+| **Input** | White, hairline border, `rounded-xl`, cobalt focus ring |
 | **Select** | Still a native `<select>`, restyled in `@layer base`: hairline border, `rounded-xl`, own caret. Native on purpose — the OS picker beats anything hand-built on a phone |
 | **Toast** | Card shape, `shadow-lg`, tinted icon chip. Top of the screen; the foot carries the demo banner. Errors 8s and `role="alert"`, others 4–5s and `role="status"` |
 | **Confirm dialog** | Centred card, scrim, `Escape` and scrim cancel. The button names the act — "Delete", not "Confirm". Replaces `window.confirm` |
@@ -205,7 +215,7 @@ Borders do the quiet separating; shadow is only for things that genuinely float.
 - Don't let a summary contradict a detail on the same screen — "0 tasks at
   risk" above a phase marked *Behind Schedule* destroys trust in both.
 - Don't wrap a horizontal scroller in `md:flex-wrap` without checking 1024px.
-- Don't colour a whole surface indigo, and don't use indigo as body-text colour — it is a CTA and link colour.
+- Don't colour a whole surface cobalt, and don't use cobalt as body-text colour — it is a CTA and link colour.
 - Don't reach for `window.alert` or `window.confirm`. They render in the
   browser's chrome, announce the domain and cannot be styled; use `toast.*`
   and `confirmDialog` from `src/lib/feedback.ts`.
@@ -236,7 +246,7 @@ Borders do the quiet separating; shadow is only for things that genuinely float.
 Prompts that keep new work on-system:
 
 - "Build this on Canvas Soft with white cards, `rounded-2xl`, `shadow-sm`,
-  indigo only for the action."
+  cobalt only for the action."
 - "Money in Indian grouping with lakh/crore; figures in JetBrains Mono,
   right-aligned."
 - "Give me both sidebar states, and 390 / 1024 / 1440."
