@@ -79,7 +79,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         <BrandLogo className="w-10 h-10 md:w-12 md:h-12 rounded-[14px] md:rounded-[16px] shadow-lg shadow-surface-dark/25 shrink-0" />
         {showLabels && (
-          <span className="font-brand font-bold text-2xl md:text-3xl tracking-tight text-ink truncate shrink-0">
+          <span className="font-brand font-extrabold text-2xl md:text-3xl tracking-tight text-ink truncate shrink-0">
             Sitetru
           </span>
         )}

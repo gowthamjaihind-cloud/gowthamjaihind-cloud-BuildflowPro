@@ -49,7 +49,7 @@ export function useRazorpayCheckout() {
         description,
         order_id: order.orderId,
         prefill: { email: user?.email || "", name: user?.displayName || "" },
-        theme: { color: "#D97D54" },
+        theme: { color: "#1D4ED8" },
         handler: async (resp: any) => {
           try {
             await callVerifyRazorpayPayment({

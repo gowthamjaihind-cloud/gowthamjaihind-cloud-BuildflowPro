@@ -57,14 +57,14 @@ async function loadPdfFont(): Promise<string | null> {
 // Brand palette, mirrored from src/index.css so an exported document looks
 // like the app it came from.
 const BRAND = {
-  slate: [50, 71, 85] as const,      // #324755 Drab
-  rust: [217, 125, 84] as const,     // #D97D54
-  sage: [135, 188, 191] as const,    // #87BCBF
-  ice: [240, 243, 244] as const,     // #F0F3F4
-  fossil: [200, 209, 211] as const,  // #C8D1D3
-  onyx: [27, 28, 32] as const,       // #1B1C20
-  muted: [86, 119, 142] as const,    // #56778E
-};
+  slate: [18, 32, 63] as const,      // #12203F surface-dark
+  rust: [29, 78, 216] as const,      // #1D4ED8 cobalt primary (name kept: many call sites)
+  sage: [168, 194, 255] as const,    // #A8C2FF pale cobalt — light type on the navy header
+  ice: [245, 247, 250] as const,     // #F5F7FA page
+  fossil: [225, 230, 238] as const,  // #E1E6EE divider
+  onyx: [15, 23, 42] as const,       // #0F172A ink
+  muted: [86, 99, 122] as const,     // #56637A ink-muted
+}
 
 /** The Sitetru mark, drawn as vectors so it stays sharp and costs no bytes. */
 function drawLogo(doc: jsPDF, x: number, y: number, size: number) {

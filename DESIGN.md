@@ -161,6 +161,17 @@ Never reuse the light primary on a dark surface.
 | **Confirm dialog** | Centred card, scrim, `Escape` and scrim cancel. The button names the act — "Delete", not "Confirm". Replaces `window.confirm` |
 | **Table header** | Brand Dark 900 bar, white small-caps labels, numeric columns right-aligned |
 
+**The brand mark** is three ascending bars — a rising skyline — in white on a
+cobalt tile, `rx` 116 of 512. White on cobalt is 6.70:1, which is what keeps
+the bars separate at 16px; cobalt bars on the deep navy tile measure 2.40:1 and
+merge into a solid square in a browser tab. The tile is 6.24:1 on the light
+page and 3.11:1 on the dark canvas. `BrandLogo.tsx` and `public/icon.svg` draw
+the same mark and must be changed together, along with `theme_color` in the
+manifest and `index.html`.
+
+**The wordmark** is Manrope 800 — the same face and weight as `h1`/`h2`, so the
+name beside the mark matches the headings under it. It was 700, one step light.
+
 Motion is one shared curve — `apple-transition`: 200ms
 `cubic-bezier(0.2, 0, 0, 1)` over colour, shadow, transform and opacity. Nothing
 animates position on load. Nothing bounces.

@@ -272,7 +272,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
         <nav className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <BrandLogo className="w-9 h-9 rounded-xl" />
-            <span className="font-brand font-bold text-xl tracking-tight">Sitetru</span>
+            <span className="font-brand font-extrabold text-xl tracking-tight">Sitetru</span>
           </div>
 
           <div className="hidden md:flex items-center gap-7 text-sm font-semibold text-ink-muted">
@@ -661,7 +661,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <BrandLogo className="w-8 h-8 rounded-lg" />
-            <span className="font-brand font-bold tracking-tight">Sitetru</span>
+            <span className="font-brand font-extrabold tracking-tight">Sitetru</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold text-ink-muted">
             <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="hover:text-ink apple-transition">{L("Terms", "விதிமுறைகள்")}</a>
@@ -705,7 +705,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
 
               <div className="flex items-center gap-2.5 mb-5">
                 <BrandLogo className="w-10 h-10 rounded-xl" />
-                <span className="font-brand font-bold text-lg tracking-tight">Sitetru</span>
+                <span className="font-brand font-extrabold text-lg tracking-tight">Sitetru</span>
               </div>
 
               <h3 className="font-display font-bold text-2xl tracking-tight mb-2">Continue to Sitetru</h3>

@@ -28,7 +28,7 @@ const statusPillClasses = (status?: string) => {
     case "Active":
       return "text-success bg-success/15 dark:text-success dark:bg-success/10";
     case "On Hold":
-      return "text-warning bg-primary/12 dark:text-[#E29677] dark:bg-primary/15";
+      return "text-warning bg-warning/12 dark:text-warning dark:bg-warning/15";
     case "Completed":
       return "text-ink-muted bg-[#6E8CA0]/12";
     default:
