@@ -1379,10 +1379,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                               isOver ? "text-danger" : "text-success"
                             }`}
                           >
-                            {isOver ? "-" : "+"}₹
+                            ₹
                             {Math.abs(variance).toLocaleString("en-IN", {
                               maximumFractionDigits: 0,
-                            })}
+                            })}{" "}
+                            <span className="text-[10px] font-medium">
+                              {isOver ? "over" : "under"}
+                            </span>
                           </div>
                         </div>
                       </>

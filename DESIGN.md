@@ -226,6 +226,15 @@ Borders do the quiet separating; shadow is only for things that genuinely float.
 - State the unit: `22 deployed`, `56d`, `₹53.7L`.
 - Give icon-only controls an `aria-label`; collapsed, the sidebar is twelve
   unlabelled buttons without one.
+- Render a signed quantity as **magnitude plus a word**, never as a bare sign:
+  `₹54.0L under budget`, not `₹-54.0L`. Two screens computed variance with
+  opposite conventions — `actual - budget` on the dashboard, `planned - actual`
+  in Cost Management — and both showed the same underspend in green, one as a
+  positive number and one as a negative. The word is what makes them agree;
+  the sign is an implementation detail and should not reach the user.
+- Derive "behind schedule" from one shared helper. `expectedProgress()` in
+  `src/lib/projectMetrics.ts` compares elapsed time to percent complete, with
+  `SLIP_TOLERANCE` for the slack; every KPI, badge and phase label reads it.
 
 **Don't**
 - Don't `truncate` a title to make a row fit. It once reduced "Labour" to "L".

@@ -5,6 +5,7 @@ import { query, onSnapshot, doc, setDoc } from "firebase/firestore";
 import { collection, db } from "../firebase";
 import { useAuthStore } from "../store";
 import { getProjectSubCollectionPath } from "../utils/projectPath";
+import { expectedProgress, SLIP_TOLERANCE } from "../lib/projectMetrics";
 
 export type TaskStatus = 'scheduled' | 'in_progress' | 'blocked' | 'done';
 
@@ -85,7 +86,8 @@ export function useScheduleData(projectId: string) {
           const minStart = new Date(Math.min(...pt.map((t: any) => new Date(t.startDate).getTime())));
           const maxEnd = new Date(Math.max(...pt.map((t: any) => new Date(t.endDate).getTime())));
           const totalProg = pt.reduce((sum: number, t: any) => sum + (t.progress || 0), 0) / (pt.length || 1);
-          const behind = totalProg < 30 && minStart < new Date();
+          const expected = expectedProgress(minStart.toISOString(), maxEnd.toISOString());
+        const behind = expected !== null && totalProg + SLIP_TOLERANCE < expected;
           return {
             id: phaseName,
             name: phaseName,
@@ -159,6 +161,8 @@ export function useScheduleData(projectId: string) {
         const minStart = new Date(Math.min(...phaseTasks.map(t => t.startDate.getTime())));
         const maxEnd = new Date(Math.max(...phaseTasks.map(t => t.endDate.getTime())));
         const totalProg = phaseTasks.reduce((sum, t) => sum + t.progress, 0) / (phaseTasks.length || 1);
+        const expected = expectedProgress(minStart.toISOString(), maxEnd.toISOString());
+        const isBehind = expected !== null && totalProg + SLIP_TOLERANCE < expected;
         
         return {
           id: phaseName,
@@ -167,8 +171,8 @@ export function useScheduleData(projectId: string) {
           endDate: maxEnd,
           progress: Math.round(totalProg),
           unitsLabel: "All Units",
-          scheduleHealth: totalProg < 30 && minStart < new Date() ? 'behind' : 'on_schedule',
-          healthLabel: totalProg < 30 && minStart < new Date() ? 'Behind Schedule' : 'On Track'
+          scheduleHealth: isBehind ? 'behind' : 'on_schedule',
+          healthLabel: isBehind ? 'Behind Schedule' : 'On Track'
         };
       });
 
