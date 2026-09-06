@@ -624,7 +624,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Deployment Entries</p>
                     <p className="text-2xl font-black text-ink font-mono">{laborTotals.entries}</p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#6E8CA0]/10 text-[#56778E] flex items-center justify-center border border-[#6E8CA0]/20"><FileText className="w-5 h-5" /></div>
+                  <div className="w-10 h-10 rounded-xl bg-info/10 text-ink-muted flex items-center justify-center border border-[#6E8CA0]/20"><FileText className="w-5 h-5" /></div>
                 </div>
               </div>
 
@@ -721,7 +721,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       <CountUp value={advancedInsights.count} />
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#6E8CA0]/10 text-[#56778E] flex items-center justify-center border border-[#6E8CA0]/20">
+                  <div className="w-10 h-10 rounded-xl bg-info/10 text-ink-muted flex items-center justify-center border border-[#6E8CA0]/20">
                     <FileText className="w-5 h-5" />
                   </div>
                 </div>
@@ -969,7 +969,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                                 className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                                   record.source === "Material Issue"
                                     ? "bg-primary/10 text-primary border border-primary/20"
-                                    : "bg-[#6E8CA0]/10 text-[#46617C] border border-[#6E8CA0]/20"
+                                    : "bg-info/10 text-[#46617C] border border-[#6E8CA0]/20"
                                 }`}
                               >
                                 {record.source}

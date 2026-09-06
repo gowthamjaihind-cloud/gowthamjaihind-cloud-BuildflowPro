@@ -14,7 +14,7 @@ export const StatTile: React.FC<{
   label: string; value: string; hint?: string;
   tone?: "default" | "danger" | "success"; icon?: React.ReactNode;
 }> = ({ label, value, hint, tone = "default", icon }) => {
-  const c = tone === "danger" ? "text-danger" : tone === "success" ? "text-[#2E8B6F]" : "text-ink";
+  const c = tone === "danger" ? "text-danger" : tone === "success" ? "text-success" : "text-ink";
   return (
     <div className="soft-card rounded-2xl p-4 flex flex-col gap-1">
       <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{label}</span>

@@ -438,7 +438,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                 <h1 className="text-3xl font-black uppercase tracking-tighter mb-2">
                   {project?.name || "Project"}
                 </h1>
-                <h2 className="text-lg font-bold text-[#56778E] uppercase tracking-widest">
+                <h2 className="text-lg font-bold text-ink-muted uppercase tracking-widest">
                   {t(`reports.${reportType}`)} {t("reports.progressReport")}
                 </h2>
               </div>
@@ -718,7 +718,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                             <span className="font-mono">{log.workDate}</span> • {log.progressPercent}% progress
                             {log.markComplete ? ' (Completed)' : ''}
                           </p>
-                          <div className="mt-2 text-xs text-[#56778E]">
+                          <div className="mt-2 text-xs text-ink-muted">
                             {log.materials && log.materials.length > 0 && (
                               <span className="mr-3"><b>Mat:</b> {log.materials.length} items</span>
                             )}

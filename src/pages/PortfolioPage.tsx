@@ -157,7 +157,7 @@ export const PortfolioPage: React.FC = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.2, 0, 0, 1] }}
-          className={`relative overflow-hidden rounded-[28px] sm:rounded-[36px] md:rounded-[44px] bg-surface-dark text-white shadow-xl shadow-drab/30 ${
+          className={`relative overflow-hidden rounded-[28px] sm:rounded-[36px] md:rounded-[44px] bg-surface-dark text-white shadow-xl shadow-surface-dark/30 ${
             dense
               ? "mb-6 sm:mb-8 px-6 py-6 sm:px-10 sm:py-8"
               : "mb-8 sm:mb-12 md:mb-14 px-6 py-8 sm:px-10 sm:py-12 md:px-16 md:py-12"
@@ -244,7 +244,7 @@ export const PortfolioPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 rounded-2xl bg-white/[0.07] border border-white/10 px-4 py-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-sage shadow-[0_0_10px_#87BCBF]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-success shadow-[0_0_10px_var(--success)]" />
                     <CountUp
                       value={activeCount}
                       className="font-display text-2xl font-bold leading-none tabular-nums"
@@ -264,7 +264,7 @@ export const PortfolioPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 rounded-2xl bg-white/[0.07] border border-white/10 px-4 py-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-sage/70" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-info/70" />
                     <CountUp
                       value={completedCount}
                       className="font-display text-2xl font-bold leading-none tabular-nums"
@@ -356,7 +356,7 @@ export const PortfolioPage: React.FC = () => {
                 <div className="flex justify-between items-start gap-3 mb-4">
                   {/* Without a cover the avatar carries the upload affordance. */}
                   {!project.imageUrl && (
-                    <div className={`relative bg-surface-dark text-white rounded-[16px] group-hover:bg-primary apple-transition shadow-lg shadow-drab/20 flex items-center justify-center overflow-hidden shrink-0 ${dense ? "w-11 h-11" : "w-12 h-12 sm:w-14 sm:h-14"}`}>
+                    <div className={`relative bg-surface-dark text-white rounded-[16px] group-hover:bg-primary apple-transition shadow-lg shadow-surface-dark/20 flex items-center justify-center overflow-hidden shrink-0 ${dense ? "w-11 h-11" : "w-12 h-12 sm:w-14 sm:h-14"}`}>
                       <ImageIcon weight="duotone" className="w-6 h-6" />
                       <label
                         className="absolute inset-0 bg-onyx/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white"

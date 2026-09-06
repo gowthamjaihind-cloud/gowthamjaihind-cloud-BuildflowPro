@@ -338,7 +338,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
           {t("dv.title")}
         </h2>
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="bg-[#6E8CA0]/10 p-1 rounded-xl flex flex-1 md:flex-none">
+          <div className="bg-info/10 p-1 rounded-xl flex flex-1 md:flex-none">
             <button
               onClick={() => setViewMode("List")}
               className={`flex-1 md:px-4 py-2 rounded-lg text-[10px] md:text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === "List" ? "bg-surface text-primary shadow-sm" : "text-ink-muted"}`}

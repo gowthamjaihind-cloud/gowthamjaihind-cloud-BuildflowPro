@@ -196,7 +196,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
                 <CheckCircle2 className="w-3 h-3" /> {L("Linked","இணைக்கப்பட்டது")} ✅
               </span>
             ) : (
-              <span className="px-2 py-0.5 bg-ice text-[#56778E] text-xs rounded-full font-medium">
+              <span className="px-2 py-0.5 bg-page text-ink-muted text-xs rounded-full font-medium">
                 {L("Not linked","இணைக்கப்படவில்லை")}
               </span>
             )}
@@ -304,7 +304,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
             </code>
             <button
               onClick={copyToClipboard}
-              className="p-2 hover:bg-[#6E8CA0]/10 text-[#56778E] rounded-lg transition-colors"
+              className="p-2 hover:bg-info/10 text-ink-muted rounded-lg transition-colors"
               title={L("Copy to clipboard","கிளிப்போர்டுக்கு நகலெடு")}
             >
               <Copy className="w-5 h-5" />
@@ -315,7 +315,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
              <button
                 onClick={generateCode}
                 disabled={loading}
-                className="text-sm font-medium text-[#56778E] hover:text-[#46617C] flex items-center gap-1"
+                className="text-sm font-medium text-ink-muted hover:text-[#46617C] flex items-center gap-1"
              >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                 {L("Generate new code","புதிய குறியீட்டை உருவாக்கு")}

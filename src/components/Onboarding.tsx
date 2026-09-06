@@ -213,7 +213,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
           <div className="inline-flex items-center bg-panel border border-divider rounded-full p-1">
             <button onClick={() => setPeriod("monthly")} className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition ${period === "monthly" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}>{t("paywall.monthly")}</button>
             <button onClick={() => setPeriod("annual")} className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition flex items-center gap-1.5 ${period === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}>
-              {t("paywall.annual")} <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">-17%</span>
+              {t("paywall.annual")} <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded-full bg-success/15 text-success">-17%</span>
             </button>
           </div>
         </div>
@@ -231,7 +231,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                   <span className="font-display font-bold text-3xl tracking-tight">₹{monthly.toLocaleString("en-IN")}</span>
                   <span className="text-xs text-ink-muted mb-1.5">{t("paywall.perMo")}</span>
                 </div>
-                <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full my-2 bg-sage/15 text-[#3E8388]">
+                <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full my-2 bg-primary/12 text-primary-deep">
                   <Stack weight="bold" className="w-3.5 h-3.5" /> {t("paywall.upToProjects", { n: p.includedProjects })}
                 </div>
                 <ul className="space-y-1.5 mb-4 text-sm">

@@ -70,7 +70,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
               className={`px-4 py-1.5 rounded-full text-sm font-bold apple-transition flex items-center gap-2 ${period === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
             >
               {t("paywall.annual")}
-              <span className="text-[10px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">{t("paywall.savePct")}</span>
+              <span className="text-[10px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-success">{t("paywall.savePct")}</span>
             </button>
           </div>
         </div>
@@ -95,7 +95,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
                 <p className="text-[11px] text-ink-muted mb-3 h-4">
                   {period === "annual" ? t("paywall.billedYearly", { amount: (p.annual || 0).toLocaleString("en-IN") }) : ""}
                 </p>
-                <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 bg-sage/15 text-[#3E8388]">
+                <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 bg-primary/12 text-primary-deep">
                   <Stack weight="bold" className="w-3.5 h-3.5" /> {t("paywall.upToProjects", { n: p.includedProjects })}
                 </div>
                 <ul className="space-y-1.5 mb-4 text-sm">

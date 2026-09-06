@@ -156,7 +156,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
                     className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition flex items-center gap-2 ${period === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
                   >
                     {L("Annual","ஆண்டு")}
-                    <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">{L("Save ~17%","~17% சேமி")}</span>
+                    <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-success">{L("Save ~17%","~17% சேமி")}</span>
                   </button>
                 </div>
               </div>
@@ -172,7 +172,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
                         <span className="font-display font-bold text-2xl tracking-tight">₹{monthly.toLocaleString("en-IN")}</span>
                         <span className="text-[11px] text-ink-muted mb-1">/ mo</span>
                       </div>
-                      <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 bg-sage/15 text-[#3E8388]">
+                      <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 bg-primary/12 text-primary-deep">
                         <Stack weight="bold" className="w-3.5 h-3.5" /> {L(`${p.includedProjects} projects`, `${p.includedProjects} செயல்திட்டங்கள்`)}
                       </div>
                       <button

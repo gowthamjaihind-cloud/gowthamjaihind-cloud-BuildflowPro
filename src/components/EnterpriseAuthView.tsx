@@ -322,7 +322,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                             <ShieldCheck className="w-4 h-4" /> {L("Admin","நிர்வாகி")}
                           </span>
                         ) : u.role === "Project Manager" ? (
-                          <span className="text-[#56778E] bg-[#56778E]/10 px-3 py-1.5 rounded-lg border border-[#56778E]/20 flex items-center gap-1.5 w-fit">
+                          <span className="text-ink-muted bg-ink-muted/10 px-3 py-1.5 rounded-lg border border-success/25 flex items-center gap-1.5 w-fit">
                             <Users className="w-4 h-4" /> {L("Manager","மேலாளர்")}
                           </span>
                         ) : u.role === "Site Engineer" ? (

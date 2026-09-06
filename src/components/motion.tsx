@@ -109,7 +109,7 @@ export const PageHero: React.FC<PageHeroProps> = ({
   className,
 }) => (
   <div
-    className={`relative overflow-hidden rounded-[24px] sm:rounded-[32px] bg-surface-dark text-white px-6 py-6 sm:px-8 sm:py-8 shadow-xl shadow-drab/30 ${
+    className={`relative overflow-hidden rounded-[24px] sm:rounded-[32px] bg-surface-dark text-white px-6 py-6 sm:px-8 sm:py-8 shadow-xl shadow-surface-dark/30 ${
       className ?? ""
     }`}
   >

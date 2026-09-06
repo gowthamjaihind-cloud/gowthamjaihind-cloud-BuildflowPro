@@ -81,6 +81,15 @@ quiet everywhere else.
   even though the rest of its model is: a green accent and a green "on track"
   cannot coexist in a product whose job is flagging trouble. Cobalt at 224° is
   clear of all three.
+- **The retired palette is gone, tokens and all.** `--color-sage`, `--color-rust`,
+  `--color-drab` and `--color-ice` no longer exist; `drab` was `surface-dark`
+  and `ice` was `page` under older names, so those usages simply moved to the
+  real token. Sage was doing four unrelated jobs and was split by meaning: plan
+  and quota badges are brand (`primary/12`), the landing "Active" chip is a
+  status (`success`), the RA-bill badge opposite "change order" is a category
+  (`info`), and the decorative wash is `primary/20`. The two portfolio dots were
+  both sage; active is now `success` and completed `info`, because two greens
+  side by side said nothing.
 - Ruby `#ea2261` and the other gradient stops are decorative in the source
   system and are **not** adopted here; at 4.29:1 ruby is large-text-only.
 

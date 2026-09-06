@@ -334,13 +334,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
-            className="absolute top-10 right-0 w-[380px] h-[380px] rounded-full bg-sage/25 blur-3xl"
+            className="absolute top-10 right-0 w-[380px] h-[380px] rounded-full bg-primary/20 blur-3xl"
             animate={{ x: [0, -30, 0], y: [0, 40, 0] }}
             transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
           />
         </div>
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <div className="inline-flex items-center gap-2 bg-sage/15 text-[#3E8388] px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-6">
+          <div className="inline-flex items-center gap-2 bg-primary/12 text-primary-deep px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-6">
             <Lightning weight="fill" className="w-3.5 h-3.5" /> {t("land.heroEyebrow")}
           </div>
           <h1 className="font-display font-bold text-[42px] leading-[1.05] sm:text-6xl tracking-tight mb-6">
@@ -375,7 +375,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 <p className="font-display font-bold text-lg tracking-tight">Ramkumar-Othakadai</p>
                 <p className="text-[10px] font-black uppercase tracking-widest text-primary">Control Center</p>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#3E8388] bg-[#87BCBF]/15 px-3 py-1.5 rounded-full">Active</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-success bg-success/12 px-3 py-1.5 rounded-full">Active</span>
             </div>
 
             <div className="bg-surface-dark rounded-2xl p-5 text-white mb-4">
@@ -402,7 +402,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               </div>
             </div>
 
-            <div className="bg-[#6E8CA0]/10 rounded-2xl p-3 flex items-start gap-3">
+            <div className="bg-info/10 rounded-2xl p-3 flex items-start gap-3">
               <div className="bg-[#229ED9] w-8 h-8 rounded-xl flex items-center justify-center shrink-0">
                 <TelegramLogo weight="fill" className="w-5 h-5 text-white" />
               </div>
@@ -430,7 +430,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {audience.map((a) => (
             <div key={a.title} className="soft-card rounded-3xl p-6 flex items-start gap-4">
-              <div className="w-12 h-12 shrink-0 rounded-2xl bg-sage/15 text-[#3E8388] flex items-center justify-center">
+              <div className="w-12 h-12 shrink-0 rounded-2xl bg-primary/12 text-primary-deep flex items-center justify-center">
                 <a.icon weight="duotone" className="w-6 h-6" />
               </div>
               <div>
@@ -487,7 +487,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       <section id="solutions" className="max-w-6xl mx-auto px-5 sm:px-8 py-8 md:py-16">
         <div className="bg-surface-dark rounded-[32px] p-8 md:p-14">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <p className="eyebrow text-sage mb-3">{t("land.solveEyebrow")}</p>
+            <p className="eyebrow text-primary-deep mb-3">{t("land.solveEyebrow")}</p>
             <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight text-white mb-4">{t("land.solveHeading")}</h2>
             <p className="text-white/70 font-medium">{L("Every messy part of running a project, answered by one connected workspace.", "ஒரு செயல்திட்டத்தை நடத்துவதன் ஒவ்வொரு குழப்பமான பகுதிக்கும், ஒரே இணைந்த பணியிடம் பதிலளிக்கிறது.")}</p>
           </div>
@@ -581,7 +581,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               className={`px-5 py-2 rounded-full text-sm font-bold apple-transition flex items-center gap-2 ${billing === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
             >
               {t("paywall.annual")}
-              <span className={`text-[10px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full ${billing === "annual" ? "bg-success/20 text-success" : "bg-success/15 text-[#2E8B6F]"}`}>{t("paywall.savePct")}</span>
+              <span className={`text-[10px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full ${billing === "annual" ? "bg-success/20 text-success" : "bg-success/15 text-success"}`}>{t("paywall.savePct")}</span>
             </button>
           </div>
         </div>
@@ -605,7 +605,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 ? L("/ mo", "/ மாதம்")
                 : L("/ org / month", "/ நிறுவனம் / மாதம்");
             return (
-              <div key={p.name} className={`rounded-3xl p-7 flex flex-col ${p.highlight ? "bg-surface-dark text-white shadow-2xl shadow-drab/20 ring-1 ring-primary/40" : "soft-card"}`}>
+              <div key={p.name} className={`rounded-3xl p-7 flex flex-col ${p.highlight ? "bg-surface-dark text-white shadow-2xl shadow-surface-dark/20 ring-1 ring-primary/40" : "soft-card"}`}>
                 {p.highlight && <span className="inline-block self-start text-[10px] font-black uppercase tracking-widest bg-primary text-white px-3 py-1 rounded-full mb-4">{L("Most popular", "மிகவும் பிரபலம்")}</span>}
                 <p className={`text-sm font-black uppercase tracking-widest mb-2 ${p.highlight ? "text-white/60" : "text-ink-muted"}`}>{p.name}</p>
                 <div className="flex items-end gap-1 mb-1">
@@ -615,7 +615,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 <p className={`text-[11px] font-semibold mb-1 h-4 ${p.highlight ? "text-white/50" : "text-ink-muted"}`}>
                   {!p.fixed && billing === "annual" ? L(p.annualTotal, (p as any).taAnnualTotal) : ""}
                 </p>
-                <div className={`inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 ${p.highlight ? "bg-white/10 text-white" : "bg-sage/15 text-[#3E8388]"}`}>
+                <div className={`inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 ${p.highlight ? "bg-white/10 text-white" : "bg-primary/12 text-primary-deep"}`}>
                   <Stack weight="bold" className="w-3.5 h-3.5" /> {L(p.projects, (p as any).taProjects)}
                 </div>
                 <p className={`text-xs font-semibold mb-6 ${p.highlight ? "text-white/50" : "text-ink-muted"}`}>{L(p.tag, (p as any).taTag)}</p>

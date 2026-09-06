@@ -150,7 +150,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition flex items-center gap-2 ${period === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
               >
                 {L("Annual", "ஆண்டு")}
-                <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">{L("Save ~17%", "~17% சேமி")}</span>
+                <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-success">{L("Save ~17%", "~17% சேமி")}</span>
               </button>
             </div>
           </div>

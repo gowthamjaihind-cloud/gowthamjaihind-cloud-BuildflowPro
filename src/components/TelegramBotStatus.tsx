@@ -70,7 +70,7 @@ export const TelegramBotStatus: React.FC = () => {
   return (
     <div
       id="telegram-bot-status-indicator"
-      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-[#56778E]/10 text-[#56778E] rounded-full text-[10px] font-bold tracking-wide border border-[#56778E]/20 shadow-sm"
+      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-success/12 text-success rounded-full text-[10px] font-bold tracking-wide border border-success/25 shadow-sm"
       title={botName ? `Telegram Bot Connected (${botName})` : "Telegram Bot Connected & Active"}
     >
       <span className="relative flex h-2.5 w-2.5">

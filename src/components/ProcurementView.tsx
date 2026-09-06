@@ -1027,7 +1027,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               setOpeningBalanceInput(0);
               setIsAddingVendor(true);
             }}
-            className="w-full sm:w-auto bg-surface-dark text-white px-5 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-[#3A4F5F] apple-transition shadow-lg shadow-drab/10 text-[10px]"
+            className="w-full sm:w-auto bg-surface-dark text-white px-5 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-[#3A4F5F] apple-transition shadow-lg shadow-surface-dark/10 text-[10px]"
           >
             <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />{" "}
             <span>Add Party</span>
@@ -1099,7 +1099,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             >
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-6 md:mb-10">
-                  <div className="bg-surface-dark p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-lg shadow-drab/5 group-hover:bg-primary apple-transition">
+                  <div className="bg-surface-dark p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-lg shadow-surface-dark/5 group-hover:bg-primary apple-transition">
                     {vendor.type === "Labor" ? (
                       <Users className="w-4 h-4 md:w-6 md:h-6 text-white/90" />
                     ) : (
@@ -1222,7 +1222,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         });
                         setIsAddingPayment(true);
                       }}
-                      className="flex-[1.5] bg-surface-dark text-white py-2.5 md:py-3.5 rounded-lg md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#3A4F5F] apple-transition shadow-md shadow-drab/5"
+                      className="flex-[1.5] bg-surface-dark text-white py-2.5 md:py-3.5 rounded-lg md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#3A4F5F] apple-transition shadow-md shadow-surface-dark/5"
                     >
                       Payment
                     </button>

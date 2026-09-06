@@ -298,7 +298,7 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
       { key: "executiveDigest" as const, title: t("insights.executiveDigest"), icon: Sparkle, accent: "#6E8CA0" },
       { key: "costVariance" as const, title: t("insights.costVariance"), icon: ChartLineUp, accent: "var(--primary)" },
       { key: "scheduleSlippage" as const, title: t("insights.scheduleSlippage"), icon: CalendarX, accent: "var(--warning)" },
-      { key: "siteReport" as const, title: t("insights.siteReport"), icon: Buildings, accent: "#56778E" },
+      { key: "siteReport" as const, title: t("insights.siteReport"), icon: Buildings, accent: "var(--info)" },
     ],
     [t],
   );

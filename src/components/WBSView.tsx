@@ -1191,7 +1191,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
             >
               <button
                 onClick={() => setIsAdding("root")}
-                className="w-full md:w-auto bg-onyx text-white px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 hover:bg-onyx/80 apple-transition shadow-2xl shadow-drab/10 font-bold text-sm"
+                className="w-full md:w-auto bg-onyx text-white px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 hover:bg-onyx/80 apple-transition shadow-2xl shadow-surface-dark/10 font-bold text-sm"
               >
                 <Plus className="w-5 h-5" /> <span>{t("wbs.addTask")}</span>
               </button>

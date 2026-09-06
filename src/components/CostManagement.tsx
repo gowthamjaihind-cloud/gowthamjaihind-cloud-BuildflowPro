@@ -1291,7 +1291,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <span>{stat.title}</span>
                     </h4>
                     {actualOnly ? (
-                      <span className="shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-ice text-[#56778E] border border-divider">
+                      <span className="shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-page text-ink-muted border border-divider">
                         Actuals
                       </span>
                     ) : (
@@ -1783,7 +1783,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         </td>
                         <td className="p-4">
                           <span
-                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-success/20 text-success" : "bg-[#E2E8ED] text-[#56778E]"}`}
+                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-success/20 text-success" : "bg-[#E2E8ED] text-ink-muted"}`}
                           >
                             {entry.type}
                           </span>
