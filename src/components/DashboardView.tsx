@@ -117,7 +117,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {tasksAtRisk.count === 0 ? (
             <span className="text-[11px] font-bold text-success flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />{t("dashboard.allOnTrack")}</span>
           ) : (
-            <span className="text-[11px] font-bold text-primary flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{tasksAtRisk.criticalCount > 0 ? t("dashboard.onCriticalPath", { count: tasksAtRisk.criticalCount }) : t("dashboard.requireAttention")}</span>
+            <span className="text-[11px] font-bold text-primary-on-dark flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{tasksAtRisk.criticalCount > 0 ? t("dashboard.onCriticalPath", { count: tasksAtRisk.criticalCount }) : t("dashboard.requireAttention")}</span>
           )}
         </section>
       </div>

@@ -467,7 +467,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
       </div>
 
       {isUploading && (
-        <div className="fixed inset-0 bg-onyx/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-surface-dark/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <form
             onSubmit={handleUpload}
             className="bg-surface w-full max-w-2xl p-5 md:p-6 rounded-2xl border shadow-2xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 relative my-auto max-h-[95vh] overflow-y-auto custom-scrollbar"

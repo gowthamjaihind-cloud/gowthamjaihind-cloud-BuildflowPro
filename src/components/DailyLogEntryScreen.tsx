@@ -888,7 +888,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       <button
                         type="button"
                         onClick={() => removePhoto(idx)}
-                        className="absolute top-1 right-1 p-1 bg-onyx/60 hover:bg-danger text-white rounded-lg backdrop-blur-md transition-colors"
+                        className="absolute top-1 right-1 p-1 bg-surface-dark/60 hover:bg-danger text-white rounded-lg backdrop-blur-md transition-colors"
                       >
                         <X className="w-3 h-3" />
                       </button>

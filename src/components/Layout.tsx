@@ -174,7 +174,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-onyx/40 backdrop-blur-md z-[100] md:hidden animate-in fade-in duration-300"
+          className="fixed inset-0 bg-surface-dark/40 backdrop-blur-md z-[100] md:hidden animate-in fade-in duration-300"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -252,7 +252,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
             <button
               onClick={() => setActiveProject(null)}
-              className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:py-2 md:px-4 md:py-2.5 sm:gap-2 rounded-full sm:rounded-[12px] md:rounded-[14px] apple-transition active:scale-95 border border-onyx/5 bg-onyx/5 sm:bg-surface/40 sm:hover:bg-surface text-ink-muted sm:hover:text-ink sm:border-white/60 shadow-none sm:shadow-sm"
+              className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:py-2 md:px-4 md:py-2.5 sm:gap-2 rounded-full sm:rounded-[12px] md:rounded-[14px] apple-transition active:scale-95 border border-surface-dark/5 bg-surface-dark/5 sm:bg-surface/40 sm:hover:bg-surface text-ink-muted sm:hover:text-ink sm:border-white/60 shadow-none sm:shadow-sm"
               title={t("header.switchProject")}
             >
               <ArrowLeftRight

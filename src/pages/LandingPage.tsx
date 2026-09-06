@@ -681,7 +681,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-onyx/40 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-surface-dark/40 backdrop-blur-sm"
             onClick={() => setConsentOpen(false)}
           >
             <motion.div
@@ -784,7 +784,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 <button
                   type="submit"
                   disabled={isLoggingIn}
-                  className="w-full inline-flex items-center justify-center gap-2 font-bold text-[15px] px-6 py-3.5 rounded-2xl bg-onyx text-white hover:bg-onyx/85 apple-transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full inline-flex items-center justify-center gap-2 font-bold text-[15px] px-6 py-3.5 rounded-2xl bg-surface-dark text-white hover:bg-surface-dark/85 apple-transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoggingIn ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

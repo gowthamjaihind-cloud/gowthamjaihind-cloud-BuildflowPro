@@ -95,7 +95,7 @@ interface PageHeroProps {
 }
 
 /**
- * Branded Drab hero band: animated palette mesh + floating glyph + depth wash.
+ * Screen header band: flat navy, one cobalt rule, floating glyph.
  * Mirrors the portfolio home hero so every screen's header reads as one system.
  */
 export const PageHero: React.FC<PageHeroProps> = ({
@@ -109,13 +109,16 @@ export const PageHero: React.FC<PageHeroProps> = ({
   className,
 }) => (
   <div
-    className={`relative overflow-hidden rounded-[24px] sm:rounded-[32px] bg-surface-dark text-white px-6 py-6 sm:px-8 sm:py-8 shadow-xl shadow-surface-dark/30 ${
+    className={`relative overflow-hidden rounded-[24px] sm:rounded-[32px] bg-surface-dark text-white px-6 py-5 sm:px-8 sm:py-6 border border-surface-edge on-dark ${
       className ?? ""
     }`}
   >
-    <div className="brand-mesh" aria-hidden="true" />
+    {/* One cobalt rule is the whole decoration. This band used to carry an
+        animated four-colour mesh over a charcoal wash; every hue in it came
+        from the retired palette, and at low opacity they cancelled into the
+        grey-brown that made the band look broken. */}
     <div
-      className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-onyx/70 pointer-events-none"
+      className="absolute inset-x-0 top-0 h-[3px] bg-primary pointer-events-none"
       aria-hidden="true"
     />
     {glyph && (
@@ -140,7 +143,7 @@ export const PageHero: React.FC<PageHeroProps> = ({
             </span>
           </div>
         )}
-        <h2 className="font-display text-3xl sm:text-4xl md:text-[44px] font-bold tracking-tight leading-[1.02]">
+        <h2 className="font-display text-2xl sm:text-3xl md:text-[32px] font-bold tracking-tight leading-[1.05]">
           {title}
         </h2>
         {subtitle && (

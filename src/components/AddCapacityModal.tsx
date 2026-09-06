@@ -64,7 +64,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-onyx/60 backdrop-blur-md z-[110] flex items-center justify-center p-6"
+        className="fixed inset-0 bg-surface-dark/60 backdrop-blur-md z-[110] flex items-center justify-center p-6"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 16 }}

@@ -179,7 +179,7 @@ export const TeamPanel: React.FC = () => {
                 />
                 <button
                   onClick={copy}
-                  className="px-4 py-2 bg-onyx text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shrink-0"
+                  className="px-4 py-2 bg-surface-dark text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shrink-0"
                 >
                   {copied ? <><CheckCircle className="w-4 h-4" /> {L("Copied","நகலெடுக்கப்பட்டது")}</> : <><Copy className="w-4 h-4" /> {L("Copy","நகலெடு")}</>}
                 </button>

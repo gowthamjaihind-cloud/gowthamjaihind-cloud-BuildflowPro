@@ -910,7 +910,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       ) : (
                         <>
                           <div
-                            className="absolute left-0 top-0 bottom-0 bg-onyx/20 backdrop-blur-[1px] transition-all pointer-events-none rounded-l-lg"
+                            className="absolute left-0 top-0 bottom-0 bg-surface-dark/20 backdrop-blur-[1px] transition-all pointer-events-none rounded-l-lg"
                             style={{ width: `${task.progress}%` }}
                           />
                           <div className="relative z-10 flex items-center justify-between w-full px-1 pointer-events-none overflow-hidden">
@@ -944,7 +944,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className={`fixed z-50 w-64 bg-onyx/95 backdrop-blur-md text-white rounded-xl shadow-2xl border border-divider p-4 ${breakpoint === "mobile" ? "pointer-events-auto" : "pointer-events-none"}`}
+            className={`fixed z-50 w-64 bg-surface-dark/95 backdrop-blur-md text-white rounded-xl shadow-2xl border border-divider p-4 ${breakpoint === "mobile" ? "pointer-events-auto" : "pointer-events-none"}`}
             style={{
               left: hoveredTask.x + 15,
               top: hoveredTask.y + 15,
@@ -956,33 +956,33 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   {hoveredTask.task.name}
                 </h4>
                 {hoveredTask.task.type === "Milestone" ? (
-                  <span className="shrink-0 inline-flex items-center justify-center bg-amber-500/20 text-ink-muted rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
+                  <span className="shrink-0 inline-flex items-center justify-center bg-warning/25 text-white/90 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
                     {L("Milestone","மைல்கல்")}
                   </span>
                 ) : (
-                  <span className="shrink-0 font-mono text-xs font-bold text-fossil">
+                  <span className="shrink-0 font-mono text-xs font-bold text-white/80">
                     {hoveredTask.task.progress}%
                   </span>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-slate-800/80 p-2 rounded-lg">
-                  <div className="text-[10px] text-ink-muted/80 uppercase tracking-widest font-bold mb-1">
+                <div className="bg-white/5 p-2 rounded-lg">
+                  <div className="text-[10px] text-white/55 uppercase tracking-widest font-bold mb-1">
                     Start
                   </div>
-                  <div className="font-medium text-fossil">
+                  <div className="font-medium text-white/80">
                     {format(
                       new Date(hoveredTask.task.startDate),
                       "MMM d, yyyy",
                     )}
                   </div>
                 </div>
-                <div className="bg-slate-800/80 p-2 rounded-lg">
-                  <div className="text-[10px] text-ink-muted/80 uppercase tracking-widest font-bold mb-1">
+                <div className="bg-white/5 p-2 rounded-lg">
+                  <div className="text-[10px] text-white/55 uppercase tracking-widest font-bold mb-1">
                     End
                   </div>
-                  <div className="font-medium text-fossil">
+                  <div className="font-medium text-white/80">
                     {format(new Date(hoveredTask.task.endDate), "MMM d, yyyy")}
                   </div>
                 </div>
@@ -995,7 +995,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       {hoveredTask.task.activityCodes.map((code) => (
                         <span
                           key={code}
-                          className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#3A4F5F] border border-[#465D6E] text-[10px] text-fossil"
+                          className="inline-flex items-center px-1.5 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] text-white/80"
                         >
                           {code}
                         </span>

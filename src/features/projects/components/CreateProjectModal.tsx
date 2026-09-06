@@ -237,7 +237,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-onyx/60 backdrop-blur-md z-[100] flex items-center justify-center p-6"
+          className="fixed inset-0 bg-surface-dark/60 backdrop-blur-md z-[100] flex items-center justify-center p-6"
         >
           <motion.form
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -475,7 +475,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </button>
               <button
                 type="submit"
-                className="bg-onyx text-white px-10 py-4 rounded-3xl font-bold text-[17px] shadow-xl hover:bg-onyx/80 apple-transition"
+                className="bg-surface-dark text-white px-10 py-4 rounded-3xl font-bold text-[17px] shadow-xl hover:bg-surface-dark/80 apple-transition"
               >
                 {t("cpm.initProject")}
               </button>

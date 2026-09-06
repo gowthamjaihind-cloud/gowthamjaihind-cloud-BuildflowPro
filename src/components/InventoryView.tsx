@@ -632,14 +632,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         <div className="bg-surface-dark p-4 md:p-5 rounded-2xl text-white relative overflow-hidden group shadow-xl">
           <div className="relative z-10">
             <div className="flex items-center justify-between gap-2 mb-2 md:mb-6">
-              <div className="bg-onyx/40 p-2 md:p-3 rounded-xl border border-white/10">
+              <div className="bg-surface-dark/40 p-2 md:p-3 rounded-xl border border-white/10">
                 <IndianRupee className="w-3.5 h-3.5 md:w-5 md:h-5 text-white" />
               </div>
-              <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
+              <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">
                 Inventory Value
               </span>
             </div>
-            <p className="text-[8px] md:text-[10px] font-bold text-white/40 mb-0.5 md:mb-1 uppercase tracking-widest">
+            <p className="text-[8px] md:text-[10px] font-bold text-white/60 mb-0.5 md:mb-1 uppercase tracking-widest">
               Total Valuation
             </p>
             <h3 className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold tracking-tight tabular-nums">
@@ -1490,7 +1490,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
       {/* Modals */}
       {showMaterialPicker && (
-        <div className="fixed inset-0 bg-onyx/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-surface-dark/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-lg rounded-[28px] overflow-hidden flex flex-col max-h-[80vh] shadow-2xl">
             <div className="p-6 border-b border-divider flex items-start justify-between gap-4">
               <div>
@@ -1552,7 +1552,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
       <AnimatePresence>
         {itemToDelete && (
-          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1588,7 +1588,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         )}
 
         {(isAdding || editingItem) && (
-          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1607,7 +1607,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       setIsAdding(false);
                       setEditingItem(null);
                     }}
-                    className="p-1.5 bg-onyx/40 hover:bg-white/10 rounded-lg transition-all"
+                    className="p-1.5 bg-surface-dark/40 hover:bg-white/10 rounded-lg transition-all"
                   >
                     <X className="w-4 h-4" />
                   </button>

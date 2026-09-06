@@ -49,6 +49,7 @@ quiet everywhere else.
 --page:           #F5F7FA;  /* the cool off-white ground */
 --panel:          #FFFFFF;
 --surface-dark:   #12203F;  /* deep navy — inverted panels, table headers. 16.10 */
+--surface-edge:   #1E2B4D;  /* hairline ON a dark surface — navy, not neutral */
 --ink:            #0F172A;  /* near-navy, never pure black. 17.85 on white */
 --ink-muted:      #56637A;  /* 6.07 on white, 5.65 on the page */
 --divider:        #E1E6EE;  /* hairline */
@@ -56,6 +57,11 @@ quiet everywhere else.
 --danger:         #B3261E;  /* 6.54 · 5.37 */
 --warning:        #9A4A22;  /* 6.22 · 5.21 */
 --info:           #4A6C82;  /* 5.59 · 4.75 */
+
+/* For content sitting ON a dark band. Every token above is tuned against
+   white and fails on navy: cobalt measures 2.40:1 there, success 2.29:1. */
+--primary-on-dark: #A8C2FF;  /* 9.07 on the navy band */
+--success-on-dark: #34D399;  /* 7.72 on its own tint over navy */
 ```
 
 **Roles.**
@@ -82,7 +88,10 @@ quiet everywhere else.
   cannot coexist in a product whose job is flagging trouble. Cobalt at 224° is
   clear of all three.
 - **The retired palette is gone, tokens and all.** `--color-sage`, `--color-rust`,
-  `--color-drab` and `--color-ice` no longer exist; `drab` was `surface-dark`
+  `--color-drab`, `--color-ice`, `--color-onyx` (#1B1C20, a zero-blue charcoal
+  that gave the app a second, greyer dark next to the navy), `--color-fossil`
+  (#C8D1D3 grey-teal, doing duty as a hairline, a hover and a disabled fill)
+  and `--color-sand` no longer exist; `drab` was `surface-dark`
   and `ice` was `page` under older names, so those usages simply moved to the
   real token. Sage was doing four unrelated jobs and was split by meaning: plan
   and quota badges are brand (`primary/12`), the landing "Active" chip is a
@@ -111,7 +120,22 @@ lifted steps, so depth reads from stacked greys and hairlines instead of shadow:
 --warning:   #F0A882;  --info:   #9BAAC2;   /* 9.64 · 8.09 */
 ```
 
-Never reuse the light primary on a dark surface.
+**Never reuse a light-mode token on a dark surface** — and this file said so
+before the code obeyed it. Cobalt as text on navy measured 2.40:1 in five
+places, including *Require attention* on the dashboard's own at-risk card and
+the amounts in Cost Management's transaction panel; the success green measured
+2.29:1 in the status pills. Two mechanisms now hold the line:
+
+- `text-primary-on-dark` for cobalt type on a dark band.
+- A `.on-dark` class on the band itself, which re-points `--color-success` to
+  the dark-surface value and so fixes a status pill's text, dot, tint and
+  border in one declaration. Re-point the **theme** variable, not the raw one:
+  Tailwind resolves `--color-success: var(--success)` at `:root`, and
+  descendants inherit that already-substituted value, so overriding
+  `--success` further down does nothing.
+
+`.on-dark` deliberately does **not** re-point `--color-primary`. A hero can
+hold a filled cobalt CTA, and that button has to stay cobalt.
 
 ---
 
@@ -166,6 +190,7 @@ Never reuse the light primary on a dark surface.
 | **Status chip** | `rounded-full`, 10px 800 uppercase. Colour goes in the fill at ~12% and in the text; both are checked against each other, per Wise |
 | **Input** | White, hairline border, `rounded-xl`, cobalt focus ring |
 | **Select** | Still a native `<select>`, restyled in `@layer base`: hairline border, `rounded-xl`, own caret. Native on purpose — the OS picker beats anything hand-built on a phone |
+| **Screen header band** | `PageHero`. Flat `--surface-dark`, a 3px cobalt rule along the top edge, `--surface-edge` hairline, no shadow. Title 32px, band ~110px. Carries `on-dark`. One dark tone per screen — it matches the at-risk KPI card rather than introducing a second |
 | **Toast** | Card shape, `shadow-lg`, tinted icon chip. Top of the screen; the foot carries the demo banner. Errors 8s and `role="alert"`, others 4–5s and `role="status"` |
 | **Confirm dialog** | Centred card, scrim, `Escape` and scrim cancel. The button names the act — "Delete", not "Confirm". Replaces `window.confirm` |
 | **Table header** | Brand Dark 900 bar, white small-caps labels, numeric columns right-aligned |
@@ -248,6 +273,17 @@ Borders do the quiet separating; shadow is only for things that genuinely float.
 - Don't reach for `window.alert` or `window.confirm`. They render in the
   browser's chrome, announce the domain and cannot be styled; use `toast.*`
   and `confirmDialog` from `src/lib/feedback.ts`.
+- Don't decorate a header band with a colour mesh. This one carried four
+  animated radial gradients — teal `#87BBBE`, terracotta `#D87C54`, slate
+  `#4C6B7F`, sand `#BFB19B` — plus a charcoal wash. Every hue belonged to the
+  retired palette, and layered at low opacity they cancelled into a grey-brown
+  that read as a rendering fault. A flat surface and one rule say the same
+  thing and cannot rot.
+- Don't write palette colours as `hsla()`. The mesh above, and seven more
+  gradients under `body::before` tinting every screen, survived two hex sweeps
+  because `hsla(18, 63%, 59%)` does not match a search for `#D87C54`. If a
+  colour must be authored in another space, leave the hex in a comment beside
+  it.
 - Don't hardcode a colour in a component. A palette change cannot reach a
   literal: the move to indigo left 104 uses of the retired rust ramp behind,
   including a terracotta Export PDF button sitting beside indigo ones. Chart

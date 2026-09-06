@@ -130,7 +130,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
   const showLoading = step === "review" && !bill;
 
   return (
-    <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
       <div className="bg-surface w-full max-w-2xl rounded-3xl border border-divider shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
         <div className="flex justify-between items-center p-5 border-b border-divider shrink-0">
           <h2 className="font-black text-ink flex items-center gap-2">

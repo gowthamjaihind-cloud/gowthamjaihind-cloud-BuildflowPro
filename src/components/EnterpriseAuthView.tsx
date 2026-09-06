@@ -422,7 +422,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                         </button>
                         <button
                           onClick={() => setEditingUserId(null)}
-                          className="p-2 bg-divider text-ink rounded-xl hover:bg-fossil transition-colors"
+                          className="p-2 bg-divider text-ink rounded-xl hover:bg-ink-muted/25 transition-colors"
                           title={L("Cancel","ரத்து")}
                         >
                           <X className="w-4 h-4" />
@@ -460,7 +460,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       
 
       {showLinkCode && (
-        <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-md rounded-3xl p-8 border border-divider shadow-2xl relative">
             <button
               onClick={() => setShowLinkCode(null)}

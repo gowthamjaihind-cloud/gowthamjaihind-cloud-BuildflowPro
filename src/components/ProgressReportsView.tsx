@@ -433,7 +433,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             className="p-8 md:p-12 text-ink bg-white"
           >
             {/* Report Header */}
-            <div className="border-b-2 border-onyx pb-6 mb-8 flex justify-between items-end">
+            <div className="border-b-2 border-surface-dark pb-6 mb-8 flex justify-between items-end">
               <div>
                 <h1 className="text-3xl font-black uppercase tracking-tighter mb-2">
                   {project?.name || "Project"}
@@ -483,7 +483,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             {/* Site-Wide Totals (Weekly/Monthly like tables) */}
             {!isDaily && (
               <div className="mb-10">
-                <h3 className="text-sm font-black uppercase tracking-widest mb-4 bg-onyx text-white py-2 px-4 rounded">
+                <h3 className="text-sm font-black uppercase tracking-widest mb-4 bg-surface-dark text-white py-2 px-4 rounded">
                   {t("reports.periodConsolidation")}
                 </h3>
                 <div className="grid grid-cols-2 gap-8">
@@ -540,7 +540,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             )}
 
             {/* Per-Task Breakdown */}
-            <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-onyx text-white py-2 px-4 rounded">
+            <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-surface-dark text-white py-2 px-4 rounded">
               {t("reports.taskProgressDetails")}
             </h3>
             <div className="space-y-8">
@@ -701,7 +701,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             
             {/* Daily Logs History */}
             <div className="mt-12 break-before-page">
-              <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-onyx text-white py-2 px-4 rounded">
+              <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-surface-dark text-white py-2 px-4 rounded">
                 Daily Logs History
               </h3>
               <div className="space-y-4">

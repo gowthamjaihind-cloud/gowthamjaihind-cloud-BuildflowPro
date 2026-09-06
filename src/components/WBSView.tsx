@@ -1073,7 +1073,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
               className="bg-surface-dark text-white rounded-[32px] p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl z-20 sticky top-4"
             >
               <div className="flex items-center gap-4">
-                <div className="bg-onyx/40 px-4 py-2 rounded-xl font-bold tracking-widest uppercase text-xs">
+                <div className="bg-surface-dark/40 px-4 py-2 rounded-xl font-bold tracking-widest uppercase text-xs">
                   {selectedTaskIds.length} Selected
                 </div>
                 <button
@@ -1091,7 +1091,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                       e.target.value = "";
                     }
                   }}
-                  className="bg-onyx/40 text-white text-sm font-bold px-4 py-2.5 rounded-xl border-none outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer flex-1 md:flex-none hover:bg-white/10 apple-transition"
+                  className="bg-surface-dark/40 text-white text-sm font-bold px-4 py-2.5 rounded-xl border-none outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer flex-1 md:flex-none hover:bg-white/10 apple-transition"
                   defaultValue=""
                 >
                   <option value="" disabled className="text-ink">
@@ -1191,7 +1191,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
             >
               <button
                 onClick={() => setIsAdding("root")}
-                className="w-full md:w-auto bg-onyx text-white px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 hover:bg-onyx/80 apple-transition shadow-2xl shadow-surface-dark/10 font-bold text-sm"
+                className="w-full md:w-auto bg-surface-dark text-white px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 hover:bg-surface-dark/80 apple-transition shadow-2xl shadow-surface-dark/10 font-bold text-sm"
               >
                 <Plus className="w-5 h-5" /> <span>{t("wbs.addTask")}</span>
               </button>
@@ -1398,7 +1398,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
       {/* Modals for Add/Edit/Delete */}
       <AnimatePresence>
         {phaseToDelete && (
-          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1438,7 +1438,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
         )}
 
         {taskToDelete && (
-          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1481,7 +1481,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
             className={
               breakpoint !== "desktop"
                 ? "fixed inset-0 bg-surface z-50 flex flex-col"
-                : "fixed inset-0 bg-onyx/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                : "fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             }
           >
             <motion.div
@@ -2384,7 +2384,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                               <option>FF</option>
                                               <option>SF</option>
                                             </select>
-                                            <div className="w-px h-3 bg-fossil" />
+                                            <div className="w-px h-3 bg-divider" />
                                             <input
                                               type="number"
                                               className="w-6 md:w-8 bg-transparent text-[10px] md:text-[10px] font-black text-center outline-none"
@@ -3092,7 +3092,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                   <div className="relative">
                                     <input
                                       type="number"
-                                      className="w-full bg-onyx/40 border border-divider rounded-xl md:rounded-2xl px-4 md:px-5 py-2.5 md:py-3 font-black text-primary focus:bg-white/10 outline-none transition-all placeholder:text-white/30 text-sm"
+                                      className="w-full bg-surface-dark/40 border border-divider rounded-xl md:rounded-2xl px-4 md:px-5 py-2.5 md:py-3 font-black text-primary focus:bg-white/10 outline-none transition-all placeholder:text-white/30 text-sm"
                                       placeholder="Additional Budget..."
                                       value={
                                         editingTask

@@ -132,7 +132,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onClick={() => setActiveTab(item.id as SettingsSection)}
                 className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl apple-transition font-semibold text-[15px] ${
                   activeTab === item.id
-                    ? "bg-surface text-ink shadow-sm ring-1 ring-onyx/5"
+                    ? "bg-surface text-ink shadow-sm ring-1 ring-surface-dark/5"
                     : "text-ink-muted hover:text-ink hover:bg-surface/40"
                 }`}
               >

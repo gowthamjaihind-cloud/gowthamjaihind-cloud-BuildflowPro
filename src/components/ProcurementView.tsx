@@ -1756,7 +1756,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   <div className="font-bold text-white text-sm tracking-tight leading-none mb-1">
                     {selectedVendor ? selectedVendor.name : "All Vendors"}
                   </div>
-                  <div className="text-[10px] font-black text-white/70 uppercase tracking-widest bg-onyx/40 px-2 py-1 rounded-lg">
+                  <div className="text-[10px] font-black text-white/70 uppercase tracking-widest bg-surface-dark/40 px-2 py-1 rounded-lg">
                     OPENING BALANCE
                   </div>
                 </div>
@@ -2030,7 +2030,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       {/* Modals with responsive widths */}
       <AnimatePresence>
         {showMasterPicker && (
-          <div className="fixed inset-0 bg-onyx/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
             <div className="bg-surface w-full max-w-lg rounded-[28px] overflow-hidden flex flex-col max-h-[80vh] shadow-2xl">
               <div className="p-6 border-b border-divider flex items-start justify-between gap-4">
                 <div>
@@ -2090,7 +2090,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         )}
 
         {isAddingVendor && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -2253,7 +2253,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         )}
 
         {isDeletingVendor != null && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -2291,7 +2291,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         )}
 
         {isDeletingReceipt != null && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -2332,7 +2332,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         )}
 
         {isAddingPayment && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}

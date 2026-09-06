@@ -36,7 +36,7 @@ export const DemoBanner: React.FC = () => {
       <button
         onClick={() => setOpen(true)}
         data-demo-banner="pill"
-        className="fixed bottom-4 right-4 z-[200] px-3.5 py-2 rounded-full bg-surface-dark text-white text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-onyx apple-transition"
+        className="fixed bottom-4 right-4 z-[200] px-3.5 py-2 rounded-full bg-surface-dark text-white text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-surface-dark apple-transition"
       >
         Demo
       </button>
@@ -48,7 +48,7 @@ export const DemoBanner: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3 sm:gap-5 flex-wrap">
         <span className="inline-flex items-center gap-2 shrink-0">
           <span className="w-2 h-2 rounded-full bg-primary" aria-hidden="true" />
-          <span className="text-[11px] font-black uppercase tracking-widest text-primary">
+          <span className="text-[11px] font-black uppercase tracking-widest text-primary-on-dark">
             Live demo
           </span>
         </span>

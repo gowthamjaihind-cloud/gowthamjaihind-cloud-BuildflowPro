@@ -147,7 +147,7 @@ const SignOutButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
 export const TrialBanner: React.FC<{ daysLeft: number }> = ({ daysLeft }) => {
   const { t } = useTranslation();
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-full bg-onyx text-white text-xs font-bold shadow-lg flex items-center gap-2">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-full bg-surface-dark text-white text-xs font-bold shadow-lg flex items-center gap-2">
       <Lock className="w-3.5 h-3.5" />
       {daysLeft > 1
         ? t("paywall.daysLeft", { n: daysLeft })

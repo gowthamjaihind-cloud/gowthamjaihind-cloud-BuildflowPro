@@ -443,7 +443,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
               <button
                 type="submit"
                 disabled={isSubmitting || !vendorId || totalAmount <= 0}
-                className="w-full py-4 bg-primary hover:bg-primary-deep disabled:bg-fossil disabled:cursor-not-allowed text-white text-sm font-bold uppercase tracking-widest rounded-xl transition flex justify-center items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)]"
+                className="w-full py-4 bg-primary hover:bg-primary-deep disabled:bg-divider disabled:cursor-not-allowed text-white text-sm font-bold uppercase tracking-widest rounded-xl transition flex justify-center items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)]"
               >
                 {isSubmitting ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> {isEditing ? "Updating PO..." : "Saving PO..."}</>

@@ -1069,7 +1069,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
       {/* Modals */}
       <AnimatePresence>
         {isAddingRate && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1155,7 +1155,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-onyx text-white py-4 rounded-xl md:rounded-2xl text-xs md:text-sm font-black uppercase tracking-widest hover:bg-onyx/80 transition-all shadow-xl shadow-surface-dark/5"
+                  className="w-full bg-surface-dark text-white py-4 rounded-xl md:rounded-2xl text-xs md:text-sm font-black uppercase tracking-widest hover:bg-surface-dark/80 transition-all shadow-xl shadow-surface-dark/5"
                 >
                   Save Index Entry
                 </button>
@@ -1165,7 +1165,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         )}
 
         {isDeletingRate && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}

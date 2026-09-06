@@ -61,8 +61,8 @@ const BRAND = {
   rust: [29, 78, 216] as const,      // #1D4ED8 cobalt primary (name kept: many call sites)
   sage: [168, 194, 255] as const,    // #A8C2FF pale cobalt — light type on the navy header
   ice: [245, 247, 250] as const,     // #F5F7FA page
-  fossil: [225, 230, 238] as const,  // #E1E6EE divider
-  onyx: [15, 23, 42] as const,       // #0F172A ink
+  divider: [225, 230, 238] as const, // #E1E6EE hairline
+  ink: [15, 23, 42] as const,        // #0F172A ink
   muted: [86, 99, 122] as const,     // #56637A ink-muted
 }
 
@@ -240,7 +240,7 @@ export async function exportToPDF(
   };
 
   const drawFooter = (page: number) => {
-    doc.setDrawColor(...BRAND.fossil);
+    doc.setDrawColor(...BRAND.divider);
     doc.line(margin, pageHeight - 10, pageWidth - margin, pageHeight - 10);
     setF("normal");
     doc.setFontSize(6.5);
@@ -272,9 +272,9 @@ export async function exportToPDF(
       doc.setFillColor(...BRAND.ice);
       doc.rect(margin, y, usableWidth, rowH, "F");
     }
-    doc.setTextColor(...BRAND.onyx);
+    doc.setTextColor(...BRAND.ink);
     row.forEach((cell, c) => drawCell(String(cell ?? ""), c, y + 4.5));
-    doc.setDrawColor(...BRAND.fossil);
+    doc.setDrawColor(...BRAND.divider);
     doc.line(margin, y + rowH, margin + usableWidth, y + rowH);
     y += rowH;
   });

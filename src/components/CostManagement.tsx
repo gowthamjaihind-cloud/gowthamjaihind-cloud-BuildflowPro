@@ -619,7 +619,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               style={{ paddingLeft: `${level * 24}px` }}
               className="flex items-center gap-2"
             >
-              {level > 0 && <span className="w-3 h-px bg-fossil" />}
+              {level > 0 && <span className="w-3 h-px bg-divider" />}
               {task.name}
             </div>
           </td>
@@ -1483,9 +1483,9 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </div>
             </div>
 
-            <div className="lg:col-span-12 xl:col-span-4 bg-surface-dark p-5 md:p-6 squircle-24 shadow-2xl relative overflow-hidden flex flex-col">
+            <div className="lg:col-span-12 xl:col-span-4 bg-surface-dark p-5 md:p-6 squircle-24 shadow-2xl relative overflow-hidden flex flex-col on-dark">
               <h3 className="text-[17px] font-bold text-white tracking-tight mb-8 flex items-center gap-3 relative z-10">
-                <div className="bg-onyx/40 p-2 rounded-xl">
+                <div className="bg-surface-dark/40 p-2 rounded-xl">
                   <Calendar className="w-5 h-5 text-primary" />
                 </div>
                 Latest Transactions
@@ -1501,26 +1501,26 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   .map((entry) => (
                     <div
                       key={entry.id}
-                      className="bg-onyx/40 border border-white/10 p-5 rounded-3xl group hover:bg-white/10 apple-transition flex justify-between items-center"
+                      className="bg-surface-dark/40 border border-white/10 p-5 rounded-3xl group hover:bg-white/10 apple-transition flex justify-between items-center"
                     >
                       <div>
                         <div className="font-bold text-white text-[15px] tracking-tight mb-1">
                           {entry.description}
                         </div>
-                        <div className="text-[12px] text-white/30 font-medium">
+                        <div className="text-[12px] text-white/60 font-medium">
                           {entry.category} • {entry.date}
                         </div>
                       </div>
                       <div className="text-right">
                         <div
-                          className={`text-[15px] font-bold font-mono tracking-tighter ${entry.type === "Actual" ? "text-primary" : "text-success"}`}
+                          className={`text-[15px] font-bold font-mono tracking-tighter ${entry.type === "Actual" ? "text-primary-on-dark" : "text-success"}`}
                         >
                           ₹
                           {entry.amount.toLocaleString("en-IN", {
                             maximumFractionDigits: 0,
                           })}
                         </div>
-                        <div className="text-[10px] font-medium text-white/20 uppercase tracking-widest mt-1">
+                        <div className="text-[10px] font-medium text-white/60 uppercase tracking-widest mt-1">
                           {entry.type}
                         </div>
                       </div>
@@ -1530,7 +1530,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
               <div className="pt-8 mt-4 border-t border-white/5 relative z-10 flex justify-between items-end">
                 <div>
-                  <p className="text-[13px] font-medium text-white/30 mb-1">
+                  <p className="text-[13px] font-medium text-white/60 mb-1">
                     Recent Flow
                   </p>
                   <p className="text-2xl font-bold text-white tracking-tighter">
@@ -1541,7 +1541,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       .toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                   </p>
                 </div>
-                <button className="text-[13px] font-bold text-primary hover:text-white apple-transition">
+                <button className="text-[13px] font-bold text-primary-on-dark hover:text-white apple-transition">
                   View All
                 </button>
               </div>
@@ -2149,7 +2149,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       {/* Modals */}
       <AnimatePresence>
         {isAdding && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -2322,7 +2322,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
       <AnimatePresence>
         {deletingId && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
