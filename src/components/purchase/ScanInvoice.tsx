@@ -173,7 +173,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
           {showReview && bill && (
             <div className="space-y-5">
               {flags.length > 0 && (
-                <div className="p-3 bg-primary/10 text-[#B85F3B] rounded-xl border border-primary/30 text-sm">
+                <div className="p-3 bg-primary/10 text-warning rounded-xl border border-primary/30 text-sm">
                   <div className="font-bold mb-1 flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> Please check:</div>
                   <ul className="list-disc pl-5 space-y-0.5">
                     {flags.map((f, i) => <li key={i}>{f}</li>)}

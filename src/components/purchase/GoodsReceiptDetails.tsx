@@ -215,7 +215,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
                
                {grn.notes && (
                   <div className="mt-6 p-4 bg-yellow-50/50 border border-primary/20 rounded-xl">
-                     <p className="text-[10px] font-black text-[#C0653F] uppercase tracking-widest mb-1.5">Notes</p>
+                     <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1.5">Notes</p>
                      <p className="text-sm font-medium text-ink/80">{grn.notes}</p>
                   </div>
                )}

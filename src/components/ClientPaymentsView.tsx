@@ -287,7 +287,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                 {t("cpay.cashOnHand")}
               </p>
               <h3
-                className={`text-3xl font-black mt-1 ${netCashFlow >= 0 ? "text-primary" : "text-[#C0653F]"}`}
+                className={`text-3xl font-black mt-1 ${netCashFlow >= 0 ? "text-primary" : "text-primary"}`}
               >
                 ₹
                 <CountUp
@@ -299,7 +299,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               </h3>
             </div>
             <div
-              className={`p-3 rounded-xl ${netCashFlow >= 0 ? "bg-[#F7E4DB] text-primary" : "bg-primary/15 text-[#C0653F]"}`}
+              className={`p-3 rounded-xl ${netCashFlow >= 0 ? "bg-warning/12 text-primary" : "bg-primary/15 text-primary"}`}
             >
               <IndianRupee className="w-6 h-6" />
             </div>
@@ -322,7 +322,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
             </button>
             <button
               onClick={handleExportPDF}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
             >
               <Download className="w-4 h-4" />
               PDF

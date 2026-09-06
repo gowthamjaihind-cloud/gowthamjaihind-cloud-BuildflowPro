@@ -386,7 +386,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
               setNewRate({ vendorId: "", role: "", rate: 0, unit: "Shift" });
               setIsAddingRate(true);
             }}
-            className="w-full sm:w-auto bg-primary text-white px-8 py-4 rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-[#C0653F] apple-transition shadow-lg shadow-primary/10 text-[10px]"
+            className="w-full sm:w-auto bg-primary text-white px-8 py-4 rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-primary-deep apple-transition shadow-lg shadow-primary/10 text-[10px]"
           >
             <Plus className="w-4 h-4" /> Global Rate Entry
           </button>
@@ -482,7 +482,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                           >
                             <div className="flex justify-between items-start gap-2 mb-2">
                               <div className="flex items-center gap-2 min-w-0">
-                                <div className="bg-panel p-1.5 rounded-lg text-[#C0653F] shrink-0">
+                                <div className="bg-panel p-1.5 rounded-lg text-primary shrink-0">
                                   <Users className="w-3.5 h-3.5" />
                                 </div>
                                 <h4 className="text-xs font-bold text-ink tracking-tight truncate" title={rate.role}>
@@ -1046,7 +1046,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
           </button>
           <button
             onClick={handleExportPDF}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#C0653F] text-white px-4 md:px-5 py-2.5 md:py-3 rounded-lg md:rounded-2xl text-[10px] md:text-[10px] font-black uppercase tracking-[0.15em] hover:bg-[#A0522F] apple-transition shadow-lg shadow-primary/20"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-primary text-white px-4 md:px-5 py-2.5 md:py-3 rounded-lg md:rounded-2xl text-[10px] md:text-[10px] font-black uppercase tracking-[0.15em] hover:bg-primary-deep apple-transition shadow-lg shadow-primary/20"
           >
             <Download className="w-3.5 h-3.5" /> {t("common.exportPdf")}
           </button>

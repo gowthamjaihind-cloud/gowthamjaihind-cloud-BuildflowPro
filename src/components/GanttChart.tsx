@@ -487,7 +487,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   refY="2"
                   orient="auto"
                 >
-                  <path d="M0,0 L6,2 L0,4 Z" fill="#C8D1D3" />
+                  <path d="M0,0 L6,2 L0,4 Z" fill="var(--divider)" />
                 </marker>
                 <marker
                   id="arrowhead-critical"
@@ -685,7 +685,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                     <div
                       className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full flex-shrink-0 ${
                         task.type === "Milestone"
-                          ? "bg-gradient-to-br from-[#E1946F] to-primary rotate-45 shadow-sm"
+                          ? "bg-gradient-to-br from-primary to-primary rotate-45 shadow-sm"
                           : task.type === "Summary"
                             ? "bg-[#465D6E] shadow-sm"
                             : isCritical
@@ -721,7 +721,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                     <div
                       className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] text-white font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${task.type !== "Summary" ? "touch-none" : ""} ${isDraggingThis ? "opacity-70 ring-2 ring-primary ring-offset-1" : ""} ${
                         task.type === "Milestone"
-                          ? "bg-gradient-to-br from-[#E1946F] to-primary w-7 !rounded-sm rotate-45 justify-center border-2 border-white cursor-pointer"
+                          ? "bg-gradient-to-br from-primary to-primary w-7 !rounded-sm rotate-45 justify-center border-2 border-white cursor-pointer"
                           : task.type === "Summary"
                             ? "bg-[#465D6E] cursor-pointer"
                             : isCritical
@@ -956,7 +956,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   {hoveredTask.task.name}
                 </h4>
                 {hoveredTask.task.type === "Milestone" ? (
-                  <span className="shrink-0 inline-flex items-center justify-center bg-amber-500/20 text-[#F0C6B2] rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
+                  <span className="shrink-0 inline-flex items-center justify-center bg-amber-500/20 text-ink-muted rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
                     {L("Milestone","மைல்கல்")}
                   </span>
                 ) : (
@@ -1005,7 +1005,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 )}
               {breakpoint === "mobile" && (
                 <button
-                  className="w-full mt-2 py-1.5 bg-primary hover:bg-[#B85F3B] text-white text-xs font-bold rounded-lg pointer-events-auto"
+                  className="w-full mt-2 py-1.5 bg-primary hover:bg-primary-deep text-white text-xs font-bold rounded-lg pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     setHoveredTask(null);

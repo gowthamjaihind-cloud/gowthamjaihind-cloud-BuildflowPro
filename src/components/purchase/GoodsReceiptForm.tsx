@@ -532,7 +532,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
            <button 
              onClick={handleSubmit} 
              disabled={isSubmitting} 
-             className="px-8 py-4 bg-primary hover:bg-[#B85F3B] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] disabled:opacity-50"
+             className="px-8 py-4 bg-primary hover:bg-primary-deep text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] disabled:opacity-50"
            >
              {isSubmitting ? <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span> : <Save className="w-4 h-4" />} Save Receipt
            </button>

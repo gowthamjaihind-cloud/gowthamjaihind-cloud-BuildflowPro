@@ -211,7 +211,7 @@ export const MastersPanel: React.FC = () => {
     finally { setBusy(false); }
   };
 
-  const field = "w-full bg-[#F0F3F4] dark:bg-panel p-3.5 rounded-xl font-medium outline-none border border-transparent focus:border-primary/40 apple-transition text-sm";
+  const field = "w-full bg-page dark:bg-panel p-3.5 rounded-xl font-medium outline-none border border-transparent focus:border-primary/40 apple-transition text-sm";
 
   return (
     <div className="space-y-6">

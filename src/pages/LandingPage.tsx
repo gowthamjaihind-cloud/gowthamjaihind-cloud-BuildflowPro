@@ -284,7 +284,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               href="/demo/?demo=1"
               target="_blank"
               rel="noopener"
-              className="inline-flex items-center gap-1.5 text-primary hover:text-[#B85F3B] apple-transition font-bold"
+              className="inline-flex items-center gap-1.5 text-primary hover:text-primary-deep apple-transition font-bold"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />
               {t("land.navDemo")}
@@ -295,7 +295,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <button onClick={requestLogin} disabled={isLoggingIn} className="text-sm font-bold text-ink hover:text-primary apple-transition disabled:opacity-60">
               Sign in
             </button>
-            <CTA label={t("land.getStarted")} className="bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-[#B85F3B] shadow-lg shadow-primary/20" />
+            <CTA label={t("land.getStarted")} className="bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-primary-deep shadow-lg shadow-primary/20" />
           </div>
 
           <button className="md:hidden p-2 -mr-2 text-ink" onClick={() => setMenuOpen((v) => !v)} aria-label="Menu">
@@ -351,7 +351,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             {t("land.heroSubhead")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
-            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-[#B85F3B] shadow-xl shadow-primary/20" />
+            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-primary-deep shadow-xl shadow-primary/20" />
             <a href="#features" className="inline-flex items-center justify-center gap-2 font-bold text-base px-7 py-4 rounded-2xl bg-panel border border-divider text-ink hover:bg-surface apple-transition">
               {t("land.seeFeatures")}
             </a>
@@ -521,7 +521,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 "பணியாளர்களுக்குப் பயிற்சி அளிக்க ஆப் தேவையில்லை. மேற்பார்வையாளர்கள் முன்னேற்றம், பொருட்கள், தொழிலாளர் மற்றும் புகைப்படங்களை நேரடியாக ஒரு அரட்டையிலிருந்து பதிவு செய்கிறார்கள் — அது உங்கள் டாஷ்போர்டுகள், செலவுத் தாள்கள் மற்றும் ஸ்டாக்கில் நேரடியாக வந்து சேரும்.",
               )}
             </p>
-            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-[#B85F3B]" />
+            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-primary-deep" />
           </div>
           <div className="space-y-3">
             {[
@@ -631,14 +631,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                   label={L(p.cta, (p as any).taCta)}
                   href={(p as any).contactHref}
                   full
-                  className={`mt-auto text-sm py-3.5 rounded-2xl ${p.highlight ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                  className={`mt-auto text-sm py-3.5 rounded-2xl ${p.highlight ? "bg-primary text-white hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                 />
               </div>
             );
           })}
         </div>
         <div className="mt-8 max-w-2xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-[#B85F3B] px-4 py-2 rounded-full text-sm font-bold">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-warning px-4 py-2 rounded-full text-sm font-bold">
             <Stack weight="duotone" className="w-4 h-4" /> {L(`Need more projects? Add extra ones any time for ₹${OVERAGE_RATE}/project / month.`, `மேலும் செயல்திட்டங்கள் தேவையா? கூடுதலானவற்றை எந்த நேரத்திலும் தலா ₹${OVERAGE_RATE}/செயல்திட்டம் / மாதம் என்ற விலையில் சேர்க்கவும்.`)}
           </div>
           <p className="text-xs text-ink-muted mt-4">{L("Start free forever, or try Starter free for 14 days — no card, upgrade to any plan anytime. Prices in INR, exclusive of GST. Annual plans are billed yearly. Enterprise billing is custom.", "எப்போதும் இலவசமாகத் தொடங்குங்கள், அல்லது Starter ஐ 14 நாட்களுக்கு இலவசமாக முயற்சிக்கவும் — கார்டு இல்லை, எந்த திட்டத்திற்கும் எப்போது வேண்டுமானாலும் மேம்படுத்தலாம். விலைகள் INR இல், GST தவிர்த்து. ஆண்டு திட்டங்கள் ஆண்டுதோறும் பில் செய்யப்படும். Enterprise பில்லிங் தனிப்பயன்.")}</p>
@@ -651,7 +651,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
           <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{t("land.finalHeading")}</h2>
           <p className="text-ink-muted font-medium max-w-lg mx-auto mb-8">{L("Start free on Lite, or try every feature free for 30 days — no card required.", "இலவசமாகத் தொடங்குங்கள், அல்லது ஒவ்வொரு அம்சத்தையும் 30 நாட்களுக்கு இலவசமாக முயற்சிக்கவும் — கார்டு தேவையில்லை.")}</p>
           <div className="flex justify-center">
-            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-8 py-4 rounded-2xl hover:bg-[#B85F3B] shadow-xl shadow-primary/20" />
+            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-8 py-4 rounded-2xl hover:bg-primary-deep shadow-xl shadow-primary/20" />
           </div>
         </div>
       </section>
@@ -718,7 +718,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                   type="checkbox"
                   checked={agreed}
                   onChange={(e) => setAgreed(e.target.checked)}
-                  className="mt-0.5 w-5 h-5 rounded-md border-divider text-primary focus:ring-primary/30 shrink-0 accent-[#B85F3B]"
+                  className="mt-0.5 w-5 h-5 rounded-md border-divider text-primary focus:ring-primary/30 shrink-0 accent-primary"
                 />
                 <span className="text-sm text-ink leading-relaxed">
                   I agree to the{" "}
@@ -731,7 +731,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               <button
                 onClick={confirmConsentAndLogin}
                 disabled={!agreed || isLoggingIn}
-                className="w-full inline-flex items-center justify-center gap-2 font-bold text-base px-7 py-4 rounded-2xl bg-primary text-white hover:bg-[#B85F3B] shadow-xl shadow-primary/20 apple-transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full inline-flex items-center justify-center gap-2 font-bold text-base px-7 py-4 rounded-2xl bg-primary text-white hover:bg-primary-deep shadow-xl shadow-primary/20 apple-transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoggingIn ? (
                   <>

@@ -120,7 +120,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                   </span>
                   <button
                     onClick={() => setLogModalOpen(true)}
-                    className="text-[10px] font-bold text-rust-strong uppercase tracking-widest hover:underline bg-[#F7E4DB] px-3 py-2 rounded-md"
+                    className="text-[10px] font-bold text-rust-strong uppercase tracking-widest hover:underline bg-warning/12 px-3 py-2 rounded-md"
                   >
                     Log Another
                   </button>
@@ -226,7 +226,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                       <div className="mt-4 pt-3 flex items-center justify-end gap-2 border-t border-divider/50">
                         <button
                           onClick={() => setLogToEdit(log)}
-                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#F7E4DB] transition"
+                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-warning/12 transition"
                         >
                           <Edit2 className="w-3.5 h-3.5" /> Edit
                         </button>
@@ -252,7 +252,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
 
               <div className="mb-6">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 text-[#C0653F] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
                     <Users className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-bold text-ink-muted">
@@ -269,7 +269,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
 
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-[#F7E4DB] text-primary flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-warning/12 text-primary flex items-center justify-center shrink-0">
                     <Box className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-bold text-ink-muted">

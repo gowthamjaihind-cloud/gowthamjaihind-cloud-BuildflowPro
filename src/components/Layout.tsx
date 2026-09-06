@@ -77,7 +77,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div
         className={`flex items-center shrink-0 transition-all duration-500 overflow-hidden ${uiMode === "site" ? "hidden sm:flex" : ""} ${showLabels ? "p-6 md:p-10 gap-4" : "justify-center p-6 md:py-10 md:px-0"}`}
       >
-        <BrandLogo className="w-10 h-10 md:w-12 md:h-12 rounded-[14px] md:rounded-[16px] shadow-lg shadow-[#324755]/25 shrink-0" />
+        <BrandLogo className="w-10 h-10 md:w-12 md:h-12 rounded-[14px] md:rounded-[16px] shadow-lg shadow-surface-dark/25 shrink-0" />
         {showLabels && (
           <span className="font-brand font-bold text-2xl md:text-3xl tracking-tight text-ink truncate shrink-0">
             Sitetru

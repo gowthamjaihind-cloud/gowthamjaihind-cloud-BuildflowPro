@@ -544,7 +544,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
             </button>
             <button
               onClick={handleEstimateExportPDF}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
             >
               <Download className="w-4 h-4" />
               PDF
@@ -709,7 +709,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                         }}
                         className={`px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase transition-all ${
                           item.isChangeOrder
-                            ? "bg-amber-500/20 text-[#C0653F] border border-amber-500/30"
+                            ? "bg-amber-500/20 text-primary border border-amber-500/30"
                             : "bg-surface/60 text-ink-muted hover:text-ink border border-white/10"
                         }`}
                       >
@@ -743,10 +743,10 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     {/* Change Order Section */}
                     <div className="space-y-4">
                       <div className="flex justify-between items-center border-b border-amber-500/25 pb-2">
-                        <span className="text-xs font-black uppercase tracking-widest text-[#C0653F]">
+                        <span className="text-xs font-black uppercase tracking-widest text-primary">
                           Change Order Items ({changeOrderItems.length})
                         </span>
-                        <span className="text-sm font-black text-[#C0653F] font-mono">
+                        <span className="text-sm font-black text-primary font-mono">
                           Subtotal: ₹{coSubTotal.toLocaleString()}
                         </span>
                       </div>
@@ -829,7 +829,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
             </div>
 
             {uncoveredCost > 0 && (
-              <div className="p-4 rounded-xl border border-primary/40 bg-[#F7E4DB]">
+              <div className="p-4 rounded-xl border border-primary/40 bg-warning/12">
                 <div className="text-primary text-sm font-bold mb-1">
                   ₹{uncoveredCost.toLocaleString()} of cost isn't included in this margin
                 </div>
@@ -949,8 +949,8 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-[#C0653F] font-medium">Change Order Subtotal</span>
-                  <span className="text-[#C0653F] font-bold">
+                  <span className="text-primary font-medium">Change Order Subtotal</span>
+                  <span className="text-primary font-bold">
                     ₹{coSubTotal.toLocaleString()}
                   </span>
                 </div>

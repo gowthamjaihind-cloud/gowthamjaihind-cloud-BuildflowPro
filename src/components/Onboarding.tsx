@@ -244,7 +244,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                         secondary action (or they pay later, in-app). */}
                     <button
                       onClick={() => startTrial(id)} disabled={!!creating}
-                      className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 bg-primary text-white hover:bg-[#B85F3B]"
+                      className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 bg-primary text-white hover:bg-primary-deep"
                     >
                       {creating === `trial:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{t("onb.startTrial")} <ArrowRight weight="bold" className="w-4 h-4" /></>}
                     </button>
@@ -258,7 +258,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                 ) : (
                   <button
                     onClick={() => payNow(id)} disabled={!!creating}
-                    className={`mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                    className={`mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                   >
                     {creating === `pay:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : t("paywall.pay", { amount: payLabel?.toLocaleString("en-IN") || "" })}
                   </button>
@@ -302,7 +302,7 @@ const ErrorBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 const PrimaryButton: React.FC<{ onClick: () => void; busy?: boolean; disabled?: boolean; children: React.ReactNode }> = ({ onClick, busy, disabled, children }) => (
   <button onClick={onClick} disabled={busy || disabled}
-    className="w-full bg-primary text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#B85F3B] transition-colors disabled:opacity-50">
+    className="w-full bg-primary text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-deep transition-colors disabled:opacity-50">
     {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{children} <ArrowRight className="w-4 h-4" /></>}
   </button>
 );

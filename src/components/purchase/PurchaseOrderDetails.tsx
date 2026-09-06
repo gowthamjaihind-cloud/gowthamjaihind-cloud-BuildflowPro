@@ -148,7 +148,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
              </button>
              <button
                onClick={handleExportPDF}
-               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
+               className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-deep text-white rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
                title={L("Export PDF","PDF எக்ஸ்போர்ட்")}
              >
                <Download className="w-3.5 h-3.5" /> PDF
@@ -180,7 +180,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                      po.status === 'Draft' ? 'bg-ice text-[#56778E]' :
                      po.status === 'Approved' ? 'bg-[#E2E8ED] text-[#56778E]' :
-                     po.status === 'Partially Received' ? 'bg-primary/10 text-[#C0653F]' :
+                     po.status === 'Partially Received' ? 'bg-primary/10 text-primary' :
                      'bg-success/12 text-success'
                   }`}>
                      {statusLabel(po.status)}
@@ -212,12 +212,12 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                            </tr>
                         ))}
                      </tbody>
-                     <tfoot className="bg-[#F7E4DB] border-t border-[#F7E4DB]">
+                     <tfoot className="bg-warning/12 border-t border-warning/25">
                         {([["loading", L("Loading charges","ஏற்றுதல் கட்டணம்")], ["transport", L("Transport charges","போக்குவரத்து கட்டணம்")], ["other", L("Other charges","பிற கட்டணங்கள்")]] as const).map(([key, label]) =>
                            po.charges?.[key] ? (
                               <tr key={key}>
-                                 <td colSpan={4} className="px-4 py-1.5 text-right text-[10px] font-bold text-[#B85F3B]/80 uppercase tracking-widest">{label}</td>
-                                 <td className="px-4 py-1.5 text-right font-mono text-[#B85F3B]">₹{po.charges[key]!.toLocaleString("en-IN")}</td>
+                                 <td colSpan={4} className="px-4 py-1.5 text-right text-[10px] font-bold text-warning/80 uppercase tracking-widest">{label}</td>
+                                 <td className="px-4 py-1.5 text-right font-mono text-warning">₹{po.charges[key]!.toLocaleString("en-IN")}</td>
                               </tr>
                            ) : null,
                         )}
@@ -231,7 +231,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                
                {po.notes && (
                   <div className="mt-6 p-4 bg-yellow-50/50 border border-primary/20 rounded-xl">
-                     <p className="text-[10px] font-black text-[#C0653F] uppercase tracking-widest mb-1.5">{L("Notes","குறிப்புகள்")}</p>
+                     <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1.5">{L("Notes","குறிப்புகள்")}</p>
                      <p className="text-sm font-medium text-ink/80">{po.notes}</p>
                   </div>
                )}
@@ -250,7 +250,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                </button>
             )}
             {po.status === "Draft" && isAdminOrOwner && (
-               <button onClick={handleApprove} disabled={isApproving} className="px-6 py-3 bg-primary hover:bg-[#B85F3B] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)]">
+               <button onClick={handleApprove} disabled={isApproving} className="px-6 py-3 bg-primary hover:bg-primary-deep text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)]">
                  {isApproving ? <Loader2 className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4" />} {L("Approve Order","ஆணையை அங்கீகரி")}
                </button>
             )}

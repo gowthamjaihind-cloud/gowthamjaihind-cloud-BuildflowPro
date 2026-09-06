@@ -69,7 +69,7 @@ export const PlanSummary: React.FC = () => {
             {cap.capped && cap.included !== null ? ` / ${cap.included}` : ""}
           </b>
           {cap.overage > 0 && (
-            <span className="text-[#B85F3B] font-semibold"> · {L(`${cap.overage} extra · ₹${cap.overageCost}/mo`, `${cap.overage} கூடுதல் · ₹${cap.overageCost}/மாதம்`)}</span>
+            <span className="text-warning font-semibold"> · {L(`${cap.overage} extra · ₹${cap.overageCost}/mo`, `${cap.overage} கூடுதல் · ₹${cap.overageCost}/மாதம்`)}</span>
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">

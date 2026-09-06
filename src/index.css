@@ -352,6 +352,46 @@
       0 8px 24px rgba(50, 71, 85, 0.07);
   }
 
+  /* Native <select>, dressed to match the system.
+     Deliberately still a native control: on a phone the OS picker handles long
+     option lists, scrolling and accessibility better than anything we would
+     build, and adopting a custom widget would mean changing 25 call sites.
+     Only the chrome is ours.
+
+     This also repairs the 14 selects that already carried `appearance-none`
+     and so rendered with no dropdown indicator at all -- they read as text
+     inputs. These sit in @layer base, so a component's own Tailwind classes
+     still override them. */
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: var(--panel);
+    color: var(--ink);
+    border: 1px solid var(--divider);
+    border-radius: 0.75rem;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%235A6A82' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6.5L8 10.5L12 6.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 1rem 1rem;
+  }
+
+  select:hover:not(:disabled) {
+    border-color: var(--ink-muted);
+  }
+
+  select:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  /* A background image cannot inherit currentColor. */
+  .dark select {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%238A8F98' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6.5L8 10.5L12 6.5'/%3E%3C/svg%3E");
+  }
+
   .dark .soft-card {
     @apply border-divider;
     box-shadow:

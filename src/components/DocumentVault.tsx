@@ -332,7 +332,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-panel p-5 md:p-6 rounded-2xl border border-divider shadow-sm gap-6">
         <h2 className="text-xl md:text-2xl font-black flex items-center gap-3 md:gap-4 text-ink tracking-tight">
-          <div className="p-2.5 md:p-3 bg-primary text-white rounded-2xl shadow-lg shadow-[#F7E4DB]">
+          <div className="p-2.5 md:p-3 bg-primary text-white rounded-2xl shadow-lg shadow-primary/15">
             <FileText className="w-5 h-5 md:w-6 md:h-6" />
           </div>
           {t("dv.title")}
@@ -504,11 +504,11 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 className={`border-4 border-dashed rounded-2xl p-5 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 ${
                   selectedFile
                     ? "border-success/40 bg-emerald-50/30"
-                    : "border-divider hover:border-[#F7E4DB] hover:bg-panel"
+                    : "border-divider hover:border-warning/25 hover:bg-panel"
                 }`}
               >
                 <div
-                  className={`p-4 rounded-3xl ${selectedFile ? "bg-success/20 text-success" : "bg-[#F7E4DB] text-primary"}`}
+                  className={`p-4 rounded-3xl ${selectedFile ? "bg-success/20 text-success" : "bg-warning/12 text-primary"}`}
                 >
                   {selectedFile ? (
                     <File className="w-8 h-8" />
@@ -679,7 +679,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               <button
                 type="submit"
                 disabled={isUploadingFile}
-                className="bg-primary text-white px-12 py-4 rounded-2xl hover:bg-[#B85F3B] shadow-xl shadow-[#F7E4DB] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-primary text-white px-12 py-4 rounded-2xl hover:bg-primary-deep shadow-xl shadow-primary/15 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isUploadingFile ? (
                   <span className="flex items-center gap-2">
@@ -742,7 +742,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 return (
                   <tr
                     key={docItem.id}
-                    className={`hover:bg-panel transition-colors group ${isSelected ? "bg-[#F7E4DB]/50" : ""}`}
+                    className={`hover:bg-panel transition-colors group ${isSelected ? "bg-warning/12/50" : ""}`}
                   >
                     <td className="px-4 lg:px-6 py-4 lg:py-6">
                       <button
@@ -758,7 +758,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                     </td>
                     <td className="px-4 lg:px-6 py-4 lg:py-6">
                       <div className="flex items-center gap-4">
-                        <div className="p-3 bg-[#F7E4DB] text-primary rounded-2xl group-hover:bg-[#F7E4DB] transition-colors">
+                        <div className="p-3 bg-warning/12 text-primary rounded-2xl group-hover:bg-warning/12 transition-colors">
                           <FileText className="w-5 h-5" />
                         </div>
                         <div>
@@ -858,7 +858,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   className={`group relative aspect-square rounded-2xl overflow-hidden border transition-all cursor-pointer ${
                     isSelected
                       ? "border-primary shadow-xl ring-4 ring-primary/10"
-                      : "border-divider bg-panel shadow-sm hover:shadow-xl hover:shadow-[#F7E4DB]"
+                      : "border-divider bg-panel shadow-sm hover:shadow-xl hover:shadow-primary/15"
                   }`}
                   onClick={(e) => {
                     if (e.metaKey || e.ctrlKey) {

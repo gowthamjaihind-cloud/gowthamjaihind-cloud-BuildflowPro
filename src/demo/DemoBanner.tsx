@@ -61,7 +61,7 @@ export const DemoBanner: React.FC = () => {
         <div className="flex items-center gap-2 shrink-0">
           <a
             href="https://sitetru.com/?signup=1"
-            className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-wider hover:bg-[#B85F3B] apple-transition"
+            className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-wider hover:bg-primary-deep apple-transition"
           >
             Start free trial
           </a>

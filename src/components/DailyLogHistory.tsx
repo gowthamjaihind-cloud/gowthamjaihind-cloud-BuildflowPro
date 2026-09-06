@@ -178,7 +178,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
           )}
 
           {log.note && (
-            <div className="mt-4 bg-amber-50/50 p-3 rounded-xl border border-primary/20 flex gap-2 items-start text-[#5E2F1B]">
+            <div className="mt-4 bg-amber-50/50 p-3 rounded-xl border border-primary/20 flex gap-2 items-start text-warning">
               <MessageSquare className="w-4 h-4 shrink-0 mt-0.5 text-rust-strong opacity-60" />
               <p className="text-[10px] font-medium leading-relaxed italic">
                 {log.note}
@@ -190,7 +190,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
             <div className="mt-4 pt-3 flex items-center justify-end gap-2 border-t border-divider/50">
               <button
                 onClick={() => setLogToEdit(log)}
-                className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#F7E4DB] transition"
+                className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-warning/12 transition"
               >
                 <Edit2 className="w-3.5 h-3.5" /> {t("common.edit")}
               </button>

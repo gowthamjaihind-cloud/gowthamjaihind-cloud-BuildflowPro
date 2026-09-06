@@ -50,7 +50,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
       <div className="w-full max-w-3xl soft-card p-8 md:p-10 squircle-24">
         <div className="text-center mb-6">
           <div className="bg-primary/10 w-14 h-14 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-primary/20">
-            <Lock className="w-7 h-7 text-[#B85F3B]" />
+            <Lock className="w-7 h-7 text-warning" />
           </div>
           <h2 className="text-2xl font-bold text-ink mb-1">{headline}</h2>
           <p className="text-ink-muted text-[15px]">{t("paywall.choosePlanPre")} <b>{org}</b> {t("paywall.choosePlanPost")}</p>
@@ -105,7 +105,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
                 <button
                   onClick={() => pay(id, period, () => window.location.reload())}
                   disabled={busy}
-                  className={`mt-auto w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                  className={`mt-auto w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                 >
                   {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("paywall.pay", { amount: (period === "annual" ? p.annual : p.monthly)?.toLocaleString("en-IN") || "" })}
                 </button>

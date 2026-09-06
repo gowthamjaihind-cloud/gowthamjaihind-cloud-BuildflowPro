@@ -241,7 +241,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               <div className="md:col-span-2 mt-8">
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white py-4 md:py-5 rounded-2xl font-bold text-[17px] hover:bg-[#B85F3B] apple-transition shadow-xl hover:shadow-2xl active:scale-[0.98]"
+                  className="w-full bg-primary text-white py-4 md:py-5 rounded-2xl font-bold text-[17px] hover:bg-primary-deep apple-transition shadow-xl hover:shadow-2xl active:scale-[0.98]"
                 >
                   {t("cpm.saveChanges")}
                 </button>

@@ -917,13 +917,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
 
     const statusBadge = (b: VendorBill) => {
       if (b.status === "pending_review")
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/15 text-[#B85F3B]">Pending review</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/15 text-warning">Pending review</span>;
       return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-success/15 text-success">Posted</span>;
     };
     const matchBadge = (m?: string) => {
       const map: any = {
         "Fully Matched": "bg-success/12 text-success",
-        "Has Discrepancies": "bg-primary/12 text-[#C0653F]",
+        "Has Discrepancies": "bg-primary/12 text-primary",
         Unlinked: "bg-danger/10 text-danger",
       };
       return m ? <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${map[m] || "bg-panel text-ink-muted"}`}>{m}</span> : null;
@@ -1328,7 +1328,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     </td>
                     <td className="px-6 md:px-10 py-5 md:py-8">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10px] md:text-[10px] font-bold text-rust-strong bg-[#F7E4DB]/50 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-[#F7E4DB]/50 shadow-sm">
+                        <span className="font-mono text-[10px] md:text-[10px] font-bold text-rust-strong bg-warning/12/50 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-warning/25/50 shadow-sm">
                           {receipt.invoiceNumber}
                         </span>
                         {receipt.matchStatus === "Fully Matched" && (
@@ -1337,7 +1337,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           </span>
                         )}
                         {receipt.matchStatus === "Has Discrepancies" && (
-                          <span className="font-bold text-[8px] md:text-[10px] uppercase tracking-widest text-[#C0653F] bg-primary/10 px-2 py-1 rounded-full border border-primary/30">
+                          <span className="font-bold text-[8px] md:text-[10px] uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-full border border-primary/30">
                             Discrepancy
                           </span>
                         )}
@@ -1381,7 +1381,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                               setIsEditingReceipt(true);
                               setIsAddingReceipt(true);
                             }}
-                            className="p-2.5 md:p-3 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition"
+                            className="p-2.5 md:p-3 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition"
                           >
                             <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           </button>
@@ -1421,7 +1421,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       </span>
                     )}
                     {receipt.matchStatus === "Has Discrepancies" && (
-                      <span className="font-bold text-[10px] uppercase tracking-widest text-[#C0653F] bg-primary/10 px-2 py-1 rounded-full border border-primary/30">
+                      <span className="font-bold text-[10px] uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-full border border-primary/30">
                         Discrepancy
                       </span>
                     )}
@@ -1442,7 +1442,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       {receipt.receiptDate}
                     </div>
                     <div className="mt-1">
-                      <span className="font-mono text-[10px] font-bold text-rust-strong bg-[#F7E4DB]/50 px-2 py-1 rounded-full border border-[#F7E4DB]/50 shadow-sm">
+                      <span className="font-mono text-[10px] font-bold text-rust-strong bg-warning/12/50 px-2 py-1 rounded-full border border-warning/25/50 shadow-sm">
                         {receipt.invoiceNumber}
                       </span>
                     </div>
@@ -1485,7 +1485,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         setIsEditingReceipt(true);
                         setIsAddingReceipt(true);
                       }}
-                      className="flex-1 py-2 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                      className="flex-1 py-2 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                     >
                       <Edit2 className="w-4 h-4 mr-1.5" /> Edit
                     </button>
@@ -1643,7 +1643,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           {entry.description}
                         </div>
                         {entry.overrideReason && (
-                          <div className="text-[8px] md:text-[10px] font-bold text-[#C0653F] mt-1 uppercase tracking-widest border border-amber-200/50 bg-primary/10 px-1.5 py-0.5 rounded-full inline-block">
+                          <div className="text-[8px] md:text-[10px] font-bold text-primary mt-1 uppercase tracking-widest border border-amber-200/50 bg-primary/10 px-1.5 py-0.5 rounded-full inline-block">
                             ⚠️ Override: {entry.overrideReason}
                           </div>
                         )}
@@ -1675,7 +1675,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                                   setEditingPaymentId(entry.id);
                                   setIsAddingPayment(true);
                                 }}
-                                className="p-2.5 md:p-3 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition"
+                                className="p-2.5 md:p-3 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition"
                               >
                                 <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                               </button>
@@ -1700,7 +1700,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                                     setIsAddingReceipt(true);
                                   }
                                 }}
-                                className="p-2.5 md:p-3 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition"
+                                className="p-2.5 md:p-3 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition"
                               >
                                 <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                               </button>
@@ -1811,7 +1811,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       {entry.description}
                     </div>
                     {entry.overrideReason && (
-                      <div className="text-[10px] font-bold text-[#C0653F] mt-2 uppercase tracking-widest border border-amber-200/50 bg-primary/10 px-2 py-1 rounded-full inline-block">
+                      <div className="text-[10px] font-bold text-primary mt-2 uppercase tracking-widest border border-amber-200/50 bg-primary/10 px-2 py-1 rounded-full inline-block">
                         ⚠️ Override: {entry.overrideReason}
                       </div>
                     )}
@@ -1857,7 +1857,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                               setEditingPaymentId(entry.id);
                               setIsAddingPayment(true);
                             }}
-                            className="flex-1 py-2 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                            className="flex-1 py-2 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
                             <Edit2 className="w-4 h-4 mr-1.5" /> Edit
                           </button>
@@ -1882,7 +1882,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                                 setIsAddingReceipt(true);
                               }
                             }}
-                            className="flex-1 py-2 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                            className="flex-1 py-2 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
                             <Edit2 className="w-4 h-4 mr-1.5" /> Edit
                           </button>
@@ -1961,7 +1961,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto md:shrink-0">
-          <div className="hidden sm:flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 bg-[#F7E4DB] rounded-lg md:rounded-2xl">
+          <div className="hidden sm:flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 bg-warning/12 rounded-lg md:rounded-2xl">
             <Users className="w-3.5 h-3.5 text-rust-strong" />
             <span className="text-[10px] md:text-[10px] font-black text-rust-strong uppercase tracking-widest">
               {vendors.length} Partners
@@ -1982,7 +1982,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           </button>
           <button
             onClick={handleExportPDF}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#C0653F] text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#A0522F] apple-transition shadow-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-primary text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-primary-deep apple-transition shadow-sm"
           >
             <Download className="w-3.5 h-3.5" /> {t("common.exportPdf")}
           </button>
@@ -2243,7 +2243,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-[#F7E4DB] hover:bg-[#B85F3B] apple-transition mt-4"
+                  className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/15 hover:bg-primary-deep apple-transition mt-4"
                 >
                   {isEditingVendor ? "Update Profile" : "Register Party"}
                 </button>
@@ -2453,13 +2453,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   ) {
                     return (
                       <div className="space-y-1 bg-primary/10 p-4 rounded-xl border border-primary/30">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#A0522F] ml-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-primary-deep ml-1">
                           Discrepancy Override Reason
                         </label>
                         <input
                           required
                           placeholder="Why are we paying this despite the discrepancy?"
-                          className="w-full bg-white p-3 rounded-xl font-bold border border-primary/40 placeholder:text-[#F0C6B2]"
+                          className="w-full bg-white p-3 rounded-xl font-bold border border-primary/40 placeholder:text-ink-muted"
                           value={newPayment.overrideReason}
                           onChange={(e) =>
                             setNewPayment({

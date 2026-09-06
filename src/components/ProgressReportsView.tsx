@@ -410,7 +410,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       </div>
 
       {!canExport && (
-        <p className="text-xs text-[#C0653F] bg-primary/10 p-3 rounded-lg border border-primary/20 font-bold uppercase tracking-widest">
+        <p className="text-xs text-primary bg-primary/10 p-3 rounded-lg border border-primary/20 font-bold uppercase tracking-widest">
           {t("reports.pdfRestricted")}
         </p>
       )}
@@ -731,7 +731,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                         <div className="print:hidden flex items-center gap-2">
                           <button
                           onClick={() => setLogToEdit(log)}
-                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-4 py-2 rounded-xl border border-divider hover:bg-[#F7E4DB] transition-colors whitespace-nowrap"
+                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-4 py-2 rounded-xl border border-divider hover:bg-warning/12 transition-colors whitespace-nowrap"
                         >
                           <Edit2 className="w-3.5 h-3.5" /> Edit Log
                         </button>

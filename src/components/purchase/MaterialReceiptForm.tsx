@@ -273,7 +273,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
       >
         <div className={`p-6 md:p-8 text-white flex justify-between items-center transition-colors
           ${overallMatchStatus === "Fully Matched" ? "bg-success" : 
-            overallMatchStatus === "Has Discrepancies" ? "bg-[#C0653F]" : "bg-[#465D6E]"}`}
+            overallMatchStatus === "Has Discrepancies" ? "bg-primary" : "bg-[#465D6E]"}`}
         >
           <div>
             <h3 className="text-xl md:text-2xl font-black">
@@ -378,12 +378,12 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
           </div>
 
           <div className="space-y-4">
-            <div className="flex justify-between items-center bg-[#F7E4DB] p-4 rounded-xl border border-[#F7E4DB]/50">
-              <h4 className="text-xs font-black uppercase tracking-widest text-[#B85F3B]">Invoice Items</h4>
+            <div className="flex justify-between items-center bg-warning/12 p-4 rounded-xl border border-warning/25/50">
+              <h4 className="text-xs font-black uppercase tracking-widest text-warning">Invoice Items</h4>
               <button
                 type="button"
                 onClick={() => setItems([...items, { itemId: "", materialId: "", name: "", quantity: 0, unitRate: 0, totalPrice: 0 }])}
-                className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-[#F7E4DB] px-4 py-2 rounded-xl transition-all"
+                className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-warning/12 px-4 py-2 rounded-xl transition-all"
               >
                 <Plus className="w-3 h-3" /> Add Item
               </button>
@@ -399,9 +399,9 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                           <th className="p-3 text-right">PO Rate</th>
                           <th className="p-3 text-right border-l border-divider/50">Ord Qty</th>
                           <th className="p-3 text-right">Rec Qty (GRN)</th>
-                          <th className="p-3 text-right border-l border-divider/50 bg-[#F7E4DB]/50">Inv Qty</th>
-                          <th className="p-3 text-right bg-[#F7E4DB]/50">Inv Rate</th>
-                          <th className="p-3 bg-[#F7E4DB]/50">Status</th>
+                          <th className="p-3 text-right border-l border-divider/50 bg-warning/12/50">Inv Qty</th>
+                          <th className="p-3 text-right bg-warning/12/50">Inv Rate</th>
+                          <th className="p-3 bg-warning/12/50">Status</th>
                           <th className="p-3"></th>
                        </tr>
                     </thead>
@@ -423,7 +423,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                              <td className="p-3 text-right font-mono text-xs text-ink-muted border-l border-divider/50">{data.orderedQty > 0 ? data.orderedQty : '-'}</td>
                              <td className="p-3 text-right font-mono text-xs text-ink-muted">{data.grnAcceptedQty > 0 ? data.grnAcceptedQty : '-'}</td>
                              
-                             <td className="p-2 border-l border-divider/50 bg-[#F7E4DB]/20">
+                             <td className="p-2 border-l border-divider/50 bg-warning/12/20">
                                 <input type="number" className="w-20 text-right bg-panel border-divider border rounded p-1 ml-auto block" value={data.item.quantity || ''} onChange={e => {
                                    const qty = parseFloat(e.target.value) || 0;
                                    const newItems = [...items];
@@ -431,7 +431,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                                    setItems(newItems);
                                 }}/>
                              </td>
-                             <td className="p-2 bg-[#F7E4DB]/20">
+                             <td className="p-2 bg-warning/12/20">
                                 <input type="number" className="w-24 text-right bg-panel border-divider border rounded p-1 ml-auto block" value={data.item.unitRate || ''} onChange={e => {
                                    const rate = parseFloat(e.target.value) || 0;
                                    const newItems = [...items];
@@ -439,10 +439,10 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                                    setItems(newItems);
                                 }}/>
                              </td>
-                             <td className="p-3 text-xs bg-[#F7E4DB]/20">
+                             <td className="p-3 text-xs bg-warning/12/20">
                                 {data.status === "Matched" && <span className="text-success bg-success/12 px-2 py-1 rounded-full font-bold">Matched</span>}
-                                {data.status === "Rate mismatch" && <span className="text-[#C0653F] bg-primary/10 px-2 py-1 rounded-full font-bold" title="Rate != PO">Rate mismatch</span>}
-                                {data.status === "Quantity mismatch" && <span className="text-[#C0653F] bg-primary/10 px-2 py-1 rounded-full font-bold" title="Qty != GRN">Qty mismatch</span>}
+                                {data.status === "Rate mismatch" && <span className="text-primary bg-primary/10 px-2 py-1 rounded-full font-bold" title="Rate != PO">Rate mismatch</span>}
+                                {data.status === "Quantity mismatch" && <span className="text-primary bg-primary/10 px-2 py-1 rounded-full font-bold" title="Qty != GRN">Qty mismatch</span>}
                                 {data.status === "Unmatched" && <span className="text-danger bg-danger/8 px-2 py-1 rounded-full font-bold">Unmatched</span>}
                              </td>
                              <td className="p-2 text-right">

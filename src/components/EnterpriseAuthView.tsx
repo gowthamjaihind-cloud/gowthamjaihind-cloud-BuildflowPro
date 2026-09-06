@@ -237,7 +237,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
         <div className="bg-danger/8 border border-danger/30 p-6 rounded-3xl flex items-start gap-4">
           <ShieldAlert className="w-8 h-8 text-danger mt-1" />
           <div>
-            <h3 className="text-lg font-bold text-[#7F1D1D]">
+            <h3 className="text-lg font-bold text-danger">
               {L("Restricted Access","கட்டுப்படுத்தப்பட்ட அணுகல்")}
             </h3>
             <p className="text-danger font-medium">
@@ -314,7 +314,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                     ) : (
                       <div className="flex items-center gap-2 text-sm font-bold">
                         {u.role === "Owner" ? (
-                          <span className="text-[#324755] bg-[#324755]/10 px-3 py-1.5 rounded-lg border border-[#324755]/20 flex items-center gap-1.5 w-fit">
+                          <span className="text-surface-dark bg-surface-dark/10 px-3 py-1.5 rounded-lg border border-surface-dark/20 flex items-center gap-1.5 w-fit">
                             <ShieldCheck className="w-4 h-4" /> {L("Owner","உரிமையாளர்")}
                           </span>
                         ) : u.role === "Admin" ? (
@@ -478,7 +478,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                 /link {showLinkCode.displayCode}
               </code>
             </div>
-            <p className="text-center text-sm font-medium text-[#C0653F] bg-primary/10 py-3 rounded-xl">
+            <p className="text-center text-sm font-medium text-primary bg-primary/10 py-3 rounded-xl">
               {L("Expires in 15 minutes.","15 நிமிடங்களில் காலாவதியாகும்.")}
             </p>
           </div>

@@ -64,7 +64,7 @@ export const GoodsReceiptTab: React.FC<GoodsReceiptTabProps> = ({ projectId }) =
                     <tr 
                       key={grn.id} 
                       onClick={() => setSelectedGRN(grn)}
-                      className="border-b border-divider/50 hover:bg-[#F7E4DB]/30 transition cursor-pointer group"
+                      className="border-b border-divider/50 hover:bg-warning/12/30 transition cursor-pointer group"
                     >
                       <td className="p-4 align-middle">
                         <div className="font-mono text-xs font-bold text-ink group-hover:text-primary transition-colors">

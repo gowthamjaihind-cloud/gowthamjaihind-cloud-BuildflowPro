@@ -146,6 +146,9 @@ Never reuse the light primary on a dark surface.
 | **Nav item** | `rounded-[18px]`; active = indigo fill, white text, ring; idle = ink-muted with panel hover. Label 15px — see §3 |
 | **Status chip** | `rounded-full`, 10px 800 uppercase. Colour goes in the fill at ~12% and in the text; both are checked against each other, per Wise |
 | **Input** | White, hairline border, `rounded-xl`, indigo focus ring |
+| **Select** | Still a native `<select>`, restyled in `@layer base`: hairline border, `rounded-xl`, own caret. Native on purpose — the OS picker beats anything hand-built on a phone |
+| **Toast** | Card shape, `shadow-lg`, tinted icon chip. Top of the screen; the foot carries the demo banner. Errors 8s and `role="alert"`, others 4–5s and `role="status"` |
+| **Confirm dialog** | Centred card, scrim, `Escape` and scrim cancel. The button names the act — "Delete", not "Confirm". Replaces `window.confirm` |
 | **Table header** | Brand Dark 900 bar, white small-caps labels, numeric columns right-aligned |
 
 Motion is one shared curve — `apple-transition`: 200ms
@@ -203,6 +206,14 @@ Borders do the quiet separating; shadow is only for things that genuinely float.
   risk" above a phase marked *Behind Schedule* destroys trust in both.
 - Don't wrap a horizontal scroller in `md:flex-wrap` without checking 1024px.
 - Don't colour a whole surface indigo, and don't use indigo as body-text colour — it is a CTA and link colour.
+- Don't reach for `window.alert` or `window.confirm`. They render in the
+  browser's chrome, announce the domain and cannot be styled; use `toast.*`
+  and `confirmDialog` from `src/lib/feedback.ts`.
+- Don't hardcode a colour in a component. A palette change cannot reach a
+  literal: the move to indigo left 104 uses of the retired rust ramp behind,
+  including a terracotta Export PDF button sitting beside indigo ones. Chart
+  series are the documented exception — they need a categorical palette that
+  is deliberately not the accent.
 
 ---
 

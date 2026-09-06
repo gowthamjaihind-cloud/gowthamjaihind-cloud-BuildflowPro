@@ -835,7 +835,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       showLaborBreakdown === task.id ? null : task.id,
                     )
                   }
-                  className={`flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest mt-1 p-1 rounded hover:bg-[#F7E4DB] apple-transition ${showLaborBreakdown === task.id ? "text-rust-strong bg-[#F7E4DB]" : "text-ink-muted"}`}
+                  className={`flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest mt-1 p-1 rounded hover:bg-warning/12 apple-transition ${showLaborBreakdown === task.id ? "text-rust-strong bg-warning/12" : "text-ink-muted"}`}
                 >
                   <Info className="w-2.5 h-2.5" /> Details
                 </button>
@@ -882,7 +882,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               maximumFractionDigits: 0,
             })}
           </td>
-          <td className="p-3 text-right font-black text-primary bg-[#F7E4DB]/30">
+          <td className="p-3 text-right font-black text-primary bg-warning/12/30">
             ₹
             {totals.totalActual.toLocaleString("en-IN", {
               maximumFractionDigits: 0,
@@ -920,7 +920,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             ) : task.isSystemGenerated ? null : (
               <button
                 onClick={() => startEditing(task)}
-                className="p-1 text-ink-muted hover:text-rust-strong hover:bg-[#F7E4DB] rounded transition-all"
+                className="p-1 text-ink-muted hover:text-rust-strong hover:bg-warning/12 rounded transition-all"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
@@ -933,9 +933,9 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           children.map((child) => renderCostRow(child, level + 1))}
 
         {showLaborBreakdown === task.id && (
-          <tr className="bg-[#F7E4DB]/30">
-            <td colSpan={11} className="p-2 md:p-6 border-b border-[#F7E4DB]">
-              <div className="bg-surface rounded-2xl border border-[#F7E4DB] shadow-sm overflow-hidden">
+          <tr className="bg-warning/12/30">
+            <td colSpan={11} className="p-2 md:p-6 border-b border-warning/25">
+              <div className="bg-surface rounded-2xl border border-warning/25 shadow-sm overflow-hidden">
                 <div className="bg-primary px-4 py-2 flex justify-between items-center">
                   <span className="text-[10px] md:text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
                     Labor Deployment Breakdown
@@ -948,7 +948,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 <div className="overflow-x-auto scroller-hide">
                   <table className="w-full text-[10px] md:text-[10px] min-w-[600px]">
                     <thead>
-                      <tr className="bg-[#F7E4DB] text-[#B85F3B] font-bold uppercase tracking-wider">
+                      <tr className="bg-warning/12 text-warning font-bold uppercase tracking-wider">
                         <th className="p-2 text-left">Date</th>
                         <th className="p-2 text-left">Contractor</th>
                         <th className="p-2 text-left">Role</th>
@@ -963,7 +963,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       {entries
                         .filter((e) => (e.taskId === task.id || (!e.taskId && task.isSystemGenerated && task.name === "Project Overhead")) && e.category === "Labor" && e.type === "Actual" && !e.isAccrual)
                         .map((entry, idx) => (
-                          <tr key={`ce-${entry.id}`} className="border-t border-[#F7E4DB] hover:bg-[#F7E4DB]/50">
+                          <tr key={`ce-${entry.id}`} className="border-t border-warning/25 hover:bg-warning/12/50">
                             <td className="p-2 font-medium">{new Date(entry.date).toLocaleDateString()}</td>
                             <td className="p-2 text-ink-muted font-bold">Direct Entry</td>
                             <td className="p-2 italic">{entry.description || "-"}</td>
@@ -983,7 +983,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           log.items
                             .filter((item) => item.taskId === task.id)
                             .map((item, idx) => (
-                              <tr key={`ll-${log.id}-${idx}`} className="border-t border-[#F7E4DB] hover:bg-[#F7E4DB]/50">
+                              <tr key={`ll-${log.id}-${idx}`} className="border-t border-warning/25 hover:bg-warning/12/50">
                                 <td className="p-2 font-medium">{log.date}</td>
                                 <td className="p-2 text-ink-muted font-bold">{log.vendorName || "General"} (RA Bill)</td>
                                 <td className="p-2 italic">{item.role}</td>
@@ -1011,7 +1011,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                               else if (log.workDate.seconds) displayDate = new Date(log.workDate.seconds * 1000).toISOString().split("T")[0];
                             }
                             return (
-                              <tr key={`dl-${log.id}-${idx}`} className="border-t border-[#F7E4DB] hover:bg-[#F7E4DB]/50">
+                              <tr key={`dl-${log.id}-${idx}`} className="border-t border-warning/25 hover:bg-warning/12/50">
                                 <td className="p-2 font-medium">{displayDate}</td>
                                 <td className="p-2 text-ink-muted font-bold">Daily Log</td>
                                 <td className="p-2 italic">{rateCard?.role || "-"}</td>
@@ -1222,7 +1222,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             onClick={handleExportPDF}
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-surface/30 text-ink-muted px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] hover:bg-surface/50 hover:text-ink shadow-sm apple-transition border border-divider/40"
           >
-            <Download className="w-3.5 h-3.5 text-[#C0653F]" /> PDF
+            <Download className="w-3.5 h-3.5 text-primary" /> PDF
           </button>
           <button
             onClick={() => {
@@ -1361,7 +1361,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                               isOver
                                 ? "bg-danger"
                                 : percentage > 80
-                                  ? "bg-[#E1946F]"
+                                  ? "bg-primary"
                                   : "bg-success"
                             }`}
                             style={{
@@ -1471,7 +1471,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     />
                     <Bar
                       dataKey="Actual"
-                      fill="#D97D54"
+                      fill="var(--primary)"
                       radius={[8, 8, 0, 0]}
                       barSize={40}
                     />
@@ -2103,13 +2103,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </table>
           </div>
 
-          <div className="bg-[#F7E4DB] p-5 rounded-2xl border border-[#F7E4DB] flex items-start gap-4">
+          <div className="bg-warning/12 p-5 rounded-2xl border border-warning/25 flex items-start gap-4">
             <AlertCircle className="w-6 h-6 text-rust-strong shrink-0" />
             <div>
-              <h4 className="font-bold text-[#B85F3B] mb-1">
+              <h4 className="font-bold text-warning mb-1">
                 Executive Summary
               </h4>
-              <p className="text-sm text-[#B85F3B] leading-relaxed">
+              <p className="text-sm text-warning leading-relaxed">
                 The project is currently{" "}
                 {stats.totalBudgeted - stats.totalActual >= 0
                   ? "under"
@@ -2158,7 +2158,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <h3 className="text-xl font-bold">
                     {newEntry.id ? "Edit Transaction" : "Add Transaction"}
                   </h3>
-                  <p className="text-[#C8D1D3] text-xs font-medium uppercase tracking-widest mt-1">
+                  <p className="text-divider text-xs font-medium uppercase tracking-widest mt-1">
                     Direct Cost Ledger
                   </p>
                 </div>
@@ -2191,7 +2191,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     <input
                       required
                       placeholder="e.g. Fuel for generator"
-                      className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-semibold outline-none"
+                      className="w-full bg-page p-4 rounded-2xl font-semibold outline-none"
                       value={newEntry.description}
                       onChange={(e) =>
                         setNewEntry({
@@ -2210,7 +2210,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <input
                         type="number"
                         required
-                        className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-black text-primary outline-none"
+                        className="w-full bg-page p-4 rounded-2xl font-black text-primary outline-none"
                         value={newEntry.amount || ""}
                         onChange={(e) =>
                           setNewEntry({
@@ -2243,7 +2243,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         Type
                       </label>
                       <select
-                        className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-semibold outline-none appearance-none"
+                        className="w-full bg-page p-4 rounded-2xl font-semibold outline-none appearance-none"
                         value={newEntry.type}
                         onChange={(e) =>
                           setNewEntry({
@@ -2265,7 +2265,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       </label>
                       <select
                         required
-                        className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-semibold outline-none focus:ring-2 focus:ring-primary/20 apple-transition appearance-none"
+                        className="w-full bg-page p-4 rounded-2xl font-semibold outline-none focus:ring-2 focus:ring-primary/20 apple-transition appearance-none"
                         value={newEntry.category}
                         onChange={(e) =>
                           setNewEntry({
@@ -2295,7 +2295,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <input
                         type="date"
                         required
-                        className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-semibold outline-none"
+                        className="w-full bg-page p-4 rounded-2xl font-semibold outline-none"
                         value={newEntry.date}
                         onChange={(e) =>
                           setNewEntry({ ...newEntry, date: e.target.value })

@@ -219,7 +219,7 @@ export const MobileWBSView: React.FC<MobileWBSViewProps> = ({
             <span className="text-xs font-black uppercase tracking-widest text-primary truncate">
               {phaseGroup.name}
             </span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F7E4DB] text-primary shrink-0">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-warning/12 text-primary shrink-0">
               {phaseGroup.children.length}{" "}
               {phaseGroup.children.length === 1 ? "location" : "locations"}
             </span>
@@ -258,7 +258,7 @@ export const MobileWBSView: React.FC<MobileWBSViewProps> = ({
         <div className="absolute bottom-6 right-6 z-20">
           <button
             onClick={openAddSheet}
-            className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-[#B85F3B] active:scale-95 transition-all cursor-pointer"
+            className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-primary-deep active:scale-95 transition-all cursor-pointer"
           >
             <Plus className="w-6 h-6" />
           </button>
@@ -455,7 +455,7 @@ const MobileTaskSheet: React.FC<MobileTaskSheetProps> = ({
             </span>
           </div>
 
-          <div className="bg-[#F7E4DB]/50 rounded-2xl p-4 border border-[#F7E4DB] flex items-center justify-between">
+          <div className="bg-warning/12/50 rounded-2xl p-4 border border-warning/25 flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-xs font-bold text-ink-muted uppercase tracking-widest">
                 Progress
@@ -476,7 +476,7 @@ const MobileTaskSheet: React.FC<MobileTaskSheetProps> = ({
                   onClose();
                   onOpenDailyLog(task.id);
                 }}
-                className="bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#B85F3B] transition"
+                className="bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary-deep transition"
               >
                 Log Work
               </button>
@@ -535,7 +535,7 @@ const MobileTaskSheet: React.FC<MobileTaskSheetProps> = ({
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full bg-primary text-white py-4 rounded-xl font-bold text-sm hover:bg-[#B85F3B] transition disabled:opacity-50"
+              className="w-full bg-primary text-white py-4 rounded-xl font-bold text-sm hover:bg-primary-deep transition disabled:opacity-50"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>

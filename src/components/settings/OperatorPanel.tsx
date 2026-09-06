@@ -185,7 +185,7 @@ export const OperatorPanel: React.FC = () => {
           <input value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} placeholder="Owner email (optional)"
             className="flex-1 bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
           <button onClick={provision} disabled={pBusy || !companyName.trim()}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {pBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Provision"}
           </button>
         </div>
@@ -246,7 +246,7 @@ export const OperatorPanel: React.FC = () => {
               className="w-24 bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm" title="Months" />
           )}
           <button onClick={setSub} disabled={sBusy || !orgId.trim()}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {sBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
           </button>
         </div>
@@ -282,7 +282,7 @@ export const OperatorPanel: React.FC = () => {
             ))}
           </select>
           <button onClick={() => applyPlan()} disabled={planBusy || !orgId.trim()}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {planBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Set plan"}
           </button>
         </div>
@@ -319,7 +319,7 @@ export const OperatorPanel: React.FC = () => {
                 {usage.projectCount}{usage.includedProjects === null ? "" : ` / ${usage.includedProjects}`}
               </p>
             </div>
-            <div className={`rounded-xl p-3 border ${usage.overageProjects > 0 ? "bg-[#B85F3B]/10 border-[#B85F3B]/30" : "bg-panel border-divider"}`}>
+            <div className={`rounded-xl p-3 border ${usage.overageProjects > 0 ? "bg-primary-deep/10 border-primary-deep/30" : "bg-panel border-divider"}`}>
               <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Overage</p>
               <p className="font-bold text-ink">{usage.overageProjects} · ₹{usage.overageCost}/mo</p>
             </div>
@@ -343,7 +343,7 @@ export const OperatorPanel: React.FC = () => {
           Paste your Razorpay keys so customers can pay and get their plan activated automatically. {rzpStatus && (
             rzpStatus.configured
               ? <span className="text-success font-semibold">Currently ON — {rzpStatus.mode.toUpperCase()} mode ({rzpStatus.keyId}){rzpStatus.hasWebhookSecret ? "" : " · webhook secret not set"}.</span>
-              : <span className="text-[#B85F3B] font-semibold">Currently OFF — checkout is disabled.</span>
+              : <span className="text-warning font-semibold">Currently OFF — checkout is disabled.</span>
           )}
         </p>
         {rzpErr && (
@@ -362,7 +362,7 @@ export const OperatorPanel: React.FC = () => {
           <input value={rzpWebhook} onChange={(e) => setRzpWebhook(e.target.value)} type="password" placeholder="Webhook secret (optional but recommended)"
             className="w-full bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20" />
           <button onClick={saveRzp} disabled={rzpBusy || !rzpKeyId.trim() || !rzpSecret.trim()}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {rzpBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
           </button>
           <p className="text-[10px] text-ink-muted leading-relaxed">
@@ -384,7 +384,7 @@ export const OperatorPanel: React.FC = () => {
           org or invite a teammate. {emailStatus && (
             emailStatus.configured
               ? <span className="text-success font-semibold">Currently ON — sending from {emailStatus.fromEmail}.</span>
-              : <span className="text-[#B85F3B] font-semibold">Currently OFF — links are copy-only.</span>
+              : <span className="text-warning font-semibold">Currently OFF — links are copy-only.</span>
           )}
         </p>
         {emErr && (
@@ -404,7 +404,7 @@ export const OperatorPanel: React.FC = () => {
             <input value={fromName} onChange={(e) => setFromName(e.target.value)} placeholder="from name"
               className="sm:w-48 bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
             <button onClick={saveEmail} disabled={emBusy || !apiKey.trim() || !fromEmail.trim()}
-              className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+              className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
               {emBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
             </button>
           </div>

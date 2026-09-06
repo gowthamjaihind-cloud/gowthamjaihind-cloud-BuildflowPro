@@ -481,7 +481,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
             </button>
             <button
               onClick={handleExportLabourPDF}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm cursor-pointer"
             >
               <Download className="w-4 h-4" />
               {t("common.exportPdf")}
@@ -504,7 +504,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               id="export-current-pdf-btn"
               onClick={() => handleExportPDF(advancedFilteredRecords)}
               disabled={advancedFilteredRecords.length === 0}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <Download className="w-4 h-4" />
               {t("common.exportPdf")}
@@ -549,7 +549,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               onClick={() => setSelectedTab("labor")}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
                 activeTab === "labor"
-                  ? "bg-[#324755] border-[#324755] text-white shadow-md shadow-[#324755]/10"
+                  ? "bg-surface-dark border-surface-dark text-white shadow-md shadow-surface-dark/10"
                   : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
               }`}
             >
@@ -568,32 +568,32 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               <div className="bg-panel p-4 rounded-2xl border border-divider grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3" id="labor-filters">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Task</label>
-                  <select value={laborTask} onChange={(e) => setLaborTask(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#324755] outline-none">
+                  <select value={laborTask} onChange={(e) => setLaborTask(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-surface-dark outline-none">
                     <option value="">All Tasks</option>
                     {distinctLaborTasks.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Role / Trade</label>
-                  <select value={laborRole} onChange={(e) => setLaborRole(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#324755] outline-none">
+                  <select value={laborRole} onChange={(e) => setLaborRole(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-surface-dark outline-none">
                     <option value="">All Roles</option>
                     {distinctLaborRoles.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Vendor</label>
-                  <select value={laborVendor} onChange={(e) => setLaborVendor(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#324755] outline-none">
+                  <select value={laborVendor} onChange={(e) => setLaborVendor(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-surface-dark outline-none">
                     <option value="">All Vendors</option>
                     {distinctLaborVendors.map((v) => <option key={v} value={v}>{v}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">From</label>
-                  <input type="date" value={laborStartDate} onChange={(e) => setLaborStartDate(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#324755] outline-none" />
+                  <input type="date" value={laborStartDate} onChange={(e) => setLaborStartDate(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-surface-dark outline-none" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">To</label>
-                  <input type="date" value={laborEndDate} onChange={(e) => setLaborEndDate(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#324755] outline-none" />
+                  <input type="date" value={laborEndDate} onChange={(e) => setLaborEndDate(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-surface-dark outline-none" />
                 </div>
               </div>
 
@@ -610,7 +610,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Total Manpower</p>
                     <p className="text-2xl font-black text-ink font-mono">{laborTotals.headcount.toLocaleString("en-IN")} <span className="text-xs font-normal text-ink-muted">head-shifts</span></p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#324755]/10 text-[#324755] flex items-center justify-center border border-[#324755]/20"><Users className="w-5 h-5" /></div>
+                  <div className="w-10 h-10 rounded-xl bg-surface-dark/10 text-surface-dark flex items-center justify-center border border-surface-dark/20"><Users className="w-5 h-5" /></div>
                 </div>
                 <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
                   <div>
@@ -631,7 +631,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               {/* PER-TASK ROLLUP */}
               <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-divider flex items-center gap-2">
-                  <HardHat className="w-4 h-4 text-[#324755]" />
+                  <HardHat className="w-4 h-4 text-surface-dark" />
                   <h3 className="text-xs font-black uppercase tracking-wider text-ink">Labor Consumption per Task</h3>
                 </div>
                 <div className="overflow-x-auto scrollbar-hide">
@@ -738,7 +738,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       <span className="text-xs font-normal text-ink-muted">{advancedInsights.unit}</span>
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-[#C0653F] flex items-center justify-center border border-primary/20">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
                     <Activity className="w-5 h-5" />
                   </div>
                 </div>

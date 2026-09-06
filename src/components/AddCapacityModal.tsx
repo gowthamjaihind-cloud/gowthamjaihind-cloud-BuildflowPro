@@ -127,7 +127,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
                 type="button"
                 onClick={handleBuySlots}
                 disabled={busy}
-                className="flex-1 min-w-[160px] py-3 rounded-xl font-bold text-sm bg-primary text-white hover:bg-[#B85F3B] apple-transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 min-w-[160px] py-3 rounded-xl font-bold text-sm bg-primary text-white hover:bg-primary-deep apple-transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : L(`Pay ₹${(slots * rate).toLocaleString("en-IN")} / mo`, `₹${(slots * rate).toLocaleString("en-IN")} / மாதம் செலுத்து`)}
               </button>

@@ -484,11 +484,11 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             )}
 
             {taskId && currentTask && (
-              <div className="bg-[#F7E4DB] p-4 rounded-xl border border-[#F7E4DB]">
+              <div className="bg-warning/12 p-4 rounded-xl border border-warning/25">
                 <span className="text-[10px] font-black uppercase tracking-widest text-rust-strong block mb-1">
                   {t("dlog.loggingForTask")}
                 </span>
-                <span className="text-sm font-bold text-[#B85F3B] block">
+                <span className="text-sm font-bold text-warning block">
                   {currentTask.name}
                 </span>
               </div>
@@ -725,7 +725,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
               {equipment.length > 0 && (
                 <div className="flex justify-between items-center px-1">
                   {equipment.some((e) => e.equipmentId && !(e.cost && e.cost > 0)) ? (
-                    <span className="text-[10px] font-bold text-[#C0653F]">
+                    <span className="text-[10px] font-bold text-primary">
                       {t("dlog.setRateHint")}
                     </span>
                   ) : (
@@ -800,7 +800,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       type="button"
                       onClick={saveNewEquipment}
                       disabled={!newEquipmentName.trim() || savingEquipment}
-                      className="px-3 py-2 text-xs font-bold text-white bg-primary hover:bg-[#B85F3B] rounded-lg disabled:opacity-50 flex items-center gap-1.5"
+                      className="px-3 py-2 text-xs font-bold text-white bg-primary hover:bg-primary-deep rounded-lg disabled:opacity-50 flex items-center gap-1.5"
                     >
                       {savingEquipment ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -908,7 +908,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             form="daily-log-form"
             type="submit"
             disabled={saveMutation.isPending || !selectedTaskId}
-            className="w-full bg-primary text-white rounded-2xl py-4 text-sm font-bold shadow-lg hover:bg-[#B85F3B] active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-50"
+            className="w-full bg-primary text-white rounded-2xl py-4 text-sm font-bold shadow-lg hover:bg-primary-deep active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-50"
           >
             {saveMutation.isPending ? (
               t("dlog.saving")

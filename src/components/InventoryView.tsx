@@ -761,7 +761,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
           </button>
           <button
             onClick={handleExportPDF}
-            className="flex items-center gap-1.5 px-3 py-2 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest transition shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-deep text-white rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest transition shadow-sm cursor-pointer"
           >
             <Download className="w-3 h-3" />
             <span>PDF</span>
@@ -798,7 +798,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             </button>
             <button
               onClick={() => setIsAdding(true)}
-              className="bg-primary text-white w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#B85F3B] apple-transition shadow-lg shadow-primary/20"
+              className="bg-primary text-white w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary-deep apple-transition shadow-lg shadow-primary/20"
             >
               <Plus className="w-3 h-3" /> <span>Add Item</span>
             </button>
@@ -1027,7 +1027,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             </div>
           ) : viewMode === "reconciliation" ? (
             <div>
-              <div className="mx-3 md:mx-6 mt-4 mb-2 p-3 bg-[#F7E4DB] border border-[#F7E4DB] rounded-lg text-xs text-[#B85F3B]">
+              <div className="mx-3 md:mx-6 mt-4 mb-2 p-3 bg-warning/12 border border-warning/25 rounded-lg text-xs text-warning">
                 <span className="font-bold">Note:</span> Reconciliation
                 adjustments may be superseded by the next recorded Goods
                 Receipt, since GRN-derived totals recompute from receipt
@@ -1633,7 +1633,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               materialId: false,
                             }))
                           }
-                          className="text-[10px] md:text-[10px] font-bold text-primary hover:text-[#B85F3B]"
+                          className="text-[10px] md:text-[10px] font-bold text-primary hover:text-primary-deep"
                         >
                           Back to List
                         </button>
@@ -1717,7 +1717,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               groupCode: false,
                             }))
                           }
-                          className="text-[10px] md:text-[10px] font-bold text-primary hover:text-[#B85F3B]"
+                          className="text-[10px] md:text-[10px] font-bold text-primary hover:text-primary-deep"
                         >
                           Back to List
                         </button>
@@ -1804,7 +1804,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               unit: false,
                             }))
                           }
-                          className="text-[10px] md:text-[10px] font-bold text-primary hover:text-[#B85F3B]"
+                          className="text-[10px] md:text-[10px] font-bold text-primary hover:text-primary-deep"
                         >
                           Back to List
                         </button>
@@ -1940,7 +1940,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                 <div className="flex gap-4 pt-2">
                   <button
                     type="submit"
-                    className="flex-1 bg-primary text-white py-3 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-[#B85F3B] transition-all shadow-sm"
+                    className="flex-1 bg-primary text-white py-3 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-primary-deep transition-all shadow-sm"
                   >
                     {editingItem ? "Save Changes" : "Add Item"}
                   </button>
