@@ -194,8 +194,13 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-surface-dark text-white">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      <div
+        className="h-screen flex flex-col items-center justify-center gap-4 bg-surface-dark text-white"
+        role="status"
+        aria-busy="true"
+      >
+        <Loader2 className="w-12 h-12 animate-spin text-primary" aria-hidden="true" />
+        <span className="sr-only">Loading Sitetru…</span>
       </div>
     );
   }

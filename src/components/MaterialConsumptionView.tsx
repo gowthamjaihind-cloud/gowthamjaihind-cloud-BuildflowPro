@@ -26,6 +26,7 @@ import {
 } from "@phosphor-icons/react";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
+import { SkeletonCards, SkeletonRows } from "./Skeleton";
 
 interface MaterialConsumptionViewProps {
   projectId: string;
@@ -452,9 +453,9 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col justify-center items-center p-24 text-ink-muted gap-3" id="loading-container">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-xs font-bold uppercase tracking-widest animate-pulse">Syncing consumption databases...</p>
+      <div className="flex flex-col gap-4" id="loading-container">
+        <SkeletonCards label="Loading consumption records…" />
+        <SkeletonRows rows={6} announce={false} />
       </div>
     );
   }

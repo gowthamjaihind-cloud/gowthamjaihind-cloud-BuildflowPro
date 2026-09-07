@@ -46,6 +46,7 @@ import html2canvas from "html2canvas-pro";
 import { toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
+import { SkeletonRows } from "./Skeleton";
 
 interface ProgressReportsViewProps {
   projectId: string;
@@ -338,11 +339,8 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-20 text-ink-muted flex-col gap-4">
-        <Loader2 className="w-8 h-8 animate-spin" />
-        <p className="font-bold text-sm tracking-widest uppercase">
-          {t("reports.aggregating")}
-        </p>
+      <div className="p-4 md:p-6">
+        <SkeletonRows rows={5} label={t("reports.aggregating")} />
       </div>
     );
   }

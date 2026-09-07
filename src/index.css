@@ -329,9 +329,41 @@
 }
 .site-mode .cta-shine::after { display: none; }
 
+/* Loading placeholder. A tinted block plus one sweep of light; the sweep is
+   the only moving part, so switching it off under reduced-motion leaves a
+   perfectly readable static placeholder rather than nothing. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--divider);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  animation: skeletonSweep 1.5s ease-in-out infinite;
+}
+.dark .skeleton::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
+/* On a navy band the divider tint is invisible; lift the block instead. */
+.skeleton-on-dark {
+  background: rgba(255, 255, 255, 0.10);
+}
+.skeleton-on-dark::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+}
+@keyframes skeletonSweep {
+  100% { transform: translateX(100%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .float-y { animation: none; }
   .cta-shine::after { display: none; }
+  .skeleton::after { display: none; }
+  .animate-pulse { animation: none; }
 }
 
 @layer components {

@@ -121,7 +121,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
         <Badge success />
         <h2 className="text-2xl font-bold text-ink mb-2">{t("onb.youreIn")}</h2>
         <p className="text-ink-muted mb-6">{t("onb.joinedLoading")} <b>{joined}</b>{t("onb.joinedLoadingPost")}</p>
-        <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
+        <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" aria-hidden="true" />
       </Card>
     );
   }

@@ -191,6 +191,7 @@ hold a filled cobalt CTA, and that button has to stay cobalt.
 | **Input** | White, hairline border, `rounded-xl`, cobalt focus ring |
 | **Select** | Still a native `<select>`, restyled in `@layer base`: hairline border, `rounded-xl`, own caret. Native on purpose — the OS picker beats anything hand-built on a phone |
 | **Screen header band** | `PageHero`. Flat `--surface-dark`, a 3px cobalt rule along the top edge, `--surface-edge` hairline, no shadow. Title 32px, band ~110px. Carries `on-dark`. One dark tone per screen — it matches the at-risk KPI card rather than introducing a second |
+| **Loading** | A spinner where the user pressed a control and there is no layout to hold — 37 of them live inside submit buttons, which is correct. `<SkeletonScreen/Rows/Cards/Text>` where the shape of what is coming *is* known. A spinner for a genuinely shapeless wait (OCR, an AI answer), and then it must carry text |
 | **Empty state** | `<EmptyState>`. Icon tile, bold title, one muted sentence, optional action. Three sizes — `inline` (in a card section, no tile), `panel` (default), `page`. Inside a `<tbody>` pass `colSpan` and it renders `<tr><td colSpan>` |
 | **Tooltip** | `<Tooltip label="…">` wrapping the control. Navy bubble, white-alpha edge, portalled to `<body>` so an `overflow-hidden` card cannot clip it; flips side near an edge. Shows on hover, on focus and **on tap**; `Escape` and any scroll dismiss. It sets `aria-label` on its child, so it replaces `title` rather than sitting beside it |
 | **Toast** | Card shape, `shadow-lg`, tinted icon chip. Top of the screen; the foot carries the demo banner. Errors 8s and `role="alert"`, others 4–5s and `role="status"` |
@@ -281,6 +282,18 @@ Borders do the quiet separating; shadow is only for things that genuinely float.
 - Don't use `K` for thousands, or Western digit grouping.
 - Don't put a negative number in the success colour. `₹-54.0L` in green reads
   as broken even when the sign convention is right.
+- Don't swap a spinner in for a skeleton, or the reverse. A spinner answers
+  "is my click doing something"; a skeleton answers "what is about to appear".
+  Ten lazily-loaded views shared one `py-32` spinner box, so every navigation
+  showed an empty page and then jumped when the chunk landed.
+- Don't animate a placeholder without a reduced-motion escape. `.skeleton` is
+  a tinted block plus one sweep of light, and only the sweep is animated, so
+  turning it off leaves a readable placeholder. `animate-pulse` was not
+  covered by the reduced-motion block at all until now.
+- Don't leave a loading state silent. The blocks are `aria-hidden`; exactly
+  one wrapper carries `role="status"` and real text, so a screen reader hears
+  "Loading…" once rather than three times from nested regions. Two full-screen
+  spinners had no text at all.
 - Don't tell a user with no data to adjust their filters. "Nothing yet" and
   "nothing matches" are different states and four screens conflated them: the
   guard was on the *filtered* list, so a brand-new project met "try adjusting

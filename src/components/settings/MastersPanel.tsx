@@ -26,6 +26,7 @@ import { round2, money } from "../../utils/num";
 import { confirmDialog, toast } from "../../lib/feedback";
 import { Tooltip } from "../Tooltip";
 import { EmptyState } from "../EmptyState";
+import { SkeletonRows } from "../Skeleton";
 
 // Organisation master data. These records are shared by every project, so they
 // belong with the organisation's settings rather than inside one project.
@@ -252,9 +253,7 @@ export const MastersPanel: React.FC = () => {
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-ink-muted">
-          <CircleNotch className="w-6 h-6 animate-spin mx-auto" />
-        </div>
+        <SkeletonRows rows={4} label={L("Loading…", "ஏற்றுகிறது…")} />
       ) : tab === "vendors" ? (
         <div className="space-y-3">
           {!showForm && (

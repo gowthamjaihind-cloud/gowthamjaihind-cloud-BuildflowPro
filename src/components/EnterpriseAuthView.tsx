@@ -226,8 +226,9 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      <div className="h-screen flex items-center justify-center" role="status" aria-busy="true">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" aria-hidden="true" />
+        <span className="sr-only">{L("Loading…", "ஏற்றுகிறது…")}</span>
       </div>
     );
   }
