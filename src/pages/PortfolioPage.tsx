@@ -22,6 +22,7 @@ import { SyncStatus } from "../components/SyncStatus";
 import { TelegramBotStatus } from "../components/TelegramBotStatus";
 import { OrgSwitcher } from "../components/OrgSwitcher";
 import { useTranslation } from "../i18n";
+import { Tooltip } from "../components/Tooltip";
 
 const statusPillClasses = (status?: string) => {
   switch (status) {
@@ -194,20 +195,24 @@ export const PortfolioPage: React.FC = () => {
                 <OrgSwitcher />
                 <SyncStatus />
                 <TelegramBotStatus />
-                <button
-                  onClick={() => setViewingSettings(true)}
-                  className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white/90 transition-colors active:scale-95 shrink-0"
-                  title={t("portfolio.globalSettings")}
-                >
-                  <GearSix weight="duotone" className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => logout()}
-                  className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-danger/25 text-white/90 hover:text-danger transition-colors active:scale-95 shrink-0"
-                  title={t("portfolio.signOut")}
-                >
-                  <SignOut weight="duotone" className="w-5 h-5" />
-                </button>
+                <Tooltip label={t("portfolio.globalSettings")}>
+                  <button
+                    onClick={() => setViewingSettings(true)}
+                    className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white/90 transition-colors active:scale-95 shrink-0"
+                   
+                  >
+                    <GearSix weight="duotone" className="w-5 h-5" />
+                  </button>
+                </Tooltip>
+                <Tooltip label={t("portfolio.signOut")}>
+                  <button
+                    onClick={() => logout()}
+                    className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-danger/25 text-white/90 hover:text-danger transition-colors active:scale-95 shrink-0"
+                   
+                  >
+                    <SignOut weight="duotone" className="w-5 h-5" />
+                  </button>
+                </Tooltip>
               </div>
             </div>
 
@@ -327,19 +332,21 @@ export const PortfolioPage: React.FC = () => {
                     className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-surface-dark/55 via-surface-dark/10 to-transparent" />
-                  <label
-                    className="absolute inset-0 bg-surface-dark/45 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white"
-                    onClick={(e) => e.stopPropagation()}
-                    title={t("cpm.uploadCover")}
-                  >
-                    <ImageIcon weight="duotone" className="w-6 h-6" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleUpdateImage(e, project.id)}
-                    />
-                  </label>
+                  <Tooltip label={t("cpm.uploadCover")}>
+                    <label
+                      className="absolute inset-0 bg-surface-dark/45 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white"
+                      onClick={(e) => e.stopPropagation()}
+                     
+                    >
+                      <ImageIcon weight="duotone" className="w-6 h-6" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleUpdateImage(e, project.id)}
+                      />
+                    </label>
+                  </Tooltip>
                   <span
                     className={`absolute top-3 right-3 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest ${statusPillClasses(
                       project.status,
@@ -358,19 +365,21 @@ export const PortfolioPage: React.FC = () => {
                   {!project.imageUrl && (
                     <div className={`relative bg-surface-dark text-white rounded-[16px] group-hover:bg-primary apple-transition shadow-lg shadow-surface-dark/20 flex items-center justify-center overflow-hidden shrink-0 ${dense ? "w-11 h-11" : "w-12 h-12 sm:w-14 sm:h-14"}`}>
                       <ImageIcon weight="duotone" className="w-6 h-6" />
-                      <label
-                        className="absolute inset-0 bg-surface-dark/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white"
-                        onClick={(e) => e.stopPropagation()}
-                        title={t("cpm.uploadCover")}
-                      >
-                        <ImageIcon weight="duotone" className="w-5 h-5" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handleUpdateImage(e, project.id)}
-                        />
-                      </label>
+                      <Tooltip label={t("cpm.uploadCover")}>
+                        <label
+                          className="absolute inset-0 bg-surface-dark/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white"
+                          onClick={(e) => e.stopPropagation()}
+                         
+                        >
+                          <ImageIcon weight="duotone" className="w-5 h-5" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleUpdateImage(e, project.id)}
+                          />
+                        </label>
+                      </Tooltip>
                     </div>
                   )}
 
@@ -387,21 +396,25 @@ export const PortfolioPage: React.FC = () => {
                       </span>
                     )}
                     {(user?.role === "Admin" || user?.role === "Owner") && (
-                      <button
-                        onClick={(e) => handleEditProjectClick(e, project)}
-                        className="flex items-center justify-center w-9 h-9 rounded-xl text-ink-muted hover:text-primary hover:bg-page apple-transition"
-                        title={t("portfolio.editProject")}
-                      >
-                        <PencilSimple weight="duotone" className="w-4 h-4" />
-                      </button>
+                      <Tooltip label={t("portfolio.editProject")}>
+                        <button
+                          onClick={(e) => handleEditProjectClick(e, project)}
+                          className="flex items-center justify-center w-9 h-9 rounded-xl text-ink-muted hover:text-primary hover:bg-page apple-transition"
+                         
+                        >
+                          <PencilSimple weight="duotone" className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
                     )}
-                    <button
-                      onClick={(e) => handleDeleteProjectClick(e, project.id)}
-                      className="flex items-center justify-center w-9 h-9 rounded-xl text-ink-muted hover:text-danger hover:bg-danger/8 apple-transition"
-                      title={t("portfolio.deleteProject")}
-                    >
-                      <Trash weight="duotone" className="w-4 h-4" />
-                    </button>
+                    <Tooltip label={t("portfolio.deleteProject")}>
+                      <button
+                        onClick={(e) => handleDeleteProjectClick(e, project.id)}
+                        className="flex items-center justify-center w-9 h-9 rounded-xl text-ink-muted hover:text-danger hover:bg-danger/8 apple-transition"
+                       
+                      >
+                        <Trash weight="duotone" className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
 

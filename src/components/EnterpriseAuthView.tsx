@@ -33,6 +33,7 @@ import { motion } from "motion/react";
 import { handleFirestoreError, OperationType } from "../firebase";
 import { useL } from "../i18n";
 import { toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
 
 interface EnterpriseAuthViewProps {
   onBack: () => void;
@@ -274,28 +275,32 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                           <span className="text-success bg-success/10 px-2.5 py-1 rounded-md border border-success/20 flex items-center gap-1 font-bold text-xs">
                             <CheckCircle2 className="w-3.5 h-3.5" /> {L("Telegram Linked","டெலிகிராம் இணைக்கப்பட்டது")}
                           </span>
-                          <button
-                            onClick={() => unlinkBot(u.uid)}
-                            disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
-                            className="text-xs font-semibold text-danger hover:text-danger bg-danger/8 hover:bg-danger/15 px-2 py-1 rounded-md transition-colors disabled:opacity-50"
-                            title={L("Unlink Telegram Bot","டெலிகிராம் போட்டை இணைப்பு நீக்கு")}
-                          >
-                            {L("Unlink","இணைப்பு நீக்கு")}
-                          </button>
+                          <Tooltip label={L("Unlink Telegram Bot","டெலிகிராம் போட்டை இணைப்பு நீக்கு")}>
+                            <button
+                              onClick={() => unlinkBot(u.uid)}
+                              disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
+                              className="text-xs font-semibold text-danger hover:text-danger bg-danger/8 hover:bg-danger/15 px-2 py-1 rounded-md transition-colors disabled:opacity-50"
+                             
+                            >
+                              {L("Unlink","இணைப்பு நீக்கு")}
+                            </button>
+                          </Tooltip>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <span className="text-ink-muted bg-panel px-2.5 py-1 rounded-md border border-divider text-xs font-bold">
                             {L("Telegram Not Linked","டெலிகிராம் இணைக்கப்படவில்லை")}
                           </span>
-                          <button
-                            onClick={() => generateLinkCode(u.uid, u.email)}
-                            disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
-                            className="text-xs font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
-                            title={L("Generate Telegram Link Code","டெலிகிராம் இணைப்புக் குறியீட்டை உருவாக்கு")}
-                          >
-                            <Send className="w-3.5 h-3.5" /> {L("Link Bot","போட்டை இணை")}
-                          </button>
+                          <Tooltip label={L("Generate Telegram Link Code","டெலிகிராம் இணைப்புக் குறியீட்டை உருவாக்கு")}>
+                            <button
+                              onClick={() => generateLinkCode(u.uid, u.email)}
+                              disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
+                              className="text-xs font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                             
+                            >
+                              <Send className="w-3.5 h-3.5" /> {L("Link Bot","போட்டை இணை")}
+                            </button>
+                          </Tooltip>
                         </div>
                       )}
                     </div>
@@ -413,41 +418,46 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                   <td className="px-8 py-6 text-right">
                     {editingUserId === u.uid ? (
                       <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleUpdateRole(u.uid)}
-                          className="p-2 bg-success text-white rounded-xl hover:bg-success transition-colors"
-                          title={L("Save Role","பங்கைச் சேமி")}
-                        >
-                          <Save className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setEditingUserId(null)}
-                          className="p-2 bg-divider text-ink rounded-xl hover:bg-ink-muted/25 transition-colors"
-                          title={L("Cancel","ரத்து")}
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        <Tooltip label={L("Save Role","பங்கைச் சேமி")}>
+                          <button
+                            onClick={() => handleUpdateRole(u.uid)}
+                            className="p-2 bg-success text-white rounded-xl hover:bg-success transition-colors"
+                           
+                          >
+                            <Save className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
+                        <Tooltip label={L("Cancel","ரத்து")}>
+                          <button
+                            onClick={() => setEditingUserId(null)}
+                            className="p-2 bg-divider text-ink rounded-xl hover:bg-ink-muted/25 transition-colors"
+                           
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => {
-                          setEditingUserId(u.uid);
-                          setEditingRole(u.role);
-                          const accessMap: Record<
-                            string,
-                            "read" | "write" | "none"
-                          > = {};
-                          projects.forEach((p) => {
-                            accessMap[p.id] = u.projectAccess?.[p.id] || "none";
-                          });
-                          setEditingProjectAccess(accessMap);
-                                                  }}
-                        disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
-                        className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                        title={L("Edit Role","பங்கைத் திருத்து")}
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
+                      <Tooltip label={L("Edit Role","பங்கைத் திருத்து")}>
+                        <button
+                          onClick={() => {
+                            setEditingUserId(u.uid);
+                            setEditingRole(u.role);
+                            const accessMap: Record<
+                              string,
+                              "read" | "write" | "none"
+                            > = {};
+                            projects.forEach((p) => {
+                              accessMap[p.id] = u.projectAccess?.[p.id] || "none";
+                            });
+                            setEditingProjectAccess(accessMap);
+                                                    }}
+                          disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
+                          className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                      </Tooltip>
                     )}
                   </td>
                 </tr>

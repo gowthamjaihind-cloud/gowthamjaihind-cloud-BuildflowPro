@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
 import { confirmDialog, toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
 
 interface PaymentsViewProps {
   projectId: string;
@@ -429,15 +430,17 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     </td>
                     <td className="p-4">
                       {entry.type === "CLIENT" && isAdminOrOwner && (
-                        <button
-                          onClick={() =>
-                            handleDelete(entry.originalId, entry.type)
-                          }
-                          className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded transition-colors"
-                          title="Delete record"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        <Tooltip label="Delete record">
+                          <button
+                            onClick={() =>
+                              handleDelete(entry.originalId, entry.type)
+                            }
+                            className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded transition-colors"
+                           
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
                       )}
                     </td>
                   </tr>

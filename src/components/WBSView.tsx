@@ -84,6 +84,7 @@ import { DailyLogHistory } from "./DailyLogHistory";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
 import { confirmDialog, toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
 
 interface WBSViewProps {
   projectId: string;
@@ -791,58 +792,64 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
             <div className="flex flex-col min-w-0 flex-1 ml-0.5 md:ml-1">
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span
-                    title={task.name}
-                    className={`leading-tight tracking-tight text-[10px] md:text-sm font-bold truncate ${task.type === "Summary" ? "text-ink border-b-2 border-slate-900/10" : "text-ink/80"} transition-colors`}
-                  >
-                    {task.name || "Unit Missing"}
-                  </span>
-                  {task.status && (
-                    <div
-                      title={task.status}
-                      className={`${
-                        task.status === "Completed"
-                          ? "text-success"
-                          : task.status === "In Progress"
-                            ? "text-primary"
-                            : task.status === "Delayed"
-                              ? "text-danger"
-                              : task.status === "On Hold"
-                                ? "text-ink-muted"
-                                : "text-ink-muted"
-                      }`}
+                  <Tooltip label={task.name}>
+                    <span
+                     
+                      className={`leading-tight tracking-tight text-[10px] md:text-sm font-bold truncate ${task.type === "Summary" ? "text-ink border-b-2 border-slate-900/10" : "text-ink/80"} transition-colors`}
                     >
-                      {task.status === "Completed" && (
-                        <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      )}
-                      {task.status === "In Progress" && (
-                        <Activity className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      )}
-                      {task.status === "Delayed" && (
-                        <AlertCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      )}
-                      {task.status === "On Hold" && (
-                        <PauseCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      )}
-                      {(task.status === "Pending" ||
-                        ![
-                          "Completed",
-                          "In Progress",
-                          "Delayed",
-                          "On Hold",
-                        ].includes(task.status)) && (
-                        <Circle className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      )}
-                    </div>
+                      {task.name || "Unit Missing"}
+                    </span>
+                  </Tooltip>
+                  {task.status && (
+                    <Tooltip label={task.status}>
+                      <div
+                       
+                        className={`${
+                          task.status === "Completed"
+                            ? "text-success"
+                            : task.status === "In Progress"
+                              ? "text-primary"
+                              : task.status === "Delayed"
+                                ? "text-danger"
+                                : task.status === "On Hold"
+                                  ? "text-ink-muted"
+                                  : "text-ink-muted"
+                        }`}
+                      >
+                        {task.status === "Completed" && (
+                          <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        )}
+                        {task.status === "In Progress" && (
+                          <Activity className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        )}
+                        {task.status === "Delayed" && (
+                          <AlertCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        )}
+                        {task.status === "On Hold" && (
+                          <PauseCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        )}
+                        {(task.status === "Pending" ||
+                          ![
+                            "Completed",
+                            "In Progress",
+                            "Delayed",
+                            "On Hold",
+                          ].includes(task.status)) && (
+                          <Circle className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        )}
+                      </div>
+                    </Tooltip>
                   )}
 
                   {task.isCritical && (
-                    <div
-                      title="Critical Path Indicator"
-                      className="text-danger flex items-center"
-                    >
-                      <Flame className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                    </div>
+                    <Tooltip label="Critical Path Indicator">
+                      <div
+                       
+                        className="text-danger flex items-center"
+                      >
+                        <Flame className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                      </div>
+                    </Tooltip>
                   )}
                 </div>
               </div>
@@ -1158,21 +1165,25 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                     Auto-Shift
                   </label>
                 </div>
-                <button
-                  onClick={handleRecalculate}
-                  className="p-2 text-ink-muted hover:text-primary hover:bg-surface hover:shadow-sm rounded-xl transition-all"
-                  title="Recalculate all dates"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={handleSaveAsTemplate}
-                  disabled={savingTemplate}
-                  className="p-2 text-ink-muted hover:text-primary hover:bg-surface hover:shadow-sm rounded-xl transition-all disabled:opacity-40"
-                  title="Save this breakdown as a reusable template"
-                >
-                  <BookmarkSimple className="w-4 h-4" />
-                </button>
+                <Tooltip label="Recalculate all dates">
+                  <button
+                    onClick={handleRecalculate}
+                    className="p-2 text-ink-muted hover:text-primary hover:bg-surface hover:shadow-sm rounded-xl transition-all"
+                   
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                </Tooltip>
+                <Tooltip label="Save this breakdown as a reusable template">
+                  <button
+                    onClick={handleSaveAsTemplate}
+                    disabled={savingTemplate}
+                    className="p-2 text-ink-muted hover:text-primary hover:bg-surface hover:shadow-sm rounded-xl transition-all disabled:opacity-40"
+                   
+                  >
+                    <BookmarkSimple className="w-4 h-4" />
+                  </button>
+                </Tooltip>
               </div>
             </div>
             <RoleGuard
@@ -1180,13 +1191,15 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
               projectId={projectId}
               requireWriteAccess
               fallback={
-                <button
-                  disabled
-                  className="w-full md:w-auto bg-divider text-ink-muted px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 font-bold text-sm cursor-not-allowed cursor-help"
-                  title="You don't have permission to add tasks"
-                >
-                  <Plus className="w-5 h-5" /> <span>{t("wbs.addTask")}</span>
-                </button>
+                <Tooltip label="You don't have permission to add tasks">
+                  <button
+                    disabled
+                    className="w-full md:w-auto bg-divider text-ink-muted px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 font-bold text-sm cursor-not-allowed cursor-help"
+                   
+                  >
+                    <Plus className="w-5 h-5" /> <span>{t("wbs.addTask")}</span>
+                  </button>
+                </Tooltip>
               }
             >
               <button
@@ -1212,7 +1225,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                     }
                   }}
                   className="w-4 h-4 text-primary rounded-lg border-white/20 bg-white/10 focus:ring-primary apple-transition cursor-pointer"
-                  title="Select All"
+                  aria-label="Select All"
                 />
                 WBS
               </div>
@@ -1277,16 +1290,18 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                             </span>
                           </div>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPhaseToDelete(phase);
-                          }}
-                          className="p-2 md:p-3 text-ink-muted hover:text-danger hover:bg-danger/8 rounded-xl apple-transition shrink-0"
-                          title="Delete entire phase"
-                        >
-                          <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
-                        </button>
+                        <Tooltip label="Delete entire phase">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPhaseToDelete(phase);
+                            }}
+                            className="p-2 md:p-3 text-ink-muted hover:text-danger hover:bg-danger/8 rounded-xl apple-transition shrink-0"
+                           
+                          >
+                            <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                          </button>
+                        </Tooltip>
                       </div>
                       {phaseExpanded &&
                         Object.entries(locations).map(

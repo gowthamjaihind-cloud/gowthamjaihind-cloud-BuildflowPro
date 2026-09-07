@@ -21,6 +21,7 @@ import { GoodsReceiptForm } from "./GoodsReceiptForm";
 import { GoodsReceiptDetails } from "./GoodsReceiptDetails";
 import { useL } from "../../i18n";
 import { confirmDialog, toast } from "../../lib/feedback";
+import { Tooltip } from "../Tooltip";
 
 interface PurchaseOrderDetailsProps {
   po: PurchaseOrder;
@@ -131,28 +132,34 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
            </div>
            <div className="flex items-center gap-2">
              {po.status === "Draft" && canEditOrDelete && onEdit && (
-               <button
-                 onClick={() => onEdit(po)}
-                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
-                 title={L("Edit draft PO","வரைவு கொள்முதல் ஆணையைத் திருத்து")}
-               >
-                 <Edit3 className="w-3.5 h-3.5 text-ink/80" /> {L("Edit","திருத்து")}
-               </button>
+               <Tooltip label={L("Edit draft PO","வரைவு கொள்முதல் ஆணையைத் திருத்து")}>
+                 <button
+                   onClick={() => onEdit(po)}
+                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
+                  
+                 >
+                   <Edit3 className="w-3.5 h-3.5 text-ink/80" /> {L("Edit","திருத்து")}
+                 </button>
+               </Tooltip>
              )}
-             <button
-               onClick={handleExportCSV}
-               className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
-               title={L("Export CSV","CSV எக்ஸ்போர்ட்")}
-             >
-               <Download className="w-3.5 h-3.5 text-ink/80" /> CSV
-             </button>
-             <button
-               onClick={handleExportPDF}
-               className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-deep text-white rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
-               title={L("Export PDF","PDF எக்ஸ்போர்ட்")}
-             >
-               <Download className="w-3.5 h-3.5" /> PDF
-             </button>
+             <Tooltip label={L("Export CSV","CSV எக்ஸ்போர்ட்")}>
+               <button
+                 onClick={handleExportCSV}
+                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
+                
+               >
+                 <Download className="w-3.5 h-3.5 text-ink/80" /> CSV
+               </button>
+             </Tooltip>
+             <Tooltip label={L("Export PDF","PDF எக்ஸ்போர்ட்")}>
+               <button
+                 onClick={handleExportPDF}
+                 className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-deep text-white rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
+                
+               >
+                 <Download className="w-3.5 h-3.5" /> PDF
+               </button>
+             </Tooltip>
              <button type="button" onClick={onClose} className="p-2 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer ml-1">
                <X className="w-5 h-5" />
              </button>

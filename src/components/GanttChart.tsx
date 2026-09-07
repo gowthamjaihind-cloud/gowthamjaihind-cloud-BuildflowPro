@@ -26,6 +26,7 @@ import {
   Funnel as Filter,
   Rows,
 } from "@phosphor-icons/react";
+import { Tooltip } from "./Tooltip";
 
 type GroupBy = "hierarchy" | "phase" | "location" | "status" | "tag";
 
@@ -793,20 +794,22 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       }}
                     >
                       {/* Linking Start Handle (Left Circle) */}
-                      <div
-                        className="absolute -left-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
-                        title={L("Link to this task","இந்த பணிக்கு இணை")}
-                        onMouseUp={(e) => {
-                          if (linkingFrom && linkingFrom.taskId !== task.id) {
-                            onAddDependency?.(
-                              linkingFrom.taskId,
-                              task.id,
-                              "FS",
-                            );
-                            e.stopPropagation();
-                          }
-                        }}
-                      />
+                      <Tooltip label={L("Link to this task","இந்த பணிக்கு இணை")}>
+                        <div
+                          className="absolute -left-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
+                         
+                          onMouseUp={(e) => {
+                            if (linkingFrom && linkingFrom.taskId !== task.id) {
+                              onAddDependency?.(
+                                linkingFrom.taskId,
+                                task.id,
+                                "FS",
+                              );
+                              e.stopPropagation();
+                            }
+                          }}
+                        />
+                      </Tooltip>
 
                       {/* Resize Start Handle */}
                       {task.type !== "Milestone" && task.type !== "Summary" && (
@@ -838,41 +841,43 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       )}
 
                       {/* Linking End Handle (Right Circle) */}
-                      <div
-                        className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
-                        title={L("Drag to link to another task","மற்றொரு பணிக்கு இணைக்க இழுக்கவும்")}
-                        onMouseDown={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const rowsRect =
-                            rowsRef.current?.getBoundingClientRect();
-                          if (rowsRect) {
-                            setLinkingFrom({
-                              taskId: task.id,
-                              x:
-                                rect.right -
-                                rowsRect.left +
-                                (rowsRef.current?.scrollLeft || 0),
-                              y:
-                                rect.top +
-                                rect.height / 2 -
-                                rowsRect.top +
-                                (rowsRef.current?.scrollTop || 0),
-                            });
-                            setMousePos({
-                              x:
-                                rect.right -
-                                rowsRect.left +
-                                (rowsRef.current?.scrollLeft || 0),
-                              y:
-                                rect.top +
-                                rect.height / 2 -
-                                rowsRect.top +
-                                (rowsRef.current?.scrollTop || 0),
-                            });
-                          }
-                          e.stopPropagation();
-                        }}
-                      />
+                      <Tooltip label={L("Drag to link to another task","மற்றொரு பணிக்கு இணைக்க இழுக்கவும்")}>
+                        <div
+                          className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
+                         
+                          onMouseDown={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const rowsRect =
+                              rowsRef.current?.getBoundingClientRect();
+                            if (rowsRect) {
+                              setLinkingFrom({
+                                taskId: task.id,
+                                x:
+                                  rect.right -
+                                  rowsRect.left +
+                                  (rowsRef.current?.scrollLeft || 0),
+                                y:
+                                  rect.top +
+                                  rect.height / 2 -
+                                  rowsRect.top +
+                                  (rowsRef.current?.scrollTop || 0),
+                              });
+                              setMousePos({
+                                x:
+                                  rect.right -
+                                  rowsRect.left +
+                                  (rowsRef.current?.scrollLeft || 0),
+                                y:
+                                  rect.top +
+                                  rect.height / 2 -
+                                  rowsRect.top +
+                                  (rowsRef.current?.scrollTop || 0),
+                              });
+                            }
+                            e.stopPropagation();
+                          }}
+                        />
+                      </Tooltip>
 
                       {/* Resize End Handle */}
                       {task.type !== "Milestone" && task.type !== "Summary" && (

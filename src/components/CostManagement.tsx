@@ -66,6 +66,7 @@ import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
 import { useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "../lib/feedback";
+import { Tooltip as HintTooltip } from "./Tooltip";
 
 interface CostManagementProps {
   projectId: string;
@@ -1798,23 +1799,27 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         </td>
                         <td className="p-4">
                           <div className="flex gap-2 justify-end">
-                            <button
-                              onClick={() => {
-                                setNewEntry(entry);
-                                setIsAdding(true);
-                              }}
-                              className="p-1 text-ink-muted hover:text-primary hover:bg-primary/10 rounded transition-colors"
-                              title="Edit record"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setDeletingId(entry.id)}
-                              className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded transition-colors"
-                              title="Delete record"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <HintTooltip label="Edit record">
+                              <button
+                                onClick={() => {
+                                  setNewEntry(entry);
+                                  setIsAdding(true);
+                                }}
+                                className="p-1 text-ink-muted hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                               
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            </HintTooltip>
+                            <HintTooltip label="Delete record">
+                              <button
+                                onClick={() => setDeletingId(entry.id)}
+                                className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded transition-colors"
+                               
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </HintTooltip>
                           </div>
                         </td>
                       </tr>

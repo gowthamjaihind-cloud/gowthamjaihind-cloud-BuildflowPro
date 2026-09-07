@@ -7,6 +7,7 @@ import { projectCapState, PLANS, PlanId } from "../../lib/plans";
 import { AddCapacityModal } from "../AddCapacityModal";
 import { ManagePlanModal } from "../ManagePlanModal";
 import { useL } from "../../i18n";
+import { Tooltip } from "../Tooltip";
 
 // Plans an Owner/Admin can self-serve manage (upgrade/downgrade).
 const SELF_SERVE_PLANS = ["free", "starter", "growth", "business"];
@@ -108,13 +109,15 @@ export const PlanSummary: React.FC = () => {
           <span className="text-[11px] text-ink-muted">
             {L("Org ID","நிறுவன ஐடி")}: <span className="font-mono text-ink">{orgId}</span>
           </span>
-          <button
-            onClick={copyId}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-muted hover:text-primary apple-transition"
-            title={L("Copy organization ID","நிறுவன ஐடியை நகலெடு")}
-          >
-            {copied ? <><Check className="w-3.5 h-3.5 text-success" /> {L("Copied","நகலெடுக்கப்பட்டது")}</> : <><Copy className="w-3.5 h-3.5" /> {L("Copy","நகலெடு")}</>}
-          </button>
+          <Tooltip label={L("Copy organization ID","நிறுவன ஐடியை நகலெடு")}>
+            <button
+              onClick={copyId}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-muted hover:text-primary apple-transition"
+             
+            >
+              {copied ? <><Check className="w-3.5 h-3.5 text-success" /> {L("Copied","நகலெடுக்கப்பட்டது")}</> : <><Copy className="w-3.5 h-3.5" /> {L("Copy","நகலெடு")}</>}
+            </button>
+          </Tooltip>
         </div>
       )}
     </div>

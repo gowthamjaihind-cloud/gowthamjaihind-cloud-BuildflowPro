@@ -24,6 +24,7 @@ import {
   CurrencyInr as IndianRupee,
   HardHat,
 } from "@phosphor-icons/react";
+import { Tooltip } from "./Tooltip";
 
 interface MaterialConsumptionViewProps {
   projectId: string;
@@ -960,9 +961,11 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                             </td>
                             <td className="px-6 py-5">
                               <div className="font-bold text-xs tracking-tight text-ink">{record.taskName}</div>
-                              <div className="text-[10px] text-ink-muted italic mt-0.5 line-clamp-1" title={record.note}>
-                                {record.note}
-                              </div>
+                              <Tooltip label={record.note}>
+                                <div className="text-[10px] text-ink-muted italic mt-0.5 line-clamp-1">
+                                  {record.note}
+                                </div>
+                              </Tooltip>
                             </td>
                             <td className="px-6 py-5">
                               <span

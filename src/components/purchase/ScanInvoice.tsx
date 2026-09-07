@@ -12,6 +12,7 @@ import { useProjectData } from "../../hooks/useProjectData";
 import { callExtractVendorInvoice } from "../../services/firebaseFunctions";
 import { postInvoiceReceipt } from "../../services/invoiceReceiptService";
 import { PurchaseOrder, VendorBill, InventoryItem } from "../../types";
+import { Tooltip } from "../Tooltip";
 
 interface ScanInvoiceProps {
   projectId: string;
@@ -224,7 +225,9 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
                               ↳ {inv?.name || "matched to PO"}{code ? ` · ${code}` : ""}
                             </div>
                           ) : (
-                            <span className="text-primary text-[10px] font-semibold" title="Not on PO"> ⚠️ not on PO</span>
+                            <Tooltip label="Not on PO">
+                              <span className="text-primary text-[10px] font-semibold"> ⚠️ not on PO</span>
+                            </Tooltip>
                           )}
                         </td>
                         <td className="p-2 text-right">

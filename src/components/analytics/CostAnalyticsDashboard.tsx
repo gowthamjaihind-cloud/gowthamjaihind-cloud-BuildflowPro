@@ -15,6 +15,7 @@ import { CostEntry, Task } from "../../types";
 import { useUIStore } from "../../store";
 import { useTranslation } from "../../i18n";
 import { ChartLineUp, TrendUp, TrendDown } from "@phosphor-icons/react";
+import { Tooltip as HintTooltip } from "../Tooltip";
 
 interface CostAnalyticsDashboardProps {
   projectId: string;
@@ -453,7 +454,9 @@ const BulletView: React.FC<any> = ({ rows, S, dark, t }) => {
               <div className="relative flex-1 h-6 rounded-lg overflow-hidden" style={{ background: dark ? "#2E2820" : "#ECE6DD" }}>
                 <div className="absolute inset-y-0 rounded-lg" style={{ width: `${(r.budget / max) * 100}%`, background: dark ? "#3a332b" : "#dfd8cd" }} />
                 <div className="absolute inset-y-1 rounded-md transition-[width] duration-700" style={{ width: `${(r.actual / max) * 100}%`, background: over ? S.over : S.under }} />
-                <div className="absolute inset-y-[-2px] w-[3px] rounded bg-ink" style={{ left: `calc(${(r.budget / max) * 100}% - 1.5px)` }} title={`${t("an.budgetTarget")}: ${inr(r.budget)}`} />
+                <HintTooltip label={`${t("an.budgetTarget")}: ${inr(r.budget)}`}>
+                  <div className="absolute inset-y-[-2px] w-[3px] rounded bg-ink" style={{ left: `calc(${(r.budget / max) * 100}% - 1.5px)` }} />
+                </HintTooltip>
               </div>
               <span className="w-16 text-right text-[11px] font-mono font-bold shrink-0" style={{ color: over ? S.over : S.under }}>{inrCompact(r.actual)}</span>
             </div>

@@ -24,6 +24,7 @@ import {
 import { useL } from "../../i18n";
 import { round2, money } from "../../utils/num";
 import { confirmDialog, toast } from "../../lib/feedback";
+import { Tooltip } from "../Tooltip";
 
 // Organisation master data. These records are shared by every project, so they
 // belong with the organisation's settings rather than inside one project.
@@ -321,16 +322,20 @@ export const MastersPanel: React.FC = () => {
                     </p>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <button onClick={() => startEdit(v)} disabled={busy}
-                      className="p-2 text-ink-muted hover:text-primary apple-transition disabled:opacity-40"
-                      title={L("Edit", "திருத்து")}>
-                      <PencilSimple className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => removeVendor(v)} disabled={busy}
-                      className="p-2 text-ink-muted hover:text-danger apple-transition disabled:opacity-40"
-                      title={L("Delete", "நீக்கு")}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <Tooltip label={L("Edit", "திருத்து")}>
+                      <button onClick={() => startEdit(v)} disabled={busy}
+                        className="p-2 text-ink-muted hover:text-primary apple-transition disabled:opacity-40"
+                       >
+                        <PencilSimple className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label={L("Delete", "நீக்கு")}>
+                      <button onClick={() => removeVendor(v)} disabled={busy}
+                        className="p-2 text-ink-muted hover:text-danger apple-transition disabled:opacity-40"
+                       >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
               ))}
@@ -440,16 +445,20 @@ export const MastersPanel: React.FC = () => {
                     </p>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <button onClick={() => startEditM(m)} disabled={busy}
-                      className="p-2 text-ink-muted hover:text-primary apple-transition disabled:opacity-40"
-                      title={L("Edit", "திருத்து")}>
-                      <PencilSimple className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => removeMaterial(m)} disabled={busy}
-                      className="p-2 text-ink-muted hover:text-danger apple-transition disabled:opacity-40"
-                      title={L("Delete", "நீக்கு")}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <Tooltip label={L("Edit", "திருத்து")}>
+                      <button onClick={() => startEditM(m)} disabled={busy}
+                        className="p-2 text-ink-muted hover:text-primary apple-transition disabled:opacity-40"
+                       >
+                        <PencilSimple className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label={L("Delete", "நீக்கு")}>
+                      <button onClick={() => removeMaterial(m)} disabled={busy}
+                        className="p-2 text-ink-muted hover:text-danger apple-transition disabled:opacity-40"
+                       >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
               ))}
@@ -476,11 +485,13 @@ export const MastersPanel: React.FC = () => {
                       {t.savedFromProjectName ? ` · ${L("from", "இதிலிருந்து")} ${t.savedFromProjectName}` : ""}
                     </p>
                   </div>
-                  <button onClick={() => removeTemplate(t)} disabled={busy}
-                    className="p-2 text-ink-muted hover:text-danger apple-transition shrink-0 disabled:opacity-40"
-                    title={L("Delete", "நீக்கு")}>
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip label={L("Delete", "நீக்கு")}>
+                    <button onClick={() => removeTemplate(t)} disabled={busy}
+                      className="p-2 text-ink-muted hover:text-danger apple-transition shrink-0 disabled:opacity-40"
+                     >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               ))}
             </div>

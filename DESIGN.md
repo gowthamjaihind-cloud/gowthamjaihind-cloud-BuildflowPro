@@ -191,6 +191,7 @@ hold a filled cobalt CTA, and that button has to stay cobalt.
 | **Input** | White, hairline border, `rounded-xl`, cobalt focus ring |
 | **Select** | Still a native `<select>`, restyled in `@layer base`: hairline border, `rounded-xl`, own caret. Native on purpose — the OS picker beats anything hand-built on a phone |
 | **Screen header band** | `PageHero`. Flat `--surface-dark`, a 3px cobalt rule along the top edge, `--surface-edge` hairline, no shadow. Title 32px, band ~110px. Carries `on-dark`. One dark tone per screen — it matches the at-risk KPI card rather than introducing a second |
+| **Tooltip** | `<Tooltip label="…">` wrapping the control. Navy bubble, white-alpha edge, portalled to `<body>` so an `overflow-hidden` card cannot clip it; flips side near an edge. Shows on hover, on focus and **on tap**; `Escape` and any scroll dismiss. It sets `aria-label` on its child, so it replaces `title` rather than sitting beside it |
 | **Toast** | Card shape, `shadow-lg`, tinted icon chip. Top of the screen; the foot carries the demo banner. Errors 8s and `role="alert"`, others 4–5s and `role="status"` |
 | **Confirm dialog** | Centred card, scrim, `Escape` and scrim cancel. The button names the act — "Delete", not "Confirm". Replaces `window.confirm` |
 | **Table header** | Brand Dark 900 bar, white small-caps labels, numeric columns right-aligned |
@@ -250,7 +251,13 @@ Borders do the quiet separating; shadow is only for things that genuinely float.
 - Let long labels wrap. Card titles are content, not chrome.
 - State the unit: `22 deployed`, `56d`, `₹53.7L`.
 - Give icon-only controls an `aria-label`; collapsed, the sidebar is twelve
-  unlabelled buttons without one.
+  unlabelled buttons without one. `<Tooltip>` does this for you.
+- Reach for `<Tooltip>`, never `title=`. Native `title` is not worthless —
+  measured in Chromium it *does* give an icon-only button an accessible name,
+  so removing one without adding `aria-label` makes things worse, not better.
+  What it cannot do is appear on touch, and this product is read on a phone at
+  a site gate. It also skips keyboard focus, waits about a second, and cannot
+  be styled.
 - Render a signed quantity as **magnitude plus a word**, never as a bare sign:
   `₹54.0L under budget`, not `₹-54.0L`. Two screens computed variance with
   opposite conventions — `actual - budget` on the dashboard, `planned - actual`

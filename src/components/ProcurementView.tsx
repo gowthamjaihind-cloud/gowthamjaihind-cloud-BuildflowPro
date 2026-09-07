@@ -75,6 +75,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useUIStore, useAuthStore } from "../store";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { confirmDialog, toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
 // Removed unused import
 
 interface ProcurementViewProps {
@@ -1032,21 +1033,25 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />{" "}
             <span>Add Party</span>
           </button>
-          <button
-            onClick={() => setShowMasterPicker(true)}
-            className="w-full sm:w-auto bg-panel border border-divider text-ink px-5 md:px-6 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-surface apple-transition text-[10px]"
-            title="Reuse a party already saved for your organisation"
-          >
-            <span>From master{masters.length ? ` (${masters.length})` : ""}</span>
-          </button>
-          <button
-            onClick={promoteAllVendors}
-            disabled={masterBusy || !vendors.length}
-            className="w-full sm:w-auto bg-panel border border-divider text-ink px-5 md:px-6 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-surface apple-transition text-[10px] disabled:opacity-40"
-            title="Add this project's parties to your organisation master"
-          >
-            <BookmarkSimple className="w-3.5 h-3.5" /> <span>Save to master</span>
-          </button>
+          <Tooltip label="Reuse a party already saved for your organisation">
+            <button
+              onClick={() => setShowMasterPicker(true)}
+              className="w-full sm:w-auto bg-panel border border-divider text-ink px-5 md:px-6 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-surface apple-transition text-[10px]"
+             
+            >
+              <span>From master{masters.length ? ` (${masters.length})` : ""}</span>
+            </button>
+          </Tooltip>
+          <Tooltip label="Add this project's parties to your organisation master">
+            <button
+              onClick={promoteAllVendors}
+              disabled={masterBusy || !vendors.length}
+              className="w-full sm:w-auto bg-panel border border-divider text-ink px-5 md:px-6 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-surface apple-transition text-[10px] disabled:opacity-40"
+             
+            >
+              <BookmarkSimple className="w-3.5 h-3.5" /> <span>Save to master</span>
+            </button>
+          </Tooltip>
           </div>
         </div>
 
@@ -1131,22 +1136,24 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       >
                         <Edit2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
                       </button>
-                      <button
-                        onClick={() => promoteToMaster(vendor)}
-                        disabled={masterBusy}
-                        className={`p-1.5 md:p-2 apple-transition disabled:opacity-40 ${
-                          (vendor as any).masterVendorId
-                            ? "text-primary"
-                            : "text-ink-muted hover:text-primary"
-                        }`}
-                        title={
+                      <Tooltip label={
                           (vendor as any).masterVendorId
                             ? "Linked to your organisation master"
                             : "Save this party to your organisation master"
-                        }
-                      >
-                        <BookmarkSimple className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                      </button>
+                        }>
+                        <button
+                          onClick={() => promoteToMaster(vendor)}
+                          disabled={masterBusy}
+                          className={`p-1.5 md:p-2 apple-transition disabled:opacity-40 ${
+                            (vendor as any).masterVendorId
+                              ? "text-primary"
+                              : "text-ink-muted hover:text-primary"
+                          }`}
+                         
+                        >
+                          <BookmarkSimple className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                        </button>
+                      </Tooltip>
                       <button
                         onClick={() => setIsDeletingVendor(vendor.id)}
                         className="p-1.5 md:p-2 text-ink-muted hover:text-danger apple-transition"

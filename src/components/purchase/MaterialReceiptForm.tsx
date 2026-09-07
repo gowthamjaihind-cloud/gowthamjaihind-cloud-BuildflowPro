@@ -22,6 +22,7 @@ import {
 } from "../../types";
 import { useAuthStore } from "../../store";
 import { useQueryClient } from "@tanstack/react-query";
+import { Tooltip } from "../Tooltip";
 
 interface MaterialReceiptFormProps {
   projectId: string;
@@ -441,8 +442,12 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                              </td>
                              <td className="p-3 text-xs bg-warning/12/20">
                                 {data.status === "Matched" && <span className="text-success bg-success/12 px-2 py-1 rounded-full font-bold">Matched</span>}
-                                {data.status === "Rate mismatch" && <span className="text-primary bg-primary/10 px-2 py-1 rounded-full font-bold" title="Rate != PO">Rate mismatch</span>}
-                                {data.status === "Quantity mismatch" && <span className="text-primary bg-primary/10 px-2 py-1 rounded-full font-bold" title="Qty != GRN">Qty mismatch</span>}
+                                {data.status === "Rate mismatch" && <Tooltip label="Rate != PO">
+                                  <span className="text-primary bg-primary/10 px-2 py-1 rounded-full font-bold">Rate mismatch</span>
+                                </Tooltip>}
+                                {data.status === "Quantity mismatch" && <Tooltip label="Qty != GRN">
+                                  <span className="text-primary bg-primary/10 px-2 py-1 rounded-full font-bold">Qty mismatch</span>
+                                </Tooltip>}
                                 {data.status === "Unmatched" && <span className="text-danger bg-danger/8 px-2 py-1 rounded-full font-bold">Unmatched</span>}
                              </td>
                              <td className="p-2 text-right">

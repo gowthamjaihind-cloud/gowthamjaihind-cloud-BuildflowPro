@@ -62,6 +62,7 @@ import { useTasksQuery, useProjectDataQuery } from "../hooks/queries";
 import { useProjectDailyLogsQuery } from "../hooks/useDailyLogs";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
 
 interface LaborTrackingViewProps {
   projectId: string;
@@ -485,9 +486,11 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                                 <div className="bg-panel p-1.5 rounded-lg text-primary shrink-0">
                                   <Users className="w-3.5 h-3.5" />
                                 </div>
-                                <h4 className="text-xs font-bold text-ink tracking-tight truncate" title={rate.role}>
-                                  {rate.role}
-                                </h4>
+                                <Tooltip label={rate.role}>
+                                  <h4 className="text-xs font-bold text-ink tracking-tight truncate">
+                                    {rate.role}
+                                  </h4>
+                                </Tooltip>
                               </div>
 
                               {isAdminOrOwner && (

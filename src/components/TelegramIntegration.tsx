@@ -12,6 +12,7 @@ import { UserProfile } from "../types";
 import { db, collection, query, where, getDocs, setDoc, doc } from "../firebase";
 import { updateDoc, deleteField } from "firebase/firestore";
 import { useL } from "../i18n";
+import { Tooltip } from "./Tooltip";
 
 interface TelegramIntegrationProps {
   currentUser: UserProfile;
@@ -302,13 +303,15 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
             <code className="flex-1 font-mono text-lg font-bold text-ink text-center">
               /link {displayCode}
             </code>
-            <button
-              onClick={copyToClipboard}
-              className="p-2 hover:bg-info/10 text-ink-muted rounded-lg transition-colors"
-              title={L("Copy to clipboard","கிளிப்போர்டுக்கு நகலெடு")}
-            >
-              <Copy className="w-5 h-5" />
-            </button>
+            <Tooltip label={L("Copy to clipboard","கிளிப்போர்டுக்கு நகலெடு")}>
+              <button
+                onClick={copyToClipboard}
+                className="p-2 hover:bg-info/10 text-ink-muted rounded-lg transition-colors"
+               
+              >
+                <Copy className="w-5 h-5" />
+              </button>
+            </Tooltip>
           </div>
 
           <div className="mt-4 flex justify-end">

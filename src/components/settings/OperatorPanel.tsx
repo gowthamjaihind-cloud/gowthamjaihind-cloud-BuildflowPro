@@ -243,7 +243,7 @@ export const OperatorPanel: React.FC = () => {
           </select>
           {action === "activate" && (
             <input type="number" min={1} value={months} onChange={(e) => setMonths(parseInt(e.target.value) || 1)}
-              className="w-24 bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm" title="Months" />
+              className="w-24 bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm" aria-label="Months" />
           )}
           <button onClick={setSub} disabled={sBusy || !orgId.trim()}
             className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2">

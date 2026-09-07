@@ -42,6 +42,7 @@ import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
 import { toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
 
 interface EstimateTrackerViewProps {
   projectId: string;
@@ -550,14 +551,16 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
               PDF
             </button>
             {isAdminOrOwner && (
-              <button
-                onClick={() => setEstimateToDelete(selectedEstimate)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
-                title="Delete this estimate"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
+              <Tooltip label="Delete this estimate">
+                <button
+                  onClick={() => setEstimateToDelete(selectedEstimate)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                 
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -1239,12 +1242,14 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <td className="py-4 px-4 text-right text-ink font-medium">
                       <div className="flex items-center justify-end gap-1.5">
                         {estScopedCost.unlinkedCount > 0 && (
-                          <span 
-                            title="Some line items aren't linked to a WBS task — cost is incomplete."
-                            className="text-primary cursor-help"
-                          >
-                            *
-                          </span>
+                          <Tooltip label="Some line items aren't linked to a WBS task — cost is incomplete.">
+                            <span 
+                             
+                              className="text-primary cursor-help"
+                            >
+                              *
+                            </span>
+                          </Tooltip>
                         )}
                         <span>₹{estScopedCost.actual.toLocaleString()}</span>
                       </div>

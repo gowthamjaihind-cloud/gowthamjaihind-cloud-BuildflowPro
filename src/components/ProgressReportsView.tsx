@@ -44,6 +44,7 @@ import jsPDF from "jspdf";
 // which is why the reports PDF export silently failed.
 import html2canvas from "html2canvas-pro";
 import { toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
 
 interface ProgressReportsViewProps {
   projectId: string;
@@ -735,13 +736,15 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                         >
                           <Edit2 className="w-3.5 h-3.5" /> Edit Log
                         </button>
-                          <button
-                            onClick={() => handleDeleteLog(log)}
-                            className="text-xs font-bold text-danger hover:text-danger flex items-center justify-center p-2 rounded-xl border border-divider hover:bg-danger/8 transition-colors"
-                            title="Delete Log"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <Tooltip label="Delete Log">
+                            <button
+                              onClick={() => handleDeleteLog(log)}
+                              className="text-xs font-bold text-danger hover:text-danger flex items-center justify-center p-2 rounded-xl border border-divider hover:bg-danger/8 transition-colors"
+                             
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
                         </div>
                         )}
                       </div>

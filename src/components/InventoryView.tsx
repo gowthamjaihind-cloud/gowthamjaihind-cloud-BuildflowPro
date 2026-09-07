@@ -54,6 +54,7 @@ import { useTasksQuery } from "../hooks/queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { confirmDialog, toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
 
 interface InventoryViewProps {
   projectId: string;
@@ -771,31 +772,37 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             projectId={projectId}
             requireWriteAccess
             fallback={
-              <button
-                disabled
-                className="bg-divider text-ink-muted w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 cursor-not-allowed cursor-help"
-                title="You don't have permission to add items"
-              >
-                <Plus className="w-3 h-3" /> <span>Add Item</span>
-              </button>
+              <Tooltip label="You don't have permission to add items">
+                <button
+                  disabled
+                  className="bg-divider text-ink-muted w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 cursor-not-allowed cursor-help"
+                 
+                >
+                  <Plus className="w-3 h-3" /> <span>Add Item</span>
+                </button>
+              </Tooltip>
             }
           >
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <button
-              onClick={() => setShowMaterialPicker(true)}
-              className="bg-panel border border-divider text-ink w-full sm:w-auto px-5 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-surface apple-transition"
-              title="Reuse a material saved for your organisation"
-            >
-              <span>From master{masterMaterials.length ? ` (${masterMaterials.length})` : ""}</span>
-            </button>
-            <button
-              onClick={promoteAllMaterials}
-              disabled={masterBusy || !rawItems.length}
-              className="bg-panel border border-divider text-ink w-full sm:w-auto px-5 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-surface apple-transition disabled:opacity-40"
-              title="Add this project's materials to your organisation master"
-            >
-              <BookmarkSimple className="w-3.5 h-3.5" /> <span>Save to master</span>
-            </button>
+            <Tooltip label="Reuse a material saved for your organisation">
+              <button
+                onClick={() => setShowMaterialPicker(true)}
+                className="bg-panel border border-divider text-ink w-full sm:w-auto px-5 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-surface apple-transition"
+               
+              >
+                <span>From master{masterMaterials.length ? ` (${masterMaterials.length})` : ""}</span>
+              </button>
+            </Tooltip>
+            <Tooltip label="Add this project's materials to your organisation master">
+              <button
+                onClick={promoteAllMaterials}
+                disabled={masterBusy || !rawItems.length}
+                className="bg-panel border border-divider text-ink w-full sm:w-auto px-5 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-surface apple-transition disabled:opacity-40"
+               
+              >
+                <BookmarkSimple className="w-3.5 h-3.5" /> <span>Save to master</span>
+              </button>
+            </Tooltip>
             <button
               onClick={() => setIsAdding(true)}
               className="bg-primary text-white w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary-deep apple-transition shadow-lg shadow-primary/20"
@@ -987,20 +994,22 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                           <button onClick={() => setEditingItem(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-primary transition-colors">
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => promoteMaterial(item)}
-                            disabled={masterBusy}
-                            className={`p-2 bg-panel rounded-lg transition-colors disabled:opacity-40 ${
-                              (item as any).masterMaterialId ? "text-primary" : "text-ink-muted hover:text-primary"
-                            }`}
-                            title={
+                          <Tooltip label={
                               (item as any).masterMaterialId
                                 ? "Linked to your organisation master"
                                 : "Save this material to your organisation master"
-                            }
-                          >
-                            <BookmarkSimple className="w-3.5 h-3.5" />
-                          </button>
+                            }>
+                            <button
+                              onClick={() => promoteMaterial(item)}
+                              disabled={masterBusy}
+                              className={`p-2 bg-panel rounded-lg transition-colors disabled:opacity-40 ${
+                                (item as any).masterMaterialId ? "text-primary" : "text-ink-muted hover:text-primary"
+                              }`}
+                             
+                            >
+                              <BookmarkSimple className="w-3.5 h-3.5" />
+                            </button>
+                          </Tooltip>
                           <button onClick={() => setItemToDelete(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-danger transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

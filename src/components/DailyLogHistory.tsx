@@ -19,6 +19,7 @@ import { DailyLogEntry } from "../types";
 import { useAuthStore } from "../store";
 import { useTranslation } from "../i18n";
 import { toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
 
 interface DailyLogHistoryProps {
   projectId: string;
@@ -78,10 +79,12 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
           className="bg-surface p-5 rounded-2xl border border-divider shadow-sm relative overflow-hidden"
         >
           {log.markComplete ? (
-            <div
-              className="absolute top-0 right-0 border-b-[32px] border-l-[32px] border-b-transparent border-l-emerald-500 w-0 h-0"
-              title={t("dlh.markedComplete")}
-            ></div>
+            <Tooltip label={t("dlh.markedComplete")}>
+              <div
+                className="absolute top-0 right-0 border-b-[32px] border-l-[32px] border-b-transparent border-l-emerald-500 w-0 h-0"
+               
+              ></div>
+            </Tooltip>
           ) : null}
 
           <div className="flex justify-between items-start mb-3">

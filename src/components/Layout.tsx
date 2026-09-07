@@ -27,6 +27,7 @@ import { LanguageToggle } from "./LanguageToggle";
 import { useAuthStore, useUIStore, useProjectStore } from "../store";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { useTranslation } from "../i18n";
+import { Tooltip } from "./Tooltip";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -90,41 +91,43 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         className={`flex-1 space-y-1.5 md:space-y-2 overflow-y-auto mt-2 md:mt-6 scrollbar-hide ${uiMode === "site" ? "pt-8" : ""} ${showLabels ? "px-4 md:px-6" : "px-2 md:px-0"}`}
       >
         {menuItems.map((item) => (
-          <button
-            key={item.id}
-            data-tour={`nav-${item.id}`}
-            onClick={() => {
-              setActiveTab(item.id);
-              setIsMobileMenuOpen(false);
-            }}
-            // Collapsed, these are icon-only. Without a name they are twelve
-            // unlabelled buttons to a screen reader, so label them always and
-            // show a tooltip when the text label is hidden.
-            aria-label={item.label}
-            aria-current={activeTab === item.id ? "page" : undefined}
-            title={showLabels ? undefined : item.label}
-            className={`flex items-center apple-transition group ${
-              showLabels
-                ? "w-full gap-4 md:gap-5 px-4 md:px-5 py-3 md:py-4"
-                : "w-12 h-12 md:w-14 md:h-14 mx-auto justify-center"
-            } rounded-[14px] md:rounded-[18px] ${
-              activeTab === item.id
-                ? "bg-primary text-white shadow-xl shadow-primary/20 ring-1 ring-primary/50"
-                : "text-ink-muted hover:text-ink hover:bg-surface/40"
-            } ${uiMode === "site" ? (showLabels ? "!py-3 !rounded-lg" : "!rounded-lg") : ""}`}
-          >
-            <item.icon
-              className={`w-5 h-5 md:w-6 md:h-6 shrink-0 apple-transition transform ${activeTab === item.id ? "text-white" : "group-hover:text-primary"}`}
-              strokeWidth={1.5}
-            />
-            {showLabels && (
-              <span
-                className={`font-display font-bold text-[14px] md:text-[15px] tracking-tight truncate ${uiMode === "site" ? "!text-sm" : ""}`}
-              >
-                {item.label}
-              </span>
-            )}
-          </button>
+          <Tooltip label={showLabels ? undefined : item.label} key={item.id}>
+            <button
+             
+              data-tour={`nav-${item.id}`}
+              onClick={() => {
+                setActiveTab(item.id);
+                setIsMobileMenuOpen(false);
+              }}
+              // Collapsed, these are icon-only. Without a name they are twelve
+              // unlabelled buttons to a screen reader, so label them always and
+              // show a tooltip when the text label is hidden.
+              aria-label={item.label}
+              aria-current={activeTab === item.id ? "page" : undefined}
+             
+              className={`flex items-center apple-transition group ${
+                showLabels
+                  ? "w-full gap-4 md:gap-5 px-4 md:px-5 py-3 md:py-4"
+                  : "w-12 h-12 md:w-14 md:h-14 mx-auto justify-center"
+              } rounded-[14px] md:rounded-[18px] ${
+                activeTab === item.id
+                  ? "bg-primary text-white shadow-xl shadow-primary/20 ring-1 ring-primary/50"
+                  : "text-ink-muted hover:text-ink hover:bg-surface/40"
+              } ${uiMode === "site" ? (showLabels ? "!py-3 !rounded-lg" : "!rounded-lg") : ""}`}
+            >
+              <item.icon
+                className={`w-5 h-5 md:w-6 md:h-6 shrink-0 apple-transition transform ${activeTab === item.id ? "text-white" : "group-hover:text-primary"}`}
+                strokeWidth={1.5}
+              />
+              {showLabels && (
+                <span
+                  className={`font-display font-bold text-[14px] md:text-[15px] tracking-tight truncate ${uiMode === "site" ? "!text-sm" : ""}`}
+                >
+                  {item.label}
+                </span>
+              )}
+            </button>
+          </Tooltip>
         ))}
       </nav>
 
@@ -198,19 +201,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           className={`soft-card rounded-none sm:rounded-[24px] px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 flex items-center justify-between z-20 shrink-0 ${uiMode === "site" ? "!rounded-none !bg-panel !border-b !border-divider !py-3" : ""}`}
         >
           <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-5">
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-              aria-expanded={isSidebarOpen}
-              title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-              className={`hidden md:block p-2 sm:p-3 hover:bg-surface/40 rounded-[10px] sm:rounded-[12px] apple-transition active:scale-95 ${uiMode === "site" ? "!p-2" : ""}`}
-            >
-              {isSidebarOpen ? (
-                <X className="w-5 h-5 sm:w-6 sm:h-6 text-ink-muted" />
-              ) : (
-                <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-ink-muted" />
-              )}
-            </button>
+            <Tooltip label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}>
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+                aria-expanded={isSidebarOpen}
+               
+                className={`hidden md:block p-2 sm:p-3 hover:bg-surface/40 rounded-[10px] sm:rounded-[12px] apple-transition active:scale-95 ${uiMode === "site" ? "!p-2" : ""}`}
+              >
+                {isSidebarOpen ? (
+                  <X className="w-5 h-5 sm:w-6 sm:h-6 text-ink-muted" />
+                ) : (
+                  <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-ink-muted" />
+                )}
+              </button>
+            </Tooltip>
             <div
               className={`hidden sm:block h-6 w-px bg-surface/30 mx-1 lg:mx-2 ${uiMode === "site" ? "!bg-divider" : ""}`}
             />
@@ -250,19 +255,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <SyncStatus />
               <TelegramBotStatus />
             </div>
-            <button
-              onClick={() => setActiveProject(null)}
-              className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:py-2 md:px-4 md:py-2.5 sm:gap-2 rounded-full sm:rounded-[12px] md:rounded-[14px] apple-transition active:scale-95 border border-surface-dark/5 bg-surface-dark/5 sm:bg-surface/40 sm:hover:bg-surface text-ink-muted sm:hover:text-ink sm:border-white/60 shadow-none sm:shadow-sm"
-              title={t("header.switchProject")}
-            >
-              <ArrowLeftRight
-                className="w-4 h-4 sm:w-5 sm:h-5"
-                strokeWidth={2}
-              />
-              <span className="hidden sm:inline-block font-bold text-[13px] md:text-[14px] tracking-tight">
-                {t("header.switch")}
-              </span>
-            </button>
+            <Tooltip label={t("header.switchProject")}>
+              <button
+                onClick={() => setActiveProject(null)}
+                className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:py-2 md:px-4 md:py-2.5 sm:gap-2 rounded-full sm:rounded-[12px] md:rounded-[14px] apple-transition active:scale-95 border border-surface-dark/5 bg-surface-dark/5 sm:bg-surface/40 sm:hover:bg-surface text-ink-muted sm:hover:text-ink sm:border-white/60 shadow-none sm:shadow-sm"
+               
+              >
+                <ArrowLeftRight
+                  className="w-4 h-4 sm:w-5 sm:h-5"
+                  strokeWidth={2}
+                />
+                <span className="hidden sm:inline-block font-bold text-[13px] md:text-[14px] tracking-tight">
+                  {t("header.switch")}
+                </span>
+              </button>
+            </Tooltip>
           </div>
         </header>
 
