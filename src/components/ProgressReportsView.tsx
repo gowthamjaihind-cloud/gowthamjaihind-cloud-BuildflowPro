@@ -47,6 +47,7 @@ import { toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
 import { SkeletonRows } from "./Skeleton";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface ProgressReportsViewProps {
   projectId: string;
@@ -782,6 +783,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       {logToDelete && (
         <div className="fixed inset-0 bg-ink/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-panel w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <DialogBehaviour />
             <h3 className="text-xl font-bold text-ink mb-2 text-center">
               Delete Log Entry?
             </h3>

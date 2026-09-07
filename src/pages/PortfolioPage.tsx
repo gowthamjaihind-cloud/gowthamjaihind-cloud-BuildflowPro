@@ -23,6 +23,7 @@ import { TelegramBotStatus } from "../components/TelegramBotStatus";
 import { OrgSwitcher } from "../components/OrgSwitcher";
 import { useTranslation } from "../i18n";
 import { Tooltip } from "../components/Tooltip";
+import { DialogBehaviour } from "../lib/useDialog";
 
 const statusPillClasses = (status?: string) => {
   switch (status) {
@@ -464,6 +465,7 @@ export const PortfolioPage: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="soft-card bg-surface rounded-2xl w-full max-w-sm p-6 relative"
           >
+            <DialogBehaviour />
             <h3 className="text-xl font-bold text-ink mb-2">
               {t("portfolio.deleteConfirmTitle")}
             </h3>

@@ -191,6 +191,7 @@ hold a filled cobalt CTA, and that button has to stay cobalt.
 | **Input** | White, hairline border, `rounded-xl`, cobalt focus ring |
 | **Select** | Still a native `<select>`, restyled in `@layer base`: hairline border, `rounded-xl`, own caret. Native on purpose — the OS picker beats anything hand-built on a phone |
 | **Screen header band** | `PageHero`. Flat `--surface-dark`, a 3px cobalt rule along the top edge, `--surface-edge` hairline, no shadow. Title 32px, band ~110px. Carries `on-dark`. One dark tone per screen — it matches the at-risk KPI card rather than introducing a second |
+| **Dialog** | Any modal panel carries `<DialogBehaviour />` as its first child. That gives it `role="dialog"`, `aria-modal`, `aria-labelledby` wired to its own visible heading, Escape, a focus trap, focus restored to whatever opened it, and a scroll lock on the real scroll container. `useDialog` is the declarative form for new code |
 | **Loading** | A spinner where the user pressed a control and there is no layout to hold — 37 of them live inside submit buttons, which is correct. `<SkeletonScreen/Rows/Cards/Text>` where the shape of what is coming *is* known. A spinner for a genuinely shapeless wait (OCR, an AI answer), and then it must carry text |
 | **Empty state** | `<EmptyState>`. Icon tile, bold title, one muted sentence, optional action. Three sizes — `inline` (in a card section, no tile), `panel` (default), `page`. Inside a `<tbody>` pass `colSpan` and it renders `<tr><td colSpan>` |
 | **Tooltip** | `<Tooltip label="…">` wrapping the control. Navy bubble, white-alpha edge, portalled to `<body>` so an `overflow-hidden` card cannot clip it; flips side near an edge. Shows on hover, on focus and **on tap**; `Escape` and any scroll dismiss. It sets `aria-label` on its child, so it replaces `title` rather than sitting beside it |
@@ -282,6 +283,19 @@ Borders do the quiet separating; shadow is only for things that genuinely float.
 - Don't use `K` for thousands, or Western digit grouping.
 - Don't put a negative number in the success colour. `₹-54.0L` in green reads
   as broken even when the sign convention is right.
+- Don't lock scrolling with `overflow: hidden` on `<body>`. This app does not
+  scroll the body — Layout scrolls an inner `div.flex-1.overflow-y-auto`, so
+  the body trick is a no-op here and the page happily scrolled behind every
+  open modal (measured: 324px). Find what is actually scrollable, and skip the
+  dialog's own `max-h-[90vh] overflow-y-auto` panel.
+- Don't guess a dialog's close handler. One of these panels has an Export PDF
+  button where the close button normally sits; wiring Escape from the nearest
+  `onClick` would have exported a file. `DialogBehaviour` presses the dialog's
+  own close control instead — an explicit Close label, then Cancel, then an
+  icon-only button — and does nothing if it finds none.
+- Don't name a dialog with a new string. `aria-labelledby` pointed at the
+  heading the modal already shows costs nothing and is already translated;
+  `aria-label` would have meant inventing 37 names in two languages.
 - Don't swap a spinner in for a skeleton, or the reverse. A spinner answers
   "is my click doing something"; a skeleton answers "what is about to appear".
   Ten lazily-loaded views shared one `py-32` spinner box, so every navigation

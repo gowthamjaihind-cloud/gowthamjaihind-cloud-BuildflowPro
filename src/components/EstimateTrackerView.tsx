@@ -44,6 +44,7 @@ import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
 import { toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface EstimateTrackerViewProps {
   projectId: string;
@@ -471,6 +472,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
         {estimateToDelete && (
           <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <div className="bg-panel rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-divider">
+              <DialogBehaviour />
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-11 h-11 rounded-2xl bg-danger/10 flex items-center justify-center shrink-0">
                   <Trash2 className="w-5 h-5 text-danger" />
@@ -1062,6 +1064,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
         {isSyncModalOpen && (
           <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <div className="bg-surface w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden border border-divider flex flex-col max-h-[80vh]">
+              <DialogBehaviour />
               <div className="bg-panel px-6 py-4 flex justify-between items-center border-b border-white/10 shrink-0">
                 <h3 className="text-[17px] font-bold text-ink flex items-center gap-2">
                   <Link className="w-5 h-5 text-secondary" /> Sync Tasks to
@@ -1292,6 +1295,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-divider">
+            <DialogBehaviour />
             <div className="bg-panel px-6 py-4 flex justify-between items-center border-b border-white/10">
               <h3 className="text-[17px] font-bold text-ink flex items-center gap-2">
                 <FileText className="w-5 h-5" /> New Client Estimate

@@ -12,6 +12,7 @@ import { doc, deleteDoc, runTransaction, addDoc, collection } from "firebase/fir
 import { db } from "../../firebase";
 import { useQueryClient } from "@tanstack/react-query";
 import { confirmDialog, toast } from "../../lib/feedback";
+import { DialogBehaviour } from "../../lib/useDialog";
 
 interface GoodsReceiptDetailsProps {
   grn: GoodsReceiptNote;
@@ -160,6 +161,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="bg-surface w-full max-w-3xl h-full rounded-[24px] shadow-2xl flex flex-col overflow-hidden"
       >
+        <DialogBehaviour />
          <div className="flex justify-between items-center p-6 border-b border-divider bg-panel sticky top-0 z-10 shrink-0">
            <div>
              <h2 className="text-xl font-black text-ink tracking-tight mb-1">{grn.grnNumber}</h2>

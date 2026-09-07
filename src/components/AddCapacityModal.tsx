@@ -7,6 +7,7 @@ import { useProjectsQuery } from "../hooks/queries";
 import { PLANS, PLAN_ORDER, PlanId } from "../lib/plans";
 import { useL } from "../i18n";
 import { Tooltip } from "./Tooltip";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface AddCapacityModalProps {
   isOpen: boolean;
@@ -73,6 +74,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
           exit={{ opacity: 0, scale: 0.96, y: 16 }}
           className="soft-card w-full max-w-xl rounded-[32px] p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto"
         >
+          <DialogBehaviour />
           <div className="flex items-start justify-between mb-5">
             <div>
               <h2 className="text-2xl font-bold text-ink tracking-tight">{L("Add project capacity","செயல்திட்ட கொள்ளளவைச் சேர்")}</h2>

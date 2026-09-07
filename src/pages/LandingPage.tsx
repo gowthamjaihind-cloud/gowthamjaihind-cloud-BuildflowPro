@@ -33,6 +33,7 @@ import {
   Stack,
 } from "@phosphor-icons/react";
 import { Tooltip } from "../components/Tooltip";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface LandingPageProps {
   isLoggingIn: boolean;
@@ -696,6 +697,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               aria-modal="true"
               aria-label="Continue to Sitetru"
             >
+              <DialogBehaviour />
               <button
                 onClick={() => setConsentOpen(false)}
                 className="absolute top-5 right-5 text-ink-muted hover:text-ink apple-transition"

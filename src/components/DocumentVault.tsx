@@ -46,6 +46,7 @@ import {
 import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface DocumentVaultProps {
   projectId: string;
@@ -474,6 +475,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
             onSubmit={handleUpload}
             className="bg-surface w-full max-w-2xl p-5 md:p-6 rounded-2xl border shadow-2xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 relative my-auto max-h-[95vh] overflow-y-auto custom-scrollbar"
           >
+            <DialogBehaviour />
             <button aria-label={t("common.close")}
               type="button"
               onClick={() => {

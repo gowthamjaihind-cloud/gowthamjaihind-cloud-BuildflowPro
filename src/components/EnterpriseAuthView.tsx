@@ -34,6 +34,7 @@ import { handleFirestoreError, OperationType } from "../firebase";
 import { useL } from "../i18n";
 import { toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface EnterpriseAuthViewProps {
   onBack: () => void;
@@ -473,6 +474,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       {showLinkCode && (
         <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-md rounded-3xl p-8 border border-divider shadow-2xl relative">
+            <DialogBehaviour />
             <button aria-label={L("Close","மூடு")}
               onClick={() => setShowLinkCode(null)}
               className="absolute right-6 top-6 p-2 bg-panel rounded-full hover:bg-divider transition-colors"

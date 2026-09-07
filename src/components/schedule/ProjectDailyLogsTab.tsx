@@ -20,6 +20,7 @@ import { DailyLogEntryScreen } from "../DailyLogEntryScreen";
 import { useAuthStore } from "../../store";
 import { toast } from "../../lib/feedback";
 import { EmptyState } from "../EmptyState";
+import { DialogBehaviour } from "../../lib/useDialog";
 
 interface ProjectDailyLogsTabProps {
   projectId: string;
@@ -317,6 +318,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
       {logToDelete && (
         <div className="fixed inset-0 bg-ink/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-sm rounded-[32px] p-8 shadow-2xl relative">
+            <DialogBehaviour />
             <div className="w-16 h-16 bg-danger/8 text-danger rounded-full flex items-center justify-center mb-6 mx-auto">
               <Trash2 className="w-8 h-8" />
             </div>

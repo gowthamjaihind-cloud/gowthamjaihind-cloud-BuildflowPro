@@ -76,6 +76,7 @@ import { useBreakpoint } from "../hooks/useBreakpoint";
 import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
+import { DialogBehaviour } from "../lib/useDialog";
 // Removed unused import
 
 interface ProcurementViewProps {
@@ -2062,6 +2063,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         {showMasterPicker && (
           <div className="fixed inset-0 bg-surface-dark/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
             <div className="bg-surface w-full max-w-lg rounded-[28px] overflow-hidden flex flex-col max-h-[80vh] shadow-2xl">
+              <DialogBehaviour />
               <div className="p-6 border-b border-divider flex items-start justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-black text-ink tracking-tight">Add from master</h3>
@@ -2128,6 +2130,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-2xl w-full max-w-lg overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="bg-surface-dark p-5 md:p-6 text-white flex justify-between items-center">
                 <div>
                   <h3 className="text-xl font-black">
@@ -2291,6 +2294,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-2xl w-full max-w-sm overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="p-6 text-center space-y-4">
                 <div className="w-12 h-12 bg-danger/15 rounded-full flex items-center justify-center mx-auto">
                   <Trash2 className="w-6 h-6 text-danger" />
@@ -2329,6 +2333,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-2xl w-full max-w-sm overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="p-6 text-center space-y-4">
                 <div className="w-12 h-12 bg-danger/15 rounded-full flex items-center justify-center mx-auto">
                   <Trash2 className="w-6 h-6 text-danger" />
@@ -2370,6 +2375,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="bg-success p-5 md:p-6 text-white flex justify-between items-center">
                 <h3 className="text-xl font-black">
                   {editingPaymentId ? "Edit Payment" : "Record Payment"}

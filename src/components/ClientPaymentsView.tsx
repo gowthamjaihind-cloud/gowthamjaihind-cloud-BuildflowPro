@@ -22,6 +22,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface PaymentsViewProps {
   projectId: string;
@@ -458,6 +459,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               exit={{ opacity: 0, scale: 0.9 }}
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
             >
+              <DialogBehaviour />
               <div className="bg-primary p-6 text-white flex justify-between items-center">
                 <h3 className="text-lg font-bold">{t("cpay.recordPayment")}</h3>
                 <button aria-label={t("common.close")}

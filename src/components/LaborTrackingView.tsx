@@ -64,6 +64,7 @@ import { useBreakpoint } from "../hooks/useBreakpoint";
 import { toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface LaborTrackingViewProps {
   projectId: string;
@@ -1082,6 +1083,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
               exit={{ opacity: 0, scale: 0.9 }}
               className="bg-surface rounded-[32px] md:rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="bg-surface-dark p-6 md:p-10 text-white flex justify-between items-center">
                 <div>
                   <h3 className="text-xl md:text-2xl font-black tracking-tight">
@@ -1177,6 +1179,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-[40px] p-10 max-w-md w-full text-center"
             >
+              <DialogBehaviour />
               <div className="bg-danger/8 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
                 <AlertCircle className="w-10 h-10 text-danger" />
               </div>

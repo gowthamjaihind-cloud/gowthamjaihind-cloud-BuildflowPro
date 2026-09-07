@@ -16,6 +16,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "fire
 import { compressImage } from "../../utils/imageCompressor";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tooltip } from "../Tooltip";
+import { DialogBehaviour } from "../../lib/useDialog";
 
 interface GoodsReceiptFormProps {
   po: PurchaseOrder;
@@ -346,6 +347,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         className="bg-surface w-full max-w-4xl rounded-[32px] overflow-hidden flex flex-col max-h-[90vh]"
       >
+        <DialogBehaviour />
         <div className="flex justify-between items-center p-6 border-b border-divider bg-panel shrink-0">
           <div>
              <h2 className="text-xl font-bold text-ink">Record Goods Receipt</h2>

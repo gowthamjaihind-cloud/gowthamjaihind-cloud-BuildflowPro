@@ -22,6 +22,7 @@ import { GoodsReceiptDetails } from "./GoodsReceiptDetails";
 import { useL } from "../../i18n";
 import { confirmDialog, toast } from "../../lib/feedback";
 import { Tooltip } from "../Tooltip";
+import { DialogBehaviour } from "../../lib/useDialog";
 
 interface PurchaseOrderDetailsProps {
   po: PurchaseOrder;
@@ -125,6 +126,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="bg-surface w-full max-w-3xl h-full rounded-[24px] shadow-2xl flex flex-col overflow-hidden"
       >
+        <DialogBehaviour />
          <div className="flex justify-between items-center p-6 border-b border-divider bg-panel sticky top-0 z-10 shrink-0">
            <div>
              <h2 className="text-xl font-black text-ink tracking-tight mb-1">{po.poNumber}</h2>

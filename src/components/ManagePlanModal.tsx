@@ -8,6 +8,7 @@ import { PLANS, PLAN_ORDER, PlanId } from "../lib/plans";
 import { callScheduleDowngrade, callCancelScheduledPlanChange } from "../services/firebaseFunctions";
 import { useL } from "../i18n";
 import { confirmDialog } from "../lib/feedback";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface Props {
   isOpen: boolean;
@@ -94,6 +95,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
           exit={{ opacity: 0, scale: 0.96, y: 16 }}
           className="soft-card w-full max-w-2xl rounded-[32px] p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto"
         >
+          <DialogBehaviour />
           <div className="flex items-start justify-between mb-5">
             <div>
               <h2 className="text-2xl font-bold text-ink tracking-tight">{L("Manage plan", "திட்டத்தை நிர்வகி")}</h2>

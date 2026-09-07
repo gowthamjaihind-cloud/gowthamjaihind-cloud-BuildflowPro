@@ -29,6 +29,7 @@ import { db } from "../../../firebase";
 import { getProjectSubCollectionPath } from "../../../utils/projectPath";
 import { confirmDialog, toast } from "../../../lib/feedback";
 import { Tooltip } from "../../../components/Tooltip";
+import { DialogBehaviour } from "../../../lib/useDialog";
 
 // Order the built-in groups the way a contractor would scan them.
 const CATEGORY_ORDER = [
@@ -247,6 +248,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             onSubmit={handleCreateProject}
             className="soft-card w-full max-w-2xl rounded-[40px] p-6 md:p-12 shadow-2xl relative max-h-[90vh] overflow-y-auto"
           >
+            <DialogBehaviour />
             <div className="relative z-10 mb-12 flex justify-between items-start">
               <div>
                 <h2 className="text-[34px] font-bold text-ink mb-2 tracking-tight">

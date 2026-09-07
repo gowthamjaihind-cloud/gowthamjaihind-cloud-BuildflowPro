@@ -9,6 +9,7 @@ import { useProjectStore } from "../../../store";
 import { Project } from "../../../types";
 import { useTranslation } from "../../../i18n";
 import { toast } from "../../../lib/feedback";
+import { DialogBehaviour } from "../../../lib/useDialog";
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -111,6 +112,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
             onSubmit={handleUpdateProject}
             className="soft-card w-full max-w-2xl rounded-[40px] p-6 md:p-12 shadow-2xl relative max-h-[90vh] overflow-y-auto"
           >
+            <DialogBehaviour />
             <div className="relative z-10 mb-12 flex justify-between items-start">
               <div>
                 <h2 className="text-[34px] font-bold text-ink mb-2 tracking-tight">

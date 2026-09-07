@@ -17,6 +17,7 @@ import { db } from "../../firebase";
 import { money } from "../../utils/num";
 import { toast } from "../../lib/feedback";
 import { Tooltip } from "../Tooltip";
+import { DialogBehaviour } from "../../lib/useDialog";
 
 interface PurchaseOrderFormProps {
   projectId: string;
@@ -233,6 +234,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="bg-surface w-full max-w-3xl h-full rounded-[24px] shadow-2xl flex flex-col overflow-hidden"
       >
+        <DialogBehaviour />
          <div className="flex justify-between items-center p-6 border-b border-divider bg-panel sticky top-0 z-10">
            <div>
              <h2 className="text-xl font-black text-ink tracking-tight mb-1">{isEditing ? `Edit ${existingPO?.poNumber || "Purchase Order"}` : "Create Purchase Order"}</h2>

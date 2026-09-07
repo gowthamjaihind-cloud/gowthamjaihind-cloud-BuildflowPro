@@ -85,6 +85,7 @@ import { useBreakpoint } from "../hooks/useBreakpoint";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
 import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface WBSViewProps {
   projectId: string;
@@ -1426,6 +1427,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="p-6 text-center">
                 <div className="bg-danger/8 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Layers className="w-8 h-8 text-danger" />
@@ -1466,6 +1468,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="p-6 text-center">
                 <div className="bg-danger/8 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Trash2 className="w-8 h-8 text-danger" />
@@ -1523,6 +1526,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                   : "bg-surface rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden max-h-[90vh] flex flex-col"
               }
             >
+              <DialogBehaviour />
               <div className="bg-surface-dark text-white p-6 flex justify-between items-center shrink-0">
                 <h3 className="text-xl font-bold flex items-center gap-2">
                   {editingTask ? (

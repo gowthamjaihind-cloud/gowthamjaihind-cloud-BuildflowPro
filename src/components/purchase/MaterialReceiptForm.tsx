@@ -24,6 +24,7 @@ import { useAuthStore } from "../../store";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tooltip } from "../Tooltip";
 import { EmptyState } from "../EmptyState";
+import { DialogBehaviour } from "../../lib/useDialog";
 
 interface MaterialReceiptFormProps {
   projectId: string;
@@ -273,6 +274,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
         animate={{ opacity: 1, scale: 1 }}
         className="bg-surface rounded-[24px] md:rounded-[32px] w-full max-w-5xl overflow-hidden my-auto shadow-2xl"
       >
+        <DialogBehaviour />
         <div className={`p-6 md:p-8 text-white flex justify-between items-center transition-colors
           ${overallMatchStatus === "Fully Matched" ? "bg-success" : 
             overallMatchStatus === "Has Discrepancies" ? "bg-primary" : "bg-[#465D6E]"}`}

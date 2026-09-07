@@ -67,6 +67,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "../lib/feedback";
 import { Tooltip as HintTooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface CostManagementProps {
   projectId: string;
@@ -2163,6 +2164,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               exit={{ opacity: 0, scale: 0.9 }}
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
             >
+              <DialogBehaviour />
               <div className="bg-primary p-5 md:p-6 text-white flex justify-between items-center">
                 <div>
                   <h3 className="text-xl font-bold">
@@ -2336,6 +2338,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               exit={{ opacity: 0, scale: 0.9 }}
               className="bg-surface rounded-3xl w-full max-w-sm overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="p-6 text-center space-y-4">
                 <div className="w-16 h-16 bg-danger/15 rounded-full flex items-center justify-center mx-auto mb-2">
                   <Trash2 className="w-8 h-8 text-danger" />

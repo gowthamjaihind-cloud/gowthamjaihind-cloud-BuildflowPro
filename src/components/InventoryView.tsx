@@ -56,6 +56,7 @@ import { useBreakpoint } from "../hooks/useBreakpoint";
 import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface InventoryViewProps {
   projectId: string;
@@ -1539,6 +1540,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       {showMaterialPicker && (
         <div className="fixed inset-0 bg-surface-dark/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-lg rounded-[28px] overflow-hidden flex flex-col max-h-[80vh] shadow-2xl">
+            <DialogBehaviour />
             <div className="p-6 border-b border-divider flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-lg font-black text-ink tracking-tight">Add from master</h3>
@@ -1608,6 +1610,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-surface rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-5 text-center"
             >
+              <DialogBehaviour />
               <div className="bg-danger/8 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 border border-danger/20">
                 <Trash2 className="w-5 h-5 text-danger" />
               </div>
@@ -1644,6 +1647,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               exit={{ opacity: 0, y: 20 }}
               className="bg-surface rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden my-auto"
             >
+              <DialogBehaviour />
               <div className="bg-surface-dark p-5 md:p-6 text-white relative">
                 <div className="relative z-10 flex items-center justify-between">
                   <h3 className="text-lg md:text-xl font-bold flex items-center gap-3">
