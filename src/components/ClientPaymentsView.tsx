@@ -10,8 +10,7 @@ import {
   Buildings as Building2,
   ArrowDownRight,
   ArrowUpRight,
-  DownloadSimple as Download,
-} from "@phosphor-icons/react";
+  DownloadSimple as Download, Receipt} from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { CountUp } from "./motion";
 import { ClientPayment, VendorLedgerEntry, Vendor, CostEntry } from "../types";
@@ -22,6 +21,7 @@ import { useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
 import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
 
 interface PaymentsViewProps {
   projectId: string;
@@ -354,14 +354,12 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
             </thead>
             <tbody className="text-sm">
               {combinedLedger.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="p-5 text-center text-ink-muted italic"
-                  >
-                    No transactions recorded yet.
-                  </td>
-                </tr>
+                <EmptyState
+                  colSpan={7}
+                  icon={Receipt}
+                  title="No transactions recorded yet"
+                  body="Client invoices and receipts will appear here as they are entered."
+                />
               ) : (
                 [...combinedLedger].reverse().map((entry) => (
                   <tr

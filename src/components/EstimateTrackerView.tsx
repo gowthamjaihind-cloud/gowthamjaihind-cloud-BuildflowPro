@@ -43,6 +43,7 @@ import { useAuthStore } from "../store";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
 import { toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
 
 interface EstimateTrackerViewProps {
   projectId: string;
@@ -1075,15 +1076,12 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
               </div>
               <div className="p-4 overflow-y-auto grow">
                 {projectTasks.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FileText className="w-10 h-10 text-ink-muted/30 mx-auto mb-3" />
-                    <h3 className="text-sm font-bold text-ink">
-                      No Tasks Found
-                    </h3>
-                    <p className="text-xs text-ink-muted">
-                      Create tasks in the Work Breakdown logic first.
-                    </p>
-                  </div>
+                  <EmptyState
+                    size="inline"
+                    icon={FileText}
+                    title="No tasks found"
+                    body="Create tasks in the Work Breakdown first."
+                  />
                 ) : (
                   <div className="space-y-2">
                     {orderTasksByWbs(projectTasks).map((row) => {
@@ -1281,13 +1279,12 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
             </tbody>
           </table>
           {estimates.length === 0 && (
-            <div className="text-center py-12">
-              <Calculator className="w-12 h-12 text-ink-muted/30 mx-auto mb-3" />
-              <h3 className="text-lg font-bold text-ink">No Estimates Found</h3>
-              <p className="text-ink-muted mb-4">
-                Create your first client estimate to start tracking approvals.
-              </p>
-            </div>
+            <EmptyState
+              size="page"
+              icon={Calculator}
+              title="No estimates yet"
+              body="Create your first client estimate to start tracking approvals."
+            />
           )}
         </div>
       </div>

@@ -45,6 +45,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas-pro";
 import { toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
 
 interface ProgressReportsViewProps {
   projectId: string;
@@ -709,7 +710,11 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
               </h3>
               <div className="space-y-4">
                 {logs.length === 0 ? (
-                  <p className="text-sm text-ink-muted italic">No daily logs found for this period.</p>
+                  <EmptyState
+                    size="inline"
+                    title="No daily logs found"
+                    body="Nothing was logged on site for this period."
+                  />
                 ) : (
                   logs.map((log, index) => {
                     const task = tasks.find((t) => t.id === log.taskId);

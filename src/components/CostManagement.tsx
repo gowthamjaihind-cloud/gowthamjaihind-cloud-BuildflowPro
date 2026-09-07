@@ -46,8 +46,7 @@ import {
   Truck,
   MapPin,
   MagnifyingGlass as Search,
-  Info,
-} from "@phosphor-icons/react";
+  Info, Receipt} from "@phosphor-icons/react";
 import {
   BarChart,
   Bar,
@@ -67,6 +66,7 @@ import { useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "../lib/feedback";
 import { Tooltip as HintTooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
 
 interface CostManagementProps {
   projectId: string;
@@ -1716,9 +1716,11 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </table>
             </div>
             {tasks.length === 0 && (
-              <div className="p-20 text-center text-ink-muted italic">
-                No tasks found. Add tasks in the WBS view to manage costs here.
-              </div>
+              <EmptyState
+                size="page"
+                title="No tasks found"
+                body="Add tasks in the WBS view to manage their costs here."
+              />
             )}
           </div>
         </div>
@@ -1759,14 +1761,12 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </thead>
               <tbody className="divide-y divide-white/10">
                 {(() => { const directCosts = entries.filter(e => !e.taskId && !e.isAccrual); return directCosts.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="p-5 text-center text-ink-muted italic"
-                    >
-                      No direct costs recorded yet.
-                    </td>
-                  </tr>
+                  <EmptyState
+                    colSpan={6}
+                    icon={Receipt}
+                    title="No direct costs recorded yet"
+                    body="Costs booked against the project rather than a single task appear here."
+                  />
                 ) : (
                   directCosts
                     .sort(

@@ -21,6 +21,7 @@ import { RoleGuard } from "../RoleGuard";
 import { useLocationDrilldown, buildPhaseLocationGroups } from "./wbsTreeUtils";
 import { useProjectCostTotals } from "../../hooks/useProjectCostTotals";
 import { Tooltip } from "../Tooltip";
+import { EmptyState } from "../EmptyState";
 
 export interface TabletWBSViewProps {
   projectId: string;
@@ -318,9 +319,10 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
     <div className="flex flex-col h-full bg-surface-dark/5 min-h-[500px] rounded-3xl overflow-hidden relative">
       <div className="flex-1 overflow-y-auto no-scrollbar p-4 bg-surface pb-24">
         {phaseGroups.length === 0 ? (
-          <div className="p-8 text-center bg-surface border border-divider rounded-2xl">
-            <p className="text-ink-muted text-sm">No WBS tasks found.</p>
-          </div>
+          <EmptyState
+            title="No WBS tasks yet"
+            body="Add tasks to build the breakdown for this project."
+          />
         ) : (
           phaseGroups.map(renderAccordionPhase)
         )}

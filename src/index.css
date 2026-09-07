@@ -68,18 +68,24 @@
   --info: #9BAAC2;
 }
 
+/* The schedule screens carry their own scoped variables. The dark block below
+   was migrated to the app palette; this light one was not, so it still held
+   three retired colours under new names -- edge was fossil #C8D1D3, faint was
+   sand #B9B0A2, ink was onyx #1B1C20 -- plus Tailwind's default green and red.
+   Four of the five are used as TEXT, and four of the five failed AA on the
+   white ground: muted 3.55, faint 2.14, ok 2.28, risk 3.76. */
 .schedule-theme {
   --bg: #FFFFFF;
-  --glass: #F5F7FA;
-  --edge: #C8D1D3;
-  --ink: #1B1C20;
-  --muted: #6E8CA0;
-  --faint: #B9B0A2;
+  --glass: #F5F7FA;      /* = --page */
+  --edge: #E1E6EE;       /* = --divider; background/border only */
+  --ink: #0F172A;        /* 17.85 on --bg */
+  --muted: #56637A;      /* 6.07 */
+  --faint: #6B7688;      /* 4.59 -- the lightest that still clears AA as text */
   --acc: #1D4ED8;
   --acc2: #A8C2FF;
-  --ok: #22C55E;
-  --warn: #9A4A22;
-  --risk: #EF4444;
+  --ok: #046A4E;         /* 6.61 */
+  --warn: #9A4A22;       /* 6.22 */
+  --risk: #B3261E;       /* 6.54 */
 }
 
 .dark .schedule-theme {

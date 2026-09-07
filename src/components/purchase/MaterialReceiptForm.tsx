@@ -23,6 +23,7 @@ import {
 import { useAuthStore } from "../../store";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tooltip } from "../Tooltip";
+import { EmptyState } from "../EmptyState";
 
 interface MaterialReceiptFormProps {
   projectId: string;
@@ -535,9 +536,11 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
             ))}
             
             {items.length === 0 && (
-               <div className="text-center py-8 text-ink-muted text-sm font-medium border-2 border-dashed border-divider rounded-xl">
-                  No items added. Select GRNs to auto-fill or add manually.
-               </div>
+               <EmptyState
+                  size="inline"
+                  title="No items added"
+                  body="Select GRNs to auto-fill, or add items manually."
+               />
             )}
           </div>
 

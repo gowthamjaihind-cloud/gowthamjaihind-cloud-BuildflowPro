@@ -19,6 +19,7 @@ import {
 import { DailyLogEntryScreen } from "../DailyLogEntryScreen";
 import { useAuthStore } from "../../store";
 import { toast } from "../../lib/feedback";
+import { EmptyState } from "../EmptyState";
 
 interface ProjectDailyLogsTabProps {
   projectId: string;
@@ -97,21 +98,12 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-4">
             {logs.length === 0 ? (
-              <div className="bg-panel border border-dashed border-divider rounded-3xl p-12 text-center flex flex-col items-center">
-                <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4 text-ink-muted shadow-sm">
-                  <Calendar className="w-8 h-8" />
-                </div>
-                <p className="text-ink-muted font-bold mb-4">
-                  No activities logged for{" "}
-                  {format(new Date(selectedDate), "MMM d, yyyy")}.
-                </p>
-                <button
-                  onClick={() => setLogModalOpen(true)}
-                  className="bg-primary text-white rounded-xl px-6 py-3 text-sm font-bold shadow-lg hover:bg-primary/80 active:scale-95 transition"
-                >
-                  Log Work Now
-                </button>
-              </div>
+              <EmptyState
+                icon={Calendar}
+                title={`No activities logged for ${format(new Date(selectedDate), "MMM d, yyyy")}`}
+                body="Record what the crew did, what was used, and how far the work got."
+                action={{ label: "Log work now", onClick: () => setLogModalOpen(true) }}
+              />
             ) : (
               <div className="space-y-4">
                 <div className="flex justify-between items-center px-2">
@@ -277,9 +269,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                   </span>
                 </div>
                 {materialsRollup.length === 0 ? (
-                  <span className="text-xs text-ink-muted font-medium italic block">
-                    No materials logged today.
-                  </span>
+                  <EmptyState size="inline" title="No materials logged today" />
                 ) : (
                   <ul className="space-y-2">
                     {materialsRollup.map((m, i) => (

@@ -63,6 +63,7 @@ import { useProjectDailyLogsQuery } from "../hooks/useDailyLogs";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
 
 interface LaborTrackingViewProps {
   projectId: string;
@@ -811,12 +812,11 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
               ))}
 
               {raBills.length === 0 && (
-                <div className="bg-surface rounded-[24px] shadow-[0_10px_40px_rgba(0,0,0,0.02)] border border-divider/40 p-12 text-center">
-                  <Calculator className="w-12 h-12 text-ink-muted mx-auto mb-4" />
-                  <p className="text-[10px] md:text-[10px] font-black text-ink-muted uppercase tracking-[0.3em]">
-                    No certification logs found in the archive
-                  </p>
-                </div>
+                <EmptyState
+                  icon={Calculator}
+                  title="No certification logs archived"
+                  body="Certified RA bills are filed here once they are approved."
+                />
               )}
 
               {raBills.length > 0 && (
@@ -933,17 +933,12 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                       </tr>
                     ))}
                     {raBills.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan={!isAdminOrOwner ? 6 : 7}
-                          className="px-6 md:px-10 py-20 md:py-32 text-center"
-                        >
-                          <Calculator className="w-12 h-12 md:w-16 md:h-16 text-ink-muted mx-auto mb-4" />
-                          <p className="text-[10px] md:text-[10px] font-black text-ink-muted uppercase tracking-[0.3em]">
-                            No certification logs found in the archive
-                          </p>
-                        </td>
-                      </tr>
+                      <EmptyState
+                        colSpan={!isAdminOrOwner ? 6 : 7}
+                        icon={Calculator}
+                        title="No certification logs archived"
+                        body="Certified RA bills are filed here once they are approved."
+                      />
                     )}
                   </tbody>
                   <tfoot className="bg-surface-dark border-t border-white/5">

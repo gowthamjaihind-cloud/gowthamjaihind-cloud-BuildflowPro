@@ -191,6 +191,7 @@ hold a filled cobalt CTA, and that button has to stay cobalt.
 | **Input** | White, hairline border, `rounded-xl`, cobalt focus ring |
 | **Select** | Still a native `<select>`, restyled in `@layer base`: hairline border, `rounded-xl`, own caret. Native on purpose — the OS picker beats anything hand-built on a phone |
 | **Screen header band** | `PageHero`. Flat `--surface-dark`, a 3px cobalt rule along the top edge, `--surface-edge` hairline, no shadow. Title 32px, band ~110px. Carries `on-dark`. One dark tone per screen — it matches the at-risk KPI card rather than introducing a second |
+| **Empty state** | `<EmptyState>`. Icon tile, bold title, one muted sentence, optional action. Three sizes — `inline` (in a card section, no tile), `panel` (default), `page`. Inside a `<tbody>` pass `colSpan` and it renders `<tr><td colSpan>` |
 | **Tooltip** | `<Tooltip label="…">` wrapping the control. Navy bubble, white-alpha edge, portalled to `<body>` so an `overflow-hidden` card cannot clip it; flips side near an edge. Shows on hover, on focus and **on tap**; `Escape` and any scroll dismiss. It sets `aria-label` on its child, so it replaces `title` rather than sitting beside it |
 | **Toast** | Card shape, `shadow-lg`, tinted icon chip. Top of the screen; the foot carries the demo banner. Errors 8s and `role="alert"`, others 4–5s and `role="status"` |
 | **Confirm dialog** | Centred card, scrim, `Escape` and scrim cancel. The button names the act — "Delete", not "Confirm". Replaces `window.confirm` |
@@ -280,6 +281,18 @@ Borders do the quiet separating; shadow is only for things that genuinely float.
 - Don't use `K` for thousands, or Western digit grouping.
 - Don't put a negative number in the success colour. `₹-54.0L` in green reads
   as broken even when the sign convention is right.
+- Don't tell a user with no data to adjust their filters. "Nothing yet" and
+  "nothing matches" are different states and four screens conflated them: the
+  guard was on the *filtered* list, so a brand-new project met "try adjusting
+  your search or filters" with no filters set. Branch on the source list first,
+  offer the way to create the first record there, and give the filtered branch
+  a way to clear the filter.
+- Don't put a `<div>` empty state inside a `<tbody>`. It is invalid markup and
+  the browser hoists it out of the table. `colSpan` on `<EmptyState>` exists
+  for this.
+- Don't leave a call to action wired to nothing. The schedule's empty state
+  offered "Add your first task" with no handler and no prop to supply one; it
+  now says where tasks are actually created.
 - Don't let a summary contradict a detail on the same screen — "0 tasks at
   risk" above a phase marked *Behind Schedule* destroys trust in both.
 - Don't wrap a horizontal scroller in `md:flex-wrap` without checking 1024px.

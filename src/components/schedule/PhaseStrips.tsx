@@ -2,6 +2,7 @@ import React from 'react';
 import { Phase } from '../../hooks/useScheduleData';
 import { format } from 'date-fns';
 import { useL } from '../../i18n';
+import { EmptyState } from "../EmptyState";
 
 interface Props {
   phases: Phase[];
@@ -13,11 +14,16 @@ export const PhaseStrips: React.FC<Props> = ({ phases, onNavigate }) => {
   if (phases.length === 0) {
     return (
       <div
-        className="soft-card-interactive rounded-[24px] p-8 flex flex-col items-center justify-center text-center w-full"
+        className="soft-card-interactive rounded-[24px] w-full cursor-pointer"
         onClick={onNavigate}
       >
-        <p className="text-ink font-bold text-sm">{L("Phase Timeline", "கட்ட காலவரிசை")}</p>
-        <p className="text-ink-muted text-xs mt-2">{L("No phases to display yet. Add tasks to see Phase scheduling.", "காட்ட கட்டங்கள் இல்லை. கட்ட அட்டவணையைப் பார்க்க பணிகளைச் சேர்க்கவும்.")}</p>
+        <EmptyState
+          title={L("Phase Timeline", "கட்ட காலவரிசை")}
+          body={L(
+            "No phases to display yet. Add tasks to see Phase scheduling.",
+            "காட்ட கட்டங்கள் இல்லை. கட்ட அட்டவணையைப் பார்க்க பணிகளைச் சேர்க்கவும்.",
+          )}
+        />
       </div>
     );
   }

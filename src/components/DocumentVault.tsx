@@ -45,6 +45,7 @@ import {
 } from "@phosphor-icons/react";
 import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
 
 interface DocumentVaultProps {
   projectId: string;
@@ -931,12 +932,13 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               );
             })}
           {filteredDocs.filter((d) => d.type === "Image").length === 0 && (
-            <div className="col-span-full py-32 flex flex-col items-center justify-center bg-panel/50 rounded-2xl border-2 border-dashed border-divider">
-              <Camera size={48} className="text-ink-muted mb-4" />
-              <p className="text-[10px] font-black text-ink-muted uppercase tracking-widest">
-                No site photos found in the vault
-              </p>
-            </div>
+            <EmptyState
+              size="page"
+              icon={Camera}
+              title="No site photos yet"
+              body="Photos attached to daily logs and uploads land here."
+              className="col-span-full"
+            />
           )}
         </div>
       )}

@@ -25,6 +25,7 @@ import {
   HardHat,
 } from "@phosphor-icons/react";
 import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
 
 interface MaterialConsumptionViewProps {
   projectId: string;
@@ -516,15 +517,12 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
       {/* NO RECORDS GENERAL STATE */}
       {allRecords.length === 0 && laborRecords.length === 0 ? (
-        <div className="bg-surface rounded-2xl border border-divider p-20 text-center" id="empty-state-container">
-          <div className="w-20 h-20 bg-panel rounded-full flex items-center justify-center mx-auto mb-6 border border-divider">
-            <Package className="text-ink-muted w-10 h-10" />
-          </div>
-          <h3 className="text-lg font-black text-ink mb-1 uppercase tracking-wider">No Consumption Logs Yet</h3>
-          <p className="text-ink-muted text-xs max-w-md mx-auto">
-            Once tasks start recording materials used in their Daily Logs or formal Material Issues are processed, they will appear aggregated here.
-          </p>
-        </div>
+        <EmptyState
+          size="page"
+          icon={Package}
+          title="No consumption logged yet"
+          body="Materials appear here once daily logs record what a task used, or a formal material issue is posted."
+        />
       ) : (
         <div className="space-y-6" id="consumption-analytics-content">
           {/* TAB BAR — two top-level tabs */}
@@ -647,7 +645,12 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                     </thead>
                     <tbody className="divide-y divide-divider/40">
                       {laborTotals.perTask.length === 0 ? (
-                        <tr><td colSpan={4} className="p-16 text-center"><HardHat className="text-ink-muted/50 w-8 h-8 mx-auto mb-3" /><p className="text-ink-muted text-xs font-bold uppercase tracking-wider">No labor consumption found</p></td></tr>
+                        <EmptyState
+                          colSpan={4}
+                          icon={HardHat}
+                          title="No labour logged yet"
+                          body="Labour totals per task appear here once daily logs record a crew."
+                        />
                       ) : laborTotals.perTask.map((t) => (
                         <tr key={t.taskName} className="hover:bg-panel/30 transition duration-150">
                           <td className="px-6 py-4 font-bold text-xs text-ink">{t.taskName}</td>
@@ -676,8 +679,31 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-divider/40">
-                      {filteredLaborRecords.length === 0 ? (
-                        <tr><td colSpan={6} className="p-16 text-center"><FileText className="text-ink-muted/50 w-8 h-8 mx-auto mb-3" /><p className="text-ink-muted text-xs font-bold uppercase tracking-wider">No matching labor logs</p></td></tr>
+                      {laborRecords.length === 0 ? (
+                        <EmptyState
+                          colSpan={6}
+                          icon={HardHat}
+                          title="No labour logged yet"
+                          body="Labour appears here once daily logs record a crew against a task."
+                        />
+                      ) : filteredLaborRecords.length === 0 ? (
+                        <EmptyState
+                          colSpan={6}
+                          icon={HardHat}
+                          variant="filtered"
+                          title="No labour matches"
+                          body="No entries match the task, role, vendor or date range selected above."
+                          action={{
+                            label: "Clear filters",
+                            onClick: () => {
+                              setLaborTask("");
+                              setLaborRole("");
+                              setLaborVendor("");
+                              setLaborStartDate("");
+                              setLaborEndDate("");
+                            },
+                          }}
+                        />
                       ) : filteredLaborRecords.map((r) => (
                         <tr key={r.id} className="hover:bg-panel/30 transition duration-150">
                           <td className="px-6 py-4 font-mono text-xs text-ink-muted whitespace-nowrap">{r.date}</td>
@@ -939,19 +965,14 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                     </thead>
                     <tbody className="divide-y divide-divider/40">
                       {advancedFilteredRecords.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="p-20 text-center">
-                            <FileText className="text-ink-muted/50 w-10 h-10 mx-auto mb-4" />
-                            <p className="text-ink-muted text-xs font-bold uppercase tracking-wider">No records match the active search filters</p>
-                            <button
-                              id="reset-filter-link"
-                              onClick={handleResetAdvancedFilters}
-                              className="mt-3 text-xs text-primary font-bold hover:underline uppercase tracking-widest"
-                            >
-                              Reset filters & view all
-                            </button>
-                          </td>
-                        </tr>
+                        <EmptyState
+                          colSpan={5}
+                          icon={FileText}
+                          variant="filtered"
+                          title="No records match"
+                          body="Nothing matches the active search filters."
+                          action={{ label: "Reset filters", onClick: handleResetAdvancedFilters }}
+                        />
                       ) : (
                         advancedFilteredRecords.map((record) => (
                           <tr key={record.id} className="hover:bg-panel/30 transition duration-150">

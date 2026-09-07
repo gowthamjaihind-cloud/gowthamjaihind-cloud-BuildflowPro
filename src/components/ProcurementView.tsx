@@ -69,13 +69,13 @@ import {
   EnvelopeSimple as Mail,
   MapPin,
   HandCoins,
-  Wallet,
-} from "@phosphor-icons/react";
+  Wallet, Receipt} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import { useUIStore, useAuthStore } from "../store";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
 // Removed unused import
 
 interface ProcurementViewProps {
@@ -966,7 +966,12 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               </thead>
               <tbody>
                 {sorted.length === 0 ? (
-                  <tr><td colSpan={7} className="p-8 text-center text-ink-muted text-sm">No vendor bills yet. Use <b>Scan Invoice</b> or send an invoice photo to the Telegram bot.</td></tr>
+                  <EmptyState
+                    colSpan={7}
+                    icon={Receipt}
+                    title="No vendor bills yet"
+                    body="Use Scan Invoice, or have a vendor send one to the Telegram bot."
+                  />
                 ) : sorted.map((b) => (
                   <tr key={b.id} className="border-b border-divider/50">
                     <td className="p-4">
@@ -2074,9 +2079,11 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               </div>
               <div className="flex-1 overflow-y-auto p-4">
                 {masters.length === 0 ? (
-                  <p className="text-sm text-ink-muted text-center py-10">
-                    No parties saved yet. Use the bookmark icon on any party to add it to your master list.
-                  </p>
+                  <EmptyState
+                    size="inline"
+                    title="No parties saved yet"
+                    body="Use the bookmark icon on any party to add it to your master list."
+                  />
                 ) : (
                   <div className="flex flex-col gap-2">
                     {masters.map((m) => {

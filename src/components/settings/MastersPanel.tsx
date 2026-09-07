@@ -25,6 +25,7 @@ import { useL } from "../../i18n";
 import { round2, money } from "../../utils/num";
 import { confirmDialog, toast } from "../../lib/feedback";
 import { Tooltip } from "../Tooltip";
+import { EmptyState } from "../EmptyState";
 
 // Organisation master data. These records are shared by every project, so they
 // belong with the organisation's settings rather than inside one project.
@@ -301,12 +302,11 @@ export const MastersPanel: React.FC = () => {
           )}
 
           {vendors.length === 0 && !showForm ? (
-            <p className="text-sm text-ink-muted py-8 text-center">
-              {L(
-                "No parties yet. Add one here, or use the bookmark icon on a project's Parties screen to lift an existing one up.",
-                "இன்னும் பார்ட்டி இல்ல. இங்க சேருங்க, அல்லது செயல்திட்டத்தின் பார்ட்டி திரையில் புக்மார்க் ஐகானைப் பயன்படுத்துங்க.",
-              )}
-            </p>
+            <EmptyState
+              icon={Truck}
+              title={L("No parties yet", "இன்னும் பார்ட்டி இல்ல")}
+              body={L("Add one here, or use the bookmark icon on a project's Parties screen to lift an existing one up.", "இங்க சேருங்க, அல்லது செயல்திட்டத்தின் பார்ட்டி திரையில் புக்மார்க் ஐகானைப் பயன்படுத்துங்க.")}
+            />
           ) : (
             <div className="flex flex-col gap-2">
               {vendors.map((v) => (
@@ -419,12 +419,11 @@ export const MastersPanel: React.FC = () => {
           )}
 
           {materials.length === 0 && !showMForm ? (
-            <p className="text-sm text-ink-muted py-8 text-center">
-              {L(
-                "No materials yet. Add the items you buy on most sites — cement, steel, sand — and they'll be one click away on every project.",
-                "இன்னும் பொருட்கள் இல்ல. எல்லா சைட்டிலும் வாங்குறதை — சிமெண்ட், ஸ்டீல், மணல் — சேர்த்து வெச்சா, எல்லா செயல்திட்டத்திலும் ஒரு கிளிக்ல கிடைக்கும்.",
-              )}
-            </p>
+            <EmptyState
+              icon={Package}
+              title={L("No materials yet", "இன்னும் பொருட்கள் இல்ல")}
+              body={L("Add the items you buy on most sites — cement, steel, sand — and they'll be one click away on every project.", "எல்லா சைட்டிலும் வாங்குறதை — சிமெண்ட், ஸ்டீல், மணல் — சேர்த்து வெச்சா, எல்லா செயல்திட்டத்திலும் ஒரு கிளிக்ல கிடைக்கும்.")}
+            />
           ) : (
             <div className="flex flex-col gap-2">
               {materials.map((m) => (
@@ -468,12 +467,11 @@ export const MastersPanel: React.FC = () => {
       ) : (
         <div className="space-y-3">
           {templates.length === 0 ? (
-            <p className="text-sm text-ink-muted py-8 text-center">
-              {L(
-                "No saved templates yet. Open a project's WBS and use the bookmark icon to save its breakdown for reuse.",
-                "இன்னும் சேமித்த டெம்ப்ளேட் இல்ல. ஒரு செயல்திட்டத்தின் WBS ல புக்மார்க் ஐகானைப் பயன்படுத்திச் சேமிக்கவும்.",
-              )}
-            </p>
+            <EmptyState
+              icon={TreeStructure}
+              title={L("No saved templates yet", "இன்னும் சேமித்த டெம்ப்ளேட் இல்ல")}
+              body={L("Open a project's WBS and use the bookmark icon to save its breakdown for reuse.", "ஒரு செயல்திட்டத்தின் WBS ல புக்மார்க் ஐகானைப் பயன்படுத்திச் சேமிக்கவும்.")}
+            />
           ) : (
             <div className="flex flex-col gap-2">
               {templates.map((t) => (

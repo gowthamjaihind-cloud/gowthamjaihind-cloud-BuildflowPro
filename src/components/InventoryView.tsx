@@ -55,6 +55,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
 
 interface InventoryViewProps {
   projectId: string;
@@ -836,18 +837,29 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       {/* Inventory Grid */}
       <div className="bg-surface rounded-2xl shadow-sm border border-divider overflow-hidden">
         <div className="overflow-x-auto">
-          {filteredItems.length === 0 ? (
-            <div className="px-10 py-24 text-center">
-              <div className="bg-panel w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-divider shadow-inner">
-                <Package className="w-8 h-8 text-ink-muted" />
-              </div>
-              <h3 className="text-xl font-bold text-ink mb-1">
-                No items found
-              </h3>
-              <p className="text-ink-muted text-sm font-medium">
-                Try adjusting your search or filters.
-              </p>
-            </div>
+          {items.length === 0 ? (
+            <EmptyState
+              size="page"
+              icon={Package}
+              title="No inventory yet"
+              body="Add the materials this project will consume, or pull them in from your organisation master."
+              action={{ label: "Add item", onClick: () => setIsAdding(true) }}
+            />
+          ) : filteredItems.length === 0 ? (
+            <EmptyState
+              size="page"
+              icon={Package}
+              variant="filtered"
+              title="No items match"
+              body="Nothing here matches your search or category filter."
+              action={{
+                label: "Clear filters",
+                onClick: () => {
+                  setSearchTerm("");
+                  setCategoryFilter("All");
+                },
+              }}
+            />
           ) : viewMode === "inventory" ? (
             <div className="bg-surface">
               {breakpoint === "desktop" ? (
@@ -1544,9 +1556,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               {masterMaterials.length === 0 ? (
-                <p className="text-sm text-ink-muted text-center py-10">
-                  No materials saved yet. Add them in Settings → Master data.
-                </p>
+                <EmptyState
+                  size="inline"
+                  title="No materials saved yet"
+                  body="Add them in Settings → Master data and they will be one click away here."
+                />
               ) : (
                 <div className="flex flex-col gap-2">
                   {masterMaterials.map((m) => {

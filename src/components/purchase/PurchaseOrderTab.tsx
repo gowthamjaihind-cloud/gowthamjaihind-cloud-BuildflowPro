@@ -10,6 +10,8 @@ import {
 import { PurchaseOrderForm } from "./PurchaseOrderForm";
 import { PurchaseOrderDetails } from "./PurchaseOrderDetails";
 import { format } from "date-fns";
+import { Receipt } from "@phosphor-icons/react";
+import { EmptyState } from "../EmptyState";
 
 interface PurchaseOrderTabProps {
   projectId: string;
@@ -83,12 +85,28 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                 </tr>
              </thead>
              <tbody>
-                {filteredPOs.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-ink-muted text-sm border-b border-divider/50">
-                      No purchase orders found.
-                    </td>
-                  </tr>
+                {pos.length === 0 ? (
+                  <EmptyState
+                    colSpan={5}
+                    icon={Receipt}
+                    title="No purchase orders yet"
+                    body="Raise a PO to record what was ordered, from whom, and at what rate."
+                  />
+                ) : filteredPOs.length === 0 ? (
+                  <EmptyState
+                    colSpan={5}
+                    icon={Receipt}
+                    variant="filtered"
+                    title="No orders match"
+                    body="Nothing matches your search or status filter."
+                    action={{
+                      label: "Clear filters",
+                      onClick: () => {
+                        setSearchTerm("");
+                        setStatusFilter("All");
+                      },
+                    }}
+                  />
                 ) : (
                   filteredPOs.map(po => (
                     <tr 
