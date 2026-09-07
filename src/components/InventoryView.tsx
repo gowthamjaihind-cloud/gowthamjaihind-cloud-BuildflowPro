@@ -954,18 +954,22 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       width: "100px",
                       render: (item) => (
                         <div className="flex gap-1 justify-end transition-opacity">
-                          <button
-                            onClick={() => setEditingItem(item)}
-                            className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-primary border border-transparent hover:border-divider"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={() => setItemToDelete(item)}
-                            className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-danger border border-transparent hover:border-divider"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                          <Tooltip label={"Edit item"}>
+                            <button aria-label="Edit item"
+                              onClick={() => setEditingItem(item)}
+                              className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-primary border border-transparent hover:border-divider"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip label={"Delete item"}>
+                            <button aria-label="Delete item"
+                              onClick={() => setItemToDelete(item)}
+                              className="p-1.5 hover:bg-surface rounded-lg text-ink-muted hover:text-danger border border-transparent hover:border-divider"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </Tooltip>
                         </div>
                       ),
                     },
@@ -991,9 +995,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                           </div>
                         </div>
                         <div className="flex gap-1 shrink-0 ml-2">
-                          <button onClick={() => setEditingItem(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-primary transition-colors">
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
+                          <Tooltip label={"Edit item"}>
+                            <button aria-label="Edit item" onClick={() => setEditingItem(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-primary transition-colors">
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          </Tooltip>
                           <Tooltip label={
                               (item as any).masterMaterialId
                                 ? "Linked to your organisation master"
@@ -1010,9 +1016,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               <BookmarkSimple className="w-3.5 h-3.5" />
                             </button>
                           </Tooltip>
-                          <button onClick={() => setItemToDelete(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-danger transition-colors">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <Tooltip label={"Delete item"}>
+                            <button aria-label="Delete item" onClick={() => setItemToDelete(item)} className="p-2 bg-panel rounded-lg text-ink-muted hover:text-danger transition-colors">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </Tooltip>
                         </div>
                       </div>
                       <div className="flex gap-3 pt-3 border-t border-divider/60">
@@ -1241,26 +1249,30 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                 </span>
                               )}
                               <div className="flex gap-1 transition-opacity">
-                                <button
-                                  onClick={() =>
-                                    setEditingConfig({
-                                      type: "materialCodes",
-                                      index: idx,
-                                      value: code,
-                                    })
-                                  }
-                                  className="text-ink-muted hover:text-primary transition-colors"
-                                >
-                                  <Edit2 className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleDeleteConfig("materialCodes", idx)
-                                  }
-                                  className="text-ink-muted hover:text-danger transition-colors"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
+                                <Tooltip label={"Edit material code"}>
+                                  <button aria-label="Edit material code"
+                                    onClick={() =>
+                                      setEditingConfig({
+                                        type: "materialCodes",
+                                        index: idx,
+                                        value: code,
+                                      })
+                                    }
+                                    className="text-ink-muted hover:text-primary transition-colors"
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                  </button>
+                                </Tooltip>
+                                <Tooltip label={"Delete material code"}>
+                                  <button aria-label="Delete material code"
+                                    onClick={() =>
+                                      handleDeleteConfig("materialCodes", idx)
+                                    }
+                                    className="text-ink-muted hover:text-danger transition-colors"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </Tooltip>
                               </div>
                             </div>
                           ))}
@@ -1284,18 +1296,20 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               e.key === "Enter" && handleAddConfig()
                             }
                           />
-                          <button
-                            onClick={() => {
-                              setNewConfigValue({
-                                type: "materialCodes",
-                                value: newConfigValue.value,
-                              });
-                              handleAddConfig();
-                            }}
-                            className="p-1 bg-primary text-white rounded-lg"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
+                          <Tooltip label={"Add material code"}>
+                            <button aria-label="Add material code"
+                              onClick={() => {
+                                setNewConfigValue({
+                                  type: "materialCodes",
+                                  value: newConfigValue.value,
+                                });
+                                handleAddConfig();
+                              }}
+                              className="p-1 bg-primary text-white rounded-lg"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </Tooltip>
                         </div>
                       </div>
                     </div>
@@ -1336,26 +1350,30 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                 </span>
                               )}
                               <div className="flex gap-1 transition-opacity">
-                                <button
-                                  onClick={() =>
-                                    setEditingConfig({
-                                      type: "groupCodes",
-                                      index: idx,
-                                      value: group,
-                                    })
-                                  }
-                                  className="text-ink-muted hover:text-primary transition-colors"
-                                >
-                                  <Edit2 className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleDeleteConfig("groupCodes", idx)
-                                  }
-                                  className="text-ink-muted hover:text-danger transition-colors"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
+                                <Tooltip label={"Edit group code"}>
+                                  <button aria-label="Edit group code"
+                                    onClick={() =>
+                                      setEditingConfig({
+                                        type: "groupCodes",
+                                        index: idx,
+                                        value: group,
+                                      })
+                                    }
+                                    className="text-ink-muted hover:text-primary transition-colors"
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                  </button>
+                                </Tooltip>
+                                <Tooltip label={"Delete group code"}>
+                                  <button aria-label="Delete group code"
+                                    onClick={() =>
+                                      handleDeleteConfig("groupCodes", idx)
+                                    }
+                                    className="text-ink-muted hover:text-danger transition-colors"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </Tooltip>
                               </div>
                             </div>
                           ))}
@@ -1379,18 +1397,20 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               e.key === "Enter" && handleAddConfig()
                             }
                           />
-                          <button
-                            onClick={() => {
-                              setNewConfigValue({
-                                type: "groupCodes",
-                                value: newConfigValue.value,
-                              });
-                              handleAddConfig();
-                            }}
-                            className="p-1 bg-primary text-white rounded-lg"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
+                          <Tooltip label={"Add group code"}>
+                            <button aria-label="Add group code"
+                              onClick={() => {
+                                setNewConfigValue({
+                                  type: "groupCodes",
+                                  value: newConfigValue.value,
+                                });
+                                handleAddConfig();
+                              }}
+                              className="p-1 bg-primary text-white rounded-lg"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </Tooltip>
                         </div>
                       </div>
                     </div>
@@ -1431,26 +1451,30 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                 </span>
                               )}
                               <div className="flex gap-1 transition-opacity">
-                                <button
-                                  onClick={() =>
-                                    setEditingConfig({
-                                      type: "units",
-                                      index: idx,
-                                      value: unit,
-                                    })
-                                  }
-                                  className="text-ink-muted hover:text-primary transition-colors"
-                                >
-                                  <Edit2 className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleDeleteConfig("units", idx)
-                                  }
-                                  className="text-ink-muted hover:text-danger transition-colors"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
+                                <Tooltip label={"Edit unit"}>
+                                  <button aria-label="Edit unit"
+                                    onClick={() =>
+                                      setEditingConfig({
+                                        type: "units",
+                                        index: idx,
+                                        value: unit,
+                                      })
+                                    }
+                                    className="text-ink-muted hover:text-primary transition-colors"
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                  </button>
+                                </Tooltip>
+                                <Tooltip label={"Delete unit"}>
+                                  <button aria-label="Delete unit"
+                                    onClick={() =>
+                                      handleDeleteConfig("units", idx)
+                                    }
+                                    className="text-ink-muted hover:text-danger transition-colors"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </Tooltip>
                               </div>
                             </div>
                           ))}
@@ -1474,18 +1498,20 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                               e.key === "Enter" && handleAddConfig()
                             }
                           />
-                          <button
-                            onClick={() => {
-                              setNewConfigValue({
-                                type: "units",
-                                value: newConfigValue.value,
-                              });
-                              handleAddConfig();
-                            }}
-                            className="p-1 bg-primary text-white rounded-lg"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
+                          <Tooltip label={"Add unit"}>
+                            <button aria-label="Add unit"
+                              onClick={() => {
+                                setNewConfigValue({
+                                  type: "units",
+                                  value: newConfigValue.value,
+                                });
+                                handleAddConfig();
+                              }}
+                              className="p-1 bg-primary text-white rounded-lg"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </Tooltip>
                         </div>
                       </div>
                     </div>
@@ -1509,7 +1535,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                   opens the stock at zero — quantity and cost stay this project's own.
                 </p>
               </div>
-              <button
+              <button aria-label={t("common.close")}
                 onClick={() => setShowMaterialPicker(false)}
                 className="p-2 hover:bg-divider rounded-full text-ink shrink-0"
               >
@@ -1610,7 +1636,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     <Package className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                     {editingItem ? "Edit Item" : "New Item"}
                   </h3>
-                  <button
+                  <button aria-label={t("common.close")}
                     type="button"
                     onClick={() => {
                       setIsAdding(false);

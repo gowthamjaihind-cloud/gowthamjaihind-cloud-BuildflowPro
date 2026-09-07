@@ -332,12 +332,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </button>
               </div>
             )}
-            <button
-              onClick={() => setIsFabOpen(!isFabOpen)}
-              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl shadow-primary/30 text-white transition-transform ${isFabOpen ? "bg-ink rotate-45" : "bg-primary"}`}
-            >
-              <Plus className="w-7 h-7" />
-            </button>
+            <Tooltip label={t("header.quickActions")}>
+              <button aria-label={t("header.quickActions")}
+                onClick={() => setIsFabOpen(!isFabOpen)}
+                className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl shadow-primary/30 text-white transition-transform ${isFabOpen ? "bg-ink rotate-45" : "bg-primary"}`}
+              >
+                <Plus className="w-7 h-7" />
+              </button>
+            </Tooltip>
           </div>
         )}
       </main>

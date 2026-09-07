@@ -763,6 +763,8 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                       [task.id]: !prev[task.id],
                     }))
                   }
+                  aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
+                  aria-expanded={isExpanded}
                   className="p-1 hover:bg-surface hover:shadow-md rounded-lg md:rounded-xl apple-transition text-ink-muted hover:text-ink active:scale-90"
                 >
                   {isExpanded ? (
@@ -969,18 +971,22 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
 
             <div className="w-12 md:w-24 flex items-center justify-center gap-0.5 md:gap-1 shrink-0">
               <div className="flex md:gap-1">
-                <button
-                  onClick={() => setEditingTask(task)}
-                  className="p-1 md:p-2.5 text-ink-muted hover:text-ink hover:bg-surface hover:shadow-md rounded-lg md:rounded-2xl apple-transition active:scale-95"
-                >
-                  <Edit2 className="w-3 h-3 md:w-4 md:h-4" />
-                </button>
-                <button
-                  onClick={() => setIsAdding(task.id)}
-                  className="p-1 md:p-2.5 text-primary hover:text-primary hover:bg-warning/12 rounded-lg md:rounded-2xl apple-transition active:scale-90"
-                >
-                  <Plus className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                </button>
+                <Tooltip label={"Edit task"}>
+                  <button aria-label="Edit task"
+                    onClick={() => setEditingTask(task)}
+                    className="p-1 md:p-2.5 text-ink-muted hover:text-ink hover:bg-surface hover:shadow-md rounded-lg md:rounded-2xl apple-transition active:scale-95"
+                  >
+                    <Edit2 className="w-3 h-3 md:w-4 md:h-4" />
+                  </button>
+                </Tooltip>
+                <Tooltip label={"Add subtask"}>
+                  <button aria-label="Add subtask"
+                    onClick={() => setIsAdding(task.id)}
+                    className="p-1 md:p-2.5 text-primary hover:text-primary hover:bg-warning/12 rounded-lg md:rounded-2xl apple-transition active:scale-90"
+                  >
+                    <Plus className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                  </button>
+                </Tooltip>
               </div>
             </div>
           </div>
@@ -1528,7 +1534,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                     ? t("wbs.editTask", { name: editingTask.name })
                     : t("wbs.createNewTask")}
                 </h3>
-                <button
+                <button aria-label={t("common.close")}
                   type="button"
                   onClick={() => {
                     setIsAdding(null);
@@ -1709,7 +1715,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                                 });
                                           }}
                                         />
-                                        <button
+                                        <button aria-label={t("common.close")}
                                           type="button"
                                           onClick={() => {
                                             setIsAddingCustomPhase(false);
@@ -1805,7 +1811,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                                 });
                                           }}
                                         />
-                                        <button
+                                        <button aria-label={t("common.close")}
                                           type="button"
                                           onClick={() => {
                                             setIsAddingCustomLocation(false);
@@ -1967,28 +1973,30 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                         className="px-2 py-0.5 md:px-3 md:py-1 bg-warning/12 text-primary rounded-full text-[10px] md:text-[10px] font-black flex items-center gap-1.5 md:gap-2 group"
                                       >
                                         {code}
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const codes = (
-                                              editingTask?.activityCodes ||
-                                              newTask.activityCodes ||
-                                              []
-                                            ).filter((c) => c !== code);
-                                            editingTask
-                                              ? setEditingTask({
-                                                  ...editingTask,
-                                                  activityCodes: codes,
-                                                })
-                                              : setNewTask({
-                                                  ...newTask,
-                                                  activityCodes: codes,
-                                                });
-                                          }}
-                                          className="hover:text-danger"
-                                        >
-                                          <X className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                                        </button>
+                                        <Tooltip label={"Remove activity code"}>
+                                          <button aria-label="Remove activity code"
+                                            type="button"
+                                            onClick={() => {
+                                              const codes = (
+                                                editingTask?.activityCodes ||
+                                                newTask.activityCodes ||
+                                                []
+                                              ).filter((c) => c !== code);
+                                              editingTask
+                                                ? setEditingTask({
+                                                    ...editingTask,
+                                                    activityCodes: codes,
+                                                  })
+                                                : setNewTask({
+                                                    ...newTask,
+                                                    activityCodes: codes,
+                                                  });
+                                            }}
+                                            className="hover:text-danger"
+                                          >
+                                            <X className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                                          </button>
+                                        </Tooltip>
                                       </span>
                                     ))}
                                   </div>
@@ -2429,30 +2437,32 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                               D
                                             </span>
                                           </div>
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              const newDeps = (
-                                                editingTask?.advancedDependencies ||
-                                                newTask.advancedDependencies ||
-                                                []
-                                              ).filter((_, i) => i !== idx);
-                                              editingTask
-                                                ? setEditingTask({
-                                                    ...editingTask,
-                                                    advancedDependencies:
-                                                      newDeps,
-                                                  })
-                                                : setNewTask({
-                                                    ...newTask,
-                                                    advancedDependencies:
-                                                      newDeps,
-                                                  });
-                                            }}
-                                            className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded-lg transition-all"
-                                          >
-                                            <X className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                                          </button>
+                                          <Tooltip label={"Remove dependency"}>
+                                            <button aria-label="Remove dependency"
+                                              type="button"
+                                              onClick={() => {
+                                                const newDeps = (
+                                                  editingTask?.advancedDependencies ||
+                                                  newTask.advancedDependencies ||
+                                                  []
+                                                ).filter((_, i) => i !== idx);
+                                                editingTask
+                                                  ? setEditingTask({
+                                                      ...editingTask,
+                                                      advancedDependencies:
+                                                        newDeps,
+                                                    })
+                                                  : setNewTask({
+                                                      ...newTask,
+                                                      advancedDependencies:
+                                                        newDeps,
+                                                    });
+                                              }}
+                                              className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded-lg transition-all"
+                                            >
+                                              <X className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                                            </button>
+                                          </Tooltip>
                                         </div>
                                       );
                                     })}
@@ -2658,28 +2668,30 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                               });
                                         }}
                                       />
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const newRes = (
-                                            editingTask?.resources ||
-                                            newTask.resources ||
-                                            []
-                                          ).filter((_, i) => i !== idx);
-                                          editingTask
-                                            ? setEditingTask({
-                                                ...editingTask,
-                                                resources: newRes,
-                                              })
-                                            : setNewTask({
-                                                ...newTask,
-                                                resources: newRes,
-                                              });
-                                        }}
-                                        className="text-ink-muted hover:text-danger p-1 transition-colors"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                      </button>
+                                      <Tooltip label={"Remove resource"}>
+                                        <button aria-label="Remove resource"
+                                          type="button"
+                                          onClick={() => {
+                                            const newRes = (
+                                              editingTask?.resources ||
+                                              newTask.resources ||
+                                              []
+                                            ).filter((_, i) => i !== idx);
+                                            editingTask
+                                              ? setEditingTask({
+                                                  ...editingTask,
+                                                  resources: newRes,
+                                                })
+                                              : setNewTask({
+                                                  ...newTask,
+                                                  resources: newRes,
+                                                });
+                                          }}
+                                          className="text-ink-muted hover:text-danger p-1 transition-colors"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                        </button>
+                                      </Tooltip>
                                     </div>
                                   ))}
                                 </div>
@@ -2781,28 +2793,30 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                               });
                                         }}
                                       />
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const newMa = (
-                                            editingTask?.materialAllocations ||
-                                            newTask.materialAllocations ||
-                                            []
-                                          ).filter((_, i) => i !== idx);
-                                          editingTask
-                                            ? setEditingTask({
-                                                ...editingTask,
-                                                materialAllocations: newMa,
-                                              })
-                                            : setNewTask({
-                                                ...newTask,
-                                                materialAllocations: newMa,
-                                              });
-                                        }}
-                                        className="text-ink-muted hover:text-danger p-1 transition-colors"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                      </button>
+                                      <Tooltip label={"Remove material allocation"}>
+                                        <button aria-label="Remove material allocation"
+                                          type="button"
+                                          onClick={() => {
+                                            const newMa = (
+                                              editingTask?.materialAllocations ||
+                                              newTask.materialAllocations ||
+                                              []
+                                            ).filter((_, i) => i !== idx);
+                                            editingTask
+                                              ? setEditingTask({
+                                                  ...editingTask,
+                                                  materialAllocations: newMa,
+                                                })
+                                              : setNewTask({
+                                                  ...newTask,
+                                                  materialAllocations: newMa,
+                                                });
+                                          }}
+                                          className="text-ink-muted hover:text-danger p-1 transition-colors"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                        </button>
+                                      </Tooltip>
                                     </div>
                                   ))}
                                 </div>

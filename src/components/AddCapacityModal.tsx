@@ -6,6 +6,7 @@ import { usePlan } from "../hooks/usePlan";
 import { useProjectsQuery } from "../hooks/queries";
 import { PLANS, PLAN_ORDER, PlanId } from "../lib/plans";
 import { useL } from "../i18n";
+import { Tooltip } from "./Tooltip";
 
 interface AddCapacityModalProps {
   isOpen: boolean;
@@ -79,7 +80,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
                 {L("You've used", "நீங்கள் பயன்படுத்தியது")} {projects.length} / {included} {L("included projects.", "உள்ளடங்கிய செயல்திட்டங்கள்.")}
               </p>
             </div>
-            <button
+            <button aria-label={L("Close","மூடு")}
               type="button"
               onClick={onClose}
               className="p-2.5 hover:bg-panel rounded-full transition-colors text-ink-muted hover:text-ink"
@@ -105,23 +106,27 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
             </p>
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="inline-flex items-center gap-3 bg-panel border border-divider rounded-full p-1">
-                <button
-                  type="button"
-                  onClick={() => setQty((q) => Math.max(minSlots, q - 1))}
-                  disabled={slots <= minSlots || busy}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface disabled:opacity-40 apple-transition"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
+                <Tooltip label={"Decrease quantity"}>
+                  <button aria-label="Decrease quantity"
+                    type="button"
+                    onClick={() => setQty((q) => Math.max(minSlots, q - 1))}
+                    disabled={slots <= minSlots || busy}
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface disabled:opacity-40 apple-transition"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                </Tooltip>
                 <span className="font-bold text-lg text-ink w-8 text-center">{slots}</span>
-                <button
-                  type="button"
-                  onClick={() => setQty((q) => Math.min(50, Math.max(minSlots, q) + 1))}
-                  disabled={slots >= 50 || busy}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface disabled:opacity-40 apple-transition"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+                <Tooltip label={"Increase quantity"}>
+                  <button aria-label="Increase quantity"
+                    type="button"
+                    onClick={() => setQty((q) => Math.min(50, Math.max(minSlots, q) + 1))}
+                    disabled={slots >= 50 || busy}
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface disabled:opacity-40 apple-transition"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </Tooltip>
               </div>
               <button
                 type="button"

@@ -101,7 +101,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 {L("Upgrade instantly, or downgrade at the end of your cycle.", "உடனடியாக மேம்படுத்தவும், அல்லது சுழற்சியின் முடிவில் குறைக்கவும்.")}
               </p>
             </div>
-            <button
+            <button aria-label={L("Close","மூடு")}
               type="button"
               onClick={onClose}
               className="p-2.5 hover:bg-panel rounded-full transition-colors text-ink-muted hover:text-ink"

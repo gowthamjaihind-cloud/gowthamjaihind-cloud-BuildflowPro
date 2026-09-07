@@ -34,6 +34,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "header.siteModeLive": "Site Mode Live",
     "header.switch": "Switch",
     "header.switchProject": "Switch Project",
+    "header.quickActions": "Quick actions",
     "header.newDprEntry": "New DPR Entry",
 
     // ---- Project status ----
@@ -581,6 +582,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "header.siteModeLive": "சைட் மோட் ஆன்",
     "header.switch": "மாற்று",
     "header.switchProject": "செயல்திட்டத்தை மாற்று",
+    "header.quickActions": "விரைவு செயல்கள்",
     "header.newDprEntry": "புதிய DPR பதிவு",
 
     // ---- Project status ----

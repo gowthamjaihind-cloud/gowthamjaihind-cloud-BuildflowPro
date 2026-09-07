@@ -160,7 +160,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                  <Download className="w-3.5 h-3.5" /> PDF
                </button>
              </Tooltip>
-             <button type="button" onClick={onClose} className="p-2 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer ml-1">
+             <button aria-label={L("Close","மூடு")} type="button" onClick={onClose} className="p-2 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer ml-1">
                <X className="w-5 h-5" />
              </button>
            </div>
@@ -252,9 +252,11 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                </button>
             )}
             {canEditOrDelete && (
-               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-danger/8 hover:bg-danger/15 text-danger text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
-                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} {po.status === "Draft" ? L("Delete Draft","வரைவை நீக்கு") : L("Delete PO","ஆணையை நீக்கு")}
-               </button>
+               <Tooltip label={L("Delete","நீக்கு")}>
+                 <button aria-label={L("Delete","நீக்கு")} onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-danger/8 hover:bg-danger/15 text-danger text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
+                   {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} {po.status === "Draft" ? L("Delete Draft","வரைவை நீக்கு") : L("Delete PO","ஆணையை நீக்கு")}
+                 </button>
+               </Tooltip>
             )}
             {po.status === "Draft" && isAdminOrOwner && (
                <button onClick={handleApprove} disabled={isApproving} className="px-6 py-3 bg-primary hover:bg-primary-deep text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)]">

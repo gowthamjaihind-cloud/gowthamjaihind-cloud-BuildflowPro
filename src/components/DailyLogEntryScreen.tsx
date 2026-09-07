@@ -34,6 +34,7 @@ import { useAuthStore } from "../store";
 import { compressImage } from "../utils/imageCompressor";
 import { useTranslation } from "../i18n";
 import { toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
 
 interface DailyLogEntryScreenProps {
   projectId: string;
@@ -415,7 +416,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
               {editLog ? t("dlog.editSubtitle") : t("dlog.newSubtitle")}
             </p>
           </div>
-          <button
+          <button aria-label={t("common.close")}
             type="button"
             onClick={onClose}
             className="p-3 bg-panel hover:bg-divider rounded-full transition text-ink cursor-pointer"
@@ -596,15 +597,17 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     }
                     className="flex-1 w-20 bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none font-mono"
                   />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMaterials(materials.filter((_, idx) => idx !== i))
-                    }
-                    className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip label={"Remove material row"}>
+                    <button aria-label="Remove material row"
+                      type="button"
+                      onClick={() =>
+                        setMaterials(materials.filter((_, idx) => idx !== i))
+                      }
+                      className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               ))}
             </div>
@@ -648,15 +651,17 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     }
                     className="flex-1 w-20 bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none font-mono"
                   />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setLabour(labour.filter((_, idx) => idx !== i))
-                    }
-                    className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip label={"Remove labour row"}>
+                    <button aria-label="Remove labour row"
+                      type="button"
+                      onClick={() =>
+                        setLabour(labour.filter((_, idx) => idx !== i))
+                      }
+                      className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               ))}
             </div>
@@ -710,15 +715,17 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     <option value="hours">{t("dlog.hrs")}</option>
                     <option value="days">{t("dlog.days")}</option>
                   </select>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEquipment(equipment.filter((_, idx) => idx !== i))
-                    }
-                    className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip label={"Remove equipment row"}>
+                    <button aria-label="Remove equipment row"
+                      type="button"
+                      onClick={() =>
+                        setEquipment(equipment.filter((_, idx) => idx !== i))
+                      }
+                      className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               ))}
 
@@ -885,13 +892,15 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                         alt="Preview"
                         className="w-full h-full object-cover"
                       />
-                      <button
-                        type="button"
-                        onClick={() => removePhoto(idx)}
-                        className="absolute top-1 right-1 p-1 bg-surface-dark/60 hover:bg-danger text-white rounded-lg backdrop-blur-md transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                      <Tooltip label={"Remove photo"}>
+                        <button aria-label="Remove photo"
+                          type="button"
+                          onClick={() => removePhoto(idx)}
+                          className="absolute top-1 right-1 p-1 bg-surface-dark/60 hover:bg-danger text-white rounded-lg backdrop-blur-md transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Tooltip>
                     </div>
                   ))}
                 </div>

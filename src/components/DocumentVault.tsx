@@ -44,6 +44,7 @@ import {
   ShieldCheck,
 } from "@phosphor-icons/react";
 import { confirmDialog, toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
 
 interface DocumentVaultProps {
   projectId: string;
@@ -472,7 +473,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
             onSubmit={handleUpload}
             className="bg-surface w-full max-w-2xl p-5 md:p-6 rounded-2xl border shadow-2xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 relative my-auto max-h-[95vh] overflow-y-auto custom-scrollbar"
           >
-            <button
+            <button aria-label={t("common.close")}
               type="button"
               onClick={() => {
                 setIsUploading(false);
@@ -703,17 +704,19 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
             <thead>
               <tr className="bg-panel border-b">
                 <th className="px-4 lg:px-6 py-3 lg:py-5 w-12">
-                  <button
-                    onClick={toggleSelectAll}
-                    className="text-ink-muted hover:text-primary transition-colors"
-                  >
-                    {selectedDocIds.length === filteredDocs.length &&
-                    filteredDocs.length > 0 ? (
-                      <CheckSquare className="w-5 h-5 text-primary" />
-                    ) : (
-                      <Square className="w-5 h-5" />
-                    )}
-                  </button>
+                  <Tooltip label={"Select all documents"}>
+                    <button aria-label="Select all documents"
+                      onClick={toggleSelectAll}
+                      className="text-ink-muted hover:text-primary transition-colors"
+                    >
+                      {selectedDocIds.length === filteredDocs.length &&
+                      filteredDocs.length > 0 ? (
+                        <CheckSquare className="w-5 h-5 text-primary" />
+                      ) : (
+                        <Square className="w-5 h-5" />
+                      )}
+                    </button>
+                  </Tooltip>
                 </th>
                 <th className="px-4 lg:px-6 py-3 lg:py-5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
                   Document Name
@@ -745,16 +748,18 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                     className={`hover:bg-panel transition-colors group ${isSelected ? "bg-warning/12/50" : ""}`}
                   >
                     <td className="px-4 lg:px-6 py-4 lg:py-6">
-                      <button
-                        onClick={() => toggleSelect(docItem.id)}
-                        className={`transition-colors ${isSelected ? "text-primary" : "text-ink-muted group-hover:text-ink-muted"}`}
-                      >
-                        {isSelected ? (
-                          <CheckSquare className="w-5 h-5" />
-                        ) : (
-                          <Square className="w-5 h-5" />
-                        )}
-                      </button>
+                      <Tooltip label={"Select document"}>
+                        <button aria-label="Select document"
+                          onClick={() => toggleSelect(docItem.id)}
+                          className={`transition-colors ${isSelected ? "text-primary" : "text-ink-muted group-hover:text-ink-muted"}`}
+                        >
+                          {isSelected ? (
+                            <CheckSquare className="w-5 h-5" />
+                          ) : (
+                            <Square className="w-5 h-5" />
+                          )}
+                        </button>
+                      </Tooltip>
                     </td>
                     <td className="px-4 lg:px-6 py-4 lg:py-6">
                       <div className="flex items-center gap-4">
@@ -877,23 +882,25 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   <div
                     className={`absolute top-4 left-4 z-20 transition-all ${isSelected ? "opacity-100" : "opacity-100"}`}
                   >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleSelect(photo.id);
-                      }}
-                      className={`p-2 rounded-xl backdrop-blur-md shadow-lg transition-all ${
-                        isSelected
-                          ? "bg-primary text-white"
-                          : "bg-surface/90 text-ink-muted hover:text-primary"
-                      }`}
-                    >
-                      {isSelected ? (
-                        <CheckSquare size={16} />
-                      ) : (
-                        <Square size={16} />
-                      )}
-                    </button>
+                    <Tooltip label={"Select photo"}>
+                      <button aria-label="Select photo"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelect(photo.id);
+                        }}
+                        className={`p-2 rounded-xl backdrop-blur-md shadow-lg transition-all ${
+                          isSelected
+                            ? "bg-primary text-white"
+                            : "bg-surface/90 text-ink-muted hover:text-primary"
+                        }`}
+                      >
+                        {isSelected ? (
+                          <CheckSquare size={16} />
+                        ) : (
+                          <Square size={16} />
+                        )}
+                      </button>
+                    </Tooltip>
                   </div>
 
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent transition-opacity p-6 flex flex-col justify-end">

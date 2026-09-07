@@ -284,7 +284,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                <span className="text-white/80 text-[10px] font-bold uppercase tracking-widest">{overallMatchStatus}</span>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+          <button aria-label="Close" onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
             <X className="w-5 h-5 md:w-6 md:h-6" />
           </button>
         </div>
@@ -451,9 +451,11 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                                 {data.status === "Unmatched" && <span className="text-danger bg-danger/8 px-2 py-1 rounded-full font-bold">Unmatched</span>}
                              </td>
                              <td className="p-2 text-right">
-                                <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-danger hover:text-danger hover:bg-danger/8 p-1.5 rounded-lg transition-colors">
-                                   <Trash2 className="w-4 h-4" />
-                                </button>
+                                <Tooltip label={"Remove item"}>
+                                  <button aria-label="Remove item" type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-danger hover:text-danger hover:bg-danger/8 p-1.5 rounded-lg transition-colors">
+                                     <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </Tooltip>
                              </td>
                           </tr>
                        ))}
@@ -523,9 +525,11 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                   </div>
                 </div>
                 <div className="col-span-1 flex justify-end pb-1 pb-1">
-                  <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-danger hover:text-danger hover:bg-danger/8 p-2 rounded-xl transition-colors">
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  <Tooltip label={"Remove item"}>
+                    <button aria-label="Remove item" type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-danger hover:text-danger hover:bg-danger/8 p-2 rounded-xl transition-colors">
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             ))}

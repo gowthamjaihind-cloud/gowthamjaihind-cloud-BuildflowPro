@@ -495,31 +495,35 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
 
                               {isAdminOrOwner && (
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setNewRate({
-                                        vendorId: rate.vendorId,
-                                        role: rate.role,
-                                        rate: rate.rate,
-                                        unit: rate.unit,
-                                      });
-                                      setEditingRateId(rate.id);
-                                      setIsAddingRate(true);
-                                    }}
-                                    className="p-1 bg-panel text-ink-muted rounded hover:bg-surface-dark hover:text-white transition-all"
-                                  >
-                                    <Edit2 className="w-3 h-3" />
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setIsDeletingRate(rate.id);
-                                    }}
-                                    className="p-1 bg-panel text-ink-muted rounded hover:bg-danger hover:text-white transition-all"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </button>
+                                  <Tooltip label={"Edit labour rate"}>
+                                    <button aria-label="Edit labour rate"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setNewRate({
+                                          vendorId: rate.vendorId,
+                                          role: rate.role,
+                                          rate: rate.rate,
+                                          unit: rate.unit,
+                                        });
+                                        setEditingRateId(rate.id);
+                                        setIsAddingRate(true);
+                                      }}
+                                      className="p-1 bg-panel text-ink-muted rounded hover:bg-surface-dark hover:text-white transition-all"
+                                    >
+                                      <Edit2 className="w-3 h-3" />
+                                    </button>
+                                  </Tooltip>
+                                  <Tooltip label={"Delete labour rate"}>
+                                    <button aria-label="Delete labour rate"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsDeletingRate(rate.id);
+                                      }}
+                                      className="p-1 bg-panel text-ink-muted rounded hover:bg-danger hover:text-white transition-all"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  </Tooltip>
                                 </div>
                               )}
                             </div>
@@ -767,12 +771,14 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         {bill.status}
                       </span>
                       {isAdminOrOwner && (
-                        <button
-                          onClick={() => handleDeleteRABill(bill.id)}
-                          className="p-1.5 text-ink-muted hover:text-danger bg-red-50/50 rounded-lg apple-transition shrink-0"
-                        >
-                          <Trash2 className="w-3.5 md:w-4 h-3.5 md:h-4" />
-                        </button>
+                        <Tooltip label={"Delete RA bill"}>
+                          <button aria-label="Delete RA bill"
+                            onClick={() => handleDeleteRABill(bill.id)}
+                            className="p-1.5 text-ink-muted hover:text-danger bg-red-50/50 rounded-lg apple-transition shrink-0"
+                          >
+                            <Trash2 className="w-3.5 md:w-4 h-3.5 md:h-4" />
+                          </button>
+                        </Tooltip>
                       )}
                     </div>
                   </div>
@@ -914,12 +920,14 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         </td>
                         {isAdminOrOwner && (
                           <td className="px-6 md:px-10 py-6 md:py-8 text-right">
-                            <button
-                              onClick={() => handleDeleteRABill(bill.id)}
-                              className="opacity-0 group-hover:opacity-100 p-2 text-ink-muted hover:text-danger apple-transition"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <Tooltip label={"Delete RA bill"}>
+                              <button aria-label="Delete RA bill"
+                                onClick={() => handleDeleteRABill(bill.id)}
+                                className="opacity-0 group-hover:opacity-100 p-2 text-ink-muted hover:text-danger apple-transition"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </Tooltip>
                           </td>
                         )}
                       </tr>
@@ -1088,7 +1096,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                     {t("views.laborMatrix")}
                   </p>
                 </div>
-                <button
+                <button aria-label={t("common.close")}
                   type="button"
                   onClick={() => {
                     setIsAddingRate(false);

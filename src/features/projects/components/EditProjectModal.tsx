@@ -120,7 +120,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                   {t("cpm.modifyParams")}
                 </p>
               </div>
-              <button
+              <button aria-label={t("common.close")}
                 type="button"
                 onClick={onClose}
                 className="p-3 hover:bg-panel rounded-full transition-colors text-ink-muted hover:text-ink"

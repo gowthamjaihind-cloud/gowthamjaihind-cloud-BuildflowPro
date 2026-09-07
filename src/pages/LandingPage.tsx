@@ -32,6 +32,7 @@ import {
   Sparkle,
   Stack,
 } from "@phosphor-icons/react";
+import { Tooltip } from "../components/Tooltip";
 
 interface LandingPageProps {
   isLoggingIn: boolean;
@@ -728,21 +729,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 </span>
               </label>
 
-              <button
-                onClick={confirmConsentAndLogin}
-                disabled={!agreed || isLoggingIn}
-                className="w-full inline-flex items-center justify-center gap-2 font-bold text-base px-7 py-4 rounded-2xl bg-primary text-white hover:bg-primary-deep shadow-xl shadow-primary/20 apple-transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoggingIn ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" /> Connecting…
-                  </>
-                ) : (
-                  <>
-                    Continue with Google <ArrowRight weight="bold" className="w-4 h-4" />
-                  </>
-                )}
-              </button>
+              <Tooltip label={L("Accept and continue","ஏற்று தொடர்க")}>
+                <button aria-label={L("Accept and continue","ஏற்று தொடர்க")}
+                  onClick={confirmConsentAndLogin}
+                  disabled={!agreed || isLoggingIn}
+                  className="w-full inline-flex items-center justify-center gap-2 font-bold text-base px-7 py-4 rounded-2xl bg-primary text-white hover:bg-primary-deep shadow-xl shadow-primary/20 apple-transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoggingIn ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" /> Connecting…
+                    </>
+                  ) : (
+                    <>
+                      Continue with Google <ArrowRight weight="bold" className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </Tooltip>
 
               <div className="flex items-center gap-3 my-5">
                 <div className="h-px bg-divider flex-1" />

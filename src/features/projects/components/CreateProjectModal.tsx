@@ -28,6 +28,7 @@ import { collection, doc, writeBatch } from "firebase/firestore";
 import { db } from "../../../firebase";
 import { getProjectSubCollectionPath } from "../../../utils/projectPath";
 import { confirmDialog, toast } from "../../../lib/feedback";
+import { Tooltip } from "../../../components/Tooltip";
 
 // Order the built-in groups the way a contractor would scan them.
 const CATEGORY_ORDER = [
@@ -255,7 +256,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   {t("cpm.initParams")}
                 </p>
               </div>
-              <button
+              <button aria-label={L("Close","மூடு")}
                 type="button"
                 onClick={onClose}
                 className="p-3 hover:bg-panel rounded-full transition-colors text-ink-muted hover:text-ink"
@@ -324,15 +325,17 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     />
                   </label>
                   {newProject.imageUrl && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setNewProject({ ...newProject, imageUrl: "" })
-                      }
-                      className="p-3 text-danger hover:bg-danger/10 rounded-xl app-transition flex-shrink-0"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    <Tooltip label={"Remove cover image"}>
+                      <button aria-label="Remove cover image"
+                        type="button"
+                        onClick={() =>
+                          setNewProject({ ...newProject, imageUrl: "" })
+                        }
+                        className="p-3 text-danger hover:bg-danger/10 rounded-xl app-transition flex-shrink-0"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </Tooltip>
                   )}
                 </div>
               </div>

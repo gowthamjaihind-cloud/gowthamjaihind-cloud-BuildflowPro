@@ -15,6 +15,7 @@ import { round2 } from "../../utils/num";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { compressImage } from "../../utils/imageCompressor";
 import { useQueryClient } from "@tanstack/react-query";
+import { Tooltip } from "../Tooltip";
 
 interface GoodsReceiptFormProps {
   po: PurchaseOrder;
@@ -350,7 +351,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
              <h2 className="text-xl font-bold text-ink">Record Goods Receipt</h2>
              <p className="text-xs text-ink-muted mt-1 uppercase tracking-widest font-bold">PO: {po.poNumber}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-divider rounded-full transition text-ink cursor-pointer">
+          <button aria-label="Close" onClick={onClose} className="p-2 hover:bg-divider rounded-full transition text-ink cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -498,13 +499,15 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                           alt="Challan photo" 
                           className="w-full h-full object-cover" 
                        />
-                       <button
-                          type="button"
-                          onClick={() => setPhotos(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute top-1 right-1 p-1 bg-red-500/90 hover:bg-danger text-white rounded-lg shadow-sm transition opacity-0 group-hover:opacity-100"
-                       >
-                          <X className="w-3.5 h-3.5" />
-                       </button>
+                       <Tooltip label={"Remove photo"}>
+                         <button aria-label="Remove photo"
+                            type="button"
+                            onClick={() => setPhotos(prev => prev.filter((_, idx) => idx !== i))}
+                            className="absolute top-1 right-1 p-1 bg-red-500/90 hover:bg-danger text-white rounded-lg shadow-sm transition opacity-0 group-hover:opacity-100"
+                         >
+                            <X className="w-3.5 h-3.5" />
+                         </button>
+                       </Tooltip>
                     </div>
                  ))}
                  

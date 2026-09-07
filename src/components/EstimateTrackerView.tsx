@@ -508,12 +508,14 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
         )}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSelectedEstimateId(null)}
-              className="p-2 bg-surface border border-divider rounded-xl hover:bg-panel transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-ink" />
-            </button>
+            <Tooltip label={"Back to estimates"}>
+              <button aria-label="Back to estimates"
+                onClick={() => setSelectedEstimateId(null)}
+                className="p-2 bg-surface border border-divider rounded-xl hover:bg-panel transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-ink" />
+              </button>
+            </Tooltip>
             <div>
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold text-ink">
@@ -602,12 +604,14 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     key={item.id}
                     className="bg-panel border border-white/10 rounded-xl p-4 flex flex-col gap-3 group relative"
                   >
-                    <button
-                      onClick={() => removeLineItem(item.id)}
-                      className="absolute top-4 right-4 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-danger transition-all pointer-events-none group-hover:pointer-events-auto"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <Tooltip label={"Remove line item"}>
+                      <button aria-label="Remove line item"
+                        onClick={() => removeLineItem(item.id)}
+                        className="absolute top-4 right-4 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-danger transition-all pointer-events-none group-hover:pointer-events-auto"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-8">
                       <div>
                         <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
@@ -1267,7 +1271,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button className="p-2 text-ink-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                        <button aria-label="Open estimate" className="p-2 text-ink-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
                           <ChevronRight className="w-4 h-4" />
                         </button>
                       </div>

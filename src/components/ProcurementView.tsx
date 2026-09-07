@@ -1113,29 +1113,31 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   </div>
                   <div className="flex flex-col items-end">
                     <div className="flex gap-1 md:gap-2 mb-2 md:mb-4">
-                      <button
-                        onClick={() => {
-                          setNewVendor({
-                            name: vendor.name,
-                            type: vendor.type,
-                            contactPerson: vendor.contactPerson || "",
-                            email: vendor.email || "",
-                            phone: vendor.phone || "",
-                            address: vendor.address || "",
-                            outstandingBalance: vendor.outstandingBalance,
-                          });
-                          setOpeningBalanceInput(
-                            (vendor.outstandingBalance || 0) -
-                              netStatementFor(vendor.id),
-                          );
-                          setSelectedVendor(vendor);
-                          setIsEditingVendor(true);
-                          setIsAddingVendor(true);
-                        }}
-                        className="p-1.5 md:p-2 text-ink-muted hover:text-primary-strong apple-transition"
-                      >
-                        <Edit2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                      </button>
+                      <Tooltip label={"Edit vendor"}>
+                        <button aria-label="Edit vendor"
+                          onClick={() => {
+                            setNewVendor({
+                              name: vendor.name,
+                              type: vendor.type,
+                              contactPerson: vendor.contactPerson || "",
+                              email: vendor.email || "",
+                              phone: vendor.phone || "",
+                              address: vendor.address || "",
+                              outstandingBalance: vendor.outstandingBalance,
+                            });
+                            setOpeningBalanceInput(
+                              (vendor.outstandingBalance || 0) -
+                                netStatementFor(vendor.id),
+                            );
+                            setSelectedVendor(vendor);
+                            setIsEditingVendor(true);
+                            setIsAddingVendor(true);
+                          }}
+                          className="p-1.5 md:p-2 text-ink-muted hover:text-primary-strong apple-transition"
+                        >
+                          <Edit2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                        </button>
+                      </Tooltip>
                       <Tooltip label={
                           (vendor as any).masterVendorId
                             ? "Linked to your organisation master"
@@ -1154,12 +1156,14 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           <BookmarkSimple className="w-3.5 h-3.5 md:w-5 md:h-5" />
                         </button>
                       </Tooltip>
-                      <button
-                        onClick={() => setIsDeletingVendor(vendor.id)}
-                        className="p-1.5 md:p-2 text-ink-muted hover:text-danger apple-transition"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                      </button>
+                      <Tooltip label={"Delete vendor"}>
+                        <button aria-label="Delete vendor"
+                          onClick={() => setIsDeletingVendor(vendor.id)}
+                          className="p-1.5 md:p-2 text-ink-muted hover:text-danger apple-transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                        </button>
+                      </Tooltip>
                     </div>
                     <div className="text-right">
                       <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-ink-muted">
@@ -1381,23 +1385,27 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     {isAdminOrOwner && (
                       <td className="px-6 md:px-10 py-5 md:py-8 text-right">
                         <div className="flex justify-end gap-1.5 md:gap-2 transition-opacity scale-90 group-hover:scale-100">
-                          <button
-                            onClick={() => {
-                              setSelectedReceipt(receipt);
-                              setNewReceipt(receipt);
-                              setIsEditingReceipt(true);
-                              setIsAddingReceipt(true);
-                            }}
-                            className="p-2.5 md:p-3 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition"
-                          >
-                            <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                          </button>
-                          <button
-                            onClick={() => setIsDeletingReceipt(receipt.id)}
-                            className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                          </button>
+                          <Tooltip label={"Edit receipt"}>
+                            <button aria-label="Edit receipt"
+                              onClick={() => {
+                                setSelectedReceipt(receipt);
+                                setNewReceipt(receipt);
+                                setIsEditingReceipt(true);
+                                setIsAddingReceipt(true);
+                              }}
+                              className="p-2.5 md:p-3 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition"
+                            >
+                              <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip label={"Delete receipt"}>
+                            <button aria-label="Delete receipt"
+                              onClick={() => setIsDeletingReceipt(receipt.id)}
+                              className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            </button>
+                          </Tooltip>
                         </div>
                       </td>
                     )}
@@ -1552,7 +1560,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 <span className="truncate max-w-[100px] md:max-w-none">
                   {selectedVendor.name}
                 </span>
-                <button
+                <button aria-label={t("common.close")}
                   onClick={() => setSelectedVendor(null)}
                   className="p-1 hover:bg-surface/10 rounded-lg apple-transition"
                 >
@@ -1669,65 +1677,75 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         <td className="px-6 md:px-10 py-5 md:py-8 text-right">
                           {entry.referenceType === "PAYMENT" ? (
                             <div className="flex justify-end gap-1.5 md:gap-2">
-                              <button
-                                onClick={() => {
-                                  setNewPayment({
-                                    supplierId: entry.vendorId,
-                                    amount: entry.amount,
-                                    date: new Date(entry.date)
-                                      .toISOString()
-                                      .split("T")[0],
-                                    description: entry.description,
-                                  });
-                                  setEditingPaymentId(entry.id);
-                                  setIsAddingPayment(true);
-                                }}
-                                className="p-2.5 md:p-3 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition"
-                              >
-                                <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteLedgerEntry(entry.id)}
-                                className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
+                              <Tooltip label={"Edit ledger entry"}>
+                                <button aria-label="Edit ledger entry"
+                                  onClick={() => {
+                                    setNewPayment({
+                                      supplierId: entry.vendorId,
+                                      amount: entry.amount,
+                                      date: new Date(entry.date)
+                                        .toISOString()
+                                        .split("T")[0],
+                                      description: entry.description,
+                                    });
+                                    setEditingPaymentId(entry.id);
+                                    setIsAddingPayment(true);
+                                  }}
+                                  className="p-2.5 md:p-3 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                              </Tooltip>
+                              <Tooltip label={"Delete ledger entry"}>
+                                <button aria-label="Delete ledger entry"
+                                  onClick={() => handleDeleteLedgerEntry(entry.id)}
+                                  className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                              </Tooltip>
                             </div>
                           ) : entry.referenceType === "GRN" ? (
                             <div className="flex justify-end gap-1.5 md:gap-2">
-                              <button
-                                onClick={() => {
-                                  const receiptToEdit = receipts.find(
-                                    (r) => r.id === entry.referenceId,
-                                  );
-                                  if (receiptToEdit) {
-                                    setSelectedReceipt(receiptToEdit);
-                                    setNewReceipt(receiptToEdit);
-                                    setIsEditingReceipt(true);
-                                    setIsAddingReceipt(true);
+                              <Tooltip label={"Edit ledger entry"}>
+                                <button aria-label="Edit ledger entry"
+                                  onClick={() => {
+                                    const receiptToEdit = receipts.find(
+                                      (r) => r.id === entry.referenceId,
+                                    );
+                                    if (receiptToEdit) {
+                                      setSelectedReceipt(receiptToEdit);
+                                      setNewReceipt(receiptToEdit);
+                                      setIsEditingReceipt(true);
+                                      setIsAddingReceipt(true);
+                                    }
+                                  }}
+                                  className="p-2.5 md:p-3 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                              </Tooltip>
+                              <Tooltip label={"Delete ledger entry"}>
+                                <button aria-label="Delete ledger entry"
+                                  onClick={() =>
+                                    setIsDeletingReceipt(entry.referenceId || null)
                                   }
-                                }}
-                                className="p-2.5 md:p-3 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition"
-                              >
-                                <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  setIsDeletingReceipt(entry.referenceId || null)
-                                }
-                                className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
+                                  className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                              </Tooltip>
                             </div>
                           ) : (
                             <div className="flex justify-end gap-1.5 md:gap-2">
-                              <button
-                                onClick={() => handleDeleteLedgerEntry(entry.id)}
-                                className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
+                              <Tooltip label={"Delete ledger entry"}>
+                                <button aria-label="Delete ledger entry"
+                                  onClick={() => handleDeleteLedgerEntry(entry.id)}
+                                  className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                              </Tooltip>
                             </div>
                           )}
                         </td>
@@ -2047,7 +2065,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     the balance and ledger start fresh on this project.
                   </p>
                 </div>
-                <button
+                <button aria-label={t("common.close")}
                   onClick={() => setShowMasterPicker(false)}
                   className="p-2 hover:bg-divider rounded-full text-ink shrink-0"
                 >
@@ -2112,7 +2130,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     Vendor Master Profile
                   </p>
                 </div>
-                <button
+                <button aria-label={t("common.close")}
                   type="button"
                   onClick={() => {
                     setIsAddingVendor(false);
@@ -2349,7 +2367,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 <h3 className="text-xl font-black">
                   {editingPaymentId ? "Edit Payment" : "Record Payment"}
                 </h3>
-                <button
+                <button aria-label={t("common.close")}
                   type="button"
                   onClick={() => {
                     setIsAddingPayment(false);

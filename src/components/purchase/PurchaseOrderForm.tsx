@@ -16,6 +16,7 @@ import { collection, doc, setDoc, updateDoc, runTransaction } from "firebase/fir
 import { db } from "../../firebase";
 import { money } from "../../utils/num";
 import { toast } from "../../lib/feedback";
+import { Tooltip } from "../Tooltip";
 
 interface PurchaseOrderFormProps {
   projectId: string;
@@ -237,7 +238,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
              <h2 className="text-xl font-black text-ink tracking-tight mb-1">{isEditing ? `Edit ${existingPO?.poNumber || "Purchase Order"}` : "Create Purchase Order"}</h2>
              <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Draft Order</p>
            </div>
-           <button type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
+           <button aria-label="Close" type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
              <X className="w-5 h-5" />
            </button>
          </div>
@@ -347,9 +348,11 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                     </span>
                   </div>
                   {items.length > 1 && (
-                    <button type="button" onClick={() => removeItem(idx)} className="p-2 text-ink-muted hover:text-danger hover:bg-white rounded-lg transition mb-1 shrink-0">
-                      <Trash2 className="w-4 h-4 cursor-pointer" />
-                    </button>
+                    <Tooltip label={"Remove item"}>
+                      <button aria-label="Remove item" type="button" onClick={() => removeItem(idx)} className="p-2 text-ink-muted hover:text-danger hover:bg-white rounded-lg transition mb-1 shrink-0">
+                        <Trash2 className="w-4 h-4 cursor-pointer" />
+                      </button>
+                    </Tooltip>
                   )}
                 </div>
                 {showDelta && (

@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { RoleGuard } from "../RoleGuard";
 import { useLocationDrilldown, buildPhaseLocationGroups } from "./wbsTreeUtils";
 import { useProjectCostTotals } from "../../hooks/useProjectCostTotals";
+import { Tooltip } from "../Tooltip";
 
 export interface TabletWBSViewProps {
   projectId: string;
@@ -202,15 +203,17 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
               </div>
             </div>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                openEditSheet(node);
-              }}
-              className="p-2 text-ink-muted hover:text-primary bg-panel rounded-xl transition-colors cursor-pointer"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
+            <Tooltip label={"Edit task"}>
+              <button aria-label="Edit task"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openEditSheet(node);
+                }}
+                className="p-2 text-ink-muted hover:text-primary bg-panel rounded-xl transition-colors cursor-pointer"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -330,12 +333,14 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
         requireWriteAccess
       >
         <div className="absolute bottom-6 right-6 z-20">
-          <button
-            onClick={openAddSheet}
-            className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-primary-deep active:scale-95 transition-all cursor-pointer"
-          >
-            <Plus className="w-6 h-6" />
-          </button>
+          <Tooltip label={"Add task"}>
+            <button aria-label="Add task"
+              onClick={openAddSheet}
+              className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-primary-deep active:scale-95 transition-all cursor-pointer"
+            >
+              <Plus className="w-6 h-6" />
+            </button>
+          </Tooltip>
         </div>
       </RoleGuard>
 
@@ -478,7 +483,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
               </span>
             )}
           </div>
-          <button
+          <button aria-label="Close"
             onClick={onClose}
             className="p-2 bg-panel rounded-full text-ink hover:bg-divider"
           >

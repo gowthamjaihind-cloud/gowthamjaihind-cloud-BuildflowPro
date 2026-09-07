@@ -462,7 +462,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
             >
               <div className="bg-primary p-6 text-white flex justify-between items-center">
                 <h3 className="text-lg font-bold">{t("cpay.recordPayment")}</h3>
-                <button
+                <button aria-label={t("common.close")}
                   onClick={() => setIsAdding(false)}
                   className="hover:bg-white/20 p-1 rounded-full transition-colors"
                 >

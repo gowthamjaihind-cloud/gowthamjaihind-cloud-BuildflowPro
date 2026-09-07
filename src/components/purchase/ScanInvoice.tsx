@@ -137,7 +137,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
           <h2 className="font-black text-ink flex items-center gap-2">
             <Sparkle weight="fill" className="w-5 h-5 text-[#6E8CA0]" /> {initialBill ? "Review Vendor Bill" : "Scan Vendor Invoice"}
           </h2>
-          <button onClick={onClose} className="p-2 bg-panel hover:bg-divider rounded-full">
+          <button aria-label="Close" onClick={onClose} className="p-2 bg-panel hover:bg-divider rounded-full">
             <X className="w-5 h-5 text-ink-muted" />
           </button>
         </div>

@@ -23,6 +23,7 @@ import {
 } from "../../services/firebaseFunctions";
 import { PLAN_ORDER, PLANS } from "../../lib/plans";
 import { confirmDialog } from "../../lib/feedback";
+import { Tooltip } from "../Tooltip";
 
 // Operator-only console: create a new customer org (30-day trial) and manually
 // manage subscriptions until automated (Razorpay) checkout is wired.
@@ -203,10 +204,12 @@ export const OperatorPanel: React.FC = () => {
             <div className="flex items-center gap-2">
               <input readOnly value={provisioned.link}
                 className="flex-1 bg-surface border border-divider px-3 py-2 rounded-lg text-xs font-mono text-ink truncate" />
-              <button onClick={async () => { try { await navigator.clipboard.writeText(provisioned.link); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {} }}
-                className="px-4 py-2 bg-surface-dark text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shrink-0">
-                {copied ? <><CheckCircle className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
-              </button>
+              <Tooltip label={"Copy activation link"}>
+                <button aria-label="Copy activation link" onClick={async () => { try { await navigator.clipboard.writeText(provisioned.link); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {} }}
+                  className="px-4 py-2 bg-surface-dark text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shrink-0">
+                  {copied ? <><CheckCircle className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
+                </button>
+              </Tooltip>
             </div>
             <p className="text-xs text-ink-muted mt-2">Send this Owner-invite link to the customer.</p>
           </div>

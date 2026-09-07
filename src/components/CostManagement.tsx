@@ -905,13 +905,15 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           <td className="p-3 text-right">
             {isEditing ? (
               <div className="flex gap-1 justify-end">
-                <button
-                  onClick={() => handleSaveTaskCosts(task.id)}
-                  className="p-1 bg-success/20 text-success rounded hover:bg-[#A7F3D0]"
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button
+                <HintTooltip label={"Save task costs"}>
+                  <button aria-label="Save task costs"
+                    onClick={() => handleSaveTaskCosts(task.id)}
+                    className="p-1 bg-success/20 text-success rounded hover:bg-[#A7F3D0]"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                </HintTooltip>
+                <button aria-label="Cancel editing"
                   onClick={() => setEditingTaskId(null)}
                   className="p-1 bg-danger/15 text-danger rounded hover:bg-danger"
                 >
@@ -942,7 +944,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     Labor Deployment Breakdown
 
                   </span>
-                  <button onClick={() => setShowLaborBreakdown(null)}>
+                  <button aria-label={t("common.close")} onClick={() => setShowLaborBreakdown(null)}>
                     <X className="w-3 h-3 text-white" />
                   </button>
                 </div>
@@ -1042,7 +1044,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <span className="text-[10px] md:text-[10px] font-black text-white uppercase tracking-widest">
                     Material Consumption Breakdown
                   </span>
-                  <button onClick={() => setShowMaterialBreakdown(null)}>
+                  <button aria-label={t("common.close")} onClick={() => setShowMaterialBreakdown(null)}>
                     <X className="w-3 h-3 text-white" />
                   </button>
                 </div>
@@ -2170,7 +2172,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     Direct Cost Ledger
                   </p>
                 </div>
-                <button
+                <button aria-label={t("common.close")}
                   type="button"
                   onClick={() => {
                     setIsAdding(false);

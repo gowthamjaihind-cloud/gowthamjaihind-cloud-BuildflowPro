@@ -251,7 +251,14 @@ Borders do the quiet separating; shadow is only for things that genuinely float.
 - Let long labels wrap. Card titles are content, not chrome.
 - State the unit: `22 deployed`, `56d`, `₹53.7L`.
 - Give icon-only controls an `aria-label`; collapsed, the sidebar is twelve
-  unlabelled buttons without one. `<Tooltip>` does this for you.
+  unlabelled buttons without one. `<Tooltip>` does this for you. Verify with
+  the browser's accessibility tree, not by reading the JSX — a grep for
+  icon-only buttons over-reported by 32 sites because it stripped `{t("…")}`
+  as if it were markup, and under-reported others whose icon alias it did not
+  know. The app now stands at 308 visible buttons, 0 unnamed.
+- Name a control, then decide separately whether it needs a hint. A modal `X`
+  wants a name and no bubble — the glyph is universally read. A trash icon in
+  a table row wants both, because "delete *what*" is not in the glyph.
 - Reach for `<Tooltip>`, never `title=`. Native `title` is not worthless —
   measured in Chromium it *does* give an icon-only button an accessible name,
   so removing one without adding `aria-label` makes things worse, not better.

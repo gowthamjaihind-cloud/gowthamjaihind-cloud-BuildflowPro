@@ -165,7 +165,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
              <h2 className="text-xl font-black text-ink tracking-tight mb-1">{grn.grnNumber}</h2>
              <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">{grn.poNumber} • {grn.vendorName}</p>
            </div>
-           <button type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
+           <button aria-label="Close" type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
              <X className="w-5 h-5" />
            </button>
          </div>
