@@ -374,7 +374,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
           <div className="soft-card rounded-[28px] p-5 md:p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <p className="font-display font-bold text-lg tracking-tight">Ramkumar-Othakadai</p>
+                <p className="font-display font-bold text-lg tracking-tight">Your Project</p>
                 <p className="text-[10px] font-black uppercase tracking-widest text-primary">Control Center</p>
               </div>
               <span className="text-[10px] font-black uppercase tracking-widest text-success bg-success/12 px-3 py-1.5 rounded-full">Active</span>

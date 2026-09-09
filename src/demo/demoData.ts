@@ -30,7 +30,7 @@ export const demoProjects = [
   {
     id: DEMO_PROJECT_ID,
     orgId: DEMO_ORG_ID,
-    name: "Ramkumar Residence, Othakadai",
+    name: "Sample Residence — Plot 12",
     description: "G+2 residential building · 3,200 sq ft · Madurai",
     status: "Active",
     startDate: d(-150),
@@ -41,7 +41,7 @@ export const demoProjects = [
   {
     id: "demo-project-2",
     orgId: DEMO_ORG_ID,
-    name: "Anna Nagar Commercial Block",
+    name: "Sample Commercial Block",
     description: "Ground + 3 retail and office block",
     status: "Active",
     startDate: d(-60),
@@ -51,7 +51,7 @@ export const demoProjects = [
   {
     id: "demo-project-3",
     orgId: DEMO_ORG_ID,
-    name: "Thirunagar Villa",
+    name: "Sample Villa — Phase 2",
     description: "Independent villa with landscaping",
     status: "Planning",
     startDate: d(20),
@@ -124,11 +124,11 @@ export const demoTasks = [
 
 // --- Parties ---------------------------------------------------------------
 export const demoVendors = [
-  { id: "v1", projectId: DEMO_PROJECT_ID, name: "Lakshmi Steels", type: "Material", contactPerson: "R. Senthil", phone: "+91 98420 11223", gstin: "33AABCL1234M1Z5", address: "Melur Road, Madurai", outstandingBalance: 284500 },
-  { id: "v2", projectId: DEMO_PROJECT_ID, name: "Sri Balaji Cements", type: "Material", contactPerson: "M. Karthik", phone: "+91 94430 55671", gstin: "33AAFCS9876P1ZQ", address: "Anna Nagar, Madurai", outstandingBalance: 96200 },
-  { id: "v3", projectId: DEMO_PROJECT_ID, name: "Murugan Blue Metals", type: "Material", contactPerson: "S. Pandi", phone: "+91 99445 78210", address: "Othakadai, Madurai", outstandingBalance: 0 },
-  { id: "v4", projectId: DEMO_PROJECT_ID, name: "Selvam Labour Contractor", type: "Labor", contactPerson: "K. Selvam", phone: "+91 90031 44526", address: "Thirunagar, Madurai", outstandingBalance: 142000 },
-  { id: "v5", projectId: DEMO_PROJECT_ID, name: "Vinayaga Electricals", type: "Both", contactPerson: "A. Ganesh", phone: "+91 98651 33907", gstin: "33AACFV5432N1Z8", address: "K.K. Nagar, Madurai", outstandingBalance: 38400 },
+  { id: "v1", projectId: DEMO_PROJECT_ID, name: "Lakshmi Steels", type: "Material", contactPerson: "R. Senthil", phone: "+91 98420 11223", gstin: "33AABCL1234M1Z5", address: "Sample Area 3", outstandingBalance: 284500 },
+  { id: "v2", projectId: DEMO_PROJECT_ID, name: "Sri Balaji Cements", type: "Material", contactPerson: "M. Karthik", phone: "+91 94430 55671", gstin: "33AAFCS9876P1ZQ", address: "Sample Area 1", outstandingBalance: 96200 },
+  { id: "v3", projectId: DEMO_PROJECT_ID, name: "Murugan Blue Metals", type: "Material", contactPerson: "S. Pandi", phone: "+91 99445 78210", address: "Sample Area 4", outstandingBalance: 0 },
+  { id: "v4", projectId: DEMO_PROJECT_ID, name: "Selvam Labour Contractor", type: "Labor", contactPerson: "K. Selvam", phone: "+91 90031 44526", address: "Sample Area 5", outstandingBalance: 142000 },
+  { id: "v5", projectId: DEMO_PROJECT_ID, name: "Vinayaga Electricals", type: "Both", contactPerson: "A. Ganesh", phone: "+91 98651 33907", gstin: "33AACFV5432N1Z8", address: "Sample Area 2", outstandingBalance: 38400 },
 ];
 
 // --- Stock -----------------------------------------------------------------
@@ -276,7 +276,7 @@ export const demoInsights = {
   model: "demo",
   insights: {
     executiveDigest:
-      "Ramkumar Residence is **43% built** with **50% of the budget drawn**, so spend is running a little ahead of progress but stays inside the sanctioned amount.\n\n" +
+      "Sample Residence is **43% built** with **50% of the budget drawn**, so spend is running a little ahead of progress but stays inside the sanctioned amount.\n\n" +
       "- Substructure and ground floor are closed out and paid for.\n" +
       "- First floor blockwork is the active front at 65%, with 22 workers on site yesterday.\n" +
       "- Labour is the one head running over: **₹9.06L spent against ₹3.34L planned**.\n" +

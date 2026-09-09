@@ -32,12 +32,28 @@ const browser = await chromium.launch({ executablePath: CHROME, args: ["--no-san
 const ctx = await browser.newContext({
   viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 2, serviceWorkers: "block",
 });
+// The guided tour puts a full-screen overlay over the app on first visit, which
+// silently intercepts every click this script makes -- it is why the captures
+// stopped regenerating after the tour shipped. record.mjs already marks the
+// tour done for the same reason; this does the same, and hides the demo
+// banner and the replay pill so they stay out of the frame.
+await ctx.addInitScript(() => {
+  try {
+    localStorage.setItem("sitetru.demo.tour.done", "1");
+  } catch {
+    /* private mode: the CSS below still keeps it out of the shot */
+  }
+});
+
 const page = await ctx.newPage();
 page.on("pageerror", (e) => console.log("  page error:", String(e).slice(0, 110)));
 
 await page.goto(`${BASE}/?demo=1`, { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(6000);
-await page.getByText("Ramkumar Residence, Othakadai").first().click();
+await page.addStyleTag({
+  content: "[data-demo-banner],[data-demo-tour]{display:none!important}",
+});
+await page.getByText("Sample Residence — Plot 12").first().click();
 await page.waitForTimeout(4000);
 
 for (const [label, name] of SCREENS) {

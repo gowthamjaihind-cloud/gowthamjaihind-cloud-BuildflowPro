@@ -9,7 +9,27 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const DIST = process.argv[2] || "dist";
-const NEEDLES = ["Ramkumar Residence", "Lakshmi Steels", "Sri Balaji Cements", "demo@sitetru.com", "Demo Owner"];
+// The current fixture names, plus the real-sounding ones they replaced: those
+// must never come back, in the production bundle or anywhere else public.
+const NEEDLES = [
+  "Sample Residence",
+  "Sample Commercial Block",
+  "Sample Villa",
+  "Lakshmi Steels",
+  "Sri Balaji Cements",
+  "demo@sitetru.com",
+  "Demo Owner",
+  // Retired real-sounding names and localities. Kept as needles so a stale
+  // copy pasted back in is caught. The landing page deliberately says
+  // "Your Project" rather than a fixture name, so nothing here collides with
+  // legitimate marketing copy in the production bundle.
+  "Ramkumar Residence",
+  "Othakadai",
+  "Anna Nagar",
+  "Thirunagar",
+  "K.K. Nagar",
+  "Melur Road",
+];
 
 // dist/demo is a deliberate, separate bundle served at sitetru.com/demo. It is
 // supposed to contain fixtures, so it is excluded here and checked positively

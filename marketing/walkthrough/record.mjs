@@ -150,7 +150,7 @@ const BEATS = [
     id: "open-project",
     say: "Open a job and everything about it is in one place.",
     async run(page) {
-      await click(page, page.getByText("Ramkumar Residence, Othakadai").first(), { settle: 3200 });
+      await click(page, page.getByText("Sample Residence — Plot 12").first(), { settle: 3200 });
     },
   },
   {
