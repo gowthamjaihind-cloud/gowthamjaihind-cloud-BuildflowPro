@@ -1071,6 +1071,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   Estimate
                 </h3>
                 <button
+                  aria-label={t("common.close")}
                   onClick={() => setIsSyncModalOpen(false)}
                   className="text-ink-muted hover:text-ink transition-colors p-1"
                 >
@@ -1301,6 +1302,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                 <FileText className="w-5 h-5" /> New Client Estimate
               </h3>
               <button
+                aria-label={t("common.close")}
                 onClick={() => setIsCreateModalOpen(false)}
                 className="text-ink-muted hover:text-ink transition-colors p-1"
               >
