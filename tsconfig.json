@@ -27,9 +27,15 @@
     "noEmit": true,
     "baseUrl": "."
   },
+  // marketing/remotion is a separate package with its own package.json and
+  // tsconfig. CI installs only the root dependencies, so typechecking it from
+  // here failed to resolve "remotion" and took the whole deploy down at the
+  // Typecheck step. It passed locally only because those deps happened to be
+  // installed. The root typecheck must not depend on a nested install.
   "exclude": [
     "dist",
     "functions",
-    "node_modules"
+    "node_modules",
+    "marketing/remotion"
   ]
 }
