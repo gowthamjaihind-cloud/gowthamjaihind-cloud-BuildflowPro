@@ -3,6 +3,7 @@ import { writeFileSync, mkdirSync, rmSync } from "fs";
 import { execSync } from "child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { BRAND } from "../brand.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CHROME = process.env.CHROME_PATH ||
   "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
@@ -85,32 +86,32 @@ function html(v) {
 html,body{width:${v.W}px;height:${v.H}px;overflow:hidden;background:#22333F}
 body{font-family:Manrope,'Noto Sans Tamil',sans-serif;-webkit-font-smoothing:antialiased}
 #stage{position:relative;width:${v.W}px;height:${v.H}px;background:
-  radial-gradient(1200px 800px at 50% -10%, #3A5262 0%, #22333F 55%, #1B2A34 100%)}
+  radial-gradient(1200px 800px at 50% -10%, #1B2E57 0%, ${BRAND.surfaceDark} 55%, #0C1730 100%)}
 .grain{position:absolute;inset:0;opacity:.05;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:5px 5px}
 .scene{position:absolute;inset:0;opacity:0}
 /* --- screen window --- */
 .win{position:absolute;overflow:hidden;border-radius:${v.win.r}px;background:#fff;
   box-shadow:0 40px 90px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.10)}
 .win img{position:absolute;transform-origin:0 0;image-rendering:auto}
-.winglow{position:absolute;border-radius:26px;box-shadow:0 0 0 3px rgba(217,125,84,.55);pointer-events:none}
+.winglow{position:absolute;border-radius:26px;box-shadow:0 0 0 3px rgba(29,78,216,.60);pointer-events:none}
 /* --- text --- */
-.tag{color:#D97D54;font-weight:800;letter-spacing:.20em;font-size:${v.tag}px;text-transform:uppercase}
-.h{color:#F0F3F4;font-weight:800;font-size:${v.h}px;line-height:1.1;letter-spacing:-.015em}
-.s{color:#B7C6CE;font-weight:500;font-size:${v.s}px;line-height:1.5}
-.badge{display:inline-block;background:rgba(135,188,191,.16);border:2px solid #87BCBF;color:#CFE6E7;
+.tag{color:${BRAND.primaryOnDark};font-weight:800;letter-spacing:.20em;font-size:${v.tag}px;text-transform:uppercase}
+.h{color:${BRAND.white};font-weight:800;font-size:${v.h}px;line-height:1.1;letter-spacing:-.015em}
+.s{color:#B6C4DE;font-weight:500;font-size:${v.s}px;line-height:1.5}
+.badge{display:inline-block;background:rgba(168,194,255,.14);border:2px solid ${BRAND.primaryOnDark};color:${BRAND.primaryOnDark};
   font-weight:800;font-size:${v.badge}px;padding:${v.badgeP}px ${v.badgeP*1.7}px;border-radius:999px}
 /* --- intro / outro --- */
-.big{color:#F0F3F4;font-weight:800;font-size:${v.big}px;line-height:1.06;letter-spacing:-.02em}
-.big em{font-style:normal;color:#D97D54}
+.big{color:${BRAND.white};font-weight:800;font-size:${v.big}px;line-height:1.06;letter-spacing:-.02em}
+.big em{font-style:normal;color:${BRAND.primaryOnDark}}
 .dots{position:absolute;display:flex;gap:10px}
-.dot{width:${v.dot}px;height:${v.dot}px;border-radius:99px;background:rgba(240,243,244,.22)}
-.dot.on{background:#D97D54;width:${v.dot*3.2}px}
-.url{color:#87BCBF;font-weight:700;font-size:${v.url}px;letter-spacing:.04em}
+.dot{width:${v.dot}px;height:${v.dot}px;border-radius:99px;background:rgba(255,255,255,.22)}
+.dot.on{background:${BRAND.primaryOnDark};width:${v.dot*3.2}px}
+.url{color:${BRAND.primaryOnDark};font-weight:700;font-size:${v.url}px;letter-spacing:.04em}
 .mark{display:flex;align-items:center;gap:${v.markG}px}
-.markbox{width:${v.markS}px;height:${v.markS}px;border-radius:${v.markS*0.26}px;background:#D97D54;
+.markbox{width:${v.markS}px;height:${v.markS}px;border-radius:${v.markS*0.26}px;background:${BRAND.primary};
   display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:${v.markS*0.55}px}
-.markw{color:#F0F3F4;font-weight:800;font-size:${v.markS*0.62}px;letter-spacing:-.01em}
-.pill{display:inline-block;border:2px solid rgba(240,243,244,.28);color:#E4EBEE;border-radius:999px;
+.markw{color:${BRAND.white};font-weight:800;font-size:${v.markS*0.62}px;letter-spacing:-.01em}
+.pill{display:inline-block;border:2px solid rgba(255,255,255,.28);color:#E6ECF7;border-radius:999px;
   font-weight:700;font-size:${v.pill}px;padding:${v.pillP}px ${v.pillP*1.9}px}
 </style></head><body>
 <div id="stage"><div class="grain"></div></div>
@@ -197,7 +198,7 @@ const outro = el("scene");
     justifyContent: vertical?"center":"flex-start"});
   m.appendChild(el("markbox",{},"S")); m.appendChild(el("markw",{},"Sitetru"));
   wrap.appendChild(m);
-  const tagline = el("big",{fontSize:(V.big*(vertical?0.70:0.52))+"px", color:"#D97D54"}, C.outroTag);
+  const tagline = el("big",{fontSize:(V.big*(vertical?0.70:0.52))+"px", color:BRAND.primaryOnDark}, C.outroTag);
   tagline.id="outroTag"; wrap.appendChild(tagline);
   const list = el("",{marginTop:V.pad*0.75+"px", display:"flex", flexWrap:"wrap",
     gap:V.pad*0.28+"px", justifyContent: vertical?"center":"flex-start"});

@@ -7,9 +7,10 @@
 // functions/src/telegram/i18n.ts.
 import { chromium } from "playwright-core";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-import { mkdirSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { existsSync, mkdirSync } from "node:fs";
 
+import { BRAND } from "../brand.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, "out");
 mkdirSync(OUT, { recursive: true });
@@ -67,18 +68,22 @@ Brickwork / blockwork — 65%
 // full frame with nothing over it. The other two variants leave room at the
 // foot for Remotion's caption band; used full-frame that reads as dead space.
 const page = (w, h, stack, standalone = false) => `<!doctype html><html><head><meta charset="utf-8">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
+<!-- Manrope from disk. Google Fonts is a render-blocking third-party request
+     that this environment cannot reach at all, and it fails SILENTLY: the still
+     renders in whatever the fallback stack resolves to and nothing says so. -->
+<style>@font-face{font-family:Manrope;font-weight:200 800;font-display:block;
+  src:url("file://${FONT_FILE}") format("woff2")}</style>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{width:${w}px;height:${h}px;overflow:hidden}
-  body{background:#324755;font-family:Manrope,system-ui,sans-serif;
+  body{background:${BRAND.surfaceDark};font-family:Manrope,system-ui,sans-serif;
     display:flex;align-items:center;justify-content:center;
     gap:${stack ? 34 : (standalone ? 120 : 96)}px;flex-direction:${stack ? "column" : "row"};
     padding:${stack ? "40px 50px 230px" : (standalone ? "60px 90px" : "10px 70px 210px")}}
   .phone{width:${stack ? 640 : (standalone ? 720 : 600)}px;background:#0E1621;border-radius:34px;
     overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.45);flex:0 0 auto}
   .bar{background:#17212B;padding:16px 18px;display:flex;align-items:center;gap:12px}
-  .av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#D97D54,#B85F3B);
+  .av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,${BRAND.primary},#14307F);
     display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:16px}
   .who{color:#fff;font-weight:700;font-size:16px}.sub{color:#7D8E9E;font-size:12px}
   .chat{padding:16px 14px 20px;display:flex;flex-direction:column;gap:10px}
@@ -94,9 +99,14 @@ const page = (w, h, stack, standalone = false) => `<!doctype html><html><head><m
   .tap{color:#7FC4F5;font-size:12px;font-weight:700;letter-spacing:.05em;
     text-align:center;margin-top:7px}
   b{font-weight:800}
-  .cap{color:#87BCBF;font-size:13px;font-weight:800;letter-spacing:.18em;
+  .cap{color:${BRAND.primaryOnDark};font-size:13px;font-weight:800;letter-spacing:.18em;
     text-transform:uppercase;text-align:center;padding:0 0 16px}
 </style></head><body>${menu}${done}</body></html>`;
+
+const FONT_FILE = resolve(HERE, "../walkthrough/fonts/Manrope-var.woff2");
+if (!existsSync(FONT_FILE)) {
+  throw new Error(`missing ${FONT_FILE} -- the stills would render in a fallback face`);
+}
 
 const b = await chromium.launch({ executablePath: CHROME, args: ["--no-sandbox"] });
 for (const [w, h, name, stack, standalone] of [

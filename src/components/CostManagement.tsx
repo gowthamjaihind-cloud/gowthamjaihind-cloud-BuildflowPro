@@ -1412,15 +1412,27 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     Planned vs Actual spending
                   </p>
                 </div>
+                {/* The legend is hand-rolled, so its dots have to be driven by
+                    the same values as the bars below. They were bg-success and
+                    bg-primary, which happened to look right while the Budget
+                    bar was a stray emerald and stopped the moment it moved to
+                    the shared chart palette -- a green dot labelled Planned
+                    above a blue bar. */}
                 <div className="flex gap-4 md:gap-6">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-success" />
+                    <div
+                      className="w-2 md:w-3 h-2 md:h-3 rounded-full"
+                      style={{ background: chartSeries.budget }}
+                    />
                     <span className="text-[10px] md:text-[13px] font-medium text-ink-muted">
-                      Planned
+                      {t("dashboard.budget")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-primary" />
+                    <div
+                      className="w-2 md:w-3 h-2 md:h-3 rounded-full"
+                      style={{ background: chartSeries.actual }}
+                    />
                     <span className="text-[10px] md:text-[13px] font-medium text-ink-muted">
                       {t("an.actual")}
                     </span>

@@ -1,12 +1,129 @@
 # Marketing asset pipeline
 
-Everything needed to regenerate the Sitetru walkthrough videos and the
-Telegram bot stills, from the demo build, with no external services.
+Everything needed to regenerate the Sitetru films and the Telegram bot stills,
+from the demo build, with no external services.
 
-Two things this pipeline does NOT do: it has no text-to-speech, so the videos
-carry their narration as on-screen text rather than voice; and it does not
-talk to any hosted video tool. Renders happen locally with a headless browser
-and ffmpeg.
+**Nothing here calls a hosted service.** The voice is a neural TTS model running
+on this machine, the music is composed and synthesised by a script in this
+repository, and the picture is rendered by a headless browser and ffmpeg. There
+is no API key to hold, no per-render cost, no third party that has to still
+exist in two years, and no licence attached to any frame or any second of audio.
+That last one is the reason the music is generated rather than chosen: a library
+track carries a licence, and a licence is exactly the sort of thing that
+surfaces later, when a video is doing well.
+
+## The two films
+
+| File | What it is | Length |
+| --- | --- | --- |
+| `remotion/out/sitetru-launch.mp4` | The launch film. Argues. Cut from stills. | ~83s |
+| `walkthrough/out/sitetru-walkthrough.mp4` | The walkthrough. Explains. The product actually running. | ~2:30 |
+
+Different jobs, on purpose. The launch film opens on the evening a contractor
+spends finding out what happened today, names the one genuinely unusual thing
+about the product — the site engineer reports over Telegram, on a phone he
+already has — and then spends its middle following a single log from site
+through the plan, the stock, the purchase order, the task cost and the client
+bill. That chain is the product; the features are just where it surfaces.
+
+The walkthrough does not sell. It is a tour of the real app being clicked, in
+the order a JOB runs rather than the order the sidebar lists: plan it, run the
+day, buy the material, pay the people, watch the money, bill the client, keep
+the paperwork. A tour that goes down the menu teaches the menu.
+
+Build either from cold:
+
+```bash
+bash marketing/voice/fetch-voice.sh          # once: the ~58 MB voice model
+npm run build:demo
+node marketing/capture/serve-demo.mjs &
+npm run capture:screens                      # only when the UI changes
+
+npm run film:launch                           # voice -> picture -> mix
+npm run film:walkthrough                      # voice -> record -> mix
+```
+
+### Timing is measured, never written
+
+Both films lay their beats out from the **measured** length of each spoken line.
+`marketing/films/build-voice.mjs` synthesises the script and writes a manifest
+of what each line actually takes to say; the launch film's Remotion composition
+imports those numbers, and the walkthrough recorder pads every beat until its
+narration has had time to finish.
+
+Edit a sentence and the film retimes itself. The alternative — frame counts kept
+by hand next to a script — is what the earlier pipeline did, and it had already
+drifted: a line that takes eleven seconds read over a beat that runs for six
+leaves the voice talking across the next screen, and every beat after it slides
+further out.
+
+### The voice
+
+`marketing/voice/` — Piper (VITS, neural) with the CC0 `en_US-joe-medium` model,
+run locally. `fetch-voice.sh` gets the weights; they are not committed.
+
+Piper normally ships a sidecar JSON beside each model with the phoneme table in
+it, and the CC0 package on npm carries only the weights, so `synth.py` rebuilds
+that config from Piper's own `DEFAULT_PHONEME_ID_MAP` — the same table every
+espeak Piper voice uses, which is why this works rather than being a lucky
+guess.
+
+`master.mjs` is the chain that makes it sound like a voiceover rather than a
+TTS demo: high-pass, de-esser (the single biggest audible improvement — the
+model's /s/ is its worst artefact), a shelf out of the boxy 300–500 Hz region,
+a presence lift at 3 kHz where consonants live, 4:1 compression with a slow
+release, a limiter, and `loudnorm` to −16 LUFS.
+
+**You cannot hear a render in CI, but you can check it.** `pronounce.py` prints
+the IPA Piper will actually use for every word in a script, which turns
+pronunciation into something verifiable:
+
+```bash
+python3 marketing/voice/pronounce.py marketing/films/launch.script.mjs
+```
+
+It has already earned its place. "Madurai" comes out /mˈædʒuːɹˌaɪ/ — MAD-joo-rye
+— so the word is out of both scripts. "Sitetru" is right on its own
+(/sˈaɪttɹuː/, SITE-troo), which is not something you would think to check and
+not something you would want to discover in a finished film.
+
+To hand a film to a human voice later, `films/out/<id>/script.txt` is the
+timestamped script and every line is already a separate WAV — swapping one line
+does not mean re-rendering a film.
+
+### The music
+
+`marketing/music/score.py` composes and renders both cues from oscillators and
+noise. Two cues with different jobs:
+
+- **launch** — D minor, 84 BPM, resolving to F major. Its shape is the script's
+  shape: almost nothing under the opening question, an arpeggio when the product
+  arrives, percussion under the middle where the film makes its case, pulled
+  back for the last line so the voice has the frame, then the resolve on the
+  mark.
+- **walkthrough** — A minor, 72 BPM, no percussion, almost no movement. Its
+  whole job is to stop the room sounding dead under a voice that talks for two
+  and a half minutes. If you notice it, it is too loud.
+
+`mix.mjs` places each line at its beat and ducks the score under the voice with
+`sidechaincompress`, then delivers at −14 LUFS with a −1 dBTP ceiling, which is
+what every platform normalises to. It prints what actually came out, and fails
+if the audio graph ended before the picture did — which it silently did once,
+trimming 2.7 seconds off the end card.
+
+### The brand
+
+`marketing/brand.mjs` is the single copy of the palette for everything under
+`marketing/`, and `brand.test.mjs` reads `../src/index.css` and fails if it
+drifts or if any renderer still holds a retired value. It runs in `npm test`
+via `brand.spec.ts`.
+
+This existed because the opposite was true for a long time. Five renderers each
+carried their own hexes, and when the product moved to navy and cobalt not one
+of them came along — so the films were rendered in the retired brand around
+screenshots that show the current one, the walkthrough's click ring pinged
+orange over a cobalt product, and nothing caught any of it, because
+`marketing/` is a separate package with no CI step of its own.
 
 ## Requirements
 
@@ -14,8 +131,14 @@ and ffmpeg.
 - `playwright-core` — a devDependency, so `npm install` covers it. It ships
   no browser; point `CHROME_PATH` at a Chromium binary if yours is not at the
   sandbox default `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
-- Google Fonts must be reachable — Manrope and Noto Sans Tamil are pulled at
-  render time. Tamil renders as tofu boxes without the latter.
+- `ffmpeg` needs the `flite`, `deesser`, `acompressor`, `alimiter`, `loudnorm`
+  and `sidechaincompress` filters. Ubuntu's build has all of them.
+- `python3` with `numpy` and `scipy` (the score), and `piper-tts` (the voice).
+- Fonts are served from `walkthrough/fonts/` on disk, not from Google. Left to
+  the network they are a render-blocking third-party request that has stalled a
+  load here before — and it fails SILENTLY: the frame renders in whatever the
+  fallback stack resolves to, so a whole film comes out in the wrong typeface
+  and nothing reports an error. That is exactly what the first render did.
 
 ## 1. Regenerate the screenshots (only when the UI changes)
 

@@ -58,7 +58,7 @@ export const HERO_BEATS = {
 const len = (b: readonly [number, number] | number[]) => b[1] - b[0];
 
 export const Hero: React.FC = () => (
-  <AbsoluteFill style={{ backgroundColor: C.slate }}>
+  <AbsoluteFill style={{ backgroundColor: C.surfaceDark }}>
     <Sequence from={HERO_BEATS.hook[0]} durationInFrames={len(HERO_BEATS.hook)}>
       <TypeCard
         lines={["How many calls does it take", "to find out what happened", "on your site today?"]}
@@ -162,7 +162,7 @@ export const Social: React.FC = () => {
   } as const;
 
   return (
-    <AbsoluteFill style={{ backgroundColor: C.slate }}>
+    <AbsoluteFill style={{ backgroundColor: C.surfaceDark }}>
       <Sequence from={B.hook[0]} durationInFrames={len(B.hook)}>
         <TypeCard lines={["How many calls", "to find out what", "happened on site?"]} accentLine={2} />
       </Sequence>

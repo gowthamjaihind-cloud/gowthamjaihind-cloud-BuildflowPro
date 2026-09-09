@@ -20,6 +20,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 
+import { BRAND } from "../brand.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(HERE, "out");
 const RAW = join(OUT, "raw");
@@ -28,10 +29,29 @@ const CHROME = process.env.CHROME_PATH || "/opt/pw-browsers/chromium-1194/chrome
 const BASE = process.env.DEMO_URL || "http://localhost:4173";
 const W = 1920, H = 1080;
 
+/**
+ * Seconds trimmed off the head of the recording.
+ *
+ * The app needs a few seconds to boot and settle before it is worth filming,
+ * and recording starts the moment the page exists -- so the run necessarily
+ * captures that. Cutting it here rather than shortening the settle keeps the
+ * two concerns apart: the run waits as long as correctness needs, and the film
+ * opens on a loaded screen. Every measured beat start is shifted by the same
+ * amount, so the narration stays where it was put.
+ *
+ * Not zero: a beat of the portfolio before the first line lands is a better
+ * opening than the voice starting over a still-arriving screen.
+ */
+const HEAD_TRIM = 2.6;
+
 rmSync(RAW, { recursive: true, force: true });
 mkdirSync(RAW, { recursive: true });
 
 /* ---------------------------------------------------------------- cursor -- */
+// The click ring, in the brand. It was #D97D54 -- the retired rust -- pinging
+// orange over a navy-and-cobalt product for as long as this recorder has
+// existed, because nothing connected marketing/ to the app's palette.
+const RING = BRAND.primary;
 // Playwright moves a real mouse but paints no pointer, so a raw recording
 // looks like the UI is operating itself. This draws one and glides it, which
 // is also what gives a viewer time to follow what is about to be clicked.
@@ -47,13 +67,13 @@ const CURSOR_JS = `
   c.innerHTML =
     '<svg viewBox="0 0 22 22" width="22" height="22">' +
     '<path d="M2 1 L2 16 L6.2 12.4 L8.8 18.4 L11.6 17.2 L9 11.4 L14.4 11.2 Z"' +
-    ' fill="#16232C" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+    ' fill="${BRAND.ink}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>';
   document.body.appendChild(c);
   const r = document.createElement("div");
   r.id = "__ring";
   r.style.cssText = [
     "position:fixed","left:0","top:0","width:34px","height:34px","border-radius:50%",
-    "z-index:2147483646","pointer-events:none","opacity:0","border:3px solid #D97D54",
+    "z-index:2147483646","pointer-events:none","opacity:0","border:3px solid ${RING}",
     "transform:translate(-17px,-17px) scale(.4)",
   ].join(";");
   document.body.appendChild(r);
@@ -134,104 +154,71 @@ async function glideScroll(page, to, ms = 900) {
 const nav = (page, label) => page.getByRole("button", { name: label, exact: true }).first();
 
 /* ----------------------------------------------------------------- beats -- */
-// `say` is the voiceover for the beat and becomes its subtitle. `run` drives
-// the app. Keep each `say` to what a listener can absorb while the action on
-// screen plays out.
-const BEATS = [
-  {
-    id: "portfolio",
-    say: "This is Sitetru. Three sites for one contractor in Madurai — what stage each is at, on one screen.",
-    async run(page) {
-      await glide(page, W * 0.32, H * 0.52, 900);
-      await sleep(2200);
-    },
+/**
+ * The beats come from the SCRIPT, and their pacing comes from the MEASURED
+ * narration.
+ *
+ * This used to be a hand-written list where each beat's `say` sat next to a
+ * pile of `sleep(2600)` calls chosen by feel, and the narration was a text file
+ * handed to whoever recorded the audio afterwards. Those two things had no way
+ * of agreeing: a line that takes eleven seconds to read over a beat that runs
+ * for six leaves the voice talking over the next screen, and every beat after
+ * it drifts further.
+ *
+ * Now marketing/films/walkthrough.script.mjs owns the words, build-voice.mjs
+ * measures how long each one actually takes to say, and every beat here is
+ * padded to at least that -- so the recording is as long as the narration needs
+ * and the two are locked together by construction rather than by care.
+ */
+const VOICE = JSON.parse(
+  readFileSync(resolve(HERE, "../films/out/walkthrough/manifest.json"), "utf8"),
+);
+
+/** What each beat DOES. The words and the timing come from the manifest. */
+const ACTIONS = {
+  portfolio: async (page) => {
+    await glide(page, W * 0.34, H * 0.46, 1100);
+    await sleep(900);
+    await glide(page, W * 0.5, H * 0.62, 1300);
   },
-  {
-    id: "open-project",
-    say: "Open a job and everything about it is in one place.",
-    async run(page) {
-      await click(page, page.getByText("Sample Residence — Plot 12").first(), { settle: 3200 });
-    },
+  open: async (page) => {
+    await click(page, page.getByText("Sample Residence — Plot 12").first(), { settle: 3200 });
   },
-  {
-    id: "dashboard",
-    say: "Forty-three percent built. Fifty-three point seven lakh spent. Nothing flagged at risk — and none of that was typed into a spreadsheet.",
-    async run(page) {
-      await sleep(2600);
-      await glideScroll(page, 320);
-      await sleep(2000);
-      await glideScroll(page, 0);
-    },
+  dashboard: async (page) => {
+    await sleep(1800);
+    await glideScroll(page, 340, 1100);
+    await sleep(1800);
+    await glideScroll(page, 0, 900);
   },
-  {
-    id: "wbs",
-    say: "The plan is broken up the way you'd write it on paper. Days and budget go in once, here.",
-    async run(page) {
-      await click(page, nav(page, "WBS"), { settle: 2600 });
-      await sleep(1800);
-      await glideScroll(page, 380);
-      await sleep(2400);
-    },
+  // Telegram is the one part of the product that is not in the browser, and a
+  // project has no Telegram screen to navigate to -- it lives in Settings,
+  // reachable only from the portfolio. So this beat holds on the app while a
+  // still of the bot is composited over exactly the window it occupied.
+  telegram: async () => {
+    await sleep(1500);
   },
-  {
-    id: "logs",
-    say: "Every day the site reports back. Progress, headcount, material used — logged against the task it belongs to.",
-    async run(page) {
-      await click(page, nav(page, "Daily Logs"), { settle: 2400 });
-      await sleep(2600);
-      await glideScroll(page, 300);
-      await sleep(2200);
-    },
-  },
-  {
-    id: "telegram",
-    // Telegram is the one part of the product that does not happen in the
-    // browser, so this beat cuts to the bot itself. The frames are composited
-    // over this window in post, using the timings measured below -- the app
-    // has no Telegram screen inside a project to navigate to.
-    cutTo: "telegram-beat-full.png",
-    say: "And your engineer sends it from Telegram — an app already on his phone. He picks what to log, and that is the whole job. Nothing to install on site, nobody to train.",
-    async run() {
-      await sleep(9000);
-    },
-  },
-  {
-    id: "procurement",
-    say: "Material is bought against the job. Raise the order, receive it when it lands — stock and the supplier's account move on their own.",
-    async run(page) {
-      await click(page, nav(page, "Procurement"), { settle: 2600 });
-      await sleep(2200);
-      await glideScroll(page, 340);
-      await sleep(2200);
-    },
-  },
-  {
-    id: "cost",
-    say: "Which means cost is live. Planned against actual, on every head — so a gap shows up the day it opens, not at month end.",
-    async run(page) {
-      await click(page, nav(page, "Cost Management"), { settle: 2800 });
-      await sleep(2600);
-      await glideScroll(page, 360);
-      await sleep(2400);
-    },
-  },
-  {
-    id: "estimates",
-    say: "And you bill the client from the same breakdown you already built. Contract, cost to date, margin — with G S T on top.",
-    async run(page) {
-      await click(page, nav(page, "Client Estimates"), { settle: 2800 });
-      await sleep(2800);
-    },
-  },
-  {
-    id: "close",
-    say: "Sitetru. Truth, reported from site. Free to start, from nine hundred and ninety nine rupees a month.",
-    async run(page) {
-      await click(page, nav(page, "Dashboard"), { settle: 2600 });
-      await sleep(2800);
-    },
-  },
-];
+};
+
+/** The default: go to a module, let it settle, and look down the page. */
+const visit = (label, scrollTo) => async (page) => {
+  if (label) await click(page, nav(page, label), { settle: 2600 });
+  await sleep(1400);
+  if (scrollTo) {
+    await glideScroll(page, scrollTo, 1200);
+    await sleep(1600);
+    await glideScroll(page, 0, 900);
+  }
+};
+
+const BEATS = VOICE.beats.map((b) => ({
+  id: b.id,
+  say: b.text,
+  cutTo: b.cutTo,
+  /** Seconds the narration needs; the runner pads the beat to cover it. */
+  voice: b.seconds,
+  hold: b.hold,
+  run: ACTIONS[b.id] ?? visit(b.nav, b.scroll),
+}));
 
 /* ------------------------------------------------------------------- run -- */
 const browser = await chromium.launch({ executablePath: CHROME, args: ["--no-sandbox"] });
@@ -267,6 +254,45 @@ await ctx.addInitScript(() => {
   } catch {
     /* private mode: the tour will open and the run will report the failures */
   }
+  // The demo's own furniture -- the LIVE DEMO bar, the Replay tour pill -- is a
+  // property of the demo, not of the product, so it must never be in frame.
+  //
+  // This has to happen HERE rather than after the page loads. Recording starts
+  // the moment the page exists, and the style tag used to be injected after
+  // goto plus a 3.5s settle, so the first four or five seconds of every
+  // walkthrough opened on a banner reading "nothing you do here is saved" --
+  // the one frame a viewer sees before anything else.
+  //
+  // Getting this right took a measurement. An init script runs in a fresh
+  // context where `document` exists but is EMPTY -- documentElement can still
+  // be null -- so the obvious version, append to `document.head ??
+  // document.documentElement`, threw on null and took the DOMContentLoaded
+  // listener registered after it down with it. The style then never existed at
+  // all, and the run looked like the CSS was simply being overridden.
+  //
+  // So: register the listener first, and keep trying until there is a head to
+  // append to.
+  const CSS =
+    "[data-demo-banner],[data-demo-tour]{display:none!important}" +
+    "body{padding-bottom:0!important}";
+  const hide = () => {
+    if (document.getElementById("__nofurniture")) return true;
+    const target = document.head ?? document.body ?? document.documentElement;
+    if (!target) return false;
+    const style = document.createElement("style");
+    style.id = "__nofurniture";
+    style.textContent = CSS;
+    target.appendChild(style);
+    return true;
+  };
+  document.addEventListener("DOMContentLoaded", hide);
+  if (!hide()) {
+    // Poll only until it lands, which is within the first frame in practice.
+    const timer = setInterval(() => {
+      if (hide()) clearInterval(timer);
+    }, 8);
+    setTimeout(() => clearInterval(timer), 8000);
+  }
 });
 
 const page = await ctx.newPage();
@@ -283,9 +309,8 @@ await page.waitForTimeout(3500);
 
 // The demo banner is a property of the demo, not of the product. Hide it so
 // the walkthrough shows the app as a customer would run it.
-await page.addStyleTag({
-  content: "[data-demo-banner],[data-demo-tour]{display:none!important}",
-});
+// Belt and braces: the init script above already did this before the first
+// frame, but a re-render can re-apply the body padding the banner reserves.
 await page.evaluate(() => { document.body.style.paddingBottom = ""; });
 await page.evaluate(CURSOR_JS);
 await page.evaluate(([a, b]) => window.__cur?.(a, b), [mouse.x, mouse.y]);
@@ -298,6 +323,13 @@ for (const beat of BEATS) {
   try {
     await page.evaluate(CURSOR_JS);            // survive any re-render
     await beat.run(page);
+    // Hold until the narration for this beat has had time to finish, plus its
+    // written hold. This is the whole point of measuring the voice first: a
+    // beat whose clicks are quicker than its line waits, instead of letting
+    // the voice run over the next screen and drag every later beat with it.
+    const need = (beat.voice + beat.hold) * 1000;
+    const spent = Date.now() - videoT0 - start;
+    if (spent < need) await sleep(need - spent);
   } catch (e) {
     console.log(`FAILED: ${String(e).split("\n")[0].slice(0, 90)}`);
     marks.push({ ...beat, start, end: Date.now() - videoT0, failed: true });
@@ -321,7 +353,13 @@ const mp4 = join(OUT, "walkthrough.mp4");
 // Composite any beat that declared a cutTo, over exactly the window that beat
 // occupied. Because the window comes from the measured run rather than a
 // hand-written offset, the cut cannot land on the wrong screen.
-const cuts = marks.filter((m) => m.cutTo && !m.failed);
+// Everything downstream works in FILM time, not run time.
+const shifted = marks.map((m) => ({
+  ...m,
+  start: Math.max(m.start - HEAD_TRIM * 1000, 0),
+  end: Math.max(m.end - HEAD_TRIM * 1000, 0),
+}));
+const cuts = shifted.filter((m) => m.cutTo && !m.failed);
 const STILLS = resolve(HERE, "../remotion/public");
 const FADE = 0.45;
 
@@ -345,14 +383,14 @@ cuts.forEach((c, i) => {
   last = `bg${idx}`;
 });
 
-const args = ["-y", "-i", webm, ...inputs];
+const args = ["-y", "-ss", String(HEAD_TRIM), "-i", webm, ...inputs];
 if (filters.length) args.push("-filter_complex", filters.join(";"), "-map", `[${last}]`);
 args.push(
   "-c:v", "libx264", "-preset", "slow", "-crf", "20",
   "-pix_fmt", "yuv420p",                        // required by most players
   "-movflags", "+faststart",
   "-r", "30",
-  "-t", String((marks.at(-1).end + 1200) / 1000),
+  "-t", String((shifted.at(-1).end + 1200) / 1000),
   mp4,
 );
 execFileSync("ffmpeg", args, { stdio: ["ignore", "ignore", "pipe"] });
@@ -368,11 +406,11 @@ const ts = (ms, sep = ",") => {
 
 writeFileSync(
   join(OUT, "walkthrough.srt"),
-  marks.map((b, i) =>
+  shifted.map((b, i) =>
     `${i + 1}\n${ts(b.start)} --> ${ts(b.end)}\n${b.say}\n`).join("\n"),
 );
 
-const total = marks.at(-1)?.end ?? 0;
+const total = shifted.at(-1)?.end ?? 0;
 writeFileSync(
   join(OUT, "walkthrough.md"),
   [
@@ -384,13 +422,35 @@ writeFileSync(
     "",
     "| In | Out | On screen | Say |",
     "|---|---|---|---|",
-    ...marks.map((b) =>
+    ...shifted.map((b) =>
       `| ${ts(b.start, ".").slice(3)} | ${ts(b.end, ".").slice(3)} | ${b.id}${b.failed ? " ⚠️ failed" : ""} | ${b.say} |`),
     "",
   ].join("\n"),
 );
 
-const failed = marks.filter((m) => m.failed);
+/* ----------------------------------------------------------------- audio -- */
+// The picture is silent up to here. The mix places each line at the beat's
+// MEASURED start, so the voice cannot be out of step with the screen it is
+// describing -- and lays the score under it, ducked.
+// The deliverable. `walkthrough.mp4` beside it is the silent picture, kept
+// because a re-mix does not need a re-record.
+const narrated = join(OUT, "sitetru-walkthrough.mp4");
+try {
+  const timed = {
+    ...VOICE,
+    beats: VOICE.beats.map((b) => {
+      const m = shifted.find((x) => x.id === b.id);
+      return { ...b, startsAt: m ? Number((m.start / 1000).toFixed(3)) : b.startsAt };
+    }),
+  };
+  writeFileSync(join(OUT, "timed-manifest.json"), JSON.stringify(timed, null, 2));
+  const { mixWithManifest } = await import("../films/mix.mjs");
+  mixWithManifest("walkthrough", timed, mp4, narrated);
+} catch (e) {
+  console.log(`  audio mix skipped: ${String(e).split("\n")[0].slice(0, 120)}`);
+}
+
+const failed = shifted.filter((m) => m.failed);
 console.log(`\n  runtime ${(total / 1000).toFixed(1)}s`);
 console.log(`  ${mp4}`);
 console.log(`  ${join(OUT, "walkthrough.srt")}`);
