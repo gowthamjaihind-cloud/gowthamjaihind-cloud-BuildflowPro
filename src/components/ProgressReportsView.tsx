@@ -240,6 +240,8 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
           useCORS: true,
           logging: false,
           windowWidth: 1000,
+          // A printed page, not a screen: the capture is flattened onto
+          // white whatever theme the user is viewing in. Not a palette value.
           backgroundColor: "#ffffff",
         });
 

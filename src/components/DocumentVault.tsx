@@ -380,12 +380,12 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
             </div>
           </div>
 
-          <div className="h-px md:h-10 w-full md:w-px bg-[#3A4F5F]" />
+          <div className="h-px md:h-10 w-full md:w-px bg-white/15" />
 
           <div className="flex items-center gap-2">
             <button
               onClick={handleBulkDownload}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#3A4F5F] hover:bg-[#465D6E] rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
             >
               <Download size={14} /> Download Set
             </button>
@@ -398,16 +398,16 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   <Trash2 size={14} /> Delete
                 </button>
                 <div className="relative group">
-                  <button className="flex items-center gap-2 px-4 py-2.5 bg-[#3A4F5F] hover:bg-[#465D6E] rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
+                  <button className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
                     <ShieldCheck size={14} /> Access Level
                   </button>
-                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-[#3A4F5F] rounded-2xl p-2 border border-[#465D6E] shadow-2xl min-w-[160px]">
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-surface-dark rounded-2xl p-2 border border-surface-edge shadow-2xl min-w-[160px]">
                     {(["Public", "Internal", "Confidential"] as const).map(
                       (level) => (
                         <button
                           key={level}
                           onClick={() => handleBulkUpdateAccess(level)}
-                          className="w-full text-left px-4 py-2 hover:bg-[#465D6E] rounded-xl text-[10px] font-black uppercase tracking-widest text-ink-muted hover:text-white transition-colors"
+                          className="w-full text-left px-4 py-2 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white transition-colors"
                         >
                           Set to {level}
                         </button>

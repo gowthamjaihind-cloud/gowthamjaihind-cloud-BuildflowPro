@@ -35,6 +35,35 @@
   --danger:  #B3261E;   /* 6.54 / 5.37 */
   --warning: #9A4A22;   /* 6.22 / 5.21 */
   --info:    #4A6C82;   /* 5.59 / 4.75 */
+
+  /* Chart palette. Charts cannot use a Tailwind class -- their colours end up
+     in SVG fill/stroke and inline styles -- so they need values they can be
+     handed directly. Keeping those values HERE, rather than as a `dark ? … : …`
+     ternary inside each dashboard, is what makes them follow the brand: when
+     the palette moved from warm sand to navy the dashboards did not come
+     along, and every chart kept the retired axis (#786F67), gauge track
+     (#ECE6DD) and donut ring (#221D18) until this block existed.
+
+     Chrome is UI, so it mirrors the interface tokens exactly. */
+  --chart-axis: var(--ink-muted);                                  /* tick labels; real text */
+  --chart-grid: color-mix(in srgb, var(--ink-muted) 14%, transparent);
+  --chart-track: var(--divider);                                   /* empty part of a gauge */
+  --chart-track-step: color-mix(in srgb, var(--ink-muted) 22%, transparent);
+  --chart-surface: var(--panel);                                   /* cuts the donut's gaps */
+
+  /* Series are data, not UI: distinctness between adjacent slices matters more
+     than matching a token, so these keep their own tuned values. Validated as
+     a 2-series budget/actual pair plus status, and a 4-hue categorical set
+     whose order keeps the similar orange and yellow non-adjacent. */
+  --chart-budget: #0F79B8;
+  --chart-actual: var(--primary);
+  --chart-under: #2E8B6F;   /* a FILL. As text it is 4.17 -- use --success */
+  --chart-over: var(--danger);
+  --chart-amber: #C0872A;
+  --chart-cat-1: #2A78D6;
+  --chart-cat-2: #EB6834;
+  --chart-cat-3: #1BAF7A;
+  --chart-cat-4: #EDA100;
 }
 
 .dark {
@@ -66,6 +95,21 @@
   --danger: #F87171;
   --warning: #F0A882;
   --info: #9BAAC2;
+
+  /* Chart chrome needs no restatement: --chart-axis and friends point at
+     --ink-muted, --divider and --panel, which this block has already moved.
+     The SERIES values are tuned per mode, so they do have to be restated --
+     and every one of them must be, or a chart silently keeps its light-mode
+     colour on a near-black canvas. chartTheme.test.ts enforces that. */
+  --chart-budget: #2A86C4;
+  --chart-actual: var(--primary);
+  --chart-under: #46B08C;
+  --chart-over: #FF8A80;
+  --chart-amber: #E0A63E;
+  --chart-cat-1: #3987E5;
+  --chart-cat-2: #D95926;
+  --chart-cat-3: #199E70;
+  --chart-cat-4: #C98500;
 }
 
 /* The schedule screens carry their own scoped variables. The dark block below
@@ -137,6 +181,14 @@
      (#1B1C20 neutral charcoal) were retired with the rest of the old ramp;
      their uses now point at divider, ink-muted and surface-dark. */
   --color-snow: #FFFFFF;
+
+  /* Telegram's own blue. This is the one colour in the app that is deliberately
+     NOT ours: it identifies a third party, so it does not follow the palette
+     and does not change in dark mode. Named rather than pasted so a reader can
+     tell it apart from a leftover -- every other bare hex in the components
+     WAS a leftover, and looked exactly like this one. */
+  --color-telegram: #229ED9;
+  --color-telegram-deep: #1C8DC4;
 }
 
 /* ---------------------------------------------------------------------------

@@ -69,6 +69,7 @@ import { Tooltip as HintTooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
 import { DialogBehaviour } from "../lib/useDialog";
 
+import { chartChrome, chartSeries } from "../lib/chartTheme";
 interface CostManagementProps {
   projectId: string;
 }
@@ -909,7 +910,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 <HintTooltip label={"Save task costs"}>
                   <button aria-label="Save task costs"
                     onClick={() => handleSaveTaskCosts(task.id)}
-                    className="p-1 bg-success/20 text-success rounded hover:bg-[#A7F3D0]"
+                    className="p-1 bg-success/20 text-success rounded hover:bg-success/35"
                   >
                     <Check className="w-4 h-4" />
                   </button>
@@ -1041,7 +1042,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           <tr className="bg-panel">
             <td colSpan={11} className="p-2 md:p-6 border-b border-divider">
               <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
-                <div className="bg-[#3A4F5F] px-4 py-2 flex justify-between items-center">
+                <div className="bg-surface-dark px-4 py-2 flex justify-between items-center">
                   <span className="text-[10px] md:text-[10px] font-black text-white uppercase tracking-widest">
                     Material Consumption Breakdown
                   </span>
@@ -1435,22 +1436,22 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     <CartesianGrid
                       strokeDasharray="3 3"
                       vertical={false}
-                      stroke="rgba(0,0,0,0.05)"
+                      stroke={chartChrome.grid}
                     />
                     <XAxis
                       dataKey="name"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#6E8CA0", fontWeight: 600, fontSize: 13 }}
+                      tick={{ fill: chartChrome.axis, fontWeight: 600, fontSize: 13 }}
                     />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#6E8CA0", fontWeight: 600, fontSize: 13 }}
+                      tick={{ fill: chartChrome.axis, fontWeight: 600, fontSize: 13 }}
                       tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
                     />
                     <Tooltip
-                      cursor={{ fill: "rgba(0,0,0,0.02)" }}
+                      cursor={{ fill: "var(--ink)", fillOpacity: 0.04 }}
                       contentStyle={{
                         borderRadius: "24px",
                         border: "1px solid var(--divider)",
@@ -1472,13 +1473,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     />
                     <Bar
                       dataKey="Budget"
-                      fill="#059669"
+                      fill={chartSeries.budget}
                       radius={[8, 8, 0, 0]}
                       barSize={40}
                     />
                     <Bar
                       dataKey="Actual"
-                      fill="var(--primary)"
+                      fill={chartSeries.actual}
                       radius={[8, 8, 0, 0]}
                       barSize={40}
                     />
@@ -1639,7 +1640,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     </th>
                     <th className="p-3 w-12 md:w-20"></th>
                   </tr>
-                  <tr className="bg-[#3A4F5F] text-white/50 text-[8px] font-black uppercase tracking-[0.2em] border-t border-white/5">
+                  <tr className="bg-surface-dark text-white/50 text-[8px] font-black uppercase tracking-[0.2em] border-t border-white/5">
                     <th className="p-1 px-3 text-left">Items</th>
                     <th className="p-1 text-center hidden md:table-cell border-l border-white/5">
                       Budget
@@ -1790,7 +1791,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         </td>
                         <td className="p-4">
                           <span
-                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-success/20 text-success" : "bg-[#E2E8ED] text-ink-muted"}`}
+                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-success/20 text-success" : "bg-divider text-ink-muted"}`}
                           >
                             {entry.type}
                           </span>

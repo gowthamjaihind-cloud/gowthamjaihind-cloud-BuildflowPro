@@ -2704,7 +2704,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                               {/* Materials */}
                               <div className="bg-emerald-50/50 rounded-2xl md:rounded-[32px] p-5 md:p-8 border border-emerald-100/50 space-y-4 md:space-y-6">
                                 <div className="flex items-center justify-between">
-                                  <h5 className="text-[10px] md:text-[10px] font-black uppercase text-[#064E3B] tracking-tighter flex items-center gap-2">
+                                  <h5 className="text-[10px] md:text-[10px] font-black uppercase text-success tracking-tighter flex items-center gap-2">
                                     Material Consumption
                                   </h5>
                                   <div className="flex gap-2">
@@ -2974,7 +2974,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                             openSection === "financial" ? null : "financial",
                           )
                         }
-                        className="w-full flex items-center justify-between p-5 text-left hover:bg-[#3A4F5F] transition-colors"
+                        className="w-full flex items-center justify-between p-5 text-left hover:bg-white/5 transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg shadow-sm bg-primary/20 text-primary">
@@ -3022,7 +3022,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                           <div
                             className={
                               breakpoint !== "desktop"
-                                ? "p-5 pt-0 border-t border-[#3A4F5F] mt-2 text-white relative"
+                                ? "p-5 pt-0 border-t border-surface-edge mt-2 text-white relative"
                                 : "relative"
                             }
                           >

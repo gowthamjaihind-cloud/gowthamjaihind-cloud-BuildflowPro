@@ -137,6 +137,40 @@ the amounts in Cost Management's transaction panel; the success green measured
 `.on-dark` deliberately does **not** re-point `--color-primary`. A hero can
 hold a filled cobalt CTA, and that button has to stay cobalt.
 
+**Charts get their colours from the palette too, and they nearly didn't.**
+A chart cannot use a Tailwind class — its colours end up in SVG `fill`/`stroke`
+and inline styles — so every dashboard had grown its own
+`const axis = dark ? … : …`. When the brand moved to navy those literals stayed
+put, and every chart in the product kept wearing the *previous* palette: axis
+`#786F67`, gauge track `#ECE6DD`, donut ring `#221D18`, all warm sand inside a
+navy app. Nothing failed, because nothing was looking.
+
+The chart palette is now `--chart-*` in `index.css`, split by what the colour
+actually is:
+
+```css
+/* Chrome is UI, so it points AT the interface tokens and follows them. */
+--chart-axis:       var(--ink-muted);   /* tick labels — real text, must pass AA */
+--chart-grid:       color-mix(in srgb, var(--ink-muted) 14%, transparent);
+--chart-track:      var(--divider);     /* the empty part of a gauge */
+--chart-track-step: color-mix(in srgb, var(--ink-muted) 22%, transparent);
+--chart-surface:    var(--panel);       /* cuts the gaps between donut segments */
+
+/* Series are data. Distinctness between adjacent slices matters more than
+   matching a token, so these keep tuned values — and are restated in .dark. */
+--chart-budget: #0F79B8;  --chart-actual: var(--primary);
+--chart-under:  #2E8B6F;  --chart-over:   var(--danger);  --chart-amber: #C0872A;
+--chart-cat-1 … --chart-cat-4         /* categorical ramp */
+```
+
+Two things fall out of using variables rather than a `dark` flag. Dark mode
+needs no `dark` prop threaded through the chart tree — five dashboards stopped
+subscribing to the theme store entirely, because CSS switches the colours. And
+a series colour is a **fill, not type**: `--chart-under` is 4.17:1 on white, so
+the same "under budget" verdict written as *words* uses `text-success` (6.61).
+That distinction is exactly what had been lost — `#2E8B6F` was shipping as body
+text in the cost dashboard.
+
 ---
 
 ## 3. Typography rules
@@ -279,6 +313,24 @@ Borders do the quiet separating; shadow is only for things that genuinely float.
   `SLIP_TOLERANCE` for the slack; every KPI, badge and phase label reads it.
 
 **Don't**
+- Don't inline a colour into a class. An arbitrary-value utility is invisible
+  to a search for token names, which is how two palette migrations each left a
+  tail: fifty-six of them survived across eighteen files, and four were
+  measurably broken rather than merely off-brand — white on `#6E8CA0` at
+  3.55:1 on two filled buttons, `#6E8CA0` as a section heading at 3.55, a
+  fixed pale chip that inverted to 2.63 in dark mode under `text-ink-muted`,
+  and a donut's centre label at 3.86. `src/lib/palette.test.ts` now fails on
+  any such class, on any literal outside the four files that genuinely cannot
+  use a variable, and on any value from either retired palette. A second check
+  in `verify:no-demo` reads the built CSS, because Tailwind's scanner reads
+  *every* file in the project — a class name merely mentioned in a comment or
+  a leftover script is generated into the bundle, which is how a `#34C759`
+  utility for a colour that exists nowhere in the app was shipping.
+- Don't build a tint by string-concatenating alpha onto a colour.
+  `` `${accent}10` `` works only when `accent` is a hex; three of Project
+  Insights' four section headers were passing `var(--primary)` and painting no
+  tint at all, silently, for as long as the tokens have existed. Use
+  `color-mix(in srgb, ${accent} 7%, transparent)`, which works for both.
 - Don't `truncate` a title to make a row fit. It once reduced "Labour" to "L".
 - Don't use `K` for thousands, or Western digit grouping.
 - Don't put a negative number in the success colour. `₹-54.0L` in green reads

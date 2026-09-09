@@ -159,7 +159,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       case "Draft":
         return "bg-page text-ink/80 border-divider";
       case "Sent to Client":
-        return "bg-[#E2E8ED] text-ink-muted border-[#C5D2DB]";
+        return "bg-divider text-ink-muted border-ink-muted/20";
       case "Approved":
         return "bg-success/20 text-success border-success/40";
       case "Rejected":

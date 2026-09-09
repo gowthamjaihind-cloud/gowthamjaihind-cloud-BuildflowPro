@@ -137,7 +137,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
         <DialogBehaviour />
         <div className="flex justify-between items-center p-5 border-b border-divider shrink-0">
           <h2 className="font-black text-ink flex items-center gap-2">
-            <Sparkle weight="fill" className="w-5 h-5 text-[#6E8CA0]" /> {initialBill ? "Review Vendor Bill" : "Scan Vendor Invoice"}
+            <Sparkle weight="fill" className="w-5 h-5 text-info" /> {initialBill ? "Review Vendor Bill" : "Scan Vendor Invoice"}
           </h2>
           <button aria-label="Close" onClick={onClose} className="p-2 bg-panel hover:bg-divider rounded-full">
             <X className="w-5 h-5 text-ink-muted" />
@@ -153,7 +153,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
           )}
 
           {step === "upload" && (
-            <label className="block border-2 border-dashed border-divider rounded-2xl p-10 text-center cursor-pointer hover:border-[#6E8CA0]/50 transition-colors">
+            <label className="block border-2 border-dashed border-divider rounded-2xl p-10 text-center cursor-pointer hover:border-info/50 transition-colors">
               <Upload className="w-10 h-10 mx-auto text-ink-muted mb-3" />
               <div className="font-bold text-ink">Upload the GST invoice</div>
               <div className="text-sm text-ink-muted mt-1">Photo or PDF · reads it and matches your PO</div>

@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { useProjectDataQuery } from "../../hooks/queries";
 import { PurchaseOrder } from "../../types";
-import { useUIStore } from "../../store";
 import { useTranslation } from "../../i18n";
 import { Truck } from "@phosphor-icons/react";
 import { inr, inrCompact, StatTile, RankedBars } from "./shared";
 
+import { chartSeries } from "../../lib/chartTheme";
 type ViewId = "byVendor" | "byStatus";
 
 const poTotal = (po: PurchaseOrder) => {
@@ -16,10 +16,9 @@ const poTotal = (po: PurchaseOrder) => {
 
 export const ProcurementAnalyticsDashboard: React.FC<{ projectId: string }> = ({ projectId }) => {
   const { t } = useTranslation();
-  const dark = useUIStore((s) => s.darkMode);
   const { data: pos = [] } = useProjectDataQuery<PurchaseOrder>(projectId, "purchase_orders");
   const [view, setView] = useState<ViewId>("byVendor");
-  const bar = dark ? "#2A86C4" : "#0F79B8";
+  const bar = chartSeries.bar;
 
   const { totalValue, count, vendors, open, byVendor, byStatus } = useMemo(() => {
     const vendorAgg = new Map<string, number>();

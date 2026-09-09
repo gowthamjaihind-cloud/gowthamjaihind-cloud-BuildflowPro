@@ -295,7 +295,11 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
 
   const sections = useMemo(
     () => [
-      { key: "executiveDigest" as const, title: t("insights.executiveDigest"), icon: Sparkle, accent: "#6E8CA0" },
+      // Four distinguishable accents, all tokens. The digest is the summary
+      // section, so it takes the neutral one; the other three are semantic.
+      // This was #6E8CA0, which is 3.55:1 on white -- the heading below is
+      // rendered in the accent, so that was a failing AA heading.
+      { key: "executiveDigest" as const, title: t("insights.executiveDigest"), icon: Sparkle, accent: "var(--ink)" },
       { key: "costVariance" as const, title: t("insights.costVariance"), icon: ChartLineUp, accent: "var(--primary)" },
       { key: "scheduleSlippage" as const, title: t("insights.scheduleSlippage"), icon: CalendarX, accent: "var(--warning)" },
       { key: "siteReport" as const, title: t("insights.siteReport"), icon: Buildings, accent: "var(--info)" },
@@ -307,7 +311,7 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
     <div className="space-y-6">
       <div className="bg-surface p-6 rounded-[20px] border border-divider shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className="p-2.5 bg-[#6E8CA0]/12 text-[#46617C] rounded-xl shrink-0">
+          <div className="p-2.5 bg-info/12 text-info rounded-xl shrink-0">
             <Sparkle weight="fill" className="w-6 h-6" />
           </div>
           <div>
@@ -368,7 +372,7 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {sections.map((s) => (
             <div key={s.key} className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
-              <div className="flex items-center gap-2 px-5 py-3.5 border-b border-divider" style={{ background: `${s.accent}10` }}>
+              <div className="flex items-center gap-2 px-5 py-3.5 border-b border-divider" style={{ background: `color-mix(in srgb, ${s.accent} 7%, transparent)` }}>
                 <s.icon weight="bold" className="w-4 h-4" style={{ color: s.accent }} />
                 <h3 className="text-sm font-black uppercase tracking-widest" style={{ color: s.accent }}>
                   {s.title}

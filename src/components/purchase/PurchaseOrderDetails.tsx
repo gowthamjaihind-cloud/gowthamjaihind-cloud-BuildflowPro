@@ -188,7 +188,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                   <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">{L("Status","நிலை")}</p>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                      po.status === 'Draft' ? 'bg-page text-ink-muted' :
-                     po.status === 'Approved' ? 'bg-[#E2E8ED] text-ink-muted' :
+                     po.status === 'Approved' ? 'bg-divider text-ink-muted' :
                      po.status === 'Partially Received' ? 'bg-primary/10 text-primary' :
                      'bg-success/12 text-success'
                   }`}>

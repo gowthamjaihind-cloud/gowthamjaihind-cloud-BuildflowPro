@@ -431,7 +431,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             : "border-divider bg-panel hover:bg-surface"
                         }`}
                       >
-                        <div className="w-5 h-5 rounded-full border border-[#465D6E] bg-surface-dark shadow-inner"></div>
+                        <div className="w-5 h-5 rounded-full border border-surface-edge bg-surface-dark shadow-inner"></div>
                         <span className="font-semibold text-ink">
                           Dark Mode
                         </span>

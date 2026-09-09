@@ -277,7 +277,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
         <DialogBehaviour />
         <div className={`p-6 md:p-8 text-white flex justify-between items-center transition-colors
           ${overallMatchStatus === "Fully Matched" ? "bg-success" : 
-            overallMatchStatus === "Has Discrepancies" ? "bg-primary" : "bg-[#465D6E]"}`}
+            overallMatchStatus === "Has Discrepancies" ? "bg-primary" : "bg-surface-dark"}`}
         >
           <div>
             <h3 className="text-xl md:text-2xl font-black">

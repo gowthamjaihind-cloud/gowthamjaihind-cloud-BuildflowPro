@@ -405,7 +405,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             </div>
 
             <div className="bg-info/10 rounded-2xl p-3 flex items-start gap-3">
-              <div className="bg-[#229ED9] w-8 h-8 rounded-xl flex items-center justify-center shrink-0">
+              <div className="bg-telegram w-8 h-8 rounded-xl flex items-center justify-center shrink-0">
                 <TelegramLogo weight="fill" className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -533,7 +533,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               { t: "✅ Logged", s: "Synced to cost, WBS & inventory", sTa: "செலவு, WBS & ஸ்டாக்குடன் ஒத்திசைக்கப்பட்டது" },
             ].map((m, i) => (
               <div key={i} className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3">
-                <div className="bg-[#229ED9] w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+                <div className="bg-telegram w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
                   <TelegramLogo weight="fill" className="w-4 h-4 text-white" />
                 </div>
                 <div>

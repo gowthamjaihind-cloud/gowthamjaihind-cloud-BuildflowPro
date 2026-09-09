@@ -988,7 +988,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       {b.status === "pending_review" ? (
                         <button
                           onClick={() => setReviewBill(b)}
-                          className="px-3 py-1.5 bg-[#6E8CA0] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-[#5C7889]"
+                          className="px-3 py-1.5 bg-surface-dark text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-surface-dark/85"
                         >
                           Review &amp; Post
                         </button>
@@ -1034,7 +1034,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               setOpeningBalanceInput(0);
               setIsAddingVendor(true);
             }}
-            className="w-full sm:w-auto bg-surface-dark text-white px-5 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-[#3A4F5F] apple-transition shadow-lg shadow-surface-dark/10 text-[10px]"
+            className="w-full sm:w-auto bg-surface-dark text-white px-5 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-surface-dark/85 apple-transition shadow-lg shadow-surface-dark/10 text-[10px]"
           >
             <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />{" "}
             <span>Add Party</span>
@@ -1239,7 +1239,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         });
                         setIsAddingPayment(true);
                       }}
-                      className="flex-[1.5] bg-surface-dark text-white py-2.5 md:py-3.5 rounded-lg md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#3A4F5F] apple-transition shadow-md shadow-surface-dark/5"
+                      className="flex-[1.5] bg-surface-dark text-white py-2.5 md:py-3.5 rounded-lg md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-surface-dark/85 apple-transition shadow-md shadow-surface-dark/5"
                     >
                       Payment
                     </button>
@@ -2001,7 +2001,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         <div className="flex items-center gap-2 w-full md:w-auto md:shrink-0">
           <button
             onClick={() => setShowScanInvoice(true)}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#6E8CA0] text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#5C7889] apple-transition shadow-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-surface-dark text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-surface-dark/85 apple-transition shadow-sm"
           >
             <Sparkle weight="fill" className="w-3.5 h-3.5" /> Scan Invoice
           </button>

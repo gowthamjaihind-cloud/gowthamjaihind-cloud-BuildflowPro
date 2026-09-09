@@ -131,4 +131,36 @@ if (debugHits.length) {
   process.exit(1);
 }
 
+// Arbitrary colour utilities in the shipped CSS.
+//
+// The palette belongs in index.css; src/lib/palette.test.ts keeps components
+// from inlining a colour into a class. This is the same check one step later,
+// on the artefact, and it catches what the source test cannot: Tailwind's
+// scanner reads EVERY file in the project, comments included, so a class name
+// merely *mentioned* in a script, a codemod or a test's own documentation is
+// generated into the bundle. That is not hypothetical — two spent codemods
+// left at the repo root were shipping `#34C759` and `#3A4F5F` utilities for a
+// colour that exists nowhere in the app.
+//
+// It matches the escaped form Tailwind emits for such a class, `.bg-\[\#…\]`,
+// so a legitimate `#hex` inside a gradient or a keyframe does not trip it.
+const ARBITRARY_HEX_UTILITY = /\.[a-z-]+-\\\[\\?#[0-9A-Fa-f]{3,8}\\?\]/g;
+const cssHits = [];
+for (const f of walk(DIST)) {
+  if (!f.endsWith(".css")) continue;
+  const found = [...new Set(readFileSync(f, "utf8").match(ARBITRARY_HEX_UTILITY) ?? [])];
+  if (found.length) cssHits.push([f, found]);
+}
+if (cssHits.length) {
+  console.error("FAIL — the CSS bundle carries colour-inlined utility classes:");
+  for (const [f, found] of cssHits) {
+    console.error(`  ${f}`);
+    found.forEach((c) => console.error(`    ${c.replace(/\\/g, "")}`));
+  }
+  console.error("\nThe palette lives in src/index.css. If a class name here appears");
+  console.error("in no component, something Tailwind scans only MENTIONS it -- a");
+  console.error("script or a comment is enough to generate it.");
+  process.exit(1);
+}
+
 console.log(`PASS — no demo fixtures in ${DIST}, no App Check debug token.${demoNote}`);
