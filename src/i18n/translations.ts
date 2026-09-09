@@ -435,7 +435,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "land.heroEyebrow": "Built for construction teams",
     "land.heroTitle": "Run your whole site,",
     "land.heroSubhead":
-      "Schedule, procurement, labor, cost and daily progress — connected in real time, with field logging as simple as a Telegram message.",
+      "Schedule, procurement, labour, cost and daily progress — connected in real time, with field logging as simple as a Telegram message.",
     "land.trustLine": "Secure Google sign-in · No credit card to start",
     "land.serveEyebrow": "Built for the people who build",
     "land.serveHeading": "Who we serve",
