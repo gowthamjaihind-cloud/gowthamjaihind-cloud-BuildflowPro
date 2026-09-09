@@ -124,11 +124,11 @@ export const demoTasks = [
 
 // --- Parties ---------------------------------------------------------------
 export const demoVendors = [
-  { id: "v1", projectId: DEMO_PROJECT_ID, name: "Lakshmi Steels", type: "Material", contactPerson: "R. Senthil", phone: "+91 98420 11223", gstin: "33AABCL1234M1Z5", address: "Sample Area 3", outstandingBalance: 284500 },
-  { id: "v2", projectId: DEMO_PROJECT_ID, name: "Sri Balaji Cements", type: "Material", contactPerson: "M. Karthik", phone: "+91 94430 55671", gstin: "33AAFCS9876P1ZQ", address: "Sample Area 1", outstandingBalance: 96200 },
-  { id: "v3", projectId: DEMO_PROJECT_ID, name: "Murugan Blue Metals", type: "Material", contactPerson: "S. Pandi", phone: "+91 99445 78210", address: "Sample Area 4", outstandingBalance: 0 },
-  { id: "v4", projectId: DEMO_PROJECT_ID, name: "Selvam Labour Contractor", type: "Labor", contactPerson: "K. Selvam", phone: "+91 90031 44526", address: "Sample Area 5", outstandingBalance: 142000 },
-  { id: "v5", projectId: DEMO_PROJECT_ID, name: "Vinayaga Electricals", type: "Both", contactPerson: "A. Ganesh", phone: "+91 98651 33907", gstin: "33AACFV5432N1Z8", address: "Sample Area 2", outstandingBalance: 38400 },
+  { id: "v1", projectId: DEMO_PROJECT_ID, name: "Sample Steel Supplier", type: "Material", contactPerson: "Contact 1", phone: "+91 00000 00001", gstin: "00AAAAA0000A1Z1", address: "Sample Area 3", outstandingBalance: 284500 },
+  { id: "v2", projectId: DEMO_PROJECT_ID, name: "Sample Cement Supplier", type: "Material", contactPerson: "Contact 2", phone: "+91 00000 00002", gstin: "00AAAAA0000A1Z2", address: "Sample Area 1", outstandingBalance: 96200 },
+  { id: "v3", projectId: DEMO_PROJECT_ID, name: "Sample Aggregate Supplier", type: "Material", contactPerson: "Contact 3", phone: "+91 00000 00003", address: "Sample Area 4", outstandingBalance: 0 },
+  { id: "v4", projectId: DEMO_PROJECT_ID, name: "Sample Labour Contractor", type: "Labor", contactPerson: "Contact 4", phone: "+91 00000 00004", address: "Sample Area 5", outstandingBalance: 142000 },
+  { id: "v5", projectId: DEMO_PROJECT_ID, name: "Sample Electrical Supplier", type: "Both", contactPerson: "Contact 5", phone: "+91 00000 00005", gstin: "00AAAAA0000A1Z3", address: "Sample Area 2", outstandingBalance: 38400 },
 ];
 
 // --- Stock -----------------------------------------------------------------
@@ -144,21 +144,21 @@ export const demoInventory = [
 
 // --- Purchase orders & receipts --------------------------------------------
 export const demoPurchaseOrders = [
-  { id: "po1", poNumber: "PO-2026-0018", projectId: DEMO_PROJECT_ID, vendorId: "v1", vendorName: "Lakshmi Steels", status: "Partially Received", orderDate: d(-24), expectedDeliveryDate: d(-18), totalAmount: 706190, createdByUid: demoUser.uid, createdByName: demoUser.displayName,
+  { id: "po1", poNumber: "PO-2026-0018", projectId: DEMO_PROJECT_ID, vendorId: "v1", vendorName: "Sample Steel Supplier", status: "Partially Received", orderDate: d(-24), expectedDeliveryDate: d(-18), totalAmount: 706190, createdByUid: demoUser.uid, createdByName: demoUser.displayName,
     lineItems: [ { itemId: "i2", materialId: "STL-TMT12", name: "TMT Bar 12mm", orderedQty: 8, unit: "MT", rate: 64290, amount: 514320, receivedQty: 6 }, { itemId: "i3", materialId: "STL-TMT16", name: "TMT Bar 16mm", orderedQty: 3, unit: "MT", rate: 63800, amount: 191400, receivedQty: 3 } ],
     charges: { transport: 470, loading: 0, other: 0 } },
-  { id: "po2", poNumber: "PO-2026-0019", projectId: DEMO_PROJECT_ID, vendorId: "v2", vendorName: "Sri Balaji Cements", status: "Closed", orderDate: d(-16), expectedDeliveryDate: d(-14), totalAmount: 247200, createdByUid: demoUser.uid, createdByName: demoUser.displayName,
+  { id: "po2", poNumber: "PO-2026-0019", projectId: DEMO_PROJECT_ID, vendorId: "v2", vendorName: "Sample Cement Supplier", status: "Closed", orderDate: d(-16), expectedDeliveryDate: d(-14), totalAmount: 247200, createdByUid: demoUser.uid, createdByName: demoUser.displayName,
     lineItems: [ { itemId: "i1", materialId: "CEM-OPC53", name: "OPC 53 Grade Cement", orderedQty: 600, unit: "Bag", rate: 412, amount: 247200, receivedQty: 600 } ] },
-  { id: "po3", poNumber: "PO-2026-0020", projectId: DEMO_PROJECT_ID, vendorId: "v3", vendorName: "Murugan Blue Metals", status: "Approved", orderDate: d(-4), expectedDeliveryDate: d(2), totalAmount: 145600, createdByUid: demoUser.uid, createdByName: demoUser.displayName,
+  { id: "po3", poNumber: "PO-2026-0020", projectId: DEMO_PROJECT_ID, vendorId: "v3", vendorName: "Sample Aggregate Supplier", status: "Approved", orderDate: d(-4), expectedDeliveryDate: d(2), totalAmount: 145600, createdByUid: demoUser.uid, createdByName: demoUser.displayName,
     lineItems: [ { itemId: "i4", materialId: "AGG-MSAND", name: "M-Sand", orderedQty: 40, unit: "Unit", rate: 2450, amount: 98000, receivedQty: 0 }, { itemId: "i5", materialId: "AGG-20MM", name: "20mm Blue Metal", orderedQty: 24, unit: "Unit", rate: 1980, amount: 47520, receivedQty: 0 } ] },
-  { id: "po4", poNumber: "PO-2026-0021", projectId: DEMO_PROJECT_ID, vendorId: "v5", vendorName: "Vinayaga Electricals", status: "Draft", orderDate: d(-1), totalAmount: 38400, createdByUid: demoUser.uid, createdByName: demoUser.displayName,
+  { id: "po4", poNumber: "PO-2026-0021", projectId: DEMO_PROJECT_ID, vendorId: "v5", vendorName: "Sample Electrical Supplier", status: "Draft", orderDate: d(-1), totalAmount: 38400, createdByUid: demoUser.uid, createdByName: demoUser.displayName,
     lineItems: [ { itemId: "i7", materialId: "ELE-CON25", name: "PVC Conduit 25mm", orderedQty: 400, unit: "Nos", rate: 96, amount: 38400, receivedQty: 0 } ] },
 ];
 
 export const demoGRNs = [
-  { id: "g1", grnNumber: "GRN-2026-0031", projectId: DEMO_PROJECT_ID, poId: "po1", poNumber: "PO-2026-0018", vendorId: "v1", vendorName: "Lakshmi Steels", receiptDate: d(-18), challanNumber: "DC-10294", totalAmount: 577140, createdByUid: demoUser.uid, createdByName: demoUser.displayName,
+  { id: "g1", grnNumber: "GRN-2026-0031", projectId: DEMO_PROJECT_ID, poId: "po1", poNumber: "PO-2026-0018", vendorId: "v1", vendorName: "Sample Steel Supplier", receiptDate: d(-18), challanNumber: "DC-10294", totalAmount: 577140, createdByUid: demoUser.uid, createdByName: demoUser.displayName,
     lineItems: [ { poLineRef: "i2", materialId: "STL-TMT12", name: "TMT Bar 12mm", orderedQty: 8, receivedQty: 6, acceptedQty: 6, rejectedQty: 0, unit: "MT" }, { poLineRef: "i3", materialId: "STL-TMT16", name: "TMT Bar 16mm", orderedQty: 3, receivedQty: 3, acceptedQty: 3, rejectedQty: 0, unit: "MT" } ] },
-  { id: "g2", grnNumber: "GRN-2026-0032", projectId: DEMO_PROJECT_ID, poId: "po2", poNumber: "PO-2026-0019", vendorId: "v2", vendorName: "Sri Balaji Cements", receiptDate: d(-14), challanNumber: "SBC-8871", totalAmount: 247200, createdByUid: demoUser.uid, createdByName: demoUser.displayName,
+  { id: "g2", grnNumber: "GRN-2026-0032", projectId: DEMO_PROJECT_ID, poId: "po2", poNumber: "PO-2026-0019", vendorId: "v2", vendorName: "Sample Cement Supplier", receiptDate: d(-14), challanNumber: "SBC-8871", totalAmount: 247200, createdByUid: demoUser.uid, createdByName: demoUser.displayName,
     lineItems: [ { poLineRef: "i1", materialId: "CEM-OPC53", name: "OPC 53 Grade Cement", orderedQty: 600, receivedQty: 600, acceptedQty: 596, rejectedQty: 4, unit: "Bag" } ] },
 ];
 
@@ -259,7 +259,7 @@ export const demoEstimates = [
 ];
 
 export const demoDocuments = [
-  { id: "doc1", projectId: DEMO_PROJECT_ID, name: "Approved plan — Madurai Corporation.pdf", type: "application/pdf", url: "#", uploadedBy: "Demo Owner", uploadedAt: d(-152), accessLevel: "Internal", category: "Approvals", tags: ["sanction"] },
+  { id: "doc1", projectId: DEMO_PROJECT_ID, name: "Approved plan — local authority.pdf", type: "application/pdf", url: "#", uploadedBy: "Demo Owner", uploadedAt: d(-152), accessLevel: "Internal", category: "Approvals", tags: ["sanction"] },
   { id: "doc2", projectId: DEMO_PROJECT_ID, name: "Soil investigation report.pdf", type: "application/pdf", url: "#", uploadedBy: "Demo Owner", uploadedAt: d(-155), accessLevel: "Internal", category: "Reports" },
   { id: "doc3", projectId: DEMO_PROJECT_ID, name: "Structural drawings — R2.pdf", type: "application/pdf", url: "#", uploadedBy: "Demo Owner", uploadedAt: d(-140), accessLevel: "Internal", category: "Drawings", tags: ["structural"] },
   { id: "doc4", projectId: DEMO_PROJECT_ID, name: "Client agreement — signed.pdf", type: "application/pdf", url: "#", uploadedBy: "Demo Owner", uploadedAt: d(-149), accessLevel: "Confidential", category: "Contracts" },

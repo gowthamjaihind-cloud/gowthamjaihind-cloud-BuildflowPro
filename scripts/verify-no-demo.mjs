@@ -15,20 +15,43 @@ const NEEDLES = [
   "Sample Residence",
   "Sample Commercial Block",
   "Sample Villa",
-  "Lakshmi Steels",
-  "Sri Balaji Cements",
+  "Sample Steel Supplier",
+  "Sample Cement Supplier",
   "demo@sitetru.com",
   "Demo Owner",
   // Retired real-sounding names and localities. Kept as needles so a stale
   // copy pasted back in is caught. The landing page deliberately says
   // "Your Project" rather than a fixture name, so nothing here collides with
   // legitimate marketing copy in the production bundle.
+  // Projects and localities
   "Ramkumar Residence",
   "Othakadai",
   "Anna Nagar",
   "Thirunagar",
   "K.K. Nagar",
   "Melur Road",
+  "Madurai Corporation",
+  // Suppliers and their contacts
+  "Lakshmi Steels",
+  "Sri Balaji Cements",
+  "Murugan Blue Metals",
+  "Vinayaga Electricals",
+  "Selvam Labour Contractor",
+  "R. Senthil",
+  "M. Karthik",
+  "S. Pandi",
+  "K. Selvam",
+  "A. Ganesh",
+  // Real-format phone numbers and GSTINs. An Indian mobile starts 6-9, so the
+  // replacements lead with 0 and cannot reach anybody.
+  "98420 11223",
+  "94430 55671",
+  "99445 78210",
+  "90031 44526",
+  "98651 33907",
+  "33AABCL1234M1Z5",
+  "33AAFCS9876P1ZQ",
+  "33AACFV5432N1Z8",
 ];
 
 // dist/demo is a deliberate, separate bundle served at sitetru.com/demo. It is
