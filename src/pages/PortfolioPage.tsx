@@ -22,13 +22,15 @@ import { SyncStatus } from "../components/SyncStatus";
 import { TelegramBotStatus } from "../components/TelegramBotStatus";
 import { OrgSwitcher } from "../components/OrgSwitcher";
 import { useTranslation } from "../i18n";
+import { Tooltip } from "../components/Tooltip";
+import { DialogBehaviour } from "../lib/useDialog";
 
 const statusPillClasses = (status?: string) => {
   switch (status) {
     case "Active":
       return "text-success bg-success/15 dark:text-success dark:bg-success/10";
     case "On Hold":
-      return "text-[#B85F3B] bg-primary/12 dark:text-[#E29677] dark:bg-primary/15";
+      return "text-warning bg-warning/12 dark:text-warning dark:bg-warning/15";
     case "Completed":
       return "text-ink-muted bg-[#6E8CA0]/12";
     default:
@@ -157,19 +159,19 @@ export const PortfolioPage: React.FC = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.2, 0, 0, 1] }}
-          className={`relative overflow-hidden rounded-[28px] sm:rounded-[36px] md:rounded-[44px] bg-surface-dark text-white shadow-xl shadow-drab/30 ${
+          className={`relative overflow-hidden rounded-[28px] sm:rounded-[36px] md:rounded-[44px] bg-surface-dark text-white border border-surface-edge on-dark ${
             dense
-              ? "mb-6 sm:mb-8 px-6 py-6 sm:px-10 sm:py-8"
-              : "mb-8 sm:mb-12 md:mb-14 px-6 py-8 sm:px-10 sm:py-12 md:px-16 md:py-12"
+              ? "mb-6 sm:mb-8 px-6 py-6 sm:px-10 sm:py-7"
+              : "mb-8 sm:mb-12 md:mb-14 px-6 py-7 sm:px-10 sm:py-10 md:px-16 md:py-10"
           }`}
         >
-          {/* Ambient palette mesh (animated, motion-safe) */}
-          <div className="brand-mesh" aria-hidden="true" />
-          {/* Depth wash + floating decorative glyph */}
+          {/* One cobalt rule, matching PageHero. See the note there for why the
+              animated mesh and charcoal wash are gone. */}
           <div
-            className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-onyx/70 pointer-events-none"
+            className="absolute inset-x-0 top-0 h-[3px] bg-primary pointer-events-none"
             aria-hidden="true"
           />
+          {/* Floating decorative glyph */}
           <Buildings
             weight="duotone"
             aria-hidden="true"
@@ -194,20 +196,24 @@ export const PortfolioPage: React.FC = () => {
                 <OrgSwitcher />
                 <SyncStatus />
                 <TelegramBotStatus />
-                <button
-                  onClick={() => setViewingSettings(true)}
-                  className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white/90 transition-colors active:scale-95 shrink-0"
-                  title={t("portfolio.globalSettings")}
-                >
-                  <GearSix weight="duotone" className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => logout()}
-                  className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-danger/25 text-white/90 hover:text-danger transition-colors active:scale-95 shrink-0"
-                  title={t("portfolio.signOut")}
-                >
-                  <SignOut weight="duotone" className="w-5 h-5" />
-                </button>
+                <Tooltip label={t("portfolio.globalSettings")}>
+                  <button
+                    onClick={() => setViewingSettings(true)}
+                    className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white/90 transition-colors active:scale-95 shrink-0"
+                   
+                  >
+                    <GearSix weight="duotone" className="w-5 h-5" />
+                  </button>
+                </Tooltip>
+                <Tooltip label={t("portfolio.signOut")}>
+                  <button
+                    onClick={() => logout()}
+                    className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-danger/25 text-white/90 hover:text-danger transition-colors active:scale-95 shrink-0"
+                   
+                  >
+                    <SignOut weight="duotone" className="w-5 h-5" />
+                  </button>
+                </Tooltip>
               </div>
             </div>
 
@@ -218,7 +224,7 @@ export const PortfolioPage: React.FC = () => {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15, duration: 0.5 }}
-                  className="text-[12px] sm:text-sm font-bold uppercase tracking-[0.2em] text-primary mb-2 sm:mb-3"
+                  className="text-[12px] sm:text-sm font-bold uppercase tracking-[0.2em] text-primary-on-dark mb-2 sm:mb-3"
                 >
                   {t("portfolio.greeting", { greeting, name: firstName })}
                 </motion.div>
@@ -227,7 +233,7 @@ export const PortfolioPage: React.FC = () => {
                 </h1>
                 <p className="text-[15px] sm:text-[17px] md:text-lg text-white/70 font-medium leading-relaxed">
                   {t("portfolio.tagline")}{" "}
-                  <span className="text-white/45">
+                  <span className="text-white/55">
                     {t("portfolio.taglineSub")}
                   </span>
                 </p>
@@ -244,7 +250,7 @@ export const PortfolioPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 rounded-2xl bg-white/[0.07] border border-white/10 px-4 py-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-sage shadow-[0_0_10px_#87BCBF]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-success shadow-[0_0_10px_var(--success)]" />
                     <CountUp
                       value={activeCount}
                       className="font-display text-2xl font-bold leading-none tabular-nums"
@@ -264,7 +270,7 @@ export const PortfolioPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 rounded-2xl bg-white/[0.07] border border-white/10 px-4 py-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-sage/70" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-info/70" />
                     <CountUp
                       value={completedCount}
                       className="font-display text-2xl font-bold leading-none tabular-nums"
@@ -326,20 +332,22 @@ export const PortfolioPage: React.FC = () => {
                     alt=""
                     className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-onyx/55 via-onyx/10 to-transparent" />
-                  <label
-                    className="absolute inset-0 bg-onyx/45 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white"
-                    onClick={(e) => e.stopPropagation()}
-                    title={t("cpm.uploadCover")}
-                  >
-                    <ImageIcon weight="duotone" className="w-6 h-6" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleUpdateImage(e, project.id)}
-                    />
-                  </label>
+                  <div className="absolute inset-0 bg-gradient-to-t from-surface-dark/55 via-surface-dark/10 to-transparent" />
+                  <Tooltip label={t("cpm.uploadCover")}>
+                    <label
+                      className="absolute inset-0 bg-surface-dark/45 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white"
+                      onClick={(e) => e.stopPropagation()}
+                     
+                    >
+                      <ImageIcon weight="duotone" className="w-6 h-6" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleUpdateImage(e, project.id)}
+                      />
+                    </label>
+                  </Tooltip>
                   <span
                     className={`absolute top-3 right-3 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest ${statusPillClasses(
                       project.status,
@@ -356,21 +364,23 @@ export const PortfolioPage: React.FC = () => {
                 <div className="flex justify-between items-start gap-3 mb-4">
                   {/* Without a cover the avatar carries the upload affordance. */}
                   {!project.imageUrl && (
-                    <div className={`relative bg-surface-dark text-white rounded-[16px] group-hover:bg-primary apple-transition shadow-lg shadow-drab/20 flex items-center justify-center overflow-hidden shrink-0 ${dense ? "w-11 h-11" : "w-12 h-12 sm:w-14 sm:h-14"}`}>
+                    <div className={`relative bg-surface-dark text-white rounded-[16px] group-hover:bg-primary apple-transition shadow-lg shadow-surface-dark/20 flex items-center justify-center overflow-hidden shrink-0 ${dense ? "w-11 h-11" : "w-12 h-12 sm:w-14 sm:h-14"}`}>
                       <ImageIcon weight="duotone" className="w-6 h-6" />
-                      <label
-                        className="absolute inset-0 bg-onyx/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white"
-                        onClick={(e) => e.stopPropagation()}
-                        title={t("cpm.uploadCover")}
-                      >
-                        <ImageIcon weight="duotone" className="w-5 h-5" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handleUpdateImage(e, project.id)}
-                        />
-                      </label>
+                      <Tooltip label={t("cpm.uploadCover")}>
+                        <label
+                          className="absolute inset-0 bg-surface-dark/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white"
+                          onClick={(e) => e.stopPropagation()}
+                         
+                        >
+                          <ImageIcon weight="duotone" className="w-5 h-5" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleUpdateImage(e, project.id)}
+                          />
+                        </label>
+                      </Tooltip>
                     </div>
                   )}
 
@@ -387,21 +397,25 @@ export const PortfolioPage: React.FC = () => {
                       </span>
                     )}
                     {(user?.role === "Admin" || user?.role === "Owner") && (
-                      <button
-                        onClick={(e) => handleEditProjectClick(e, project)}
-                        className="flex items-center justify-center w-9 h-9 rounded-xl text-ink-muted hover:text-primary hover:bg-page apple-transition"
-                        title={t("portfolio.editProject")}
-                      >
-                        <PencilSimple weight="duotone" className="w-4 h-4" />
-                      </button>
+                      <Tooltip label={t("portfolio.editProject")}>
+                        <button
+                          onClick={(e) => handleEditProjectClick(e, project)}
+                          className="flex items-center justify-center w-9 h-9 rounded-xl text-ink-muted hover:text-primary hover:bg-page apple-transition"
+                         
+                        >
+                          <PencilSimple weight="duotone" className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
                     )}
-                    <button
-                      onClick={(e) => handleDeleteProjectClick(e, project.id)}
-                      className="flex items-center justify-center w-9 h-9 rounded-xl text-ink-muted hover:text-danger hover:bg-danger/8 apple-transition"
-                      title={t("portfolio.deleteProject")}
-                    >
-                      <Trash weight="duotone" className="w-4 h-4" />
-                    </button>
+                    <Tooltip label={t("portfolio.deleteProject")}>
+                      <button
+                        onClick={(e) => handleDeleteProjectClick(e, project.id)}
+                        className="flex items-center justify-center w-9 h-9 rounded-xl text-ink-muted hover:text-danger hover:bg-danger/8 apple-transition"
+                       
+                      >
+                        <Trash weight="duotone" className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
 
@@ -425,7 +439,7 @@ export const PortfolioPage: React.FC = () => {
             </motion.div>
           ))}
           {visibleProjects.length === 0 && !isCreatingProject && (
-            <div className="sm:col-span-2 lg:col-span-3 py-20 sm:py-32 md:py-40 text-center soft-card border-2 border-dashed border-fossil rounded-[24px] sm:rounded-[32px] md:rounded-[48px]">
+            <div className="sm:col-span-2 lg:col-span-3 py-20 sm:py-32 md:py-40 text-center soft-card border-2 border-dashed border-divider rounded-[24px] sm:rounded-[32px] md:rounded-[48px]">
               <div className="bg-page w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-[20px] sm:rounded-[32px] md:rounded-[40px] flex items-center justify-center mx-auto mb-6 sm:mb-8 md:mb-10 border border-divider/60">
                 <ArrowsClockwise
                   weight="duotone"
@@ -445,12 +459,13 @@ export const PortfolioPage: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {projectToDelete && (
-        <div className="fixed inset-0 bg-onyx/50 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-surface-dark/50 z-[100] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="soft-card bg-surface rounded-2xl w-full max-w-sm p-6 relative"
           >
+            <DialogBehaviour />
             <h3 className="text-xl font-bold text-ink mb-2">
               {t("portfolio.deleteConfirmTitle")}
             </h3>

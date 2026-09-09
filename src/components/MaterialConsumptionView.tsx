@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { round2 } from "../utils/num";
 import { useTranslation } from "../i18n";
 import { useProjectDataQuery, useTasksQuery } from "../hooks/queries";
 import { useProjectDailyLogsQuery } from "../hooks/useDailyLogs";
@@ -22,6 +24,9 @@ import {
   CurrencyInr as IndianRupee,
   HardHat,
 } from "@phosphor-icons/react";
+import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
+import { SkeletonCards, SkeletonRows } from "./Skeleton";
 
 interface MaterialConsumptionViewProps {
   projectId: string;
@@ -31,6 +36,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   projectId,
 }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   // Local Filter state for Active Material Tab
   const [localTaskSearch, setLocalTaskSearch] = useState("");
   const [localStartDate, setLocalStartDate] = useState("");
@@ -380,6 +386,44 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
     return { headers, rows };
   };
 
+  // The labour tab had its export buttons hidden outright, so the one screen
+  // that answers "what did we spend on people" could not leave the app.
+  const handleExportLabourCSV = () => {
+    const headers = ["Date", "Task", "Role", "Contractor", "Headcount", "Shifts", "Cost (₹)"];
+    const rows = filteredLaborRecords.map((r) => [
+      r.date,
+      r.taskName,
+      r.role,
+      r.vendorName,
+      r.headcount || 0,
+      r.shifts || 1,
+      round2(r.cost || 0),
+    ]);
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToCSV(`Labour_Consumption_${dateStr}`, headers, rows);
+  };
+
+  const handleExportLabourPDF = () => {
+    const headers = ["Date", "Task", "Role", "Contractor", "Headcount", "Shifts", "Cost (₹)"];
+    const rows = filteredLaborRecords.map((r) => [
+      r.date,
+      r.taskName,
+      r.role,
+      r.vendorName,
+      r.headcount || 0,
+      r.shifts || 1,
+      round2(r.cost || 0),
+    ]);
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToPDF(
+      "Labour Consumption Log",
+      `Project: ${projectLabel}`,
+      headers,
+      rows,
+      `Labour_Consumption_${dateStr}`,
+    );
+  };
+
   const handleExportCSV = (recordsToExport: any[]) => {
     const { headers, rows } = getExportData(recordsToExport);
     const dateStr = new Date().toISOString().split("T")[0];
@@ -389,7 +433,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   const handleExportPDF = (recordsToExport: any[]) => {
     const { headers, rows } = getExportData(recordsToExport);
     const dateStr = new Date().toISOString().split("T")[0];
-    exportToPDF("Material Consumption Log", `Project ID: ${projectId}`, headers, rows, `Material_Consumption_${activeTab === "advanced-filter" ? "Filtered" : activeTab.replace(/\s+/g, "_")}_${dateStr}`);
+    exportToPDF("Material Consumption Log", `Project: ${projectLabel}`, headers, rows, `Material_Consumption_${activeTab === "advanced-filter" ? "Filtered" : activeTab.replace(/\s+/g, "_")}_${dateStr}`);
   };
 
   const handleResetAdvancedFilters = () => {
@@ -409,9 +453,9 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col justify-center items-center p-24 text-ink-muted gap-3" id="loading-container">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-xs font-bold uppercase tracking-widest animate-pulse">Syncing consumption databases...</p>
+      <div className="flex flex-col gap-4" id="loading-container">
+        <SkeletonCards label="Loading consumption records…" />
+        <SkeletonRows rows={6} announce={false} />
       </div>
     );
   }
@@ -429,6 +473,25 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
           </p>
         </div>
         
+        {activeTab === "labor" && filteredLaborRecords.length > 0 && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportLabourCSV}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-panel hover:bg-divider border border-divider rounded-xl text-xs font-bold uppercase tracking-wider text-ink transition duration-200 shadow-sm cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-primary" />
+              {t("common.exportCsv")}
+            </button>
+            <button
+              onClick={handleExportLabourPDF}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              {t("common.exportPdf")}
+            </button>
+          </div>
+        )}
+
         {allRecords.length > 0 && activeTab !== "labor" && (
           <div className="flex items-center gap-2">
             <button
@@ -444,7 +507,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               id="export-current-pdf-btn"
               onClick={() => handleExportPDF(advancedFilteredRecords)}
               disabled={advancedFilteredRecords.length === 0}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <Download className="w-4 h-4" />
               {t("common.exportPdf")}
@@ -455,15 +518,12 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
 
       {/* NO RECORDS GENERAL STATE */}
       {allRecords.length === 0 && laborRecords.length === 0 ? (
-        <div className="bg-surface rounded-2xl border border-divider p-20 text-center" id="empty-state-container">
-          <div className="w-20 h-20 bg-panel rounded-full flex items-center justify-center mx-auto mb-6 border border-divider">
-            <Package className="text-ink-muted w-10 h-10" />
-          </div>
-          <h3 className="text-lg font-black text-ink mb-1 uppercase tracking-wider">No Consumption Logs Yet</h3>
-          <p className="text-ink-muted text-xs max-w-md mx-auto">
-            Once tasks start recording materials used in their Daily Logs or formal Material Issues are processed, they will appear aggregated here.
-          </p>
-        </div>
+        <EmptyState
+          size="page"
+          icon={Package}
+          title="No consumption logged yet"
+          body="Materials appear here once daily logs record what a task used, or a formal material issue is posted."
+        />
       ) : (
         <div className="space-y-6" id="consumption-analytics-content">
           {/* TAB BAR — two top-level tabs */}
@@ -489,7 +549,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               onClick={() => setSelectedTab("labor")}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
                 activeTab === "labor"
-                  ? "bg-[#324755] border-[#324755] text-white shadow-md shadow-[#324755]/10"
+                  ? "bg-surface-dark border-surface-dark text-white shadow-md shadow-surface-dark/10"
                   : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
               }`}
             >
@@ -508,32 +568,32 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               <div className="bg-panel p-4 rounded-2xl border border-divider grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3" id="labor-filters">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Task</label>
-                  <select value={laborTask} onChange={(e) => setLaborTask(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#324755] outline-none">
+                  <select value={laborTask} onChange={(e) => setLaborTask(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-surface-dark outline-none">
                     <option value="">All Tasks</option>
                     {distinctLaborTasks.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Role / Trade</label>
-                  <select value={laborRole} onChange={(e) => setLaborRole(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#324755] outline-none">
+                  <select value={laborRole} onChange={(e) => setLaborRole(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-surface-dark outline-none">
                     <option value="">All Roles</option>
                     {distinctLaborRoles.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Vendor</label>
-                  <select value={laborVendor} onChange={(e) => setLaborVendor(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-[#324755] outline-none">
+                  <select value={laborVendor} onChange={(e) => setLaborVendor(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-surface-dark outline-none">
                     <option value="">All Vendors</option>
                     {distinctLaborVendors.map((v) => <option key={v} value={v}>{v}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">From</label>
-                  <input type="date" value={laborStartDate} onChange={(e) => setLaborStartDate(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#324755] outline-none" />
+                  <input type="date" value={laborStartDate} onChange={(e) => setLaborStartDate(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-surface-dark outline-none" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">To</label>
-                  <input type="date" value={laborEndDate} onChange={(e) => setLaborEndDate(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-[#324755] outline-none" />
+                  <input type="date" value={laborEndDate} onChange={(e) => setLaborEndDate(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2 text-xs font-bold text-ink focus:border-surface-dark outline-none" />
                 </div>
               </div>
 
@@ -550,7 +610,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Total Manpower</p>
                     <p className="text-2xl font-black text-ink font-mono">{laborTotals.headcount.toLocaleString("en-IN")} <span className="text-xs font-normal text-ink-muted">head-shifts</span></p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#324755]/10 text-[#324755] flex items-center justify-center border border-[#324755]/20"><Users className="w-5 h-5" /></div>
+                  <div className="w-10 h-10 rounded-xl bg-surface-dark/10 text-surface-dark flex items-center justify-center border border-surface-dark/20"><Users className="w-5 h-5" /></div>
                 </div>
                 <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
                   <div>
@@ -564,14 +624,14 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Deployment Entries</p>
                     <p className="text-2xl font-black text-ink font-mono">{laborTotals.entries}</p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#6E8CA0]/10 text-[#56778E] flex items-center justify-center border border-[#6E8CA0]/20"><FileText className="w-5 h-5" /></div>
+                  <div className="w-10 h-10 rounded-xl bg-info/10 text-ink-muted flex items-center justify-center border border-[#6E8CA0]/20"><FileText className="w-5 h-5" /></div>
                 </div>
               </div>
 
               {/* PER-TASK ROLLUP */}
               <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-divider flex items-center gap-2">
-                  <HardHat className="w-4 h-4 text-[#324755]" />
+                  <HardHat className="w-4 h-4 text-surface-dark" />
                   <h3 className="text-xs font-black uppercase tracking-wider text-ink">Labor Consumption per Task</h3>
                 </div>
                 <div className="overflow-x-auto scrollbar-hide">
@@ -586,7 +646,12 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                     </thead>
                     <tbody className="divide-y divide-divider/40">
                       {laborTotals.perTask.length === 0 ? (
-                        <tr><td colSpan={4} className="p-16 text-center"><HardHat className="text-ink-muted/50 w-8 h-8 mx-auto mb-3" /><p className="text-ink-muted text-xs font-bold uppercase tracking-wider">No labor consumption found</p></td></tr>
+                        <EmptyState
+                          colSpan={4}
+                          icon={HardHat}
+                          title="No labour logged yet"
+                          body="Labour totals per task appear here once daily logs record a crew."
+                        />
                       ) : laborTotals.perTask.map((t) => (
                         <tr key={t.taskName} className="hover:bg-panel/30 transition duration-150">
                           <td className="px-6 py-4 font-bold text-xs text-ink">{t.taskName}</td>
@@ -615,8 +680,31 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-divider/40">
-                      {filteredLaborRecords.length === 0 ? (
-                        <tr><td colSpan={6} className="p-16 text-center"><FileText className="text-ink-muted/50 w-8 h-8 mx-auto mb-3" /><p className="text-ink-muted text-xs font-bold uppercase tracking-wider">No matching labor logs</p></td></tr>
+                      {laborRecords.length === 0 ? (
+                        <EmptyState
+                          colSpan={6}
+                          icon={HardHat}
+                          title="No labour logged yet"
+                          body="Labour appears here once daily logs record a crew against a task."
+                        />
+                      ) : filteredLaborRecords.length === 0 ? (
+                        <EmptyState
+                          colSpan={6}
+                          icon={HardHat}
+                          variant="filtered"
+                          title="No labour matches"
+                          body="No entries match the task, role, vendor or date range selected above."
+                          action={{
+                            label: "Clear filters",
+                            onClick: () => {
+                              setLaborTask("");
+                              setLaborRole("");
+                              setLaborVendor("");
+                              setLaborStartDate("");
+                              setLaborEndDate("");
+                            },
+                          }}
+                        />
                       ) : filteredLaborRecords.map((r) => (
                         <tr key={r.id} className="hover:bg-panel/30 transition duration-150">
                           <td className="px-6 py-4 font-mono text-xs text-ink-muted whitespace-nowrap">{r.date}</td>
@@ -661,7 +749,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       <CountUp value={advancedInsights.count} />
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-[#6E8CA0]/10 text-[#56778E] flex items-center justify-center border border-[#6E8CA0]/20">
+                  <div className="w-10 h-10 rounded-xl bg-info/10 text-ink-muted flex items-center justify-center border border-[#6E8CA0]/20">
                     <FileText className="w-5 h-5" />
                   </div>
                 </div>
@@ -678,7 +766,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       <span className="text-xs font-normal text-ink-muted">{advancedInsights.unit}</span>
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-[#C0653F] flex items-center justify-center border border-primary/20">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
                     <Activity className="w-5 h-5" />
                   </div>
                 </div>
@@ -878,19 +966,14 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                     </thead>
                     <tbody className="divide-y divide-divider/40">
                       {advancedFilteredRecords.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="p-20 text-center">
-                            <FileText className="text-ink-muted/50 w-10 h-10 mx-auto mb-4" />
-                            <p className="text-ink-muted text-xs font-bold uppercase tracking-wider">No records match the active search filters</p>
-                            <button
-                              id="reset-filter-link"
-                              onClick={handleResetAdvancedFilters}
-                              className="mt-3 text-xs text-primary font-bold hover:underline uppercase tracking-widest"
-                            >
-                              Reset filters & view all
-                            </button>
-                          </td>
-                        </tr>
+                        <EmptyState
+                          colSpan={5}
+                          icon={FileText}
+                          variant="filtered"
+                          title="No records match"
+                          body="Nothing matches the active search filters."
+                          action={{ label: "Reset filters", onClick: handleResetAdvancedFilters }}
+                        />
                       ) : (
                         advancedFilteredRecords.map((record) => (
                           <tr key={record.id} className="hover:bg-panel/30 transition duration-150">
@@ -900,16 +983,18 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                             </td>
                             <td className="px-6 py-5">
                               <div className="font-bold text-xs tracking-tight text-ink">{record.taskName}</div>
-                              <div className="text-[10px] text-ink-muted italic mt-0.5 line-clamp-1" title={record.note}>
-                                {record.note}
-                              </div>
+                              <Tooltip label={record.note}>
+                                <div className="text-[10px] text-ink-muted italic mt-0.5 line-clamp-1">
+                                  {record.note}
+                                </div>
+                              </Tooltip>
                             </td>
                             <td className="px-6 py-5">
                               <span
                                 className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                                   record.source === "Material Issue"
                                     ? "bg-primary/10 text-primary border border-primary/20"
-                                    : "bg-[#6E8CA0]/10 text-[#46617C] border border-[#6E8CA0]/20"
+                                    : "bg-info/10 text-[#46617C] border border-[#6E8CA0]/20"
                                 }`}
                               >
                                 {record.source}

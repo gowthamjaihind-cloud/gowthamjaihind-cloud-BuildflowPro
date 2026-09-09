@@ -1,8 +1,9 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { logAuditEvent } from "../audit/logEvent";
 import { db } from "../db";
+import { CALLABLE_OPTS } from "../callable";
 
-export const deleteProject = onCall(async (request) => {
+export const deleteProject = onCall({ ...CALLABLE_OPTS }, async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be logged in.");
   }

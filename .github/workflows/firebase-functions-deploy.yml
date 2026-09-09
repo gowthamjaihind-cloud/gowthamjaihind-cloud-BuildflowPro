@@ -75,8 +75,20 @@ jobs:
           else
             echo "SENTRY_DSN not set — backend Sentry stays disabled"
           fi
+          # App Check enforcement for all 27 callables. Off unless the repo
+          # variable APPCHECK_ENFORCE is exactly "true". Turn it on only after
+          # the Firebase console shows App Check in monitoring mode reporting
+          # ~100% verified requests -- enforcing before that rejects every
+          # caller at once. See functions/src/callable.ts.
+          if [ "${APPCHECK_ENFORCE}" = "true" ]; then
+            echo "APPCHECK_ENFORCE=true" >> functions/.env
+            echo "App Check enforcement: ON"
+          else
+            echo "App Check enforcement: off (monitoring only)"
+          fi
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          APPCHECK_ENFORCE: ${{ vars.APPCHECK_ENFORCE }}
 
       - name: Deploy functions
         # Application Default Credentials come from the auth step above
@@ -87,3 +99,7 @@ jobs:
           # functions in CI, otherwise deploy fails with "Cannot determine
           # backend specification. Timeout after 10000".
           FUNCTIONS_DISCOVERY_TIMEOUT: "120"
+          # enforceAppCheck is baked into each function's config when the CLI
+          # enumerates the backend, not read at runtime, so the flag has to be
+          # present for THIS step as well as in functions/.env.
+          APPCHECK_ENFORCE: ${{ vars.APPCHECK_ENFORCE }}

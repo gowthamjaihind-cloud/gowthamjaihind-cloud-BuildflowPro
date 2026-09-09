@@ -32,6 +32,8 @@ import {
   Sparkle,
   Stack,
 } from "@phosphor-icons/react";
+import { Tooltip } from "../components/Tooltip";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface LandingPageProps {
   isLoggingIn: boolean;
@@ -42,7 +44,7 @@ interface LandingPageProps {
 const features = [
   { icon: TreeStructure, title: "WBS & Scheduling", taTitle: "பணிப் பிரிவு & அட்டவணை", body: "Break projects into a work-breakdown structure with a live Gantt, dependencies and auto-shifting dates.", taBody: "செயல்திட்டங்களை நேரடி Gantt, சார்புகள் மற்றும் தானாக மாறும் தேதிகளுடன் பணிப் பிரிவு அமைப்பாகப் பிரிக்கவும்." },
   { icon: Truck, title: "Procurement & GRN", taTitle: "கொள்முதல் & GRN", body: "Raise purchase orders, record goods receipts, and keep vendor ledgers and inventory in perfect step.", taBody: "கொள்முதல் ஆணைகளை உருவாக்கி, பொருள் ரசீதுகளைப் பதிவு செய்து, சப்ளையர் லெட்ஜர்களையும் ஸ்டாக்கையும் சரியாக ஒத்திசைக்கவும்." },
-  { icon: Users, title: "Labor Tracking", taTitle: "தொழிலாளர் கண்காணிப்பு", body: "Log daily manpower by trade and task, with rate cards, billing and per-task consumption rollups.", taBody: "விலை அட்டைகள், பில்லிங் மற்றும் பணி வாரியான பயன்பாட்டுடன் தினசரி மனித சக்தியைத் தொழில் மற்றும் பணி வாரியாகப் பதிவு செய்யவும்." },
+  { icon: Users, title: "Labour Tracking", taTitle: "தொழிலாளர் கண்காணிப்பு", body: "Log daily manpower by trade and task, with rate cards, billing and per-task consumption rollups.", taBody: "விலை அட்டைகள், பில்லிங் மற்றும் பணி வாரியான பயன்பாட்டுடன் தினசரி மனித சக்தியைத் தொழில் மற்றும் பணி வாரியாகப் பதிவு செய்யவும்." },
   { icon: CurrencyInr, title: "Cost Management", taTitle: "செலவு மேலாண்மை", body: "Track budgeted vs actual in real time, with CPI, forecasts and an AI-assisted cost analysis.", taBody: "CPI, முன்னறிவிப்புகள் மற்றும் AI உதவி செலவு பகுப்பாய்வுடன் பட்ஜெட் vs உண்மையை நிகழ்நேரத்தில் கண்காணிக்கவும்." },
   { icon: FileText, title: "Daily Logs & Reports", taTitle: "தினசரி பதிவுகள் & அறிக்கைகள்", body: "Site diaries with progress, materials, labour and photos — exportable as clean PDF reports.", taBody: "முன்னேற்றம், பொருட்கள், தொழிலாளர் மற்றும் புகைப்படங்களுடன் தள நாட்குறிப்புகள் — சுத்தமான PDF அறிக்கைகளாக எக்ஸ்போர்ட் செய்யலாம்." },
   { icon: Calculator, title: "Client Estimates", taTitle: "வாடிக்கையாளர் எஸ்டிமேட்", body: "Build estimates, track change orders, and compare against your live budget at any moment.", taBody: "மதிப்பீடுகளை உருவாக்கி, மாற்ற ஆணைகளைக் கண்காணித்து, எந்த நேரத்திலும் உங்கள் நேரடி பட்ஜெட்டுடன் ஒப்பிடவும்." },
@@ -272,7 +274,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
         <nav className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <BrandLogo className="w-9 h-9 rounded-xl" />
-            <span className="font-brand font-bold text-xl tracking-tight">Sitetru</span>
+            <span className="font-brand font-extrabold text-xl tracking-tight">Sitetru</span>
           </div>
 
           <div className="hidden md:flex items-center gap-7 text-sm font-semibold text-ink-muted">
@@ -280,13 +282,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <a href="#solutions" className="hover:text-ink apple-transition">{t("land.navSolutions")}</a>
             <a href="#features" className="hover:text-ink apple-transition">{t("land.navFeatures")}</a>
             <a href="#pricing" className="hover:text-ink apple-transition">{t("land.navPricing")}</a>
+            <a
+              href="/demo/?demo=1"
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-1.5 text-primary hover:text-primary-deep apple-transition font-bold"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />
+              {t("land.navDemo")}
+            </a>
           </div>
 
           <div className="hidden md:flex items-center gap-3">
             <button onClick={requestLogin} disabled={isLoggingIn} className="text-sm font-bold text-ink hover:text-primary apple-transition disabled:opacity-60">
               Sign in
             </button>
-            <CTA label={t("land.getStarted")} className="bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-[#B85F3B] shadow-lg shadow-primary/20" />
+            <CTA label={t("land.getStarted")} className="bg-primary text-white text-sm px-5 py-2.5 rounded-xl hover:bg-primary-deep shadow-lg shadow-primary/20" />
           </div>
 
           <button className="md:hidden p-2 -mr-2 text-ink" onClick={() => setMenuOpen((v) => !v)} aria-label="Menu">
@@ -300,6 +311,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <a href="#solutions" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navSolutions")}</a>
             <a href="#features" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navFeatures")}</a>
             <a href="#pricing" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navPricing")}</a>
+            <a
+              href="/demo/?demo=1"
+              target="_blank"
+              rel="noopener"
+              onClick={() => setMenuOpen(false)}
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-primary py-1"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />
+              {t("land.navDemo")}
+            </a>
             <CTA label={t("land.getStarted")} full className="bg-primary text-white text-sm px-5 py-3 rounded-xl mt-1" />
           </div>
         )}
@@ -315,13 +336,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
-            className="absolute top-10 right-0 w-[380px] h-[380px] rounded-full bg-sage/25 blur-3xl"
+            className="absolute top-10 right-0 w-[380px] h-[380px] rounded-full bg-primary/20 blur-3xl"
             animate={{ x: [0, -30, 0], y: [0, 40, 0] }}
             transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
           />
         </div>
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <div className="inline-flex items-center gap-2 bg-sage/15 text-[#3E8388] px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-6">
+          <div className="inline-flex items-center gap-2 bg-primary/12 text-primary-deep px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-6">
             <Lightning weight="fill" className="w-3.5 h-3.5" /> {t("land.heroEyebrow")}
           </div>
           <h1 className="font-display font-bold text-[42px] leading-[1.05] sm:text-6xl tracking-tight mb-6">
@@ -332,7 +353,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             {t("land.heroSubhead")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
-            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-[#B85F3B] shadow-xl shadow-primary/20" />
+            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-primary-deep shadow-xl shadow-primary/20" />
             <a href="#features" className="inline-flex items-center justify-center gap-2 font-bold text-base px-7 py-4 rounded-2xl bg-panel border border-divider text-ink hover:bg-surface apple-transition">
               {t("land.seeFeatures")}
             </a>
@@ -353,10 +374,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
           <div className="soft-card rounded-[28px] p-5 md:p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <p className="font-display font-bold text-lg tracking-tight">Ramkumar-Othakadai</p>
+                <p className="font-display font-bold text-lg tracking-tight">Your Project</p>
                 <p className="text-[10px] font-black uppercase tracking-widest text-primary">Control Center</p>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#3E8388] bg-[#87BCBF]/15 px-3 py-1.5 rounded-full">Active</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-success bg-success/12 px-3 py-1.5 rounded-full">Active</span>
             </div>
 
             <div className="bg-surface-dark rounded-2xl p-5 text-white mb-4">
@@ -383,7 +404,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               </div>
             </div>
 
-            <div className="bg-[#6E8CA0]/10 rounded-2xl p-3 flex items-start gap-3">
+            <div className="bg-info/10 rounded-2xl p-3 flex items-start gap-3">
               <div className="bg-[#229ED9] w-8 h-8 rounded-xl flex items-center justify-center shrink-0">
                 <TelegramLogo weight="fill" className="w-5 h-5 text-white" />
               </div>
@@ -411,7 +432,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {audience.map((a) => (
             <div key={a.title} className="soft-card rounded-3xl p-6 flex items-start gap-4">
-              <div className="w-12 h-12 shrink-0 rounded-2xl bg-sage/15 text-[#3E8388] flex items-center justify-center">
+              <div className="w-12 h-12 shrink-0 rounded-2xl bg-primary/12 text-primary-deep flex items-center justify-center">
                 <a.icon weight="duotone" className="w-6 h-6" />
               </div>
               <div>
@@ -468,7 +489,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       <section id="solutions" className="max-w-6xl mx-auto px-5 sm:px-8 py-8 md:py-16">
         <div className="bg-surface-dark rounded-[32px] p-8 md:p-14">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <p className="eyebrow text-sage mb-3">{t("land.solveEyebrow")}</p>
+            <p className="eyebrow text-primary-deep mb-3">{t("land.solveEyebrow")}</p>
             <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight text-white mb-4">{t("land.solveHeading")}</h2>
             <p className="text-white/70 font-medium">{L("Every messy part of running a project, answered by one connected workspace.", "ஒரு செயல்திட்டத்தை நடத்துவதன் ஒவ்வொரு குழப்பமான பகுதிக்கும், ஒரே இணைந்த பணியிடம் பதிலளிக்கிறது.")}</p>
           </div>
@@ -502,7 +523,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 "பணியாளர்களுக்குப் பயிற்சி அளிக்க ஆப் தேவையில்லை. மேற்பார்வையாளர்கள் முன்னேற்றம், பொருட்கள், தொழிலாளர் மற்றும் புகைப்படங்களை நேரடியாக ஒரு அரட்டையிலிருந்து பதிவு செய்கிறார்கள் — அது உங்கள் டாஷ்போர்டுகள், செலவுத் தாள்கள் மற்றும் ஸ்டாக்கில் நேரடியாக வந்து சேரும்.",
               )}
             </p>
-            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-[#B85F3B]" />
+            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-7 py-4 rounded-2xl hover:bg-primary-deep" />
           </div>
           <div className="space-y-3">
             {[
@@ -562,7 +583,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               className={`px-5 py-2 rounded-full text-sm font-bold apple-transition flex items-center gap-2 ${billing === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
             >
               {t("paywall.annual")}
-              <span className={`text-[10px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full ${billing === "annual" ? "bg-success/20 text-success" : "bg-success/15 text-[#2E8B6F]"}`}>{t("paywall.savePct")}</span>
+              <span className={`text-[10px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full ${billing === "annual" ? "bg-success/20 text-success" : "bg-success/15 text-success"}`}>{t("paywall.savePct")}</span>
             </button>
           </div>
         </div>
@@ -586,7 +607,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 ? L("/ mo", "/ மாதம்")
                 : L("/ org / month", "/ நிறுவனம் / மாதம்");
             return (
-              <div key={p.name} className={`rounded-3xl p-7 flex flex-col ${p.highlight ? "bg-surface-dark text-white shadow-2xl shadow-drab/20 ring-1 ring-primary/40" : "soft-card"}`}>
+              <div key={p.name} className={`rounded-3xl p-7 flex flex-col ${p.highlight ? "bg-surface-dark text-white shadow-2xl shadow-surface-dark/20 ring-1 ring-primary/40" : "soft-card"}`}>
                 {p.highlight && <span className="inline-block self-start text-[10px] font-black uppercase tracking-widest bg-primary text-white px-3 py-1 rounded-full mb-4">{L("Most popular", "மிகவும் பிரபலம்")}</span>}
                 <p className={`text-sm font-black uppercase tracking-widest mb-2 ${p.highlight ? "text-white/60" : "text-ink-muted"}`}>{p.name}</p>
                 <div className="flex items-end gap-1 mb-1">
@@ -596,7 +617,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 <p className={`text-[11px] font-semibold mb-1 h-4 ${p.highlight ? "text-white/50" : "text-ink-muted"}`}>
                   {!p.fixed && billing === "annual" ? L(p.annualTotal, (p as any).taAnnualTotal) : ""}
                 </p>
-                <div className={`inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 ${p.highlight ? "bg-white/10 text-white" : "bg-sage/15 text-[#3E8388]"}`}>
+                <div className={`inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 ${p.highlight ? "bg-white/10 text-white" : "bg-primary/12 text-primary-deep"}`}>
                   <Stack weight="bold" className="w-3.5 h-3.5" /> {L(p.projects, (p as any).taProjects)}
                 </div>
                 <p className={`text-xs font-semibold mb-6 ${p.highlight ? "text-white/50" : "text-ink-muted"}`}>{L(p.tag, (p as any).taTag)}</p>
@@ -612,14 +633,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                   label={L(p.cta, (p as any).taCta)}
                   href={(p as any).contactHref}
                   full
-                  className={`mt-auto text-sm py-3.5 rounded-2xl ${p.highlight ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                  className={`mt-auto text-sm py-3.5 rounded-2xl ${p.highlight ? "bg-primary text-white hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                 />
               </div>
             );
           })}
         </div>
         <div className="mt-8 max-w-2xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-[#B85F3B] px-4 py-2 rounded-full text-sm font-bold">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-warning px-4 py-2 rounded-full text-sm font-bold">
             <Stack weight="duotone" className="w-4 h-4" /> {L(`Need more projects? Add extra ones any time for ₹${OVERAGE_RATE}/project / month.`, `மேலும் செயல்திட்டங்கள் தேவையா? கூடுதலானவற்றை எந்த நேரத்திலும் தலா ₹${OVERAGE_RATE}/செயல்திட்டம் / மாதம் என்ற விலையில் சேர்க்கவும்.`)}
           </div>
           <p className="text-xs text-ink-muted mt-4">{L("Start free forever, or try Starter free for 14 days — no card, upgrade to any plan anytime. Prices in INR, exclusive of GST. Annual plans are billed yearly. Enterprise billing is custom.", "எப்போதும் இலவசமாகத் தொடங்குங்கள், அல்லது Starter ஐ 14 நாட்களுக்கு இலவசமாக முயற்சிக்கவும் — கார்டு இல்லை, எந்த திட்டத்திற்கும் எப்போது வேண்டுமானாலும் மேம்படுத்தலாம். விலைகள் INR இல், GST தவிர்த்து. ஆண்டு திட்டங்கள் ஆண்டுதோறும் பில் செய்யப்படும். Enterprise பில்லிங் தனிப்பயன்.")}</p>
@@ -632,7 +653,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
           <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{t("land.finalHeading")}</h2>
           <p className="text-ink-muted font-medium max-w-lg mx-auto mb-8">{L("Start free on Lite, or try every feature free for 30 days — no card required.", "இலவசமாகத் தொடங்குங்கள், அல்லது ஒவ்வொரு அம்சத்தையும் 30 நாட்களுக்கு இலவசமாக முயற்சிக்கவும் — கார்டு தேவையில்லை.")}</p>
           <div className="flex justify-center">
-            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-8 py-4 rounded-2xl hover:bg-[#B85F3B] shadow-xl shadow-primary/20" />
+            <CTA label={t("land.getStartedFree")} className="bg-primary text-white text-base px-8 py-4 rounded-2xl hover:bg-primary-deep shadow-xl shadow-primary/20" />
           </div>
         </div>
       </section>
@@ -642,7 +663,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <BrandLogo className="w-8 h-8 rounded-lg" />
-            <span className="font-brand font-bold tracking-tight">Sitetru</span>
+            <span className="font-brand font-extrabold tracking-tight">Sitetru</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold text-ink-muted">
             <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="hover:text-ink apple-transition">{L("Terms", "விதிமுறைகள்")}</a>
@@ -662,7 +683,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-onyx/40 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-surface-dark/40 backdrop-blur-sm"
             onClick={() => setConsentOpen(false)}
           >
             <motion.div
@@ -676,6 +697,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               aria-modal="true"
               aria-label="Continue to Sitetru"
             >
+              <DialogBehaviour />
               <button
                 onClick={() => setConsentOpen(false)}
                 className="absolute top-5 right-5 text-ink-muted hover:text-ink apple-transition"
@@ -686,7 +708,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
 
               <div className="flex items-center gap-2.5 mb-5">
                 <BrandLogo className="w-10 h-10 rounded-xl" />
-                <span className="font-brand font-bold text-lg tracking-tight">Sitetru</span>
+                <span className="font-brand font-extrabold text-lg tracking-tight">Sitetru</span>
               </div>
 
               <h3 className="font-display font-bold text-2xl tracking-tight mb-2">Continue to Sitetru</h3>
@@ -699,7 +721,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                   type="checkbox"
                   checked={agreed}
                   onChange={(e) => setAgreed(e.target.checked)}
-                  className="mt-0.5 w-5 h-5 rounded-md border-divider text-primary focus:ring-primary/30 shrink-0 accent-[#B85F3B]"
+                  className="mt-0.5 w-5 h-5 rounded-md border-divider text-primary focus:ring-primary/30 shrink-0 accent-primary"
                 />
                 <span className="text-sm text-ink leading-relaxed">
                   I agree to the{" "}
@@ -709,21 +731,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 </span>
               </label>
 
-              <button
-                onClick={confirmConsentAndLogin}
-                disabled={!agreed || isLoggingIn}
-                className="w-full inline-flex items-center justify-center gap-2 font-bold text-base px-7 py-4 rounded-2xl bg-primary text-white hover:bg-[#B85F3B] shadow-xl shadow-primary/20 apple-transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoggingIn ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" /> Connecting…
-                  </>
-                ) : (
-                  <>
-                    Continue with Google <ArrowRight weight="bold" className="w-4 h-4" />
-                  </>
-                )}
-              </button>
+              <Tooltip label={L("Accept and continue","ஏற்று தொடர்க")}>
+                <button aria-label={L("Accept and continue","ஏற்று தொடர்க")}
+                  onClick={confirmConsentAndLogin}
+                  disabled={!agreed || isLoggingIn}
+                  className="w-full inline-flex items-center justify-center gap-2 font-bold text-base px-7 py-4 rounded-2xl bg-primary text-white hover:bg-primary-deep shadow-xl shadow-primary/20 apple-transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoggingIn ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" /> Connecting…
+                    </>
+                  ) : (
+                    <>
+                      Continue with Google <ArrowRight weight="bold" className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </Tooltip>
 
               <div className="flex items-center gap-3 my-5">
                 <div className="h-px bg-divider flex-1" />
@@ -765,7 +789,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 <button
                   type="submit"
                   disabled={isLoggingIn}
-                  className="w-full inline-flex items-center justify-center gap-2 font-bold text-[15px] px-6 py-3.5 rounded-2xl bg-onyx text-white hover:bg-onyx/85 apple-transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full inline-flex items-center justify-center gap-2 font-bold text-[15px] px-6 py-3.5 rounded-2xl bg-surface-dark text-white hover:bg-surface-dark/85 apple-transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoggingIn ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

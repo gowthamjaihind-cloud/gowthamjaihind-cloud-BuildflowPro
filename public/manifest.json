@@ -4,8 +4,8 @@
   "description": "Project Logistics and Construction Management",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F0F3F4",
-  "theme_color": "#324755",
+  "background_color": "#F5F7FA",
+  "theme_color": "#12203F",
   "orientation": "portrait",
   "icons": [
     {

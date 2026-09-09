@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import {
   db,
   collection,
@@ -45,8 +46,7 @@ import {
   Truck,
   MapPin,
   MagnifyingGlass as Search,
-  Info,
-} from "@phosphor-icons/react";
+  Info, Receipt} from "@phosphor-icons/react";
 import {
   BarChart,
   Bar,
@@ -64,6 +64,10 @@ import { useProjectDataQuery } from "../hooks/queries";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
 import { useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "../lib/feedback";
+import { Tooltip as HintTooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface CostManagementProps {
   projectId: string;
@@ -73,6 +77,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
   projectId,
 }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
 
@@ -302,9 +307,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newEntry.category?.toLowerCase() === "material") {
-      alert(
-        "Material costs are tracked automatically from daily logs — log consumption via the Daily Log screen instead",
-      );
+      toast.info("Material costs are tracked automatically from daily logs — log consumption via the Daily Log screen instead",);
       return;
     }
     const path = `${basePath}/costs`;
@@ -592,7 +595,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       ...r.slice(1).map((v) => `₹${Number(v).toLocaleString("en-IN")}`),
     ]);
     const dateStr = new Date().toISOString().split("T")[0];
-    exportToPDF("Project Cost Management Report", `Project ID: ${projectId}`, headers, formattedRows, `Project_Cost_Report_${dateStr}`);
+    exportToPDF("Project Cost Management Report", `Project: ${projectLabel}`, headers, formattedRows, `Project_Cost_Report_${dateStr}`);
   };
 
   const startEditing = (task: Task) => {
@@ -618,7 +621,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               style={{ paddingLeft: `${level * 24}px` }}
               className="flex items-center gap-2"
             >
-              {level > 0 && <span className="w-3 h-px bg-fossil" />}
+              {level > 0 && <span className="w-3 h-px bg-divider" />}
               {task.name}
             </div>
           </td>
@@ -775,7 +778,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           </td>
           <td className="p-3 text-right hidden sm:table-cell bg-panel/30">
             <div className="flex flex-col items-end">
-              <div className="text-[10px] font-black text-rust-strong">
+              <div className="text-[10px] font-black text-primary-strong">
                 ₹
                 {totals.actualMaterial.toLocaleString("en-IN", {
                   maximumFractionDigits: 0,
@@ -821,7 +824,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           </td>
           <td className="p-3 text-right hidden md:table-cell bg-panel/30">
             <div className="flex flex-col items-end">
-              <div className="text-[10px] font-black text-rust-strong">
+              <div className="text-[10px] font-black text-primary-strong">
                 ₹
                 {totals.actualLabor.toLocaleString("en-IN", {
                   maximumFractionDigits: 0,
@@ -834,7 +837,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       showLaborBreakdown === task.id ? null : task.id,
                     )
                   }
-                  className={`flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest mt-1 p-1 rounded hover:bg-[#F7E4DB] apple-transition ${showLaborBreakdown === task.id ? "text-rust-strong bg-[#F7E4DB]" : "text-ink-muted"}`}
+                  className={`flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest mt-1 p-1 rounded hover:bg-warning/12 apple-transition ${showLaborBreakdown === task.id ? "text-primary-strong bg-warning/12" : "text-ink-muted"}`}
                 >
                   <Info className="w-2.5 h-2.5" /> Details
                 </button>
@@ -866,7 +869,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             )}
           </td>
           <td className="p-3 text-right hidden xl:table-cell bg-panel/30">
-            <div className="text-[10px] font-black text-rust-strong">
+            <div className="text-[10px] font-black text-primary-strong">
               ₹
               {totals.actualOther.toLocaleString("en-IN", {
                 maximumFractionDigits: 0,
@@ -881,7 +884,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               maximumFractionDigits: 0,
             })}
           </td>
-          <td className="p-3 text-right font-black text-primary bg-[#F7E4DB]/30">
+          <td className="p-3 text-right font-black text-primary bg-warning/12/30">
             ₹
             {totals.totalActual.toLocaleString("en-IN", {
               maximumFractionDigits: 0,
@@ -903,13 +906,15 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           <td className="p-3 text-right">
             {isEditing ? (
               <div className="flex gap-1 justify-end">
-                <button
-                  onClick={() => handleSaveTaskCosts(task.id)}
-                  className="p-1 bg-success/20 text-success rounded hover:bg-[#A7F3D0]"
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button
+                <HintTooltip label={"Save task costs"}>
+                  <button aria-label="Save task costs"
+                    onClick={() => handleSaveTaskCosts(task.id)}
+                    className="p-1 bg-success/20 text-success rounded hover:bg-[#A7F3D0]"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                </HintTooltip>
+                <button aria-label="Cancel editing"
                   onClick={() => setEditingTaskId(null)}
                   className="p-1 bg-danger/15 text-danger rounded hover:bg-danger"
                 >
@@ -919,7 +924,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             ) : task.isSystemGenerated ? null : (
               <button
                 onClick={() => startEditing(task)}
-                className="p-1 text-ink-muted hover:text-rust-strong hover:bg-[#F7E4DB] rounded transition-all"
+                className="p-1 text-ink-muted hover:text-primary-strong hover:bg-warning/12 rounded transition-all"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
@@ -932,22 +937,22 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           children.map((child) => renderCostRow(child, level + 1))}
 
         {showLaborBreakdown === task.id && (
-          <tr className="bg-[#F7E4DB]/30">
-            <td colSpan={11} className="p-2 md:p-6 border-b border-[#F7E4DB]">
-              <div className="bg-surface rounded-2xl border border-[#F7E4DB] shadow-sm overflow-hidden">
+          <tr className="bg-warning/12/30">
+            <td colSpan={11} className="p-2 md:p-6 border-b border-warning/25">
+              <div className="bg-surface rounded-2xl border border-warning/25 shadow-sm overflow-hidden">
                 <div className="bg-primary px-4 py-2 flex justify-between items-center">
                   <span className="text-[10px] md:text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
                     Labor Deployment Breakdown
 
                   </span>
-                  <button onClick={() => setShowLaborBreakdown(null)}>
+                  <button aria-label={t("common.close")} onClick={() => setShowLaborBreakdown(null)}>
                     <X className="w-3 h-3 text-white" />
                   </button>
                 </div>
                 <div className="overflow-x-auto scroller-hide">
                   <table className="w-full text-[10px] md:text-[10px] min-w-[600px]">
                     <thead>
-                      <tr className="bg-[#F7E4DB] text-[#B85F3B] font-bold uppercase tracking-wider">
+                      <tr className="bg-warning/12 text-warning font-bold uppercase tracking-wider">
                         <th className="p-2 text-left">Date</th>
                         <th className="p-2 text-left">Contractor</th>
                         <th className="p-2 text-left">Role</th>
@@ -962,14 +967,14 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       {entries
                         .filter((e) => (e.taskId === task.id || (!e.taskId && task.isSystemGenerated && task.name === "Project Overhead")) && e.category === "Labor" && e.type === "Actual" && !e.isAccrual)
                         .map((entry, idx) => (
-                          <tr key={`ce-${entry.id}`} className="border-t border-[#F7E4DB] hover:bg-[#F7E4DB]/50">
+                          <tr key={`ce-${entry.id}`} className="border-t border-warning/25 hover:bg-warning/12/50">
                             <td className="p-2 font-medium">{new Date(entry.date).toLocaleDateString()}</td>
                             <td className="p-2 text-ink-muted font-bold">Direct Entry</td>
                             <td className="p-2 italic">{entry.description || "-"}</td>
                             <td className="p-2 text-right">-</td>
                             <td className="p-2 text-right">-</td>
                             <td className="p-2 text-right">-</td>
-                            <td className="p-2 text-right font-black text-rust-strong">
+                            <td className="p-2 text-right font-black text-primary-strong">
                               ₹{entry.amount?.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                             </td>
                           </tr>
@@ -982,14 +987,14 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           log.items
                             .filter((item) => item.taskId === task.id)
                             .map((item, idx) => (
-                              <tr key={`ll-${log.id}-${idx}`} className="border-t border-[#F7E4DB] hover:bg-[#F7E4DB]/50">
+                              <tr key={`ll-${log.id}-${idx}`} className="border-t border-warning/25 hover:bg-warning/12/50">
                                 <td className="p-2 font-medium">{log.date}</td>
                                 <td className="p-2 text-ink-muted font-bold">{log.vendorName || "General"} (RA Bill)</td>
                                 <td className="p-2 italic">{item.role}</td>
                                 <td className="p-2 text-right">{item.headcount}</td>
                                 <td className="p-2 text-right">{item.shifts}</td>
                                 <td className="p-2 text-right">₹{item.rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
-                                <td className="p-2 text-right font-black text-rust-strong">
+                                <td className="p-2 text-right font-black text-primary-strong">
                                   ₹{item.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                                 </td>
                               </tr>
@@ -1010,14 +1015,14 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                               else if (log.workDate.seconds) displayDate = new Date(log.workDate.seconds * 1000).toISOString().split("T")[0];
                             }
                             return (
-                              <tr key={`dl-${log.id}-${idx}`} className="border-t border-[#F7E4DB] hover:bg-[#F7E4DB]/50">
+                              <tr key={`dl-${log.id}-${idx}`} className="border-t border-warning/25 hover:bg-warning/12/50">
                                 <td className="p-2 font-medium">{displayDate}</td>
                                 <td className="p-2 text-ink-muted font-bold">Daily Log</td>
                                 <td className="p-2 italic">{rateCard?.role || "-"}</td>
                                 <td className="p-2 text-right">{l.headcount}</td>
                                 <td className="p-2 text-right">-</td>
                                 <td className="p-2 text-right">₹{rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
-                                <td className="p-2 text-right font-black text-rust-strong">
+                                <td className="p-2 text-right font-black text-primary-strong">
                                   ₹{subtotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                                 </td>
                               </tr>
@@ -1040,7 +1045,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <span className="text-[10px] md:text-[10px] font-black text-white uppercase tracking-widest">
                     Material Consumption Breakdown
                   </span>
-                  <button onClick={() => setShowMaterialBreakdown(null)}>
+                  <button aria-label={t("common.close")} onClick={() => setShowMaterialBreakdown(null)}>
                     <X className="w-3 h-3 text-white" />
                   </button>
                 </div>
@@ -1221,7 +1226,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             onClick={handleExportPDF}
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-surface/30 text-ink-muted px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] hover:bg-surface/50 hover:text-ink shadow-sm apple-transition border border-divider/40"
           >
-            <Download className="w-3.5 h-3.5 text-[#C0653F]" /> PDF
+            <Download className="w-3.5 h-3.5 text-primary" /> PDF
           </button>
           <button
             onClick={() => {
@@ -1290,7 +1295,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <span>{stat.title}</span>
                     </h4>
                     {actualOnly ? (
-                      <span className="shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-ice text-[#56778E] border border-divider">
+                      <span className="shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-page text-ink-muted border border-divider">
                         Actuals
                       </span>
                     ) : (
@@ -1360,7 +1365,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                               isOver
                                 ? "bg-danger"
                                 : percentage > 80
-                                  ? "bg-[#E1946F]"
+                                  ? "bg-primary"
                                   : "bg-success"
                             }`}
                             style={{
@@ -1378,10 +1383,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                               isOver ? "text-danger" : "text-success"
                             }`}
                           >
-                            {isOver ? "-" : "+"}₹
+                            ₹
                             {Math.abs(variance).toLocaleString("en-IN", {
                               maximumFractionDigits: 0,
-                            })}
+                            })}{" "}
+                            <span className="text-[10px] font-medium">
+                              {isOver ? "over" : "under"}
+                            </span>
                           </div>
                         </div>
                       </>
@@ -1470,7 +1478,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     />
                     <Bar
                       dataKey="Actual"
-                      fill="#D97D54"
+                      fill="var(--primary)"
                       radius={[8, 8, 0, 0]}
                       barSize={40}
                     />
@@ -1479,9 +1487,9 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </div>
             </div>
 
-            <div className="lg:col-span-12 xl:col-span-4 bg-surface-dark p-5 md:p-6 squircle-24 shadow-2xl relative overflow-hidden flex flex-col">
+            <div className="lg:col-span-12 xl:col-span-4 bg-surface-dark p-5 md:p-6 squircle-24 shadow-2xl relative overflow-hidden flex flex-col on-dark">
               <h3 className="text-[17px] font-bold text-white tracking-tight mb-8 flex items-center gap-3 relative z-10">
-                <div className="bg-onyx/40 p-2 rounded-xl">
+                <div className="bg-surface-dark/40 p-2 rounded-xl">
                   <Calendar className="w-5 h-5 text-primary" />
                 </div>
                 Latest Transactions
@@ -1497,26 +1505,26 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   .map((entry) => (
                     <div
                       key={entry.id}
-                      className="bg-onyx/40 border border-white/10 p-5 rounded-3xl group hover:bg-white/10 apple-transition flex justify-between items-center"
+                      className="bg-surface-dark/40 border border-white/10 p-5 rounded-3xl group hover:bg-white/10 apple-transition flex justify-between items-center"
                     >
                       <div>
                         <div className="font-bold text-white text-[15px] tracking-tight mb-1">
                           {entry.description}
                         </div>
-                        <div className="text-[12px] text-white/30 font-medium">
+                        <div className="text-[12px] text-white/60 font-medium">
                           {entry.category} • {entry.date}
                         </div>
                       </div>
                       <div className="text-right">
                         <div
-                          className={`text-[15px] font-bold font-mono tracking-tighter ${entry.type === "Actual" ? "text-primary" : "text-success"}`}
+                          className={`text-[15px] font-bold font-mono tracking-tighter ${entry.type === "Actual" ? "text-primary-on-dark" : "text-success"}`}
                         >
                           ₹
                           {entry.amount.toLocaleString("en-IN", {
                             maximumFractionDigits: 0,
                           })}
                         </div>
-                        <div className="text-[10px] font-medium text-white/20 uppercase tracking-widest mt-1">
+                        <div className="text-[10px] font-medium text-white/60 uppercase tracking-widest mt-1">
                           {entry.type}
                         </div>
                       </div>
@@ -1526,7 +1534,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
               <div className="pt-8 mt-4 border-t border-white/5 relative z-10 flex justify-between items-end">
                 <div>
-                  <p className="text-[13px] font-medium text-white/30 mb-1">
+                  <p className="text-[13px] font-medium text-white/60 mb-1">
                     Recent Flow
                   </p>
                   <p className="text-2xl font-bold text-white tracking-tighter">
@@ -1537,7 +1545,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       .toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                   </p>
                 </div>
-                <button className="text-[13px] font-bold text-primary hover:text-white apple-transition">
+                <button className="text-[13px] font-bold text-primary-on-dark hover:text-white apple-transition">
                   View All
                 </button>
               </div>
@@ -1586,7 +1594,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-primary" />
-              <span className="text-[10px] font-bold text-rust-strong uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-primary-strong uppercase tracking-wider">
                 Actual (Spent)
               </span>
             </div>
@@ -1672,7 +1680,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                               <Layers className="w-4 h-4" />
                             </div>
                             <div>
-                              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rust-strong block leading-none mb-1">
+                              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-strong block leading-none mb-1">
                                 Project Phase
                               </span>
                               <span className="text-sm font-black text-ink leading-none">
@@ -1709,9 +1717,11 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </table>
             </div>
             {tasks.length === 0 && (
-              <div className="p-20 text-center text-ink-muted italic">
-                No tasks found. Add tasks in the WBS view to manage costs here.
-              </div>
+              <EmptyState
+                size="page"
+                title="No tasks found"
+                body="Add tasks in the WBS view to manage their costs here."
+              />
             )}
           </div>
         </div>
@@ -1752,14 +1762,12 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </thead>
               <tbody className="divide-y divide-white/10">
                 {(() => { const directCosts = entries.filter(e => !e.taskId && !e.isAccrual); return directCosts.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="p-5 text-center text-ink-muted italic"
-                    >
-                      No direct costs recorded yet.
-                    </td>
-                  </tr>
+                  <EmptyState
+                    colSpan={6}
+                    icon={Receipt}
+                    title="No direct costs recorded yet"
+                    body="Costs booked against the project rather than a single task appear here."
+                  />
                 ) : (
                   directCosts
                     .sort(
@@ -1782,7 +1790,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         </td>
                         <td className="p-4">
                           <span
-                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-success/20 text-success" : "bg-[#E2E8ED] text-[#56778E]"}`}
+                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-success/20 text-success" : "bg-[#E2E8ED] text-ink-muted"}`}
                           >
                             {entry.type}
                           </span>
@@ -1794,23 +1802,27 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         </td>
                         <td className="p-4">
                           <div className="flex gap-2 justify-end">
-                            <button
-                              onClick={() => {
-                                setNewEntry(entry);
-                                setIsAdding(true);
-                              }}
-                              className="p-1 text-ink-muted hover:text-primary hover:bg-primary/10 rounded transition-colors"
-                              title="Edit record"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setDeletingId(entry.id)}
-                              className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded transition-colors"
-                              title="Delete record"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <HintTooltip label="Edit record">
+                              <button
+                                onClick={() => {
+                                  setNewEntry(entry);
+                                  setIsAdding(true);
+                                }}
+                                className="p-1 text-ink-muted hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                               
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            </HintTooltip>
+                            <HintTooltip label="Delete record">
+                              <button
+                                onClick={() => setDeletingId(entry.id)}
+                                className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded transition-colors"
+                               
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </HintTooltip>
                           </div>
                         </td>
                       </tr>
@@ -1835,7 +1847,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               </p>
             </div>
             <div className="text-right">
-              <div className="font-brand text-sm font-bold text-rust-strong uppercase tracking-widest">
+              <div className="font-brand text-sm font-bold text-primary-strong uppercase tracking-widest">
                 Sitetru
               </div>
               <div className="text-[10px] opacity-50">
@@ -1987,7 +1999,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             <Layers className="w-4 h-4" />
                           </div>
                           <div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rust-strong block leading-none mb-1">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-strong block leading-none mb-1">
                               Project Phase
                             </span>
                             <span className="text-sm font-black text-ink leading-none">
@@ -2102,13 +2114,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </table>
           </div>
 
-          <div className="bg-[#F7E4DB] p-5 rounded-2xl border border-[#F7E4DB] flex items-start gap-4">
-            <AlertCircle className="w-6 h-6 text-rust-strong shrink-0" />
+          <div className="bg-warning/12 p-5 rounded-2xl border border-warning/25 flex items-start gap-4">
+            <AlertCircle className="w-6 h-6 text-primary-strong shrink-0" />
             <div>
-              <h4 className="font-bold text-[#B85F3B] mb-1">
+              <h4 className="font-bold text-warning mb-1">
                 Executive Summary
               </h4>
-              <p className="text-sm text-[#B85F3B] leading-relaxed">
+              <p className="text-sm text-warning leading-relaxed">
                 The project is currently{" "}
                 {stats.totalBudgeted - stats.totalActual >= 0
                   ? "under"
@@ -2145,23 +2157,24 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       {/* Modals */}
       <AnimatePresence>
         {isAdding && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
             >
+              <DialogBehaviour />
               <div className="bg-primary p-5 md:p-6 text-white flex justify-between items-center">
                 <div>
                   <h3 className="text-xl font-bold">
                     {newEntry.id ? "Edit Transaction" : "Add Transaction"}
                   </h3>
-                  <p className="text-[#C8D1D3] text-xs font-medium uppercase tracking-widest mt-1">
+                  <p className="text-divider text-xs font-medium uppercase tracking-widest mt-1">
                     Direct Cost Ledger
                   </p>
                 </div>
-                <button
+                <button aria-label={t("common.close")}
                   type="button"
                   onClick={() => {
                     setIsAdding(false);
@@ -2190,7 +2203,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     <input
                       required
                       placeholder="e.g. Fuel for generator"
-                      className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-semibold outline-none"
+                      className="w-full bg-page p-4 rounded-2xl font-semibold outline-none"
                       value={newEntry.description}
                       onChange={(e) =>
                         setNewEntry({
@@ -2209,7 +2222,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <input
                         type="number"
                         required
-                        className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-black text-primary outline-none"
+                        className="w-full bg-page p-4 rounded-2xl font-black text-primary outline-none"
                         value={newEntry.amount || ""}
                         onChange={(e) =>
                           setNewEntry({
@@ -2242,7 +2255,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         Type
                       </label>
                       <select
-                        className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-semibold outline-none appearance-none"
+                        className="w-full bg-page p-4 rounded-2xl font-semibold outline-none appearance-none"
                         value={newEntry.type}
                         onChange={(e) =>
                           setNewEntry({
@@ -2264,7 +2277,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       </label>
                       <select
                         required
-                        className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-semibold outline-none focus:ring-2 focus:ring-primary/20 apple-transition appearance-none"
+                        className="w-full bg-page p-4 rounded-2xl font-semibold outline-none focus:ring-2 focus:ring-primary/20 apple-transition appearance-none"
                         value={newEntry.category}
                         onChange={(e) =>
                           setNewEntry({
@@ -2294,7 +2307,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       <input
                         type="date"
                         required
-                        className="w-full bg-[#F0F3F4] p-4 rounded-2xl font-semibold outline-none"
+                        className="w-full bg-page p-4 rounded-2xl font-semibold outline-none"
                         value={newEntry.date}
                         onChange={(e) =>
                           setNewEntry({ ...newEntry, date: e.target.value })
@@ -2318,13 +2331,14 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
       <AnimatePresence>
         {deletingId && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="bg-surface rounded-3xl w-full max-w-sm overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="p-6 text-center space-y-4">
                 <div className="w-16 h-16 bg-danger/15 rounded-full flex items-center justify-center mx-auto mb-2">
                   <Trash2 className="w-8 h-8 text-danger" />

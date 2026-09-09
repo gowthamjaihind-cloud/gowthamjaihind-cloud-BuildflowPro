@@ -9,6 +9,7 @@ import { db } from '../../firebase';
 import { useIsDesktop } from '../../hooks/useBreakpoint';
 
 import { DependencyType } from '../../types';
+import { EmptyState } from "../EmptyState";
 
 export const ScheduleView: React.FC<{ 
   projectId: string;
@@ -65,11 +66,12 @@ export const ScheduleView: React.FC<{
 
   if (tasks.length === 0) {
     return (
-      <div className="schedule-theme flex flex-col w-full h-[300px] border border-dashed border-[var(--edge)] bg-[var(--bg)] rounded-[24px] items-center justify-center shadow-xl">
-        <p className="text-[var(--muted)] text-sm mb-4">No tasks found for this project.</p>
-        <button className="px-6 py-2 bg-[var(--acc)] text-[var(--bg)] font-bold rounded-full hover:bg-[var(--ink)] transition-colors">
-          Add your first task
-        </button>
+      <div className="schedule-theme w-full border border-dashed border-[var(--edge)] bg-[var(--bg)] rounded-[24px] shadow-xl">
+        <EmptyState
+          size="page"
+          title="No tasks for this project"
+          body="Build the work breakdown in the WBS screen and the schedule fills in from it."
+        />
       </div>
     );
   }

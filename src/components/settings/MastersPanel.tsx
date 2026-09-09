@@ -23,6 +23,10 @@ import {
 } from "../../services/wbsTemplateService";
 import { useL } from "../../i18n";
 import { round2, money } from "../../utils/num";
+import { confirmDialog, toast } from "../../lib/feedback";
+import { Tooltip } from "../Tooltip";
+import { EmptyState } from "../EmptyState";
+import { SkeletonRows } from "../Skeleton";
 
 // Organisation master data. These records are shared by every project, so they
 // belong with the organisation's settings rather than inside one project.
@@ -102,10 +106,8 @@ export const MastersPanel: React.FC = () => {
     // naturally match itself.
     if (!editingId) {
       const dupes = findDuplicates(form, vendors);
-      if (dupes.length && !window.confirm(
-        L(`"${dupes[0].name}" already looks like the same party. Add "${form.name}" anyway?`,
-          `"${dupes[0].name}" ஏற்கனவே இதே பார்ட்டி மாதிரி இருக்கு. இருந்தாலும் "${form.name}" சேர்க்கவா?`),
-      )) return;
+      if (dupes.length && !(await confirmDialog({ title: L(`"${dupes[0].name}" already looks like the same party. Add "${form.name}" anyway?`,
+          `"${dupes[0].name}" ஏற்கனவே இதே பார்ட்டி மாதிரி இருக்கு. இருந்தாலும் "${form.name}" சேர்க்கவா?`), }))) return;
     }
     setBusy(true); setError(null);
     try {
@@ -136,10 +138,8 @@ export const MastersPanel: React.FC = () => {
     if (!mForm.name.trim()) { setError(L("Enter a name.", "பெயரைக் கொடுங்க.")); return; }
     if (!mEditingId) {
       const dupes = findDuplicateMaterials(mForm, materials);
-      if (dupes.length && !window.confirm(
-        L(`"${dupes[0].name}" already looks like the same item. Add "${mForm.name}" anyway?`,
-          `"${dupes[0].name}" ஏற்கனவே இதே பொருள் மாதிரி இருக்கு. இருந்தாலும் சேர்க்கவா?`),
-      )) return;
+      if (dupes.length && !(await confirmDialog({ title: L(`"${dupes[0].name}" already looks like the same item. Add "${mForm.name}" anyway?`,
+          `"${dupes[0].name}" ஏற்கனவே இதே பொருள் மாதிரி இருக்கு. இருந்தாலும் சேர்க்கவா?`), }))) return;
     }
     setBusy(true); setError(null);
     try {
@@ -163,15 +163,15 @@ export const MastersPanel: React.FC = () => {
   // no permanent button for a one-off job.
   const untidy = findUntidyMaterials(materials);
   const tidyNow = async () => {
-    if (!window.confirm(L(
+    if (!(await confirmDialog({ title: L(
       `Round ${untidy.length} stored value${untidy.length === 1 ? "" : "s"} to 2 decimals? Only the numbers change.`,
       `${untidy.length} சேமித்த மதிப்பை 2 புள்ளிக்கு மாற்றவா? எண்கள் மட்டும் மாறும்.`,
-    ))) return;
+    ) }))) return;
     setBusy(true); setError(null);
     try {
       const { updated } = await tidyMasterMaterials(materials);
       await reload();
-      alert(L(`Tidied ${updated} record${updated === 1 ? "" : "s"}.`, `${updated} பதிவு சரிசெய்யப்பட்டது.`));
+      toast.success(L(`Tidied ${updated} record${updated === 1 ? "" : "s"}.`, `${updated} பதிவு சரிசெய்யப்பட்டது.`));
     } catch (err: any) {
       setError(
         err?.code === "permission-denied"
@@ -182,10 +182,10 @@ export const MastersPanel: React.FC = () => {
   };
 
   const removeMaterial = async (m: MasterMaterial) => {
-    if (!window.confirm(L(
+    if (!(await confirmDialog({ title: L(
       `Delete "${m.name}" from your master list? Projects already stocking it keep their own record and are not affected.`,
       `"${m.name}" ஐ மாஸ்டர் பட்டியலிலிருந்து நீக்கவா? ஏற்கனவே ஸ்டாக் வெச்சிருக்கிற செயல்திட்டங்கள் பாதிக்கப்படாது.`,
-    ))) return;
+    ) }))) return;
     setBusy(true);
     try { await deleteMasterMaterial(m.id); await reload(); }
     catch { setError(L("Couldn't delete.", "நீக்க முடியல.")); }
@@ -193,10 +193,10 @@ export const MastersPanel: React.FC = () => {
   };
 
   const removeVendor = async (v: MasterVendor) => {
-    if (!window.confirm(L(
+    if (!(await confirmDialog({ title: L(
       `Delete "${v.name}" from your master list? Projects already using it keep their own copy and are not affected.`,
       `"${v.name}" ஐ மாஸ்டர் பட்டியலிலிருந்து நீக்கவா? ஏற்கனவே பயன்படுத்தும் செயல்திட்டங்கள் பாதிக்கப்படாது.`,
-    ))) return;
+    ) }))) return;
     setBusy(true);
     try { await deleteMasterVendor(v.id); await reload(); }
     catch { setError(L("Couldn't delete.", "நீக்க முடியல.")); }
@@ -204,17 +204,17 @@ export const MastersPanel: React.FC = () => {
   };
 
   const removeTemplate = async (t: SavedWbsTemplate) => {
-    if (!window.confirm(L(
+    if (!(await confirmDialog({ title: L(
       `Delete the template "${t.name}"? Projects already created from it are not affected.`,
       `"${t.name}" டெம்ப்ளேட்டை நீக்கவா? அதிலிருந்து உருவாக்கின செயல்திட்டங்கள் பாதிக்கப்படாது.`,
-    ))) return;
+    ) }))) return;
     setBusy(true);
     try { await deleteTemplate(t.id); await reload(); }
     catch { setError(L("Couldn't delete.", "நீக்க முடியல.")); }
     finally { setBusy(false); }
   };
 
-  const field = "w-full bg-[#F0F3F4] dark:bg-panel p-3.5 rounded-xl font-medium outline-none border border-transparent focus:border-primary/40 apple-transition text-sm";
+  const field = "w-full bg-page dark:bg-panel p-3.5 rounded-xl font-medium outline-none border border-transparent focus:border-primary/40 apple-transition text-sm";
 
   return (
     <div className="space-y-6">
@@ -253,9 +253,7 @@ export const MastersPanel: React.FC = () => {
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-ink-muted">
-          <CircleNotch className="w-6 h-6 animate-spin mx-auto" />
-        </div>
+        <SkeletonRows rows={4} label={L("Loading…", "ஏற்றுகிறது…")} />
       ) : tab === "vendors" ? (
         <div className="space-y-3">
           {!showForm && (
@@ -303,12 +301,11 @@ export const MastersPanel: React.FC = () => {
           )}
 
           {vendors.length === 0 && !showForm ? (
-            <p className="text-sm text-ink-muted py-8 text-center">
-              {L(
-                "No parties yet. Add one here, or use the bookmark icon on a project's Parties screen to lift an existing one up.",
-                "இன்னும் பார்ட்டி இல்ல. இங்க சேருங்க, அல்லது செயல்திட்டத்தின் பார்ட்டி திரையில் புக்மார்க் ஐகானைப் பயன்படுத்துங்க.",
-              )}
-            </p>
+            <EmptyState
+              icon={Truck}
+              title={L("No parties yet", "இன்னும் பார்ட்டி இல்ல")}
+              body={L("Add one here, or use the bookmark icon on a project's Parties screen to lift an existing one up.", "இங்க சேருங்க, அல்லது செயல்திட்டத்தின் பார்ட்டி திரையில் புக்மார்க் ஐகானைப் பயன்படுத்துங்க.")}
+            />
           ) : (
             <div className="flex flex-col gap-2">
               {vendors.map((v) => (
@@ -324,16 +321,20 @@ export const MastersPanel: React.FC = () => {
                     </p>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <button onClick={() => startEdit(v)} disabled={busy}
-                      className="p-2 text-ink-muted hover:text-primary apple-transition disabled:opacity-40"
-                      title={L("Edit", "திருத்து")}>
-                      <PencilSimple className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => removeVendor(v)} disabled={busy}
-                      className="p-2 text-ink-muted hover:text-danger apple-transition disabled:opacity-40"
-                      title={L("Delete", "நீக்கு")}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <Tooltip label={L("Edit", "திருத்து")}>
+                      <button onClick={() => startEdit(v)} disabled={busy}
+                        className="p-2 text-ink-muted hover:text-primary apple-transition disabled:opacity-40"
+                       >
+                        <PencilSimple className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label={L("Delete", "நீக்கு")}>
+                      <button onClick={() => removeVendor(v)} disabled={busy}
+                        className="p-2 text-ink-muted hover:text-danger apple-transition disabled:opacity-40"
+                       >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
               ))}
@@ -417,12 +418,11 @@ export const MastersPanel: React.FC = () => {
           )}
 
           {materials.length === 0 && !showMForm ? (
-            <p className="text-sm text-ink-muted py-8 text-center">
-              {L(
-                "No materials yet. Add the items you buy on most sites — cement, steel, sand — and they'll be one click away on every project.",
-                "இன்னும் பொருட்கள் இல்ல. எல்லா சைட்டிலும் வாங்குறதை — சிமெண்ட், ஸ்டீல், மணல் — சேர்த்து வெச்சா, எல்லா செயல்திட்டத்திலும் ஒரு கிளிக்ல கிடைக்கும்.",
-              )}
-            </p>
+            <EmptyState
+              icon={Package}
+              title={L("No materials yet", "இன்னும் பொருட்கள் இல்ல")}
+              body={L("Add the items you buy on most sites — cement, steel, sand — and they'll be one click away on every project.", "எல்லா சைட்டிலும் வாங்குறதை — சிமெண்ட், ஸ்டீல், மணல் — சேர்த்து வெச்சா, எல்லா செயல்திட்டத்திலும் ஒரு கிளிக்ல கிடைக்கும்.")}
+            />
           ) : (
             <div className="flex flex-col gap-2">
               {materials.map((m) => (
@@ -443,16 +443,20 @@ export const MastersPanel: React.FC = () => {
                     </p>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <button onClick={() => startEditM(m)} disabled={busy}
-                      className="p-2 text-ink-muted hover:text-primary apple-transition disabled:opacity-40"
-                      title={L("Edit", "திருத்து")}>
-                      <PencilSimple className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => removeMaterial(m)} disabled={busy}
-                      className="p-2 text-ink-muted hover:text-danger apple-transition disabled:opacity-40"
-                      title={L("Delete", "நீக்கு")}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <Tooltip label={L("Edit", "திருத்து")}>
+                      <button onClick={() => startEditM(m)} disabled={busy}
+                        className="p-2 text-ink-muted hover:text-primary apple-transition disabled:opacity-40"
+                       >
+                        <PencilSimple className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label={L("Delete", "நீக்கு")}>
+                      <button onClick={() => removeMaterial(m)} disabled={busy}
+                        className="p-2 text-ink-muted hover:text-danger apple-transition disabled:opacity-40"
+                       >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
               ))}
@@ -462,12 +466,11 @@ export const MastersPanel: React.FC = () => {
       ) : (
         <div className="space-y-3">
           {templates.length === 0 ? (
-            <p className="text-sm text-ink-muted py-8 text-center">
-              {L(
-                "No saved templates yet. Open a project's WBS and use the bookmark icon to save its breakdown for reuse.",
-                "இன்னும் சேமித்த டெம்ப்ளேட் இல்ல. ஒரு செயல்திட்டத்தின் WBS ல புக்மார்க் ஐகானைப் பயன்படுத்திச் சேமிக்கவும்.",
-              )}
-            </p>
+            <EmptyState
+              icon={TreeStructure}
+              title={L("No saved templates yet", "இன்னும் சேமித்த டெம்ப்ளேட் இல்ல")}
+              body={L("Open a project's WBS and use the bookmark icon to save its breakdown for reuse.", "ஒரு செயல்திட்டத்தின் WBS ல புக்மார்க் ஐகானைப் பயன்படுத்திச் சேமிக்கவும்.")}
+            />
           ) : (
             <div className="flex flex-col gap-2">
               {templates.map((t) => (
@@ -479,11 +482,13 @@ export const MastersPanel: React.FC = () => {
                       {t.savedFromProjectName ? ` · ${L("from", "இதிலிருந்து")} ${t.savedFromProjectName}` : ""}
                     </p>
                   </div>
-                  <button onClick={() => removeTemplate(t)} disabled={busy}
-                    className="p-2 text-ink-muted hover:text-danger apple-transition shrink-0 disabled:opacity-40"
-                    title={L("Delete", "நீக்கு")}>
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip label={L("Delete", "நீக்கு")}>
+                    <button onClick={() => removeTemplate(t)} disabled={busy}
+                      className="p-2 text-ink-muted hover:text-danger apple-transition shrink-0 disabled:opacity-40"
+                     >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               ))}
             </div>

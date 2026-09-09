@@ -5,6 +5,8 @@ import {
   MagnifyingGlass as Search,
 } from "@phosphor-icons/react";
 import { GoodsReceiptDetails } from "./GoodsReceiptDetails";
+import { Package } from "@phosphor-icons/react";
+import { EmptyState } from "../EmptyState";
 
 interface GoodsReceiptTabProps {
   projectId: string;
@@ -53,18 +55,28 @@ export const GoodsReceiptTab: React.FC<GoodsReceiptTabProps> = ({ projectId }) =
                 </tr>
              </thead>
              <tbody>
-                {filteredGRNs.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-ink-muted text-sm border-b border-divider/50">
-                      No GRNs found.
-                    </td>
-                  </tr>
+                {grns.length === 0 ? (
+                  <EmptyState
+                    colSpan={5}
+                    icon={Package}
+                    title="No goods receipts yet"
+                    body="A GRN is recorded when material arrives on site against a purchase order."
+                  />
+                ) : filteredGRNs.length === 0 ? (
+                  <EmptyState
+                    colSpan={5}
+                    icon={Package}
+                    variant="filtered"
+                    title="No GRNs match"
+                    body="Nothing matches your search."
+                    action={{ label: "Clear search", onClick: () => setSearchTerm("") }}
+                  />
                 ) : (
                   filteredGRNs.map(grn => (
                     <tr 
                       key={grn.id} 
                       onClick={() => setSelectedGRN(grn)}
-                      className="border-b border-divider/50 hover:bg-[#F7E4DB]/30 transition cursor-pointer group"
+                      className="border-b border-divider/50 hover:bg-warning/12/30 transition cursor-pointer group"
                     >
                       <td className="p-4 align-middle">
                         <div className="font-mono text-xs font-bold text-ink group-hover:text-primary transition-colors">

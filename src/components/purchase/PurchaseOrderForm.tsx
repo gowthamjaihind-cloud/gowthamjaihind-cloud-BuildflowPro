@@ -15,6 +15,9 @@ import { Vendor, InventoryItem, POLineItem, LaborRateCard, PurchaseOrder } from 
 import { collection, doc, setDoc, updateDoc, runTransaction } from "firebase/firestore";
 import { db } from "../../firebase";
 import { money } from "../../utils/num";
+import { toast } from "../../lib/feedback";
+import { Tooltip } from "../Tooltip";
+import { DialogBehaviour } from "../../lib/useDialog";
 
 interface PurchaseOrderFormProps {
   projectId: string;
@@ -216,7 +219,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
        onClose();
     } catch (e) {
        console.error("Failed to save PO", e);
-       alert("Failed to save Purchase Order.");
+       toast.error("Failed to save Purchase Order.");
     } finally {
        setIsSubmitting(false);
     }
@@ -231,12 +234,13 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="bg-surface w-full max-w-3xl h-full rounded-[24px] shadow-2xl flex flex-col overflow-hidden"
       >
+        <DialogBehaviour />
          <div className="flex justify-between items-center p-6 border-b border-divider bg-panel sticky top-0 z-10">
            <div>
              <h2 className="text-xl font-black text-ink tracking-tight mb-1">{isEditing ? `Edit ${existingPO?.poNumber || "Purchase Order"}` : "Create Purchase Order"}</h2>
              <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Draft Order</p>
            </div>
-           <button type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
+           <button aria-label="Close" type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
              <X className="w-5 h-5" />
            </button>
          </div>
@@ -277,7 +281,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
             <div className="space-y-4">
               <div className="flex justify-between items-end border-b border-divider pb-2">
                  <h3 className="text-xs font-black text-ink uppercase tracking-widest">Line Items</h3>
-                 <button type="button" onClick={addItem} className="text-[10px] font-bold text-primary hover:text-[#B85F3B] uppercase tracking-widest flex items-center gap-1">
+                 <button type="button" onClick={addItem} className="text-[10px] font-bold text-primary hover:text-primary-deep uppercase tracking-widest flex items-center gap-1">
                    <Plus className="w-3.5 h-3.5" /> Add
                  </button>
               </div>
@@ -346,9 +350,11 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                     </span>
                   </div>
                   {items.length > 1 && (
-                    <button type="button" onClick={() => removeItem(idx)} className="p-2 text-ink-muted hover:text-danger hover:bg-white rounded-lg transition mb-1 shrink-0">
-                      <Trash2 className="w-4 h-4 cursor-pointer" />
-                    </button>
+                    <Tooltip label={"Remove item"}>
+                      <button aria-label="Remove item" type="button" onClick={() => removeItem(idx)} className="p-2 text-ink-muted hover:text-danger hover:bg-white rounded-lg transition mb-1 shrink-0">
+                        <Trash2 className="w-4 h-4 cursor-pointer" />
+                      </button>
+                    </Tooltip>
                   )}
                 </div>
                 {showDelta && (
@@ -411,13 +417,13 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                ))}
             </div>
 
-            <div className="mt-4 mb-4 p-6 bg-[#F7E4DB] border border-[#F7E4DB]/50 rounded-[20px] space-y-2">
-               <div className="flex justify-between text-xs font-bold text-[#B85F3B]/80">
+            <div className="mt-4 mb-4 p-6 bg-warning/12 border border-warning/25/50 rounded-[20px] space-y-2">
+               <div className="flex justify-between text-xs font-bold text-warning/80">
                   <span>Materials</span>
                   <span className="font-mono">₹{money(materialTotal)}</span>
                </div>
                {chargesTotal > 0 && (
-                  <div className="flex justify-between text-xs font-bold text-[#B85F3B]/80">
+                  <div className="flex justify-between text-xs font-bold text-warning/80">
                      <span>Loading + Transport + Other</span>
                      <span className="font-mono">₹{chargesTotal.toLocaleString("en-IN")}</span>
                   </div>
@@ -431,7 +437,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                {/* Inline budget insight: what this PO does to the project budget,
                    shown before the buyer commits. */}
                {budgetInsight && (
-                  <div className={`pt-2 text-[11px] font-semibold flex items-start gap-1.5 ${budgetInsight.tone === "bad" ? "text-danger" : "text-[#B85F3B]"}`}>
+                  <div className={`pt-2 text-[11px] font-semibold flex items-start gap-1.5 ${budgetInsight.tone === "bad" ? "text-danger" : "text-warning"}`}>
                      <span aria-hidden>{budgetInsight.tone === "bad" ? "▲" : "•"}</span>
                      <span>{budgetInsight.text}</span>
                   </div>
@@ -442,7 +448,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
               <button
                 type="submit"
                 disabled={isSubmitting || !vendorId || totalAmount <= 0}
-                className="w-full py-4 bg-primary hover:bg-[#B85F3B] disabled:bg-fossil disabled:cursor-not-allowed text-white text-sm font-bold uppercase tracking-widest rounded-xl transition flex justify-center items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)]"
+                className="w-full py-4 bg-primary hover:bg-primary-deep disabled:bg-divider disabled:cursor-not-allowed text-white text-sm font-bold uppercase tracking-widest rounded-xl transition flex justify-center items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)]"
               >
                 {isSubmitting ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> {isEditing ? "Updating PO..." : "Saving PO..."}</>

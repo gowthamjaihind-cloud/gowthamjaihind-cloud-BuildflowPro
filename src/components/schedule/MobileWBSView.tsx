@@ -19,6 +19,8 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { RoleGuard } from "../RoleGuard";
 import { useLocationDrilldown, buildPhaseLocationGroups } from "./wbsTreeUtils";
+import { Tooltip } from "../Tooltip";
+import { EmptyState } from "../EmptyState";
 
 export interface MobileWBSViewProps {
   projectId: string;
@@ -128,15 +130,17 @@ export const MobileWBSView: React.FC<MobileWBSViewProps> = ({
             >
               {node.computedProgress}%
             </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                openEditSheet(node);
-              }}
-              className="p-1.5 text-ink-muted hover:text-primary bg-panel rounded-lg transition-colors cursor-pointer"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-            </button>
+            <Tooltip label={"Edit task"}>
+              <button aria-label="Edit task"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openEditSheet(node);
+                }}
+                className="p-1.5 text-ink-muted hover:text-primary bg-panel rounded-lg transition-colors cursor-pointer"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -219,7 +223,7 @@ export const MobileWBSView: React.FC<MobileWBSViewProps> = ({
             <span className="text-xs font-black uppercase tracking-widest text-primary truncate">
               {phaseGroup.name}
             </span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F7E4DB] text-primary shrink-0">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-warning/12 text-primary shrink-0">
               {phaseGroup.children.length}{" "}
               {phaseGroup.children.length === 1 ? "location" : "locations"}
             </span>
@@ -241,9 +245,10 @@ export const MobileWBSView: React.FC<MobileWBSViewProps> = ({
     <div className="flex flex-col h-full bg-surface-dark/5 min-h-[500px] rounded-3xl overflow-hidden relative">
       <div className="flex-1 overflow-y-auto no-scrollbar p-4 bg-surface pb-24">
         {phaseGroups.length === 0 ? (
-          <div className="p-8 text-center bg-surface border border-divider rounded-2xl">
-            <p className="text-ink-muted text-sm">No WBS tasks found.</p>
-          </div>
+          <EmptyState
+            title="No WBS tasks yet"
+            body="Add tasks to build the breakdown for this project."
+          />
         ) : (
           phaseGroups.map(renderAccordionPhase)
         )}
@@ -256,12 +261,14 @@ export const MobileWBSView: React.FC<MobileWBSViewProps> = ({
         requireWriteAccess
       >
         <div className="absolute bottom-6 right-6 z-20">
-          <button
-            onClick={openAddSheet}
-            className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-[#B85F3B] active:scale-95 transition-all cursor-pointer"
-          >
-            <Plus className="w-6 h-6" />
-          </button>
+          <Tooltip label={"Add task"}>
+            <button aria-label="Add task"
+              onClick={openAddSheet}
+              className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-primary-deep active:scale-95 transition-all cursor-pointer"
+            >
+              <Plus className="w-6 h-6" />
+            </button>
+          </Tooltip>
         </div>
       </RoleGuard>
 
@@ -405,7 +412,7 @@ const MobileTaskSheet: React.FC<MobileTaskSheetProps> = ({
               </span>
             )}
           </div>
-          <button
+          <button aria-label="Close"
             onClick={onClose}
             className="p-2 bg-panel rounded-full text-ink hover:bg-divider"
           >
@@ -455,7 +462,7 @@ const MobileTaskSheet: React.FC<MobileTaskSheetProps> = ({
             </span>
           </div>
 
-          <div className="bg-[#F7E4DB]/50 rounded-2xl p-4 border border-[#F7E4DB] flex items-center justify-between">
+          <div className="bg-warning/12/50 rounded-2xl p-4 border border-warning/25 flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-xs font-bold text-ink-muted uppercase tracking-widest">
                 Progress
@@ -476,7 +483,7 @@ const MobileTaskSheet: React.FC<MobileTaskSheetProps> = ({
                   onClose();
                   onOpenDailyLog(task.id);
                 }}
-                className="bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#B85F3B] transition"
+                className="bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary-deep transition"
               >
                 Log Work
               </button>
@@ -535,7 +542,7 @@ const MobileTaskSheet: React.FC<MobileTaskSheetProps> = ({
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full bg-primary text-white py-4 rounded-xl font-bold text-sm hover:bg-[#B85F3B] transition disabled:opacity-50"
+              className="w-full bg-primary text-white py-4 rounded-xl font-bold text-sm hover:bg-primary-deep transition disabled:opacity-50"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>

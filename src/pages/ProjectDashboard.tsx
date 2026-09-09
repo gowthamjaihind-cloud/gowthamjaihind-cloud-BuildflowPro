@@ -7,6 +7,7 @@ import { WBSView } from "../components/WBSView";
 import { Project, UserProfile } from "../types";
 import { useUIStore, useProjectStore, useTaskStore } from "../store";
 import { useTasksQuery } from "../hooks/queries";
+import { SkeletonScreen } from "../components/Skeleton";
 
 // Heavy per-tab views are code-split so the initial bundle only pays for the
 // default dashboard. Each becomes its own async chunk, loaded on first visit.
@@ -43,9 +44,11 @@ const ProjectDailyLogsTab = lazy(() =>
   })),
 );
 
+// Every lazily-loaded view mounts behind this. A spinner in an empty py-32
+// box told the user nothing and let the layout jump when the chunk landed.
 const ViewFallback: React.FC = () => (
-  <div className="flex items-center justify-center py-32 md:py-40">
-    <CircleNotch className="w-8 h-8 text-primary animate-spin" />
+  <div className="p-4 md:p-6 lg:p-8">
+    <SkeletonScreen />
   </div>
 );
 

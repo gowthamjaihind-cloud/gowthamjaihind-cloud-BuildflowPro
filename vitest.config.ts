@@ -4,6 +4,13 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    // functions/src is included for claimsPolicy: the rule that a
+    // client-writable mirror can never grant tenant access is worth
+    // pinning, and that module imports nothing so it needs no emulator.
+    include: [
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx",
+      "functions/src/**/*.test.ts",
+    ],
   },
 });

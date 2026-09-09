@@ -27,6 +27,7 @@ import { LanguageToggle } from "./LanguageToggle";
 import { useAuthStore, useUIStore, useProjectStore } from "../store";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { useTranslation } from "../i18n";
+import { Tooltip } from "./Tooltip";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -77,52 +78,56 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div
         className={`flex items-center shrink-0 transition-all duration-500 overflow-hidden ${uiMode === "site" ? "hidden sm:flex" : ""} ${showLabels ? "p-6 md:p-10 gap-4" : "justify-center p-6 md:py-10 md:px-0"}`}
       >
-        <BrandLogo className="w-10 h-10 md:w-12 md:h-12 rounded-[14px] md:rounded-[16px] shadow-lg shadow-[#324755]/25 shrink-0" />
+        <BrandLogo className="w-10 h-10 md:w-12 md:h-12 rounded-[14px] md:rounded-[16px] shadow-lg shadow-surface-dark/25 shrink-0" />
         {showLabels && (
-          <span className="font-brand font-bold text-2xl md:text-3xl tracking-tight text-ink truncate shrink-0">
+          <span className="font-brand font-extrabold text-2xl md:text-3xl tracking-tight text-ink truncate shrink-0">
             Sitetru
           </span>
         )}
       </div>
 
       <nav
+        data-tour="nav"
         className={`flex-1 space-y-1.5 md:space-y-2 overflow-y-auto mt-2 md:mt-6 scrollbar-hide ${uiMode === "site" ? "pt-8" : ""} ${showLabels ? "px-4 md:px-6" : "px-2 md:px-0"}`}
       >
         {menuItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => {
-              setActiveTab(item.id);
-              setIsMobileMenuOpen(false);
-            }}
-            // Collapsed, these are icon-only. Without a name they are twelve
-            // unlabelled buttons to a screen reader, so label them always and
-            // show a tooltip when the text label is hidden.
-            aria-label={item.label}
-            aria-current={activeTab === item.id ? "page" : undefined}
-            title={showLabels ? undefined : item.label}
-            className={`flex items-center apple-transition group ${
-              showLabels
-                ? "w-full gap-4 md:gap-5 px-4 md:px-5 py-3 md:py-4"
-                : "w-12 h-12 md:w-14 md:h-14 mx-auto justify-center"
-            } rounded-[14px] md:rounded-[18px] ${
-              activeTab === item.id
-                ? "bg-primary text-white shadow-xl shadow-primary/20 ring-1 ring-primary/50"
-                : "text-ink-muted hover:text-ink hover:bg-surface/40"
-            } ${uiMode === "site" ? (showLabels ? "!py-3 !rounded-lg" : "!rounded-lg") : ""}`}
-          >
-            <item.icon
-              className={`w-5 h-5 md:w-6 md:h-6 shrink-0 apple-transition transform ${activeTab === item.id ? "text-white" : "group-hover:text-primary"}`}
-              strokeWidth={1.5}
-            />
-            {showLabels && (
-              <span
-                className={`font-semibold text-[15px] md:text-[17px] tracking-tight truncate ${uiMode === "site" ? "!text-sm" : ""}`}
-              >
-                {item.label}
-              </span>
-            )}
-          </button>
+          <Tooltip label={showLabels ? undefined : item.label} key={item.id}>
+            <button
+             
+              data-tour={`nav-${item.id}`}
+              onClick={() => {
+                setActiveTab(item.id);
+                setIsMobileMenuOpen(false);
+              }}
+              // Collapsed, these are icon-only. Without a name they are twelve
+              // unlabelled buttons to a screen reader, so label them always and
+              // show a tooltip when the text label is hidden.
+              aria-label={item.label}
+              aria-current={activeTab === item.id ? "page" : undefined}
+             
+              className={`flex items-center apple-transition group ${
+                showLabels
+                  ? "w-full gap-4 md:gap-5 px-4 md:px-5 py-3 md:py-4"
+                  : "w-12 h-12 md:w-14 md:h-14 mx-auto justify-center"
+              } rounded-[14px] md:rounded-[18px] ${
+                activeTab === item.id
+                  ? "bg-primary text-white shadow-xl shadow-primary/20 ring-1 ring-primary/50"
+                  : "text-ink-muted hover:text-ink hover:bg-surface/40"
+              } ${uiMode === "site" ? (showLabels ? "!py-3 !rounded-lg" : "!rounded-lg") : ""}`}
+            >
+              <item.icon
+                className={`w-5 h-5 md:w-6 md:h-6 shrink-0 apple-transition transform ${activeTab === item.id ? "text-white" : "group-hover:text-primary"}`}
+                strokeWidth={1.5}
+              />
+              {showLabels && (
+                <span
+                  className={`font-display font-bold text-[14px] md:text-[15px] tracking-tight truncate ${uiMode === "site" ? "!text-sm" : ""}`}
+                >
+                  {item.label}
+                </span>
+              )}
+            </button>
+          </Tooltip>
         ))}
       </nav>
 
@@ -144,7 +149,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 md:w-4 md:h-4 bg-success border-2 border-white rounded-full shadow-sm" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-bold truncate text-ink text-[15px] md:text-[17px] tracking-tight">
+                <div className="font-display font-bold truncate text-ink text-[14px] md:text-[15px] tracking-tight">
                   {user.displayName}
                 </div>
                 <div className="text-[10px] md:text-[13px] font-medium text-ink-muted uppercase tracking-widest mt-0.5">
@@ -172,7 +177,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-onyx/40 backdrop-blur-md z-[100] md:hidden animate-in fade-in duration-300"
+          className="fixed inset-0 bg-surface-dark/40 backdrop-blur-md z-[100] md:hidden animate-in fade-in duration-300"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -188,6 +193,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Main Content */}
       <main
+        data-tour="content"
         className={`flex-1 flex flex-col min-w-0 h-full sm:h-[calc(100vh-32px)] md:h-[calc(100vh-48px)] ${uiMode === "site" ? "!h-[100dvh] pb-16 md:pb-0" : ""}`}
       >
         {/* Top Bar Navigation */}
@@ -195,30 +201,32 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           className={`soft-card rounded-none sm:rounded-[24px] px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 flex items-center justify-between z-20 shrink-0 ${uiMode === "site" ? "!rounded-none !bg-panel !border-b !border-divider !py-3" : ""}`}
         >
           <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-5">
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-              aria-expanded={isSidebarOpen}
-              title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-              className={`hidden md:block p-2 sm:p-3 hover:bg-surface/40 rounded-[10px] sm:rounded-[12px] apple-transition active:scale-95 ${uiMode === "site" ? "!p-2" : ""}`}
-            >
-              {isSidebarOpen ? (
-                <X className="w-5 h-5 sm:w-6 sm:h-6 text-ink-muted" />
-              ) : (
-                <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-ink-muted" />
-              )}
-            </button>
+            <Tooltip label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}>
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+                aria-expanded={isSidebarOpen}
+               
+                className={`hidden md:block p-2 sm:p-3 hover:bg-surface/40 rounded-[10px] sm:rounded-[12px] apple-transition active:scale-95 ${uiMode === "site" ? "!p-2" : ""}`}
+              >
+                {isSidebarOpen ? (
+                  <X className="w-5 h-5 sm:w-6 sm:h-6 text-ink-muted" />
+                ) : (
+                  <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-ink-muted" />
+                )}
+              </button>
+            </Tooltip>
             <div
               className={`hidden sm:block h-6 w-px bg-surface/30 mx-1 lg:mx-2 ${uiMode === "site" ? "!bg-divider" : ""}`}
             />
             <div className="min-w-0 flex items-center gap-3 sm:gap-4">
               <div className="min-w-0">
                 <h1
-                  className={`font-bold text-lg sm:text-xl tracking-tight text-ink truncate ${uiMode === "site" ? "!text-lg" : ""}`}
+                  className={`font-display font-bold text-base sm:text-lg tracking-tight text-ink truncate min-w-0 ${uiMode === "site" ? "!text-lg" : ""}`}
                 >
                   {activeProject?.name || t("header.portfolio")}
                 </h1>
-                <div className="hidden sm:block text-[10px] font-black text-rust-strong uppercase tracking-widest mt-0.5">
+                <div className="hidden sm:block text-[10px] font-black text-primary-strong uppercase tracking-widest mt-0.5">
                   {uiMode === "site" ? t("header.siteModeLive") : t("header.controlCenter")}
                 </div>
               </div>
@@ -247,19 +255,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <SyncStatus />
               <TelegramBotStatus />
             </div>
-            <button
-              onClick={() => setActiveProject(null)}
-              className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:py-2 md:px-4 md:py-2.5 sm:gap-2 rounded-full sm:rounded-[12px] md:rounded-[14px] apple-transition active:scale-95 border border-onyx/5 bg-onyx/5 sm:bg-surface/40 sm:hover:bg-surface text-ink-muted sm:hover:text-ink sm:border-white/60 shadow-none sm:shadow-sm"
-              title={t("header.switchProject")}
-            >
-              <ArrowLeftRight
-                className="w-4 h-4 sm:w-5 sm:h-5"
-                strokeWidth={2}
-              />
-              <span className="hidden sm:inline-block font-bold text-[13px] md:text-[14px] tracking-tight">
-                {t("header.switch")}
-              </span>
-            </button>
+            <Tooltip label={t("header.switchProject")}>
+              <button
+                onClick={() => setActiveProject(null)}
+                className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:py-2 md:px-4 md:py-2.5 sm:gap-2 rounded-full sm:rounded-[12px] md:rounded-[14px] apple-transition active:scale-95 border border-surface-dark/5 bg-surface-dark/5 sm:bg-surface/40 sm:hover:bg-surface text-ink-muted sm:hover:text-ink sm:border-white/60 shadow-none sm:shadow-sm"
+               
+              >
+                <ArrowLeftRight
+                  className="w-4 h-4 sm:w-5 sm:h-5"
+                  strokeWidth={2}
+                />
+                <span className="hidden sm:inline-block font-bold text-[13px] md:text-[14px] tracking-tight">
+                  {t("header.switch")}
+                </span>
+              </button>
+            </Tooltip>
           </div>
         </header>
 
@@ -322,12 +332,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </button>
               </div>
             )}
-            <button
-              onClick={() => setIsFabOpen(!isFabOpen)}
-              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl shadow-primary/30 text-white transition-transform ${isFabOpen ? "bg-ink rotate-45" : "bg-primary"}`}
-            >
-              <Plus className="w-7 h-7" />
-            </button>
+            <Tooltip label={t("header.quickActions")}>
+              <button aria-label={t("header.quickActions")}
+                onClick={() => setIsFabOpen(!isFabOpen)}
+                className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl shadow-primary/30 text-white transition-transform ${isFabOpen ? "bg-ink rotate-45" : "bg-primary"}`}
+              >
+                <Plus className="w-7 h-7" />
+              </button>
+            </Tooltip>
           </div>
         )}
       </main>

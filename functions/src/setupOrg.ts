@@ -1,6 +1,8 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
+import { syncOrgClaimsQuietly } from "./claims";
+import { CALLABLE_OPTS } from "./callable";
 
 // One-time, admin-only migration from the legacy single-tenant layout
 // (projects/*) to the multi-tenant layout (organizations/{orgId}/projects/*).
@@ -15,7 +17,7 @@ import { db } from "./db";
 // account (e.g. the client timed out), a re-run adopts that same org and
 // re-copies (overwrite) rather than creating a duplicate.
 export const setupOrganization = onCall(
-  { timeoutSeconds: 540, memory: "1GiB" },
+  { ...CALLABLE_OPTS, timeoutSeconds: 540, memory: "1GiB" },
   async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
     const uid = request.auth.uid;
@@ -103,6 +105,8 @@ export const setupOrganization = onCall(
       { currentOrgId: orgId, orgIds: FieldValue.arrayUnion(orgId) },
       { merge: true },
     );
+
+    await syncOrgClaimsQuietly(uid);
 
     return { orgId, alreadyLinked: false, projects: counters.projects, docs: counters.docs };
   },

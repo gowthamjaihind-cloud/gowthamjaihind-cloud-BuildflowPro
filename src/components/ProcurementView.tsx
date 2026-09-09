@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { round2, round3 } from "../utils/num";
 import { useTranslation } from "../i18n";
 import { demoRequested } from "../demo";
 import {
@@ -67,11 +69,14 @@ import {
   EnvelopeSimple as Mail,
   MapPin,
   HandCoins,
-  Wallet,
-} from "@phosphor-icons/react";
+  Wallet, Receipt} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import { useUIStore, useAuthStore } from "../store";
 import { useBreakpoint } from "../hooks/useBreakpoint";
+import { confirmDialog, toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
+import { DialogBehaviour } from "../lib/useDialog";
 // Removed unused import
 
 interface ProcurementViewProps {
@@ -90,6 +95,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   projectId,
 }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
@@ -124,7 +130,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         (v.name || "").trim().toLowerCase() === master.name.trim().toLowerCase(),
     );
     if (already) {
-      alert(`"${master.name}" is already a party on this project.`);
+      toast.info(`"${master.name}" is already a party on this project.`);
       return;
     }
     setMasterBusy(true);
@@ -133,7 +139,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       setShowMasterPicker(false);
     } catch (err) {
       console.error("Add from master failed", err);
-      alert("Couldn't add that party to the project. Please try again.");
+      toast.error("Couldn't add that party to the project. Please try again.");
     } finally {
       setMasterBusy(false);
     }
@@ -146,15 +152,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       (v: any) => findDuplicates(v, masters).length === 0,
     );
     if (!missing.length) {
-      alert("Every party on this project is already in your master list.");
+      toast.info("Every party on this project is already in your master list.");
       return;
     }
-    if (!window.confirm(
-      `Save ${missing.length} part${missing.length === 1 ? "y" : "ies"} to your organisation master?\n\n` +
+    if (!(await confirmDialog({ title: `Save ${missing.length} part${missing.length === 1 ? "y" : "ies"} to your organisation master?\n\n` +
       missing.slice(0, 12).map((v: any) => `• ${v.name}`).join("\n") +
       (missing.length > 12 ? `\n…and ${missing.length - 12} more` : "") +
-      `\n\nOnly contact details are shared — balances and ledgers stay with this project. Parties already in the master are skipped.`,
-    )) return;
+      `\n\nOnly contact details are shared — balances and ledgers stay with this project. Parties already in the master are skipped.`, }))) return;
     setMasterBusy(true);
     let ok = 0;
     const failed: string[] = [];
@@ -174,11 +178,9 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         } catch { failed.push(v.name); }
       }
       setMasters(await listMasterVendors());
-      alert(
-        failed.length
+      toast.error(failed.length
           ? `Saved ${ok}. Couldn't save ${failed.length}: ${failed.slice(0, 5).join(", ")}${failed.length > 5 ? "…" : ""}`
-          : `Saved ${ok} part${ok === 1 ? "y" : "ies"} to your master list.`,
-      );
+          : `Saved ${ok} part${ok === 1 ? "y" : "ies"} to your master list.`,);
     } finally { setMasterBusy(false); }
   };
 
@@ -187,12 +189,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   const promoteToMaster = async (v: any) => {
     const dupes = findDuplicates(v, masters);
     if (dupes.length) {
-      if (!window.confirm(
-        `"${dupes[0].name}" already looks like the same party in your master list.\n\nSave "${v.name}" anyway as a separate entry?`,
-      )) return;
-    } else if (!window.confirm(
-      `Save "${v.name}" to your organisation master?\n\nOnly the contact details are shared — the balance and ledger stay with this project.`,
-    )) return;
+      if (!(await confirmDialog({ title: `"${dupes[0].name}" already looks like the same party in your master list.\n\nSave "${v.name}" anyway as a separate entry?`, }))) return;
+    } else if (!(await confirmDialog({ title: `Save "${v.name}" to your organisation master?\n\nOnly the contact details are shared — the balance and ledger stay with this project.`, }))) return;
     setMasterBusy(true);
     try {
       await saveMasterVendor({
@@ -205,14 +203,12 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         address: v.address || "",
       });
       setMasters(await listMasterVendors());
-      alert(`"${v.name}" is now available on every project in your organisation.`);
+      toast.success(`"${v.name}" is now available on every project in your organisation.`);
     } catch (err: any) {
       console.error("Promote to master failed", err);
-      alert(
-        err?.code === "permission-denied"
+      toast.error(err?.code === "permission-denied"
           ? "Only an Owner, Admin or Manager can update the organisation master."
-          : "Couldn't save to the master list. Please try again.",
-      );
+          : "Couldn't save to the master list. Please try again.",);
     } finally {
       setMasterBusy(false);
     }
@@ -739,6 +735,71 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         r.items.map((i) => `${i.name} (Qty: ${i.quantity})`).join("; "),
         r.totalAmount,
       ]);
+    } else if (activeTab === "purchase_orders") {
+      title = "Purchase Orders";
+      baseFileName = `purchase_orders_${dateSuffix}`;
+      headers = ["PO Number", "Date", "Vendor", "Items", "Status", "Amount (₹)"];
+      dataToExport = purchaseOrders.map((po) => [
+        po.poNumber,
+        po.orderDate,
+        po.vendorName,
+        (po.lineItems || []).length,
+        po.status,
+        po.totalAmount,
+      ]);
+    } else if (activeTab === "goods_receipt") {
+      title = "Goods Receipts";
+      baseFileName = `goods_receipts_${dateSuffix}`;
+      headers = [
+        "GRN Number",
+        "Date",
+        "Vendor",
+        "Against PO",
+        "Accepted Qty",
+        "Rejected Qty",
+        "Value (₹)",
+      ];
+      dataToExport = grns.map((g) => {
+        const items = g.lineItems || [];
+        const accepted = items.reduce((a, i) => a + (Number(i.acceptedQty) || 0), 0);
+        const rejected = items.reduce((a, i) => a + (Number(i.rejectedQty) || 0), 0);
+        // GRNs carry no stored total, so value is the accepted quantity priced
+        // at the line rate -- the same basis the receipt posts to the ledger.
+        const value = items.reduce(
+          (a, i) => a + (Number(i.acceptedQty) || 0) * (Number(i.rate) || 0),
+          0,
+        );
+        return [
+          g.grnNumber,
+          g.receiptDate,
+          g.vendorName,
+          g.poNumber || "-",
+          round3(accepted),
+          round3(rejected),
+          round2(value),
+        ];
+      });
+    } else if (activeTab === "bills") {
+      title = "Vendor Bills";
+      baseFileName = `vendor_bills_${dateSuffix}`;
+      headers = [
+        "Invoice Number",
+        "Date",
+        "Vendor",
+        "Against PO",
+        "Taxable (₹)",
+        "GST (₹)",
+        "Total (₹)",
+      ];
+      dataToExport = bills.map((b) => [
+        b.invoiceNumber,
+        b.invoiceDate,
+        b.vendorName,
+        b.poNumber || "-",
+        round2(b.subtotalTaxable),
+        round2((b.totalCGST || 0) + (b.totalSGST || 0) + (b.totalIGST || 0)),
+        round2(b.grandTotal),
+      ]);
     } else if (activeTab === "ledger") {
       const filteredLedger = selectedVendor
         ? ledger.filter((e) => e.vendorId === selectedVendor.id)
@@ -772,7 +833,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     const formattedRows = dataToExport.map((row) =>
       row.map((val) => typeof val === "number" ? `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : val)
     );
-    exportToPDF(title, `Project ID: ${projectId}`, headers, formattedRows, baseFileName);
+    exportToPDF(title, `Project: ${projectLabel}`, headers, formattedRows, baseFileName);
   };
 
   // Net of the vendor's ledger rows (credits - debits) — the same figure the
@@ -858,13 +919,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
 
     const statusBadge = (b: VendorBill) => {
       if (b.status === "pending_review")
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/15 text-[#B85F3B]">Pending review</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/15 text-warning">Pending review</span>;
       return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-success/15 text-success">Posted</span>;
     };
     const matchBadge = (m?: string) => {
       const map: any = {
         "Fully Matched": "bg-success/12 text-success",
-        "Has Discrepancies": "bg-primary/12 text-[#C0653F]",
+        "Has Discrepancies": "bg-primary/12 text-primary",
         Unlinked: "bg-danger/10 text-danger",
       };
       return m ? <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${map[m] || "bg-panel text-ink-muted"}`}>{m}</span> : null;
@@ -906,7 +967,12 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               </thead>
               <tbody>
                 {sorted.length === 0 ? (
-                  <tr><td colSpan={7} className="p-8 text-center text-ink-muted text-sm">No vendor bills yet. Use <b>Scan Invoice</b> or send an invoice photo to the Telegram bot.</td></tr>
+                  <EmptyState
+                    colSpan={7}
+                    icon={Receipt}
+                    title="No vendor bills yet"
+                    body="Use Scan Invoice, or have a vendor send one to the Telegram bot."
+                  />
                 ) : sorted.map((b) => (
                   <tr key={b.id} className="border-b border-divider/50">
                     <td className="p-4">
@@ -968,26 +1034,30 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               setOpeningBalanceInput(0);
               setIsAddingVendor(true);
             }}
-            className="w-full sm:w-auto bg-surface-dark text-white px-5 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-[#3A4F5F] apple-transition shadow-lg shadow-drab/10 text-[10px]"
+            className="w-full sm:w-auto bg-surface-dark text-white px-5 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-[#3A4F5F] apple-transition shadow-lg shadow-surface-dark/10 text-[10px]"
           >
             <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />{" "}
             <span>Add Party</span>
           </button>
-          <button
-            onClick={() => setShowMasterPicker(true)}
-            className="w-full sm:w-auto bg-panel border border-divider text-ink px-5 md:px-6 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-surface apple-transition text-[10px]"
-            title="Reuse a party already saved for your organisation"
-          >
-            <span>From master{masters.length ? ` (${masters.length})` : ""}</span>
-          </button>
-          <button
-            onClick={promoteAllVendors}
-            disabled={masterBusy || !vendors.length}
-            className="w-full sm:w-auto bg-panel border border-divider text-ink px-5 md:px-6 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-surface apple-transition text-[10px] disabled:opacity-40"
-            title="Add this project's parties to your organisation master"
-          >
-            <BookmarkSimple className="w-3.5 h-3.5" /> <span>Save to master</span>
-          </button>
+          <Tooltip label="Reuse a party already saved for your organisation">
+            <button
+              onClick={() => setShowMasterPicker(true)}
+              className="w-full sm:w-auto bg-panel border border-divider text-ink px-5 md:px-6 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-surface apple-transition text-[10px]"
+             
+            >
+              <span>From master{masters.length ? ` (${masters.length})` : ""}</span>
+            </button>
+          </Tooltip>
+          <Tooltip label="Add this project's parties to your organisation master">
+            <button
+              onClick={promoteAllVendors}
+              disabled={masterBusy || !vendors.length}
+              className="w-full sm:w-auto bg-panel border border-divider text-ink px-5 md:px-6 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-surface apple-transition text-[10px] disabled:opacity-40"
+             
+            >
+              <BookmarkSimple className="w-3.5 h-3.5" /> <span>Save to master</span>
+            </button>
+          </Tooltip>
           </div>
         </div>
 
@@ -1040,7 +1110,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             >
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-6 md:mb-10">
-                  <div className="bg-surface-dark p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-lg shadow-drab/5 group-hover:bg-primary apple-transition">
+                  <div className="bg-surface-dark p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-lg shadow-surface-dark/5 group-hover:bg-primary apple-transition">
                     {vendor.type === "Labor" ? (
                       <Users className="w-4 h-4 md:w-6 md:h-6 text-white/90" />
                     ) : (
@@ -1049,51 +1119,57 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   </div>
                   <div className="flex flex-col items-end">
                     <div className="flex gap-1 md:gap-2 mb-2 md:mb-4">
-                      <button
-                        onClick={() => {
-                          setNewVendor({
-                            name: vendor.name,
-                            type: vendor.type,
-                            contactPerson: vendor.contactPerson || "",
-                            email: vendor.email || "",
-                            phone: vendor.phone || "",
-                            address: vendor.address || "",
-                            outstandingBalance: vendor.outstandingBalance,
-                          });
-                          setOpeningBalanceInput(
-                            (vendor.outstandingBalance || 0) -
-                              netStatementFor(vendor.id),
-                          );
-                          setSelectedVendor(vendor);
-                          setIsEditingVendor(true);
-                          setIsAddingVendor(true);
-                        }}
-                        className="p-1.5 md:p-2 text-ink-muted hover:text-rust-strong apple-transition"
-                      >
-                        <Edit2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                      </button>
-                      <button
-                        onClick={() => promoteToMaster(vendor)}
-                        disabled={masterBusy}
-                        className={`p-1.5 md:p-2 apple-transition disabled:opacity-40 ${
-                          (vendor as any).masterVendorId
-                            ? "text-primary"
-                            : "text-ink-muted hover:text-primary"
-                        }`}
-                        title={
+                      <Tooltip label={"Edit vendor"}>
+                        <button aria-label="Edit vendor"
+                          onClick={() => {
+                            setNewVendor({
+                              name: vendor.name,
+                              type: vendor.type,
+                              contactPerson: vendor.contactPerson || "",
+                              email: vendor.email || "",
+                              phone: vendor.phone || "",
+                              address: vendor.address || "",
+                              outstandingBalance: vendor.outstandingBalance,
+                            });
+                            setOpeningBalanceInput(
+                              (vendor.outstandingBalance || 0) -
+                                netStatementFor(vendor.id),
+                            );
+                            setSelectedVendor(vendor);
+                            setIsEditingVendor(true);
+                            setIsAddingVendor(true);
+                          }}
+                          className="p-1.5 md:p-2 text-ink-muted hover:text-primary-strong apple-transition"
+                        >
+                          <Edit2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                        </button>
+                      </Tooltip>
+                      <Tooltip label={
                           (vendor as any).masterVendorId
                             ? "Linked to your organisation master"
                             : "Save this party to your organisation master"
-                        }
-                      >
-                        <BookmarkSimple className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                      </button>
-                      <button
-                        onClick={() => setIsDeletingVendor(vendor.id)}
-                        className="p-1.5 md:p-2 text-ink-muted hover:text-danger apple-transition"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                      </button>
+                        }>
+                        <button
+                          onClick={() => promoteToMaster(vendor)}
+                          disabled={masterBusy}
+                          className={`p-1.5 md:p-2 apple-transition disabled:opacity-40 ${
+                            (vendor as any).masterVendorId
+                              ? "text-primary"
+                              : "text-ink-muted hover:text-primary"
+                          }`}
+                         
+                        >
+                          <BookmarkSimple className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                        </button>
+                      </Tooltip>
+                      <Tooltip label={"Delete vendor"}>
+                        <button aria-label="Delete vendor"
+                          onClick={() => setIsDeletingVendor(vendor.id)}
+                          className="p-1.5 md:p-2 text-ink-muted hover:text-danger apple-transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                        </button>
+                      </Tooltip>
                     </div>
                     <div className="text-right">
                       <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-ink-muted">
@@ -1128,7 +1204,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 mb-1">
-                  <h3 className="text-base md:text-xl font-black text-ink tracking-tight group-hover:text-rust-strong apple-transition truncate">
+                  <h3 className="text-base md:text-xl font-black text-ink tracking-tight group-hover:text-primary-strong apple-transition truncate">
                     {vendor.name}
                   </h3>
                 </div>
@@ -1163,7 +1239,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         });
                         setIsAddingPayment(true);
                       }}
-                      className="flex-[1.5] bg-surface-dark text-white py-2.5 md:py-3.5 rounded-lg md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#3A4F5F] apple-transition shadow-md shadow-drab/5"
+                      className="flex-[1.5] bg-surface-dark text-white py-2.5 md:py-3.5 rounded-lg md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#3A4F5F] apple-transition shadow-md shadow-surface-dark/5"
                     >
                       Payment
                     </button>
@@ -1262,14 +1338,14 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         {receipt.supplierName}
                       </div>
                       {receipt.poNumber && (
-                        <div className="text-[8px] md:text-[10px] font-black text-rust-strong uppercase tracking-widest mt-1">
+                        <div className="text-[8px] md:text-[10px] font-black text-primary-strong uppercase tracking-widest mt-1">
                           PO: {receipt.poNumber}
                         </div>
                       )}
                     </td>
                     <td className="px-6 md:px-10 py-5 md:py-8">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10px] md:text-[10px] font-bold text-rust-strong bg-[#F7E4DB]/50 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-[#F7E4DB]/50 shadow-sm">
+                        <span className="font-mono text-[10px] md:text-[10px] font-bold text-primary-strong bg-warning/12/50 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-warning/25/50 shadow-sm">
                           {receipt.invoiceNumber}
                         </span>
                         {receipt.matchStatus === "Fully Matched" && (
@@ -1278,7 +1354,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           </span>
                         )}
                         {receipt.matchStatus === "Has Discrepancies" && (
-                          <span className="font-bold text-[8px] md:text-[10px] uppercase tracking-widest text-[#C0653F] bg-primary/10 px-2 py-1 rounded-full border border-primary/30">
+                          <span className="font-bold text-[8px] md:text-[10px] uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-full border border-primary/30">
                             Discrepancy
                           </span>
                         )}
@@ -1315,23 +1391,27 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     {isAdminOrOwner && (
                       <td className="px-6 md:px-10 py-5 md:py-8 text-right">
                         <div className="flex justify-end gap-1.5 md:gap-2 transition-opacity scale-90 group-hover:scale-100">
-                          <button
-                            onClick={() => {
-                              setSelectedReceipt(receipt);
-                              setNewReceipt(receipt);
-                              setIsEditingReceipt(true);
-                              setIsAddingReceipt(true);
-                            }}
-                            className="p-2.5 md:p-3 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition"
-                          >
-                            <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                          </button>
-                          <button
-                            onClick={() => setIsDeletingReceipt(receipt.id)}
-                            className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                          </button>
+                          <Tooltip label={"Edit receipt"}>
+                            <button aria-label="Edit receipt"
+                              onClick={() => {
+                                setSelectedReceipt(receipt);
+                                setNewReceipt(receipt);
+                                setIsEditingReceipt(true);
+                                setIsAddingReceipt(true);
+                              }}
+                              className="p-2.5 md:p-3 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition"
+                            >
+                              <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip label={"Delete receipt"}>
+                            <button aria-label="Delete receipt"
+                              onClick={() => setIsDeletingReceipt(receipt.id)}
+                              className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            </button>
+                          </Tooltip>
                         </div>
                       </td>
                     )}
@@ -1350,7 +1430,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       {receipt.supplierName}
                     </div>
                     {receipt.poNumber && (
-                      <div className="text-[10px] font-black text-rust-strong uppercase tracking-widest mt-1">
+                      <div className="text-[10px] font-black text-primary-strong uppercase tracking-widest mt-1">
                         PO: {receipt.poNumber}
                       </div>
                     )}
@@ -1362,7 +1442,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       </span>
                     )}
                     {receipt.matchStatus === "Has Discrepancies" && (
-                      <span className="font-bold text-[10px] uppercase tracking-widest text-[#C0653F] bg-primary/10 px-2 py-1 rounded-full border border-primary/30">
+                      <span className="font-bold text-[10px] uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-full border border-primary/30">
                         Discrepancy
                       </span>
                     )}
@@ -1383,7 +1463,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       {receipt.receiptDate}
                     </div>
                     <div className="mt-1">
-                      <span className="font-mono text-[10px] font-bold text-rust-strong bg-[#F7E4DB]/50 px-2 py-1 rounded-full border border-[#F7E4DB]/50 shadow-sm">
+                      <span className="font-mono text-[10px] font-bold text-primary-strong bg-warning/12/50 px-2 py-1 rounded-full border border-warning/25/50 shadow-sm">
                         {receipt.invoiceNumber}
                       </span>
                     </div>
@@ -1426,7 +1506,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         setIsEditingReceipt(true);
                         setIsAddingReceipt(true);
                       }}
-                      className="flex-1 py-2 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                      className="flex-1 py-2 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                     >
                       <Edit2 className="w-4 h-4 mr-1.5" /> Edit
                     </button>
@@ -1486,7 +1566,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 <span className="truncate max-w-[100px] md:max-w-none">
                   {selectedVendor.name}
                 </span>
-                <button
+                <button aria-label={t("common.close")}
                   onClick={() => setSelectedVendor(null)}
                   className="p-1 hover:bg-surface/10 rounded-lg apple-transition"
                 >
@@ -1541,7 +1621,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         ? `₹${openingBalance.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                         : "-"}
                     </td>
-                    <td className="px-6 md:px-10 py-5 md:py-8 text-right font-bold text-rust-strong text-base md:text-lg font-mono">
+                    <td className="px-6 md:px-10 py-5 md:py-8 text-right font-bold text-primary-strong text-base md:text-lg font-mono">
                       {openingBalance < 0
                         ? `₹${Math.abs(openingBalance).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                         : "-"}
@@ -1566,8 +1646,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         <div
                           className={`text-[8px] md:text-[10px] font-black uppercase tracking-widest ${
                             entry.isChangeOrder
-                              ? "text-rust-strong"
-                              : "text-rust-strong/50"
+                              ? "text-primary-strong"
+                              : "text-primary-strong/50"
                           }`}
                         >
                           {entry.referenceType === "GRN"
@@ -1584,7 +1664,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           {entry.description}
                         </div>
                         {entry.overrideReason && (
-                          <div className="text-[8px] md:text-[10px] font-bold text-[#C0653F] mt-1 uppercase tracking-widest border border-amber-200/50 bg-primary/10 px-1.5 py-0.5 rounded-full inline-block">
+                          <div className="text-[8px] md:text-[10px] font-bold text-primary mt-1 uppercase tracking-widest border border-amber-200/50 bg-primary/10 px-1.5 py-0.5 rounded-full inline-block">
                             ⚠️ Override: {entry.overrideReason}
                           </div>
                         )}
@@ -1594,7 +1674,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           ? `₹${entry.amount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                           : "-"}
                       </td>
-                      <td className="px-6 md:px-10 py-5 md:py-8 text-right font-bold text-rust-strong text-base md:text-lg font-mono tracking-tighter">
+                      <td className="px-6 md:px-10 py-5 md:py-8 text-right font-bold text-primary-strong text-base md:text-lg font-mono tracking-tighter">
                         {entry.type === "DEBIT"
                           ? `₹${entry.amount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                           : "-"}
@@ -1603,65 +1683,75 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         <td className="px-6 md:px-10 py-5 md:py-8 text-right">
                           {entry.referenceType === "PAYMENT" ? (
                             <div className="flex justify-end gap-1.5 md:gap-2">
-                              <button
-                                onClick={() => {
-                                  setNewPayment({
-                                    supplierId: entry.vendorId,
-                                    amount: entry.amount,
-                                    date: new Date(entry.date)
-                                      .toISOString()
-                                      .split("T")[0],
-                                    description: entry.description,
-                                  });
-                                  setEditingPaymentId(entry.id);
-                                  setIsAddingPayment(true);
-                                }}
-                                className="p-2.5 md:p-3 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition"
-                              >
-                                <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteLedgerEntry(entry.id)}
-                                className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
+                              <Tooltip label={"Edit ledger entry"}>
+                                <button aria-label="Edit ledger entry"
+                                  onClick={() => {
+                                    setNewPayment({
+                                      supplierId: entry.vendorId,
+                                      amount: entry.amount,
+                                      date: new Date(entry.date)
+                                        .toISOString()
+                                        .split("T")[0],
+                                      description: entry.description,
+                                    });
+                                    setEditingPaymentId(entry.id);
+                                    setIsAddingPayment(true);
+                                  }}
+                                  className="p-2.5 md:p-3 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                              </Tooltip>
+                              <Tooltip label={"Delete ledger entry"}>
+                                <button aria-label="Delete ledger entry"
+                                  onClick={() => handleDeleteLedgerEntry(entry.id)}
+                                  className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                              </Tooltip>
                             </div>
                           ) : entry.referenceType === "GRN" ? (
                             <div className="flex justify-end gap-1.5 md:gap-2">
-                              <button
-                                onClick={() => {
-                                  const receiptToEdit = receipts.find(
-                                    (r) => r.id === entry.referenceId,
-                                  );
-                                  if (receiptToEdit) {
-                                    setSelectedReceipt(receiptToEdit);
-                                    setNewReceipt(receiptToEdit);
-                                    setIsEditingReceipt(true);
-                                    setIsAddingReceipt(true);
+                              <Tooltip label={"Edit ledger entry"}>
+                                <button aria-label="Edit ledger entry"
+                                  onClick={() => {
+                                    const receiptToEdit = receipts.find(
+                                      (r) => r.id === entry.referenceId,
+                                    );
+                                    if (receiptToEdit) {
+                                      setSelectedReceipt(receiptToEdit);
+                                      setNewReceipt(receiptToEdit);
+                                      setIsEditingReceipt(true);
+                                      setIsAddingReceipt(true);
+                                    }
+                                  }}
+                                  className="p-2.5 md:p-3 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                              </Tooltip>
+                              <Tooltip label={"Delete ledger entry"}>
+                                <button aria-label="Delete ledger entry"
+                                  onClick={() =>
+                                    setIsDeletingReceipt(entry.referenceId || null)
                                   }
-                                }}
-                                className="p-2.5 md:p-3 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition"
-                              >
-                                <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  setIsDeletingReceipt(entry.referenceId || null)
-                                }
-                                className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
+                                  className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                              </Tooltip>
                             </div>
                           ) : (
                             <div className="flex justify-end gap-1.5 md:gap-2">
-                              <button
-                                onClick={() => handleDeleteLedgerEntry(entry.id)}
-                                className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
+                              <Tooltip label={"Delete ledger entry"}>
+                                <button aria-label="Delete ledger entry"
+                                  onClick={() => handleDeleteLedgerEntry(entry.id)}
+                                  className="p-2.5 md:p-3 bg-danger/8 border border-danger/20 shadow-sm rounded-xl text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                              </Tooltip>
                             </div>
                           )}
                         </td>
@@ -1697,7 +1787,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   <div className="font-bold text-white text-sm tracking-tight leading-none mb-1">
                     {selectedVendor ? selectedVendor.name : "All Vendors"}
                   </div>
-                  <div className="text-[10px] font-black text-white/70 uppercase tracking-widest bg-onyx/40 px-2 py-1 rounded-lg">
+                  <div className="text-[10px] font-black text-white/70 uppercase tracking-widest bg-surface-dark/40 px-2 py-1 rounded-lg">
                     OPENING BALANCE
                   </div>
                 </div>
@@ -1716,7 +1806,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1 tracking-[0.1em]">
                       DR (-)
                     </div>
-                    <div className="text-lg font-bold text-rust-strong tracking-tighter font-mono leading-none">
+                    <div className="text-lg font-bold text-primary-strong tracking-tighter font-mono leading-none">
                       {openingBalance < 0
                         ? `₹${Math.abs(openingBalance).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                         : "-"}
@@ -1732,7 +1822,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       <div className="font-bold text-ink text-sm tracking-tight leading-none mb-1">
                         {vendors.find((v) => v.id === entry.vendorId)?.name || "Unknown Partner"}
                       </div>
-                      <div className="text-[10px] font-black text-rust-strong uppercase tracking-widest mt-1">
+                      <div className="text-[10px] font-black text-primary-strong uppercase tracking-widest mt-1">
                         {entry.referenceType === "GRN"
                           ? "MATERIAL INVOICE"
                           : entry.referenceType === "LABOR_DEPLOYMENT"
@@ -1752,7 +1842,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       {entry.description}
                     </div>
                     {entry.overrideReason && (
-                      <div className="text-[10px] font-bold text-[#C0653F] mt-2 uppercase tracking-widest border border-amber-200/50 bg-primary/10 px-2 py-1 rounded-full inline-block">
+                      <div className="text-[10px] font-bold text-primary mt-2 uppercase tracking-widest border border-amber-200/50 bg-primary/10 px-2 py-1 rounded-full inline-block">
                         ⚠️ Override: {entry.overrideReason}
                       </div>
                     )}
@@ -1773,7 +1863,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       <div className="text-[8px] font-bold text-ink-muted uppercase tracking-widest mb-1 tracking-[0.1em]">
                         DR (-)
                       </div>
-                      <div className="text-base font-bold text-rust-strong tracking-tighter font-mono leading-none">
+                      <div className="text-base font-bold text-primary-strong tracking-tighter font-mono leading-none">
                         {entry.type === "DEBIT"
                           ? `₹${entry.amount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                           : "-"}
@@ -1798,7 +1888,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                               setEditingPaymentId(entry.id);
                               setIsAddingPayment(true);
                             }}
-                            className="flex-1 py-2 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                            className="flex-1 py-2 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
                             <Edit2 className="w-4 h-4 mr-1.5" /> Edit
                           </button>
@@ -1823,7 +1913,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                                 setIsAddingReceipt(true);
                               }
                             }}
-                            className="flex-1 py-2 bg-[#F7E4DB] border border-[#F0C6B2] shadow-sm rounded-xl text-primary hover:bg-[#F0D5C7] hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
+                            className="flex-1 py-2 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
                             <Edit2 className="w-4 h-4 mr-1.5" /> Edit
                           </button>
@@ -1884,7 +1974,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 md:flex-none px-4 md:px-8 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] md:tracking-[0.2em] apple-transition whitespace-nowrap ${activeTab === tab ? "bg-surface shadow-sm text-rust-strong ring-1 ring-divider" : "text-ink-muted hover:text-ink/80"}`}
+              className={`flex-1 md:flex-none px-4 md:px-8 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] md:tracking-[0.2em] apple-transition whitespace-nowrap ${activeTab === tab ? "bg-surface shadow-sm text-primary-strong ring-1 ring-divider" : "text-ink-muted hover:text-ink/80"}`}
             >
               {tab === "purchase_orders"
                 ? "Purchase Orders"
@@ -1902,9 +1992,9 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto md:shrink-0">
-          <div className="hidden sm:flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 bg-[#F7E4DB] rounded-lg md:rounded-2xl">
-            <Users className="w-3.5 h-3.5 text-rust-strong" />
-            <span className="text-[10px] md:text-[10px] font-black text-rust-strong uppercase tracking-widest">
+          <div className="hidden sm:flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 bg-warning/12 rounded-lg md:rounded-2xl">
+            <Users className="w-3.5 h-3.5 text-primary-strong" />
+            <span className="text-[10px] md:text-[10px] font-black text-primary-strong uppercase tracking-widest">
               {vendors.length} Partners
             </span>
           </div>
@@ -1923,7 +2013,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           </button>
           <button
             onClick={handleExportPDF}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#C0653F] text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#A0522F] apple-transition shadow-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-primary text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-primary-deep apple-transition shadow-sm"
           >
             <Download className="w-3.5 h-3.5" /> {t("common.exportPdf")}
           </button>
@@ -1971,8 +2061,9 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       {/* Modals with responsive widths */}
       <AnimatePresence>
         {showMasterPicker && (
-          <div className="fixed inset-0 bg-onyx/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
             <div className="bg-surface w-full max-w-lg rounded-[28px] overflow-hidden flex flex-col max-h-[80vh] shadow-2xl">
+              <DialogBehaviour />
               <div className="p-6 border-b border-divider flex items-start justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-black text-ink tracking-tight">Add from master</h3>
@@ -1981,7 +2072,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     the balance and ledger start fresh on this project.
                   </p>
                 </div>
-                <button
+                <button aria-label={t("common.close")}
                   onClick={() => setShowMasterPicker(false)}
                   className="p-2 hover:bg-divider rounded-full text-ink shrink-0"
                 >
@@ -1990,9 +2081,11 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               </div>
               <div className="flex-1 overflow-y-auto p-4">
                 {masters.length === 0 ? (
-                  <p className="text-sm text-ink-muted text-center py-10">
-                    No parties saved yet. Use the bookmark icon on any party to add it to your master list.
-                  </p>
+                  <EmptyState
+                    size="inline"
+                    title="No parties saved yet"
+                    body="Use the bookmark icon on any party to add it to your master list."
+                  />
                 ) : (
                   <div className="flex flex-col gap-2">
                     {masters.map((m) => {
@@ -2031,12 +2124,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         )}
 
         {isAddingVendor && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-2xl w-full max-w-lg overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="bg-surface-dark p-5 md:p-6 text-white flex justify-between items-center">
                 <div>
                   <h3 className="text-xl font-black">
@@ -2046,7 +2140,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     Vendor Master Profile
                   </p>
                 </div>
-                <button
+                <button aria-label={t("common.close")}
                   type="button"
                   onClick={() => {
                     setIsAddingVendor(false);
@@ -2184,7 +2278,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-[#F7E4DB] hover:bg-[#B85F3B] apple-transition mt-4"
+                  className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/15 hover:bg-primary-deep apple-transition mt-4"
                 >
                   {isEditingVendor ? "Update Profile" : "Register Party"}
                 </button>
@@ -2194,12 +2288,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         )}
 
         {isDeletingVendor != null && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-2xl w-full max-w-sm overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="p-6 text-center space-y-4">
                 <div className="w-12 h-12 bg-danger/15 rounded-full flex items-center justify-center mx-auto">
                   <Trash2 className="w-6 h-6 text-danger" />
@@ -2232,12 +2327,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         )}
 
         {isDeletingReceipt != null && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-2xl w-full max-w-sm overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="p-6 text-center space-y-4">
                 <div className="w-12 h-12 bg-danger/15 rounded-full flex items-center justify-center mx-auto">
                   <Trash2 className="w-6 h-6 text-danger" />
@@ -2273,17 +2369,18 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         )}
 
         {isAddingPayment && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="bg-success p-5 md:p-6 text-white flex justify-between items-center">
                 <h3 className="text-xl font-black">
                   {editingPaymentId ? "Edit Payment" : "Record Payment"}
                 </h3>
-                <button
+                <button aria-label={t("common.close")}
                   type="button"
                   onClick={() => {
                     setIsAddingPayment(false);
@@ -2394,13 +2491,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   ) {
                     return (
                       <div className="space-y-1 bg-primary/10 p-4 rounded-xl border border-primary/30">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#A0522F] ml-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-primary-deep ml-1">
                           Discrepancy Override Reason
                         </label>
                         <input
                           required
                           placeholder="Why are we paying this despite the discrepancy?"
-                          className="w-full bg-white p-3 rounded-xl font-bold border border-primary/40 placeholder:text-[#F0C6B2]"
+                          className="w-full bg-white p-3 rounded-xl font-bold border border-primary/40 placeholder:text-ink-muted"
                           value={newPayment.overrideReason}
                           onChange={(e) =>
                             setNewPayment({

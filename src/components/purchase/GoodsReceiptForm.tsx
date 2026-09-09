@@ -15,6 +15,8 @@ import { round2 } from "../../utils/num";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { compressImage } from "../../utils/imageCompressor";
 import { useQueryClient } from "@tanstack/react-query";
+import { Tooltip } from "../Tooltip";
+import { DialogBehaviour } from "../../lib/useDialog";
 
 interface GoodsReceiptFormProps {
   po: PurchaseOrder;
@@ -338,19 +340,20 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
   };
 
   return (
-    <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         className="bg-surface w-full max-w-4xl rounded-[32px] overflow-hidden flex flex-col max-h-[90vh]"
       >
+        <DialogBehaviour />
         <div className="flex justify-between items-center p-6 border-b border-divider bg-panel shrink-0">
           <div>
              <h2 className="text-xl font-bold text-ink">Record Goods Receipt</h2>
              <p className="text-xs text-ink-muted mt-1 uppercase tracking-widest font-bold">PO: {po.poNumber}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-divider rounded-full transition text-ink cursor-pointer">
+          <button aria-label="Close" onClick={onClose} className="p-2 hover:bg-divider rounded-full transition text-ink cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -498,13 +501,15 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                           alt="Challan photo" 
                           className="w-full h-full object-cover" 
                        />
-                       <button
-                          type="button"
-                          onClick={() => setPhotos(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute top-1 right-1 p-1 bg-red-500/90 hover:bg-danger text-white rounded-lg shadow-sm transition opacity-0 group-hover:opacity-100"
-                       >
-                          <X className="w-3.5 h-3.5" />
-                       </button>
+                       <Tooltip label={"Remove photo"}>
+                         <button aria-label="Remove photo"
+                            type="button"
+                            onClick={() => setPhotos(prev => prev.filter((_, idx) => idx !== i))}
+                            className="absolute top-1 right-1 p-1 bg-red-500/90 hover:bg-danger text-white rounded-lg shadow-sm transition opacity-0 group-hover:opacity-100"
+                         >
+                            <X className="w-3.5 h-3.5" />
+                         </button>
+                       </Tooltip>
                     </div>
                  ))}
                  
@@ -532,7 +537,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
            <button 
              onClick={handleSubmit} 
              disabled={isSubmitting} 
-             className="px-8 py-4 bg-primary hover:bg-[#B85F3B] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] disabled:opacity-50"
+             className="px-8 py-4 bg-primary hover:bg-primary-deep text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] disabled:opacity-50"
            >
              {isSubmitting ? <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span> : <Save className="w-4 h-4" />} Save Receipt
            </button>

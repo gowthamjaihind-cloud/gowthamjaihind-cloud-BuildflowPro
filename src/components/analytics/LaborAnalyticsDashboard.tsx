@@ -26,8 +26,8 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
   const [view, setView] = useState<ViewId>("byRole");
 
   const S = dark
-    ? { actual: "#CE7250", under: "#46B08C", over: "#CE7250", amber: "#E0A63E", bar: "#2A86C4" }
-    : { actual: "#C0653F", under: "#2E8B6F", over: "#C0653F", amber: "#C0872A", bar: "#0F79B8" };
+    ? { actual: "#5B87FF", under: "#46B08C", over: "#FF8A80", amber: "#E0A63E", bar: "#2A86C4" }
+    : { actual: "#1D4ED8", under: "#2E8B6F", over: "#B3261E", amber: "#C0872A", bar: "#0F79B8" };
 
   const budget = stats.laborPlanned || 0;
   const actual = stats.laborActual || 0;

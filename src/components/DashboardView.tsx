@@ -101,13 +101,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{t("an.consumed")}</span>
           <span className={`text-2xl font-black font-mono tracking-tight ${consumedPct > 100 ? "text-danger" : "text-ink"}`}>{consumedPct}%</span>
           <div className="h-1.5 bg-surface/40 rounded-full overflow-hidden">
-            <div className={`h-full rounded-full ${consumedPct > 100 ? "bg-danger" : "bg-[#2E8B6F]"}`} style={{ width: `${Math.min(consumedPct, 100)}%` }} />
+            <div className={`h-full rounded-full ${consumedPct > 100 ? "bg-danger" : "bg-success"}`} style={{ width: `${Math.min(consumedPct, 100)}%` }} />
           </div>
         </section>
 
         <section className="soft-card p-4 md:p-5 squircle-24 flex flex-col gap-1.5 justify-center">
           <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{t("an.variance")}</span>
-          <span className={`text-2xl font-black font-mono tracking-tight ${costVariance > 0 ? "text-danger" : "text-[#2E8B6F]"}`}>{costVariance > 0 ? "+" : ""}{inr(costVariance)}</span>
+          <span className={`text-2xl font-black font-mono tracking-tight ${costVariance > 0 ? "text-danger" : "text-success"}`}>{inr(Math.abs(costVariance))}{" "}<span className="text-[11px] font-bold tracking-normal">{costVariance > 0 ? t("an.overBudget") : t("an.underBudget")}</span></span>
           <span className="text-[10px] font-bold text-ink-muted">{t("an.totalSpent")} {inr(totalActual)}</span>
         </section>
 
@@ -117,7 +117,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {tasksAtRisk.count === 0 ? (
             <span className="text-[11px] font-bold text-success flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />{t("dashboard.allOnTrack")}</span>
           ) : (
-            <span className="text-[11px] font-bold text-[#E1946F] flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{tasksAtRisk.criticalCount > 0 ? t("dashboard.onCriticalPath", { count: tasksAtRisk.criticalCount }) : t("dashboard.requireAttention")}</span>
+            <span className="text-[11px] font-bold text-primary-on-dark flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{tasksAtRisk.criticalCount > 0 ? t("dashboard.onCriticalPath", { count: tasksAtRisk.criticalCount }) : t("dashboard.requireAttention")}</span>
           )}
         </section>
       </div>

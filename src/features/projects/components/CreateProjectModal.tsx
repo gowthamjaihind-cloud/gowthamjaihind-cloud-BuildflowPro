@@ -27,6 +27,9 @@ import {
 import { collection, doc, writeBatch } from "firebase/firestore";
 import { db } from "../../../firebase";
 import { getProjectSubCollectionPath } from "../../../utils/projectPath";
+import { confirmDialog, toast } from "../../../lib/feedback";
+import { Tooltip } from "../../../components/Tooltip";
+import { DialogBehaviour } from "../../../lib/useDialog";
 
 // Order the built-in groups the way a contractor would scan them.
 const CATEGORY_ORDER = [
@@ -48,7 +51,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   onClose,
   user,
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const L = useL();
   // Optional WBS starter structure. "" = start with an empty breakdown.
   const [templateId, setTemplateId] = useState<string>("");
@@ -73,17 +76,18 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
   // Saved templates need a way out, or the picker silently fills with junk.
   const removeSaved = async (savedId: string, name: string) => {
-    if (!window.confirm(L(`Delete the template "${name}"? Projects already created from it are not affected.`, `"${name}" டெம்ப்ளேட்டை நீக்கவா? அதிலிருந்து ஏற்கனவே உருவாக்கின செயல்திட்டங்கள் பாதிக்கப்படாது.`))) return;
+    if (!(await confirmDialog({ title: L(`Delete the template "${name}"? Projects already created from it are not affected.`, `"${name}" டெம்ப்ளேட்டை நீக்கவா? அதிலிருந்து ஏற்கனவே உருவாக்கின செயல்திட்டங்கள் பாதிக்கப்படாது.`) }))) return;
     try {
       await deleteTemplate(savedId);
       setSaved((rows) => rows.filter((r) => r.id !== savedId));
       setTemplateId((cur) => (cur === `saved:${savedId}` ? "" : cur));
     } catch {
-      alert(L("Couldn't delete that template.", "அந்த டெம்ப்ளேட்டை நீக்க முடியல."));
+      toast.error(L("Couldn't delete that template.", "அந்த டெம்ப்ளேட்டை நீக்க முடியல."));
     }
   };
   const [newProject, setNewProject] = useState({
     name: "",
+    projectCode: "",
     description: "",
     startDate: "",
     endDate: "",
@@ -142,7 +146,14 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     const template = allTemplates.find((x) => x.id === templateId);
     if (!template) return;
     const start = newProject.startDate ? new Date(newProject.startDate) : new Date();
-    const planned = planFromTemplate(template, isNaN(start.getTime()) ? new Date() : start);
+    // The language is chosen here, once: these names are written into
+    // Firestore as task documents and stay editable, so they are data from
+    // this point on rather than text looked up at render time.
+    const planned = planFromTemplate(
+      template,
+      isNaN(start.getTime()) ? new Date() : start,
+      language === "ta" ? "ta" : "en",
+    );
     const path = getProjectSubCollectionPath(projectId, "tasks");
     const batch = writeBatch(db);
     const ids: string[] = planned.map(() => doc(collection(db, path)).id);
@@ -181,7 +192,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         // The project exists either way — surface the seeding failure without
         // losing it, so the user can add the breakdown manually.
         console.error("WBS template seeding failed", err);
-        alert(L(
+        toast.error(L(
           "The project was created, but the task breakdown could not be added. You can add it from the WBS tab.",
           "செயல்திட்டம் உருவாக்கப்பட்டது, ஆனா பணிப் பட்டியலைச் சேர்க்க முடியல. WBS தாவல்ல சேர்த்துக்கலாம்."
         ));
@@ -190,6 +201,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
     setNewProject({
       name: "",
+      projectCode: "",
       description: "",
       startDate: "",
       endDate: "",
@@ -202,12 +214,12 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProject.name.trim()) {
-      alert("Please enter a workspace name.");
+      toast.error("Please enter a workspace name.");
       return;
     }
 
     if (projects.some(p => p.name.trim().toLowerCase() === newProject.name.trim().toLowerCase())) {
-      alert("A workspace with this name already exists.");
+      toast.info("A workspace with this name already exists.");
       return;
     }
 
@@ -217,9 +229,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     const cap = projectCapState(plan, projects.length);
     if (cap.capped && cap.atOrOver) {
       if (cap.isFree) {
-        alert(
-          `Your Free plan includes ${cap.included} project. Upgrade to a paid plan to add more projects.`,
-        );
+        toast.info(`Your Free plan includes ${cap.included} project. Upgrade to a paid plan to add more projects.`,);
         return;
       }
       setShowCapacity(true);
@@ -236,7 +246,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-onyx/60 backdrop-blur-md z-[100] flex items-center justify-center p-6"
+          className="fixed inset-0 bg-surface-dark/60 backdrop-blur-md z-[100] flex items-center justify-center p-6"
         >
           <motion.form
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -245,6 +255,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             onSubmit={handleCreateProject}
             className="soft-card w-full max-w-2xl rounded-[40px] p-6 md:p-12 shadow-2xl relative max-h-[90vh] overflow-y-auto"
           >
+            <DialogBehaviour />
             <div className="relative z-10 mb-12 flex justify-between items-start">
               <div>
                 <h2 className="text-[34px] font-bold text-ink mb-2 tracking-tight">
@@ -254,7 +265,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   {t("cpm.initParams")}
                 </p>
               </div>
-              <button
+              <button aria-label={L("Close","மூடு")}
                 type="button"
                 onClick={onClose}
                 className="p-3 hover:bg-panel rounded-full transition-colors text-ink-muted hover:text-ink"
@@ -277,6 +288,23 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     setNewProject({ ...newProject, name: e.target.value })
                   }
                 />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-widest text-ink-muted mb-2">
+                  {t("cpm.projectCode")}
+                </label>
+                <input
+                  className="w-full bg-surface/50 border border-divider rounded-2xl p-3 md:p-4 focus:bg-surface outline-none apple-transition font-bold"
+                  placeholder={t("cpm.projectCodePlaceholder")}
+                  value={newProject.projectCode}
+                  onChange={(e) =>
+                    setNewProject({ ...newProject, projectCode: e.target.value })
+                  }
+                />
+                <p className="text-[11px] text-ink-muted mt-1.5">
+                  {t("cpm.projectCodeHint")}
+                </p>
               </div>
               <div className="md:col-span-2 space-y-3">
                 <label className="text-[13px] font-bold text-ink-muted ml-1">
@@ -306,15 +334,17 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     />
                   </label>
                   {newProject.imageUrl && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setNewProject({ ...newProject, imageUrl: "" })
-                      }
-                      className="p-3 text-danger hover:bg-danger/10 rounded-xl app-transition flex-shrink-0"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    <Tooltip label={"Remove cover image"}>
+                      <button aria-label="Remove cover image"
+                        type="button"
+                        onClick={() =>
+                          setNewProject({ ...newProject, imageUrl: "" })
+                        }
+                        className="p-3 text-danger hover:bg-danger/10 rounded-xl app-transition flex-shrink-0"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </Tooltip>
                   )}
                 </div>
               </div>
@@ -457,7 +487,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </button>
               <button
                 type="submit"
-                className="bg-onyx text-white px-10 py-4 rounded-3xl font-bold text-[17px] shadow-xl hover:bg-onyx/80 apple-transition"
+                className="bg-surface-dark text-white px-10 py-4 rounded-3xl font-bold text-[17px] shadow-xl hover:bg-surface-dark/80 apple-transition"
               >
                 {t("cpm.initProject")}
               </button>

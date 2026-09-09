@@ -152,7 +152,7 @@ export const PrivacyPanel: React.FC<{ currentUser: UserProfile }> = ({ currentUs
         <button
           onClick={handleExport}
           disabled={exporting}
-          className="px-6 py-3 bg-primary text-white rounded-xl font-bold flex items-center gap-2 hover:bg-[#B85F3B] transition-colors disabled:opacity-50"
+          className="px-6 py-3 bg-primary text-white rounded-xl font-bold flex items-center gap-2 hover:bg-primary-deep transition-colors disabled:opacity-50"
         >
           {exporting ? (
             <>

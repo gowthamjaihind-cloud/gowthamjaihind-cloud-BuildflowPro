@@ -11,6 +11,8 @@ import { useAuthStore } from "../../store";
 import { doc, deleteDoc, runTransaction, addDoc, collection } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useQueryClient } from "@tanstack/react-query";
+import { confirmDialog, toast } from "../../lib/feedback";
+import { DialogBehaviour } from "../../lib/useDialog";
 
 interface GoodsReceiptDetailsProps {
   grn: GoodsReceiptNote;
@@ -31,7 +33,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
 
   const handleDelete = async () => {
     if (!canEditOrDelete) return;
-    if (!confirm("Are you sure you want to delete this GRN? This will revert the received quantities on the PO and Inventory.")) return;
+    if (!(await confirmDialog({ title: "Are you sure you want to delete this GRN? This will revert the received quantities on the PO and Inventory." }))) return;
     setIsDeleting(true);
     try {
       await runTransaction(db, async (transaction) => {
@@ -144,7 +146,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
           context: "delete GRN"
         });
       } catch(logErr) {}
-      alert(e.message || JSON.stringify(e) || "Failed to delete GRN");
+      toast.error(e.message || JSON.stringify(e) || "Failed to delete GRN");
     } finally {
       setIsDeleting(false);
     }
@@ -159,12 +161,13 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="bg-surface w-full max-w-3xl h-full rounded-[24px] shadow-2xl flex flex-col overflow-hidden"
       >
+        <DialogBehaviour />
          <div className="flex justify-between items-center p-6 border-b border-divider bg-panel sticky top-0 z-10 shrink-0">
            <div>
              <h2 className="text-xl font-black text-ink tracking-tight mb-1">{grn.grnNumber}</h2>
              <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">{grn.poNumber} • {grn.vendorName}</p>
            </div>
-           <button type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
+           <button aria-label="Close" type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
              <X className="w-5 h-5" />
            </button>
          </div>
@@ -214,7 +217,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
                
                {grn.notes && (
                   <div className="mt-6 p-4 bg-yellow-50/50 border border-primary/20 rounded-xl">
-                     <p className="text-[10px] font-black text-[#C0653F] uppercase tracking-widest mb-1.5">Notes</p>
+                     <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1.5">Notes</p>
                      <p className="text-sm font-medium text-ink/80">{grn.notes}</p>
                   </div>
                )}

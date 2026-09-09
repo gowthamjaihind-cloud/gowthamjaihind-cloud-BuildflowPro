@@ -33,6 +33,8 @@ import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import { compressImage } from "../utils/imageCompressor";
 import { useTranslation } from "../i18n";
+import { toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
 
 interface DailyLogEntryScreenProps {
   projectId: string;
@@ -157,7 +159,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition)
-      return alert(t("dlog.speechUnsupported"));
+      return toast.error(t("dlog.speechUnsupported"));
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
@@ -309,7 +311,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
       setShowNewEquipment(false);
     } catch (err) {
       console.error("Failed to add equipment", err);
-      alert(t("dlog.failedAddEquipment"));
+      toast.error(t("dlog.failedAddEquipment"));
     } finally {
       setSavingEquipment(false);
     }
@@ -385,7 +387,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
       }
     } catch (err) {
       console.error(err);
-      alert(t("dlog.failedSave"));
+      toast.error(t("dlog.failedSave"));
     }
   };
 
@@ -414,7 +416,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
               {editLog ? t("dlog.editSubtitle") : t("dlog.newSubtitle")}
             </p>
           </div>
-          <button
+          <button aria-label={t("common.close")}
             type="button"
             onClick={onClose}
             className="p-3 bg-panel hover:bg-divider rounded-full transition text-ink cursor-pointer"
@@ -483,11 +485,11 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             )}
 
             {taskId && currentTask && (
-              <div className="bg-[#F7E4DB] p-4 rounded-xl border border-[#F7E4DB]">
-                <span className="text-[10px] font-black uppercase tracking-widest text-rust-strong block mb-1">
+              <div className="bg-warning/12 p-4 rounded-xl border border-warning/25">
+                <span className="text-[10px] font-black uppercase tracking-widest text-primary-strong block mb-1">
                   {t("dlog.loggingForTask")}
                 </span>
-                <span className="text-sm font-bold text-[#B85F3B] block">
+                <span className="text-sm font-bold text-warning block">
                   {currentTask.name}
                 </span>
               </div>
@@ -514,7 +516,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
                   {t("dlog.cumulativeProgress")}
                 </label>
-                <span className="text-xl font-black text-rust-strong font-mono">
+                <span className="text-xl font-black text-primary-strong font-mono">
                   {markComplete ? 100 : progressPercent}%
                 </span>
               </div>
@@ -563,7 +565,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleAddMaterial}
-                  className="text-rust-strong text-xs font-bold hover:underline flex items-center gap-1"
+                  className="text-primary-strong text-xs font-bold hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> {t("dlog.addMaterial")}
                 </button>
@@ -595,15 +597,17 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     }
                     className="flex-1 w-20 bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none font-mono"
                   />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMaterials(materials.filter((_, idx) => idx !== i))
-                    }
-                    className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip label={"Remove material row"}>
+                    <button aria-label="Remove material row"
+                      type="button"
+                      onClick={() =>
+                        setMaterials(materials.filter((_, idx) => idx !== i))
+                      }
+                      className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               ))}
             </div>
@@ -617,7 +621,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleAddLabor}
-                  className="text-rust-strong text-xs font-bold hover:underline flex items-center gap-1"
+                  className="text-primary-strong text-xs font-bold hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> {t("dlog.addLabor")}
                 </button>
@@ -647,15 +651,17 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     }
                     className="flex-1 w-20 bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none font-mono"
                   />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setLabour(labour.filter((_, idx) => idx !== i))
-                    }
-                    className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip label={"Remove labour row"}>
+                    <button aria-label="Remove labour row"
+                      type="button"
+                      onClick={() =>
+                        setLabour(labour.filter((_, idx) => idx !== i))
+                      }
+                      className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               ))}
             </div>
@@ -669,7 +675,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleAddEquipment}
-                  className="text-rust-strong text-xs font-bold hover:underline flex items-center gap-1"
+                  className="text-primary-strong text-xs font-bold hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> {t("dlog.addEquipment")}
                 </button>
@@ -709,22 +715,24 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     <option value="hours">{t("dlog.hrs")}</option>
                     <option value="days">{t("dlog.days")}</option>
                   </select>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEquipment(equipment.filter((_, idx) => idx !== i))
-                    }
-                    className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip label={"Remove equipment row"}>
+                    <button aria-label="Remove equipment row"
+                      type="button"
+                      onClick={() =>
+                        setEquipment(equipment.filter((_, idx) => idx !== i))
+                      }
+                      className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               ))}
 
               {equipment.length > 0 && (
                 <div className="flex justify-between items-center px-1">
                   {equipment.some((e) => e.equipmentId && !(e.cost && e.cost > 0)) ? (
-                    <span className="text-[10px] font-bold text-[#C0653F]">
+                    <span className="text-[10px] font-bold text-primary">
                       {t("dlog.setRateHint")}
                     </span>
                   ) : (
@@ -799,7 +807,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       type="button"
                       onClick={saveNewEquipment}
                       disabled={!newEquipmentName.trim() || savingEquipment}
-                      className="px-3 py-2 text-xs font-bold text-white bg-primary hover:bg-[#B85F3B] rounded-lg disabled:opacity-50 flex items-center gap-1.5"
+                      className="px-3 py-2 text-xs font-bold text-white bg-primary hover:bg-primary-deep rounded-lg disabled:opacity-50 flex items-center gap-1.5"
                     >
                       {savingEquipment ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -884,13 +892,15 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                         alt="Preview"
                         className="w-full h-full object-cover"
                       />
-                      <button
-                        type="button"
-                        onClick={() => removePhoto(idx)}
-                        className="absolute top-1 right-1 p-1 bg-onyx/60 hover:bg-danger text-white rounded-lg backdrop-blur-md transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                      <Tooltip label={"Remove photo"}>
+                        <button aria-label="Remove photo"
+                          type="button"
+                          onClick={() => removePhoto(idx)}
+                          className="absolute top-1 right-1 p-1 bg-surface-dark/60 hover:bg-danger text-white rounded-lg backdrop-blur-md transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Tooltip>
                     </div>
                   ))}
                 </div>
@@ -907,7 +917,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             form="daily-log-form"
             type="submit"
             disabled={saveMutation.isPending || !selectedTaskId}
-            className="w-full bg-primary text-white rounded-2xl py-4 text-sm font-bold shadow-lg hover:bg-[#B85F3B] active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-50"
+            className="w-full bg-primary text-white rounded-2xl py-4 text-sm font-bold shadow-lg hover:bg-primary-deep active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-50"
           >
             {saveMutation.isPending ? (
               t("dlog.saving")

@@ -10,6 +10,8 @@ import {
 import { PurchaseOrderForm } from "./PurchaseOrderForm";
 import { PurchaseOrderDetails } from "./PurchaseOrderDetails";
 import { format } from "date-fns";
+import { Receipt } from "@phosphor-icons/react";
+import { EmptyState } from "../EmptyState";
 
 interface PurchaseOrderTabProps {
   projectId: string;
@@ -64,7 +66,7 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
         
         <button
           onClick={() => setIsFormOpen(true)}
-          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-primary hover:bg-[#B85F3B] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-deep text-white text-xs font-bold uppercase tracking-widest rounded-xl transition"
         >
           <Plus className="w-4 h-4" /> New PO
         </button>
@@ -83,18 +85,34 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                 </tr>
              </thead>
              <tbody>
-                {filteredPOs.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-ink-muted text-sm border-b border-divider/50">
-                      No purchase orders found.
-                    </td>
-                  </tr>
+                {pos.length === 0 ? (
+                  <EmptyState
+                    colSpan={5}
+                    icon={Receipt}
+                    title="No purchase orders yet"
+                    body="Raise a PO to record what was ordered, from whom, and at what rate."
+                  />
+                ) : filteredPOs.length === 0 ? (
+                  <EmptyState
+                    colSpan={5}
+                    icon={Receipt}
+                    variant="filtered"
+                    title="No orders match"
+                    body="Nothing matches your search or status filter."
+                    action={{
+                      label: "Clear filters",
+                      onClick: () => {
+                        setSearchTerm("");
+                        setStatusFilter("All");
+                      },
+                    }}
+                  />
                 ) : (
                   filteredPOs.map(po => (
                     <tr 
                       key={po.id} 
                       onClick={() => setSelectedPO(po)}
-                      className="border-b border-divider/50 hover:bg-[#F7E4DB]/30 transition cursor-pointer group"
+                      className="border-b border-divider/50 hover:bg-warning/12/30 transition cursor-pointer group"
                     >
                       <td className="p-4 align-middle">
                         <div className="font-mono text-xs font-bold text-ink group-hover:text-primary transition-colors">
@@ -112,9 +130,9 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                       </td>
                       <td className="p-4 align-middle">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                          po.status === 'Draft' ? 'bg-ice text-[#56778E]' :
-                          po.status === 'Approved' ? 'bg-[#E2E8ED] text-[#56778E]' :
-                          po.status === 'Partially Received' ? 'bg-primary/10 text-[#C0653F]' :
+                          po.status === 'Draft' ? 'bg-page text-ink-muted' :
+                          po.status === 'Approved' ? 'bg-[#E2E8ED] text-ink-muted' :
+                          po.status === 'Partially Received' ? 'bg-primary/10 text-primary' :
                           'bg-success/12 text-success'
                         }`}>
                           {po.status}

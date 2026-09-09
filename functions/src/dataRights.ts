@@ -2,6 +2,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import * as admin from "firebase-admin";
 import { db } from "./db";
+import { CALLABLE_OPTS } from "./callable";
 
 // ---------------------------------------------------------------------------
 // Data-subject rights (DPDP / GDPR): export and erasure, built into the app so
@@ -36,7 +37,7 @@ async function readOrgProjects(orgRef: FirebaseFirestore.DocumentReference) {
 // Download a machine-readable copy of the caller's data. Always includes the
 // personal profile; includes the full organization dataset only when the caller
 // is an Owner or Admin of their current org (they control that tenant's data).
-export const exportMyData = onCall({ timeoutSeconds: 300, memory: "512MiB" }, async (request) => {
+export const exportMyData = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 300, memory: "512MiB" }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const uid = request.auth.uid;
 
@@ -111,7 +112,7 @@ async function deletePendingInvites(orgId: string) {
 
 // Permanently delete an organization and ALL of its data. Owner-only. Removes
 // the org from every member's account and deletes pending invites. Irreversible.
-export const deleteOrganization = onCall({ timeoutSeconds: 300, memory: "512MiB" }, async (request) => {
+export const deleteOrganization = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 300, memory: "512MiB" }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const uid = request.auth.uid;
   const orgId = String(request.data?.orgId || "").trim();
@@ -143,7 +144,7 @@ export const deleteOrganization = onCall({ timeoutSeconds: 300, memory: "512MiB"
 // are the sole member of an org, that org is deleted too. If they are the only
 // Owner of an org that still has other members, deletion is blocked until they
 // transfer ownership, remove the members, or delete the org. Irreversible.
-export const deleteMyAccount = onCall({ timeoutSeconds: 300 }, async (request) => {
+export const deleteMyAccount = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 300 }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const uid = request.auth.uid;
 

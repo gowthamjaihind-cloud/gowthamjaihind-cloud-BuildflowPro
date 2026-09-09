@@ -1,4 +1,8 @@
 import React, { useState, useEffect, Component } from "react";
+import { demoRequested } from "./demo";
+import { Feedback } from "./components/feedback/Feedback";
+import { DemoBanner } from "./demo/DemoBanner";
+import { DemoTour } from "./demo/DemoTour";
 import {
   auth,
   db,
@@ -119,7 +123,7 @@ class ErrorBoundary extends React.Component<
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="w-full bg-onyx text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-onyx/80 apple-transition shadow-xl"
+              className="w-full bg-surface-dark text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-surface-dark/80 apple-transition shadow-xl"
             >
               <RefreshCw className="w-5 h-5" /> Reload Application
             </button>
@@ -190,8 +194,13 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-surface-dark text-white">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      <div
+        className="h-screen flex flex-col items-center justify-center gap-4 bg-surface-dark text-white"
+        role="status"
+        aria-busy="true"
+      >
+        <Loader2 className="w-12 h-12 animate-spin text-primary" aria-hidden="true" />
+        <span className="sr-only">Loading Sitetru…</span>
       </div>
     );
   }
@@ -244,6 +253,10 @@ function AppContent() {
     <>
       {page}
       {access.isTrial && access.allowed && <TrialBanner daysLeft={access.daysLeft} />}
+      {/* Folds away entirely in the production bundle. */}
+      <Feedback />
+      {__DEMO__ && demoRequested() && <DemoBanner />}
+      {__DEMO__ && demoRequested() && <DemoTour />}
     </>
   );
 }

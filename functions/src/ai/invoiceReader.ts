@@ -2,6 +2,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { db } from "../db";
 import { chargeAiUsage } from "./usage";
+import { CALLABLE_OPTS } from "../callable";
 
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-1.5-flash"];
@@ -13,7 +14,7 @@ const norm = (s: any) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "")
 
 // Callable wrapper used by the web app's Scan Invoice flow.
 export const extractVendorInvoice = onCall(
-  { secrets: [GEMINI_API_KEY], timeoutSeconds: 120, memory: "512MiB" },
+  { ...CALLABLE_OPTS, secrets: [GEMINI_API_KEY], timeoutSeconds: 120, memory: "512MiB" },
   async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
     const { orgId, projectId, fileBase64, mimeType } = request.data || {};

@@ -11,5 +11,11 @@
   "compileOnSave": true,
   "include": [
     "src"
+  ],
+  // Tests are run by vitest from the repository root, not compiled into lib/.
+  // Leaving them in pulled vitest's vite types into this build, which runs as
+  // the functions predeploy hook -- so a test file could fail the deploy.
+  "exclude": [
+    "src/**/*.test.ts"
   ]
 }

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useProjectLabel } from "../hooks/useProjectLabel";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { useTranslation } from "../i18n";
 import {
@@ -9,8 +10,7 @@ import {
   Buildings as Building2,
   ArrowDownRight,
   ArrowUpRight,
-  DownloadSimple as Download,
-} from "@phosphor-icons/react";
+  DownloadSimple as Download, Receipt} from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { CountUp } from "./motion";
 import { ClientPayment, VendorLedgerEntry, Vendor, CostEntry } from "../types";
@@ -19,6 +19,10 @@ import { collection, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuthStore } from "../store";
 import { useQueryClient } from "@tanstack/react-query";
+import { confirmDialog, toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface PaymentsViewProps {
   projectId: string;
@@ -36,6 +40,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
   costEntries,
 }) => {
   const { t } = useTranslation();
+  const projectLabel = useProjectLabel(projectId);
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -101,20 +106,16 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
     type: "CLIENT" | "VENDOR" | "DIRECT_COST",
   ) => {
     if (type === "VENDOR") {
-      alert(
-        "Vendor payments must be deleted from the Procurement / Ledger section.",
-      );
+      toast.success("Vendor payments must be deleted from the Procurement / Ledger section.",);
       return;
     }
     if (type === "DIRECT_COST") {
-      alert(
-        "Direct costs must be deleted from the Cost Management / Tasks section.",
-      );
+      toast.success("Direct costs must be deleted from the Cost Management / Tasks section.",);
       return;
     }
     if (type === "CLIENT" && !isAdminOrOwner) return;
 
-    if (!confirm("Are you sure you want to delete this payment record?"))
+    if (!(await confirmDialog({ title: "Are you sure you want to delete this payment record?" })))
       return;
     try {
       await deleteDoc(doc(db, `${basePath}/client_payments`, id));
@@ -227,7 +228,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
     const dateStr = new Date().toISOString().split("T")[0];
     exportToPDF(
       "INTEGRATED CASH BOOK LEDGER",
-      `Project ID: ${projectId} | Inward: ₹${totalClientReceived.toLocaleString("en-IN")} | Outward: ₹${(totalVendorPaid + totalDirectCosts).toLocaleString("en-IN")}`,
+      `Project: ${projectLabel} | Inward: ₹${totalClientReceived.toLocaleString("en-IN")} | Outward: ₹${(totalVendorPaid + totalDirectCosts).toLocaleString("en-IN")}`,
       headers,
       rows,
       `Cash_Book_Ledger_${dateStr}`
@@ -288,7 +289,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                 {t("cpay.cashOnHand")}
               </p>
               <h3
-                className={`text-3xl font-black mt-1 ${netCashFlow >= 0 ? "text-primary" : "text-[#C0653F]"}`}
+                className={`text-3xl font-black mt-1 ${netCashFlow >= 0 ? "text-primary" : "text-primary"}`}
               >
                 ₹
                 <CountUp
@@ -300,7 +301,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               </h3>
             </div>
             <div
-              className={`p-3 rounded-xl ${netCashFlow >= 0 ? "bg-[#F7E4DB] text-primary" : "bg-primary/15 text-[#C0653F]"}`}
+              className={`p-3 rounded-xl ${netCashFlow >= 0 ? "bg-warning/12 text-primary" : "bg-primary/15 text-primary"}`}
             >
               <IndianRupee className="w-6 h-6" />
             </div>
@@ -323,7 +324,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
             </button>
             <button
               onClick={handleExportPDF}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
             >
               <Download className="w-4 h-4" />
               PDF
@@ -354,14 +355,12 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
             </thead>
             <tbody className="text-sm">
               {combinedLedger.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="p-5 text-center text-ink-muted italic"
-                  >
-                    No transactions recorded yet.
-                  </td>
-                </tr>
+                <EmptyState
+                  colSpan={7}
+                  icon={Receipt}
+                  title="No transactions recorded yet"
+                  body="Client invoices and receipts will appear here as they are entered."
+                />
               ) : (
                 [...combinedLedger].reverse().map((entry) => (
                   <tr
@@ -430,15 +429,17 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     </td>
                     <td className="p-4">
                       {entry.type === "CLIENT" && isAdminOrOwner && (
-                        <button
-                          onClick={() =>
-                            handleDelete(entry.originalId, entry.type)
-                          }
-                          className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded transition-colors"
-                          title="Delete record"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        <Tooltip label="Delete record">
+                          <button
+                            onClick={() =>
+                              handleDelete(entry.originalId, entry.type)
+                            }
+                            className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded transition-colors"
+                           
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
                       )}
                     </td>
                   </tr>
@@ -451,16 +452,17 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
 
       <AnimatePresence>
         {isAdding && (
-          <div className="fixed inset-0 bg-onyx/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
             >
+              <DialogBehaviour />
               <div className="bg-primary p-6 text-white flex justify-between items-center">
                 <h3 className="text-lg font-bold">{t("cpay.recordPayment")}</h3>
-                <button
+                <button aria-label={t("common.close")}
                   onClick={() => setIsAdding(false)}
                   className="hover:bg-white/20 p-1 rounded-full transition-colors"
                 >

@@ -1,4 +1,5 @@
 import React from "react";
+import { Tooltip } from "../Tooltip";
 
 export const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 
@@ -14,7 +15,7 @@ export const StatTile: React.FC<{
   label: string; value: string; hint?: string;
   tone?: "default" | "danger" | "success"; icon?: React.ReactNode;
 }> = ({ label, value, hint, tone = "default", icon }) => {
-  const c = tone === "danger" ? "text-danger" : tone === "success" ? "text-[#2E8B6F]" : "text-ink";
+  const c = tone === "danger" ? "text-danger" : tone === "success" ? "text-success" : "text-ink";
   return (
     <div className="soft-card rounded-2xl p-4 flex flex-col gap-1">
       <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{label}</span>
@@ -54,7 +55,9 @@ export const RankedBars: React.FC<{
     <div className="space-y-2.5">
       {rows.map((r) => (
         <div key={r.name} className="flex items-center gap-3">
-          <span className="w-24 md:w-32 text-xs font-bold text-ink truncate shrink-0" title={r.name}>{r.name}</span>
+          <Tooltip label={r.name}>
+            <span className="w-24 md:w-32 text-xs font-bold text-ink truncate shrink-0">{r.name}</span>
+          </Tooltip>
           <div className="flex-1 h-6 rounded-lg bg-surface/50 overflow-hidden">
             <div className="h-full rounded-lg flex items-center justify-end pr-2 transition-[width] duration-700"
               style={{ width: `${Math.max((r.value / max) * 100, 6)}%`, background: color }}>

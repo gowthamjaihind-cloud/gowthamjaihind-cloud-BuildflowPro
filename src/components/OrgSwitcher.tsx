@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react";
 import { useMyOrgs } from "../hooks/useMyOrgs";
 import { useL } from "../i18n";
+import { SkeletonRows } from "./Skeleton";
 
 // Dropdown to switch the active organization. Renders nothing unless the user
 // belongs to more than one org, so single-org users never see clutter.
@@ -46,8 +47,8 @@ export const OrgSwitcher: React.FC<{ className?: string }> = ({ className }) => 
             {L("Switch organization","நிறுவனத்தை மாற்று")}
           </div>
           {loading && (
-            <div className="p-4 text-center text-ink-muted text-sm">
-              <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+            <div className="p-3">
+              <SkeletonRows rows={2} label={L("Loading…", "ஏற்றுகிறது…")} />
             </div>
           )}
           {orgs.map((o) => (

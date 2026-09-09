@@ -154,7 +154,7 @@ export const TeamPanel: React.FC = () => {
             <button
               onClick={sendInvite}
               disabled={busy}
-              className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : L("Create invite","அழைப்பை உருவாக்கு")}
             </button>
@@ -179,7 +179,7 @@ export const TeamPanel: React.FC = () => {
                 />
                 <button
                   onClick={copy}
-                  className="px-4 py-2 bg-onyx text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shrink-0"
+                  className="px-4 py-2 bg-surface-dark text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shrink-0"
                 >
                   {copied ? <><CheckCircle className="w-4 h-4" /> {L("Copied","நகலெடுக்கப்பட்டது")}</> : <><Copy className="w-4 h-4" /> {L("Copy","நகலெடு")}</>}
                 </button>

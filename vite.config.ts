@@ -24,8 +24,8 @@ export default defineConfig(({mode}) => {
         manifest: {
           name: 'Sitetru',
           short_name: 'Sitetru',
-          theme_color: '#324755',
-          background_color: '#F0F3F4',
+          theme_color: '#12203F',
+          background_color: '#F5F7FA',
           display: 'standalone',
           icons: [
             {

@@ -15,6 +15,7 @@ import { CostEntry, Task } from "../../types";
 import { useUIStore } from "../../store";
 import { useTranslation } from "../../i18n";
 import { ChartLineUp, TrendUp, TrendDown } from "@phosphor-icons/react";
+import { Tooltip as HintTooltip } from "../Tooltip";
 
 interface CostAnalyticsDashboardProps {
   projectId: string;
@@ -64,8 +65,8 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
   // 4-hue categorical set for the composition donut (order keeps the similar
   // orange/yellow non-adjacent, and every slice is directly labelled).
   const S = dark
-    ? { budget: "#2A86C4", actual: "#CE7250", under: "#46B08C", over: "#CE7250", amber: "#E0A63E" }
-    : { budget: "#0F79B8", actual: "#C0653F", under: "#2E8B6F", over: "#C0653F", amber: "#C0872A" };
+    ? { budget: "#2A86C4", actual: "#5B87FF", under: "#46B08C", over: "#FF8A80", amber: "#E0A63E" }
+    : { budget: "#0F79B8", actual: "#1D4ED8", under: "#2E8B6F", over: "#B3261E", amber: "#C0872A" };
   const CAT = dark
     ? ["#3987e5", "#d95926", "#199e70", "#c98500"]
     : ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];
@@ -453,7 +454,9 @@ const BulletView: React.FC<any> = ({ rows, S, dark, t }) => {
               <div className="relative flex-1 h-6 rounded-lg overflow-hidden" style={{ background: dark ? "#2E2820" : "#ECE6DD" }}>
                 <div className="absolute inset-y-0 rounded-lg" style={{ width: `${(r.budget / max) * 100}%`, background: dark ? "#3a332b" : "#dfd8cd" }} />
                 <div className="absolute inset-y-1 rounded-md transition-[width] duration-700" style={{ width: `${(r.actual / max) * 100}%`, background: over ? S.over : S.under }} />
-                <div className="absolute inset-y-[-2px] w-[3px] rounded bg-ink" style={{ left: `calc(${(r.budget / max) * 100}% - 1.5px)` }} title={`${t("an.budgetTarget")}: ${inr(r.budget)}`} />
+                <HintTooltip label={`${t("an.budgetTarget")}: ${inr(r.budget)}`}>
+                  <div className="absolute inset-y-[-2px] w-[3px] rounded bg-ink" style={{ left: `calc(${(r.budget / max) * 100}% - 1.5px)` }} />
+                </HintTooltip>
               </div>
               <span className="w-16 text-right text-[11px] font-mono font-bold shrink-0" style={{ color: over ? S.over : S.under }}>{inrCompact(r.actual)}</span>
             </div>

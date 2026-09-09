@@ -18,6 +18,9 @@ import {
 } from "@phosphor-icons/react";
 import { DailyLogEntryScreen } from "../DailyLogEntryScreen";
 import { useAuthStore } from "../../store";
+import { toast } from "../../lib/feedback";
+import { EmptyState } from "../EmptyState";
+import { DialogBehaviour } from "../../lib/useDialog";
 
 interface ProjectDailyLogsTabProps {
   projectId: string;
@@ -54,7 +57,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
       setLogToDelete(null);
     } catch (e) {
       console.error(e);
-      alert("Failed to delete log");
+      toast.error("Failed to delete log");
     }
   };
 
@@ -96,21 +99,12 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-4">
             {logs.length === 0 ? (
-              <div className="bg-panel border border-dashed border-divider rounded-3xl p-12 text-center flex flex-col items-center">
-                <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4 text-ink-muted shadow-sm">
-                  <Calendar className="w-8 h-8" />
-                </div>
-                <p className="text-ink-muted font-bold mb-4">
-                  No activities logged for{" "}
-                  {format(new Date(selectedDate), "MMM d, yyyy")}.
-                </p>
-                <button
-                  onClick={() => setLogModalOpen(true)}
-                  className="bg-primary text-white rounded-xl px-6 py-3 text-sm font-bold shadow-lg hover:bg-primary/80 active:scale-95 transition"
-                >
-                  Log Work Now
-                </button>
-              </div>
+              <EmptyState
+                icon={Calendar}
+                title={`No activities logged for ${format(new Date(selectedDate), "MMM d, yyyy")}`}
+                body="Record what the crew did, what was used, and how far the work got."
+                action={{ label: "Log work now", onClick: () => setLogModalOpen(true) }}
+              />
             ) : (
               <div className="space-y-4">
                 <div className="flex justify-between items-center px-2">
@@ -119,7 +113,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                   </span>
                   <button
                     onClick={() => setLogModalOpen(true)}
-                    className="text-[10px] font-bold text-rust-strong uppercase tracking-widest hover:underline bg-[#F7E4DB] px-3 py-2 rounded-md"
+                    className="text-[10px] font-bold text-primary-strong uppercase tracking-widest hover:underline bg-warning/12 px-3 py-2 rounded-md"
                   >
                     Log Another
                   </button>
@@ -225,7 +219,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                       <div className="mt-4 pt-3 flex items-center justify-end gap-2 border-t border-divider/50">
                         <button
                           onClick={() => setLogToEdit(log)}
-                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#F7E4DB] transition"
+                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-warning/12 transition"
                         >
                           <Edit2 className="w-3.5 h-3.5" /> Edit
                         </button>
@@ -251,7 +245,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
 
               <div className="mb-6">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 text-[#C0653F] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
                     <Users className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-bold text-ink-muted">
@@ -268,7 +262,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
 
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-[#F7E4DB] text-primary flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-warning/12 text-primary flex items-center justify-center shrink-0">
                     <Box className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-bold text-ink-muted">
@@ -276,9 +270,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                   </span>
                 </div>
                 {materialsRollup.length === 0 ? (
-                  <span className="text-xs text-ink-muted font-medium italic block">
-                    No materials logged today.
-                  </span>
+                  <EmptyState size="inline" title="No materials logged today" />
                 ) : (
                   <ul className="space-y-2">
                     {materialsRollup.map((m, i) => (
@@ -326,6 +318,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
       {logToDelete && (
         <div className="fixed inset-0 bg-ink/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-sm rounded-[32px] p-8 shadow-2xl relative">
+            <DialogBehaviour />
             <div className="w-16 h-16 bg-danger/8 text-danger rounded-full flex items-center justify-center mb-6 mx-auto">
               <Trash2 className="w-8 h-8" />
             </div>

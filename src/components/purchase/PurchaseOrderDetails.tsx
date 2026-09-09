@@ -20,6 +20,9 @@ import { db } from "../../firebase";
 import { GoodsReceiptForm } from "./GoodsReceiptForm";
 import { GoodsReceiptDetails } from "./GoodsReceiptDetails";
 import { useL } from "../../i18n";
+import { confirmDialog, toast } from "../../lib/feedback";
+import { Tooltip } from "../Tooltip";
+import { DialogBehaviour } from "../../lib/useDialog";
 
 interface PurchaseOrderDetailsProps {
   po: PurchaseOrder;
@@ -62,7 +65,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
       onClose();
     } catch (e) {
       console.error(e);
-      alert(L("Failed to approve PO","கொள்முதல் ஆணையை அங்கீகரிக்க முடியவில்லை"));
+      toast.error(L("Failed to approve PO","கொள்முதல் ஆணையை அங்கீகரிக்க முடியவில்லை"));
     } finally {
       setIsApproving(false);
     }
@@ -70,7 +73,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
 
   const handleDelete = async () => {
     if (!canEditOrDelete) return;
-    if (!confirm(L("Delete this Purchase Order?","இந்த கொள்முதல் ஆணையை நீக்கவா?"))) return;
+    if (!(await confirmDialog({ title: L("Delete this Purchase Order?","இந்த கொள்முதல் ஆணையை நீக்கவா?") }))) return;
     setIsDeleting(true);
     try {
       await deleteDoc(poRef);
@@ -78,7 +81,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
       onClose();
     } catch (e) {
       console.error(e);
-      alert(L("Failed to delete PO","கொள்முதல் ஆணையை நீக்க முடியவில்லை"));
+      toast.error(L("Failed to delete PO","கொள்முதல் ஆணையை நீக்க முடியவில்லை"));
     } finally {
       setIsDeleting(false);
     }
@@ -123,6 +126,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="bg-surface w-full max-w-3xl h-full rounded-[24px] shadow-2xl flex flex-col overflow-hidden"
       >
+        <DialogBehaviour />
          <div className="flex justify-between items-center p-6 border-b border-divider bg-panel sticky top-0 z-10 shrink-0">
            <div>
              <h2 className="text-xl font-black text-ink tracking-tight mb-1">{po.poNumber}</h2>
@@ -130,29 +134,35 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
            </div>
            <div className="flex items-center gap-2">
              {po.status === "Draft" && canEditOrDelete && onEdit && (
-               <button
-                 onClick={() => onEdit(po)}
-                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
-                 title={L("Edit draft PO","வரைவு கொள்முதல் ஆணையைத் திருத்து")}
-               >
-                 <Edit3 className="w-3.5 h-3.5 text-ink/80" /> {L("Edit","திருத்து")}
-               </button>
+               <Tooltip label={L("Edit draft PO","வரைவு கொள்முதல் ஆணையைத் திருத்து")}>
+                 <button
+                   onClick={() => onEdit(po)}
+                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
+                  
+                 >
+                   <Edit3 className="w-3.5 h-3.5 text-ink/80" /> {L("Edit","திருத்து")}
+                 </button>
+               </Tooltip>
              )}
-             <button
-               onClick={handleExportCSV}
-               className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
-               title={L("Export CSV","CSV எக்ஸ்போர்ட்")}
-             >
-               <Download className="w-3.5 h-3.5 text-ink/80" /> CSV
-             </button>
-             <button
-               onClick={handleExportPDF}
-               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
-               title={L("Export PDF","PDF எக்ஸ்போர்ட்")}
-             >
-               <Download className="w-3.5 h-3.5" /> PDF
-             </button>
-             <button type="button" onClick={onClose} className="p-2 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer ml-1">
+             <Tooltip label={L("Export CSV","CSV எக்ஸ்போர்ட்")}>
+               <button
+                 onClick={handleExportCSV}
+                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
+                
+               >
+                 <Download className="w-3.5 h-3.5 text-ink/80" /> CSV
+               </button>
+             </Tooltip>
+             <Tooltip label={L("Export PDF","PDF எக்ஸ்போர்ட்")}>
+               <button
+                 onClick={handleExportPDF}
+                 className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-deep text-white rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
+                
+               >
+                 <Download className="w-3.5 h-3.5" /> PDF
+               </button>
+             </Tooltip>
+             <button aria-label={L("Close","மூடு")} type="button" onClick={onClose} className="p-2 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer ml-1">
                <X className="w-5 h-5" />
              </button>
            </div>
@@ -177,9 +187,9 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                <div>
                   <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">{L("Status","நிலை")}</p>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                     po.status === 'Draft' ? 'bg-ice text-[#56778E]' :
-                     po.status === 'Approved' ? 'bg-[#E2E8ED] text-[#56778E]' :
-                     po.status === 'Partially Received' ? 'bg-primary/10 text-[#C0653F]' :
+                     po.status === 'Draft' ? 'bg-page text-ink-muted' :
+                     po.status === 'Approved' ? 'bg-[#E2E8ED] text-ink-muted' :
+                     po.status === 'Partially Received' ? 'bg-primary/10 text-primary' :
                      'bg-success/12 text-success'
                   }`}>
                      {statusLabel(po.status)}
@@ -211,12 +221,12 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                            </tr>
                         ))}
                      </tbody>
-                     <tfoot className="bg-[#F7E4DB] border-t border-[#F7E4DB]">
+                     <tfoot className="bg-warning/12 border-t border-warning/25">
                         {([["loading", L("Loading charges","ஏற்றுதல் கட்டணம்")], ["transport", L("Transport charges","போக்குவரத்து கட்டணம்")], ["other", L("Other charges","பிற கட்டணங்கள்")]] as const).map(([key, label]) =>
                            po.charges?.[key] ? (
                               <tr key={key}>
-                                 <td colSpan={4} className="px-4 py-1.5 text-right text-[10px] font-bold text-[#B85F3B]/80 uppercase tracking-widest">{label}</td>
-                                 <td className="px-4 py-1.5 text-right font-mono text-[#B85F3B]">₹{po.charges[key]!.toLocaleString("en-IN")}</td>
+                                 <td colSpan={4} className="px-4 py-1.5 text-right text-[10px] font-bold text-warning/80 uppercase tracking-widest">{label}</td>
+                                 <td className="px-4 py-1.5 text-right font-mono text-warning">₹{po.charges[key]!.toLocaleString("en-IN")}</td>
                               </tr>
                            ) : null,
                         )}
@@ -230,7 +240,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                
                {po.notes && (
                   <div className="mt-6 p-4 bg-yellow-50/50 border border-primary/20 rounded-xl">
-                     <p className="text-[10px] font-black text-[#C0653F] uppercase tracking-widest mb-1.5">{L("Notes","குறிப்புகள்")}</p>
+                     <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1.5">{L("Notes","குறிப்புகள்")}</p>
                      <p className="text-sm font-medium text-ink/80">{po.notes}</p>
                   </div>
                )}
@@ -244,12 +254,14 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                </button>
             )}
             {canEditOrDelete && (
-               <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-danger/8 hover:bg-danger/15 text-danger text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
-                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} {po.status === "Draft" ? L("Delete Draft","வரைவை நீக்கு") : L("Delete PO","ஆணையை நீக்கு")}
-               </button>
+               <Tooltip label={L("Delete","நீக்கு")}>
+                 <button aria-label={L("Delete","நீக்கு")} onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-danger/8 hover:bg-danger/15 text-danger text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
+                   {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} {po.status === "Draft" ? L("Delete Draft","வரைவை நீக்கு") : L("Delete PO","ஆணையை நீக்கு")}
+                 </button>
+               </Tooltip>
             )}
             {po.status === "Draft" && isAdminOrOwner && (
-               <button onClick={handleApprove} disabled={isApproving} className="px-6 py-3 bg-primary hover:bg-[#B85F3B] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)]">
+               <button onClick={handleApprove} disabled={isApproving} className="px-6 py-3 bg-primary hover:bg-primary-deep text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)]">
                  {isApproving ? <Loader2 className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4" />} {L("Approve Order","ஆணையை அங்கீகரி")}
                </button>
             )}

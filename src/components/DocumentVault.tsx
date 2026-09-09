@@ -43,6 +43,10 @@ import {
   DownloadSimple as Download,
   ShieldCheck,
 } from "@phosphor-icons/react";
+import { confirmDialog, toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface DocumentVaultProps {
   projectId: string;
@@ -227,7 +231,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               : code === "storage/unauthenticated"
                 ? "Your session expired. Sign in again and retry."
                 : "Please try again.";
-      alert(`Failed to upload document (${code}). ${hint}`);
+      toast.error(`Failed to upload document (${code}). ${hint}`);
       handleFirestoreError(error, OperationType.CREATE, path);
     }
   };
@@ -271,9 +275,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
   const handleBulkDelete = async () => {
     if (!isAdminOrOwner) return;
     if (
-      !window.confirm(
-        `Are you sure you want to delete ${selectedDocIds.length} documents?`,
-      )
+      !(await confirmDialog({ title: `Are you sure you want to delete ${selectedDocIds.length} documents?`, }))
     )
       return;
     setIsBulkUpdating(true);
@@ -333,13 +335,13 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-panel p-5 md:p-6 rounded-2xl border border-divider shadow-sm gap-6">
         <h2 className="text-xl md:text-2xl font-black flex items-center gap-3 md:gap-4 text-ink tracking-tight">
-          <div className="p-2.5 md:p-3 bg-primary text-white rounded-2xl shadow-lg shadow-[#F7E4DB]">
+          <div className="p-2.5 md:p-3 bg-primary text-white rounded-2xl shadow-lg shadow-primary/15">
             <FileText className="w-5 h-5 md:w-6 md:h-6" />
           </div>
           {t("dv.title")}
         </h2>
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="bg-[#6E8CA0]/10 p-1 rounded-xl flex flex-1 md:flex-none">
+          <div className="bg-info/10 p-1 rounded-xl flex flex-1 md:flex-none">
             <button
               onClick={() => setViewMode("List")}
               className={`flex-1 md:px-4 py-2 rounded-lg text-[10px] md:text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === "List" ? "bg-surface text-primary shadow-sm" : "text-ink-muted"}`}
@@ -468,12 +470,13 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
       </div>
 
       {isUploading && (
-        <div className="fixed inset-0 bg-onyx/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-surface-dark/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <form
             onSubmit={handleUpload}
             className="bg-surface w-full max-w-2xl p-5 md:p-6 rounded-2xl border shadow-2xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 relative my-auto max-h-[95vh] overflow-y-auto custom-scrollbar"
           >
-            <button
+            <DialogBehaviour />
+            <button aria-label={t("common.close")}
               type="button"
               onClick={() => {
                 setIsUploading(false);
@@ -505,11 +508,11 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 className={`border-4 border-dashed rounded-2xl p-5 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 ${
                   selectedFile
                     ? "border-success/40 bg-emerald-50/30"
-                    : "border-divider hover:border-[#F7E4DB] hover:bg-panel"
+                    : "border-divider hover:border-warning/25 hover:bg-panel"
                 }`}
               >
                 <div
-                  className={`p-4 rounded-3xl ${selectedFile ? "bg-success/20 text-success" : "bg-[#F7E4DB] text-primary"}`}
+                  className={`p-4 rounded-3xl ${selectedFile ? "bg-success/20 text-success" : "bg-warning/12 text-primary"}`}
                 >
                   {selectedFile ? (
                     <File className="w-8 h-8" />
@@ -680,7 +683,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               <button
                 type="submit"
                 disabled={isUploadingFile}
-                className="bg-primary text-white px-12 py-4 rounded-2xl hover:bg-[#B85F3B] shadow-xl shadow-[#F7E4DB] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-primary text-white px-12 py-4 rounded-2xl hover:bg-primary-deep shadow-xl shadow-primary/15 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isUploadingFile ? (
                   <span className="flex items-center gap-2">
@@ -704,17 +707,19 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
             <thead>
               <tr className="bg-panel border-b">
                 <th className="px-4 lg:px-6 py-3 lg:py-5 w-12">
-                  <button
-                    onClick={toggleSelectAll}
-                    className="text-ink-muted hover:text-primary transition-colors"
-                  >
-                    {selectedDocIds.length === filteredDocs.length &&
-                    filteredDocs.length > 0 ? (
-                      <CheckSquare className="w-5 h-5 text-primary" />
-                    ) : (
-                      <Square className="w-5 h-5" />
-                    )}
-                  </button>
+                  <Tooltip label={"Select all documents"}>
+                    <button aria-label="Select all documents"
+                      onClick={toggleSelectAll}
+                      className="text-ink-muted hover:text-primary transition-colors"
+                    >
+                      {selectedDocIds.length === filteredDocs.length &&
+                      filteredDocs.length > 0 ? (
+                        <CheckSquare className="w-5 h-5 text-primary" />
+                      ) : (
+                        <Square className="w-5 h-5" />
+                      )}
+                    </button>
+                  </Tooltip>
                 </th>
                 <th className="px-4 lg:px-6 py-3 lg:py-5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
                   Document Name
@@ -743,23 +748,25 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 return (
                   <tr
                     key={docItem.id}
-                    className={`hover:bg-panel transition-colors group ${isSelected ? "bg-[#F7E4DB]/50" : ""}`}
+                    className={`hover:bg-panel transition-colors group ${isSelected ? "bg-warning/12/50" : ""}`}
                   >
                     <td className="px-4 lg:px-6 py-4 lg:py-6">
-                      <button
-                        onClick={() => toggleSelect(docItem.id)}
-                        className={`transition-colors ${isSelected ? "text-primary" : "text-ink-muted group-hover:text-ink-muted"}`}
-                      >
-                        {isSelected ? (
-                          <CheckSquare className="w-5 h-5" />
-                        ) : (
-                          <Square className="w-5 h-5" />
-                        )}
-                      </button>
+                      <Tooltip label={"Select document"}>
+                        <button aria-label="Select document"
+                          onClick={() => toggleSelect(docItem.id)}
+                          className={`transition-colors ${isSelected ? "text-primary" : "text-ink-muted group-hover:text-ink-muted"}`}
+                        >
+                          {isSelected ? (
+                            <CheckSquare className="w-5 h-5" />
+                          ) : (
+                            <Square className="w-5 h-5" />
+                          )}
+                        </button>
+                      </Tooltip>
                     </td>
                     <td className="px-4 lg:px-6 py-4 lg:py-6">
                       <div className="flex items-center gap-4">
-                        <div className="p-3 bg-[#F7E4DB] text-primary rounded-2xl group-hover:bg-[#F7E4DB] transition-colors">
+                        <div className="p-3 bg-warning/12 text-primary rounded-2xl group-hover:bg-warning/12 transition-colors">
                           <FileText className="w-5 h-5" />
                         </div>
                         <div>
@@ -859,7 +866,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   className={`group relative aspect-square rounded-2xl overflow-hidden border transition-all cursor-pointer ${
                     isSelected
                       ? "border-primary shadow-xl ring-4 ring-primary/10"
-                      : "border-divider bg-panel shadow-sm hover:shadow-xl hover:shadow-[#F7E4DB]"
+                      : "border-divider bg-panel shadow-sm hover:shadow-xl hover:shadow-primary/15"
                   }`}
                   onClick={(e) => {
                     if (e.metaKey || e.ctrlKey) {
@@ -878,23 +885,25 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   <div
                     className={`absolute top-4 left-4 z-20 transition-all ${isSelected ? "opacity-100" : "opacity-100"}`}
                   >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleSelect(photo.id);
-                      }}
-                      className={`p-2 rounded-xl backdrop-blur-md shadow-lg transition-all ${
-                        isSelected
-                          ? "bg-primary text-white"
-                          : "bg-surface/90 text-ink-muted hover:text-primary"
-                      }`}
-                    >
-                      {isSelected ? (
-                        <CheckSquare size={16} />
-                      ) : (
-                        <Square size={16} />
-                      )}
-                    </button>
+                    <Tooltip label={"Select photo"}>
+                      <button aria-label="Select photo"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelect(photo.id);
+                        }}
+                        className={`p-2 rounded-xl backdrop-blur-md shadow-lg transition-all ${
+                          isSelected
+                            ? "bg-primary text-white"
+                            : "bg-surface/90 text-ink-muted hover:text-primary"
+                        }`}
+                      >
+                        {isSelected ? (
+                          <CheckSquare size={16} />
+                        ) : (
+                          <Square size={16} />
+                        )}
+                      </button>
+                    </Tooltip>
                   </div>
 
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent transition-opacity p-6 flex flex-col justify-end">
@@ -925,12 +934,13 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
               );
             })}
           {filteredDocs.filter((d) => d.type === "Image").length === 0 && (
-            <div className="col-span-full py-32 flex flex-col items-center justify-center bg-panel/50 rounded-2xl border-2 border-dashed border-divider">
-              <Camera size={48} className="text-ink-muted mb-4" />
-              <p className="text-[10px] font-black text-ink-muted uppercase tracking-widest">
-                No site photos found in the vault
-              </p>
-            </div>
+            <EmptyState
+              size="page"
+              icon={Camera}
+              title="No site photos yet"
+              body="Photos attached to daily logs and uploads land here."
+              className="col-span-full"
+            />
           )}
         </div>
       )}

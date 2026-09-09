@@ -43,6 +43,11 @@ import jsPDF from "jspdf";
 // color-mix) that Tailwind v4 emits; the original html2canvas throws on them,
 // which is why the reports PDF export silently failed.
 import html2canvas from "html2canvas-pro";
+import { toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
+import { SkeletonRows } from "./Skeleton";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface ProgressReportsViewProps {
   projectId: string;
@@ -89,7 +94,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
         setLogToDelete(null);
     } catch (err) {
       console.error(err);
-      alert(`Failed to delete log: ${err.message || err}`);
+      toast.error(`Failed to delete log: ${err.message || err}`);
     }
   };
 
@@ -226,7 +231,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       try {
         const element = document.getElementById("report-printable-area");
         if (!element) {
-          alert(t("reports.pdfNoContent"));
+          toast.error(t("reports.pdfNoContent"));
           return;
         }
 
@@ -246,7 +251,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
           imgData = canvas.toDataURL("image/jpeg", 0.95);
         } catch (taintErr) {
           console.error("PDF canvas tainted", taintErr);
-          alert(t("reports.pdfTainted"));
+          toast.error(t("reports.pdfTainted"));
           return;
         }
 
@@ -276,7 +281,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
         );
       } catch (err) {
         console.error("PDF generation error", err);
-        alert(t("reports.pdfFailed"));
+        toast.error(t("reports.pdfFailed"));
       } finally {
         setIsGeneratingPdf(false);
       }
@@ -335,11 +340,8 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-20 text-ink-muted flex-col gap-4">
-        <Loader2 className="w-8 h-8 animate-spin" />
-        <p className="font-bold text-sm tracking-widest uppercase">
-          {t("reports.aggregating")}
-        </p>
+      <div className="p-4 md:p-6">
+        <SkeletonRows rows={5} label={t("reports.aggregating")} />
       </div>
     );
   }
@@ -393,23 +395,25 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             <Download className="w-4 h-4 text-ink/80" />
             {t("common.exportCsv")}
           </button>
-          <button
-            onClick={handleExportPDF}
-            disabled={logs.length === 0 || !canExport || isGeneratingPdf}
-            className={`flex items-center gap-2 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-primary text-white hover:bg-primary/80 active:scale-95 cursor-pointer"}`}
-          >
-            {isGeneratingPdf ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
-            {canExport ? t("common.exportPdf") : t("common.managerAccessRequired")}
-          </button>
+          <Tooltip label={t("common.exportPdf")}>
+            <button aria-label={t("common.exportPdf")}
+              onClick={handleExportPDF}
+              disabled={logs.length === 0 || !canExport || isGeneratingPdf}
+              className={`flex items-center gap-2 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-primary text-white hover:bg-primary/80 active:scale-95 cursor-pointer"}`}
+            >
+              {isGeneratingPdf ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              {canExport ? t("common.exportPdf") : t("common.managerAccessRequired")}
+            </button>
+          </Tooltip>
         </div>
       </div>
 
       {!canExport && (
-        <p className="text-xs text-[#C0653F] bg-primary/10 p-3 rounded-lg border border-primary/20 font-bold uppercase tracking-widest">
+        <p className="text-xs text-primary bg-primary/10 p-3 rounded-lg border border-primary/20 font-bold uppercase tracking-widest">
           {t("reports.pdfRestricted")}
         </p>
       )}
@@ -432,12 +436,12 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             className="p-8 md:p-12 text-ink bg-white"
           >
             {/* Report Header */}
-            <div className="border-b-2 border-onyx pb-6 mb-8 flex justify-between items-end">
+            <div className="border-b-2 border-surface-dark pb-6 mb-8 flex justify-between items-end">
               <div>
                 <h1 className="text-3xl font-black uppercase tracking-tighter mb-2">
                   {project?.name || "Project"}
                 </h1>
-                <h2 className="text-lg font-bold text-[#56778E] uppercase tracking-widest">
+                <h2 className="text-lg font-bold text-ink-muted uppercase tracking-widest">
                   {t(`reports.${reportType}`)} {t("reports.progressReport")}
                 </h2>
               </div>
@@ -482,7 +486,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             {/* Site-Wide Totals (Weekly/Monthly like tables) */}
             {!isDaily && (
               <div className="mb-10">
-                <h3 className="text-sm font-black uppercase tracking-widest mb-4 bg-onyx text-white py-2 px-4 rounded">
+                <h3 className="text-sm font-black uppercase tracking-widest mb-4 bg-surface-dark text-white py-2 px-4 rounded">
                   {t("reports.periodConsolidation")}
                 </h3>
                 <div className="grid grid-cols-2 gap-8">
@@ -539,7 +543,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             )}
 
             {/* Per-Task Breakdown */}
-            <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-onyx text-white py-2 px-4 rounded">
+            <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-surface-dark text-white py-2 px-4 rounded">
               {t("reports.taskProgressDetails")}
             </h3>
             <div className="space-y-8">
@@ -700,12 +704,16 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             
             {/* Daily Logs History */}
             <div className="mt-12 break-before-page">
-              <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-onyx text-white py-2 px-4 rounded">
+              <h3 className="text-sm font-black uppercase tracking-widest mb-6 bg-surface-dark text-white py-2 px-4 rounded">
                 Daily Logs History
               </h3>
               <div className="space-y-4">
                 {logs.length === 0 ? (
-                  <p className="text-sm text-ink-muted italic">No daily logs found for this period.</p>
+                  <EmptyState
+                    size="inline"
+                    title="No daily logs found"
+                    body="Nothing was logged on site for this period."
+                  />
                 ) : (
                   logs.map((log, index) => {
                     const task = tasks.find((t) => t.id === log.taskId);
@@ -717,7 +725,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                             <span className="font-mono">{log.workDate}</span> • {log.progressPercent}% progress
                             {log.markComplete ? ' (Completed)' : ''}
                           </p>
-                          <div className="mt-2 text-xs text-[#56778E]">
+                          <div className="mt-2 text-xs text-ink-muted">
                             {log.materials && log.materials.length > 0 && (
                               <span className="mr-3"><b>Mat:</b> {log.materials.length} items</span>
                             )}
@@ -730,17 +738,19 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                         <div className="print:hidden flex items-center gap-2">
                           <button
                           onClick={() => setLogToEdit(log)}
-                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-4 py-2 rounded-xl border border-divider hover:bg-[#F7E4DB] transition-colors whitespace-nowrap"
+                          className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-4 py-2 rounded-xl border border-divider hover:bg-warning/12 transition-colors whitespace-nowrap"
                         >
                           <Edit2 className="w-3.5 h-3.5" /> Edit Log
                         </button>
-                          <button
-                            onClick={() => handleDeleteLog(log)}
-                            className="text-xs font-bold text-danger hover:text-danger flex items-center justify-center p-2 rounded-xl border border-divider hover:bg-danger/8 transition-colors"
-                            title="Delete Log"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <Tooltip label="Delete Log">
+                            <button
+                              onClick={() => handleDeleteLog(log)}
+                              className="text-xs font-bold text-danger hover:text-danger flex items-center justify-center p-2 rounded-xl border border-divider hover:bg-danger/8 transition-colors"
+                             
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
                         </div>
                         )}
                       </div>
@@ -773,6 +783,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       {logToDelete && (
         <div className="fixed inset-0 bg-ink/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-panel w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <DialogBehaviour />
             <h3 className="text-xl font-bold text-ink mb-2 text-center">
               Delete Log Entry?
             </h3>

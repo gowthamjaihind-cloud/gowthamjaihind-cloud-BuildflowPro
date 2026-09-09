@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import { db } from "./db";
 import { sendInviteEmail, APP_URL } from "./email";
 import { isPlanId, OVERAGE_RATE, PlanId, planPatch, PLANS } from "./plans";
+import { CALLABLE_OPTS } from "./callable";
 
 // App operators who may provision orgs and manage subscriptions. Keep in sync
 // with the client-side check in the super-admin panel. (Later this can move to
@@ -22,7 +23,7 @@ function assertSuperAdmin(request: any) {
 
 // Provision a brand-new customer organization on a 30-day trial and mint an
 // Owner invite for its first user. Super-admin only.
-export const provisionOrganization = onCall({ timeoutSeconds: 60 }, async (request) => {
+export const provisionOrganization = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, async (request) => {
   assertSuperAdmin(request);
   const companyName = String(request.data?.companyName || "").trim();
   const ownerEmail = String(request.data?.ownerEmail || "").trim().toLowerCase();
@@ -76,7 +77,7 @@ export const provisionOrganization = onCall({ timeoutSeconds: 60 }, async (reque
 // ---- Email (Resend) configuration: super-admin only ----
 // Stored in an Admin-only Firestore doc so it can be set from the UI without a
 // redeploy. getEmailConfigStatus never returns the API key.
-export const setEmailConfig = onCall({ timeoutSeconds: 30 }, async (request) => {
+export const setEmailConfig = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   assertSuperAdmin(request);
   const apiKey = String(request.data?.apiKey || "").trim();
   const fromEmail = String(request.data?.fromEmail || "").trim();
@@ -89,7 +90,7 @@ export const setEmailConfig = onCall({ timeoutSeconds: 30 }, async (request) => 
   return { ok: true };
 });
 
-export const getEmailConfigStatus = onCall({ timeoutSeconds: 30 }, async (request) => {
+export const getEmailConfigStatus = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   assertSuperAdmin(request);
   const snap = await db.doc("app_config/email").get();
   const d: any = snap.exists ? snap.data() : {};
@@ -99,7 +100,7 @@ export const getEmailConfigStatus = onCall({ timeoutSeconds: 30 }, async (reques
 // Set/adjust an org's subscription. Super-admin only — this is the manual
 // "mark as paid / extend / expire" control that stands in until an automated
 // payment webhook (Razorpay) drives it.
-export const setSubscription = onCall({ timeoutSeconds: 60 }, async (request) => {
+export const setSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, async (request) => {
   assertSuperAdmin(request);
   const orgId = String(request.data?.orgId || "").trim();
   const action = String(request.data?.action || ""); // activate | extend_trial | expire | internal
@@ -140,7 +141,7 @@ export const setSubscription = onCall({ timeoutSeconds: 60 }, async (request) =>
 // Enterprise). Sets the capacity fields the app enforces (includedProjects,
 // aiQuota, userLimit, overageRate) and the matching subscription status.
 // Super-admin only — the manual stand-in until automated checkout is wired.
-export const setOrgPlan = onCall({ timeoutSeconds: 60 }, async (request) => {
+export const setOrgPlan = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, async (request) => {
   assertSuperAdmin(request);
   const orgId = String(request.data?.orgId || "").trim();
   const plan = String(request.data?.plan || "");
@@ -177,7 +178,7 @@ export const setOrgPlan = onCall({ timeoutSeconds: 60 }, async (request) => {
 
 // Operator view of an org's live usage vs its plan — the "safety-cap" lens:
 // spot an org running far past its included projects or AI quota. Super-admin only.
-export const getOrgUsage = onCall({ timeoutSeconds: 60 }, async (request) => {
+export const getOrgUsage = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, async (request) => {
   assertSuperAdmin(request);
   const orgId = String(request.data?.orgId || "").trim();
   if (!orgId) throw new HttpsError("invalid-argument", "orgId is required.");

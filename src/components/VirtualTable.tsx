@@ -4,6 +4,7 @@ import {
   CaretUp as ChevronUp,
   CaretDown as ChevronDown,
 } from "@phosphor-icons/react";
+import { EmptyState } from "./EmptyState";
 
 export interface ColumnDef<T> {
   key: string;
@@ -143,7 +144,7 @@ export function VirtualTable<T>({
           })}
         </div>
         {sortedData.length === 0 && (
-          <div className="p-8 text-center text-ink-muted">No records found.</div>
+          <EmptyState size="inline" title="No records found" />
         )}
       </div>
     </div>

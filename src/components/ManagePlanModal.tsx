@@ -7,6 +7,8 @@ import { useProjectsQuery } from "../hooks/queries";
 import { PLANS, PLAN_ORDER, PlanId } from "../lib/plans";
 import { callScheduleDowngrade, callCancelScheduledPlanChange } from "../services/firebaseFunctions";
 import { useL } from "../i18n";
+import { confirmDialog } from "../lib/feedback";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface Props {
   isOpen: boolean;
@@ -50,12 +52,10 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
             `\n\nஉங்களிடம் ${projects.length} செயல்திட்டங்கள் உள்ளன; ${PLANS[id].name} இல் ${cap} அடங்கும். கூடுதல் ${over} க்கு ₹${plan.overageRate}/செயல்திட்டம்/மாதம் கட்டணம் — எந்த செயல்திட்டமும் நீக்கப்படாது.`,
           )
         : "";
-    const ok = window.confirm(
-      L(
+    const ok = (await confirmDialog({ title: L(
         `Switch to ${PLANS[id].name} on ${when}? You keep your current plan until then.${overMsg}`,
         `${when} அன்று ${PLANS[id].name} க்கு மாறவா? அதுவரை உங்கள் தற்போதைய திட்டத்தை வைத்திருப்பீர்கள்.${overMsg}`,
-      ),
-    );
+      ), }));
     if (!ok) return;
     setBusy(true);
     setErr(null);
@@ -87,7 +87,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-onyx/60 backdrop-blur-md z-[110] flex items-center justify-center p-6"
+        className="fixed inset-0 bg-surface-dark/60 backdrop-blur-md z-[110] flex items-center justify-center p-6"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -95,6 +95,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
           exit={{ opacity: 0, scale: 0.96, y: 16 }}
           className="soft-card w-full max-w-2xl rounded-[32px] p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto"
         >
+          <DialogBehaviour />
           <div className="flex items-start justify-between mb-5">
             <div>
               <h2 className="text-2xl font-bold text-ink tracking-tight">{L("Manage plan", "திட்டத்தை நிர்வகி")}</h2>
@@ -102,7 +103,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 {L("Upgrade instantly, or downgrade at the end of your cycle.", "உடனடியாக மேம்படுத்தவும், அல்லது சுழற்சியின் முடிவில் குறைக்கவும்.")}
               </p>
             </div>
-            <button
+            <button aria-label={L("Close","மூடு")}
               type="button"
               onClick={onClose}
               className="p-2.5 hover:bg-panel rounded-full transition-colors text-ink-muted hover:text-ink"
@@ -151,7 +152,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition flex items-center gap-2 ${period === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
               >
                 {L("Annual", "ஆண்டு")}
-                <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">{L("Save ~17%", "~17% சேமி")}</span>
+                <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-success">{L("Save ~17%", "~17% சேமி")}</span>
               </button>
             </div>
           </div>
@@ -191,7 +192,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     <button
                       onClick={() => doUpgrade(id)}
                       disabled={working}
-                      className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-white hover:bg-[#B85F3B] apple-transition disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-white hover:bg-primary-deep apple-transition disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {payBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ArrowUp weight="bold" className="w-4 h-4" /> {L("Upgrade", "மேம்படுத்து")}</>}
                     </button>

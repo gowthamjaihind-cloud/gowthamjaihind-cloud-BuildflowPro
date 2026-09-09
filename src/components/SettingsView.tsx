@@ -132,7 +132,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onClick={() => setActiveTab(item.id as SettingsSection)}
                 className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl apple-transition font-semibold text-[15px] ${
                   activeTab === item.id
-                    ? "bg-surface text-ink shadow-sm ring-1 ring-onyx/5"
+                    ? "bg-surface text-ink shadow-sm ring-1 ring-surface-dark/5"
                     : "text-ink-muted hover:text-ink hover:bg-surface/40"
                 }`}
               >
@@ -182,7 +182,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 {!orgId && !setupDone && (
                   <div className="mb-6 p-5 rounded-2xl border border-primary/40 bg-primary/10">
                     <div className="flex items-start gap-3">
-                      <Shield className="w-5 h-5 text-[#B85F3B] shrink-0 mt-0.5" />
+                      <Shield className="w-5 h-5 text-warning shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <div className="font-bold text-ink">{L("Set up your organization","உங்கள் நிறுவனத்தை அமைக்கவும்")}</div>
                         <p className="text-sm text-ink-muted mt-1">
@@ -205,7 +205,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             }
                           }}
                           disabled={settingUp}
-                          className="mt-3 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50"
+                          className="mt-3 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50"
                         >
                           {settingUp ? L("Setting up… (may take a minute)","அமைக்கிறது… (ஒரு நிமிடம் ஆகலாம்)") : L("Set up organization & migrate data","நிறுவனத்தை அமைத்து தரவை நகர்த்து")}
                         </button>
@@ -230,7 +230,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 {orgId && !isClaimed && (
                   <div className="mb-6 p-5 rounded-2xl border border-primary/40 bg-primary/10">
                     <div className="flex items-start gap-3">
-                      <Shield className="w-5 h-5 text-[#B85F3B] shrink-0 mt-0.5" />
+                      <Shield className="w-5 h-5 text-warning shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <div className="font-bold text-ink">{L("Secure this organization","இந்த நிறுவனத்தைப் பாதுகாக்கவும்")}</div>
                         <p className="text-sm text-ink-muted mt-1">
@@ -252,7 +252,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             }
                           }}
                           disabled={claiming}
-                          className="mt-3 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50"
+                          className="mt-3 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50"
                         >
                           {claiming ? L("Claiming…","கோருகிறது…") : L("Claim organization","நிறுவனத்தைக் கோரு")}
                         </button>
@@ -280,7 +280,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
-                          className="w-full bg-surface border border-[#C8D1D3] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink"
+                          className="w-full bg-surface border border-divider px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink"
                           placeholder={t("settings.enterCompanyName")}
                           value={draftCompanyName}
                           onChange={(e) => setDraftCompanyName(e.target.value)}
@@ -290,13 +290,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             setCompanyName(draftCompanyName);
                             setIsEditingCompany(false);
                           }}
-                          className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors"
+                          className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors"
                         >
                           {L("Save","சேமி")}
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between bg-surface border border-[#C8D1D3] px-4 py-3 rounded-xl">
+                      <div className="flex items-center justify-between bg-surface border border-divider px-4 py-3 rounded-xl">
                         <span className="text-ink font-semibold">
                           {companyName || L("No Company Name Set","நிறுவனப் பெயர் அமைக்கப்படவில்லை")}
                         </span>
@@ -321,7 +321,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       value={draftGstin}
                       onChange={(e) => setDraftGstin(e.target.value.toUpperCase())}
                       maxLength={15}
-                      className="w-full bg-surface border border-[#C8D1D3] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink font-mono"
+                      className="w-full bg-surface border border-divider px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink font-mono"
                       placeholder="e.g. 29ABCDE1234F1Z5"
                     />
                     <p className="text-[10px] text-ink-muted mt-1.5">
@@ -333,7 +333,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <label className="block text-sm font-semibold text-ink mb-2">
                       {L("Base Currency","அடிப்படை நாணயம்")}
                     </label>
-                    <select className="w-full bg-surface border border-[#C8D1D3] px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink appearance-none">
+                    <select className="w-full bg-surface border border-divider px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink appearance-none">
                       <option value="INR">INR (₹)</option>
                       <option value="USD">USD ($)</option>
                       <option value="EUR">EUR (€)</option>
@@ -354,7 +354,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           target.innerHTML = originalText;
                         }, 2000);
                       }}
-                      className="bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#B85F3B] transition-colors apple-transition active:scale-95"
+                      className="bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-primary-deep transition-colors apple-transition active:scale-95"
                     >
                       <Save className="w-5 h-5" /> {L("Save Configuration","அமைப்பைச் சேமி")}
                     </button>

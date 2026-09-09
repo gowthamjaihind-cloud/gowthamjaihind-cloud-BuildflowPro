@@ -6,6 +6,8 @@ import { usePlan } from "../hooks/usePlan";
 import { useProjectsQuery } from "../hooks/queries";
 import { PLANS, PLAN_ORDER, PlanId } from "../lib/plans";
 import { useL } from "../i18n";
+import { Tooltip } from "./Tooltip";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface AddCapacityModalProps {
   isOpen: boolean;
@@ -64,7 +66,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-onyx/60 backdrop-blur-md z-[110] flex items-center justify-center p-6"
+        className="fixed inset-0 bg-surface-dark/60 backdrop-blur-md z-[110] flex items-center justify-center p-6"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -72,6 +74,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
           exit={{ opacity: 0, scale: 0.96, y: 16 }}
           className="soft-card w-full max-w-xl rounded-[32px] p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto"
         >
+          <DialogBehaviour />
           <div className="flex items-start justify-between mb-5">
             <div>
               <h2 className="text-2xl font-bold text-ink tracking-tight">{L("Add project capacity","செயல்திட்ட கொள்ளளவைச் சேர்")}</h2>
@@ -79,7 +82,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
                 {L("You've used", "நீங்கள் பயன்படுத்தியது")} {projects.length} / {included} {L("included projects.", "உள்ளடங்கிய செயல்திட்டங்கள்.")}
               </p>
             </div>
-            <button
+            <button aria-label={L("Close","மூடு")}
               type="button"
               onClick={onClose}
               className="p-2.5 hover:bg-panel rounded-full transition-colors text-ink-muted hover:text-ink"
@@ -105,29 +108,33 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
             </p>
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="inline-flex items-center gap-3 bg-panel border border-divider rounded-full p-1">
-                <button
-                  type="button"
-                  onClick={() => setQty((q) => Math.max(minSlots, q - 1))}
-                  disabled={slots <= minSlots || busy}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface disabled:opacity-40 apple-transition"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
+                <Tooltip label={"Decrease quantity"}>
+                  <button aria-label="Decrease quantity"
+                    type="button"
+                    onClick={() => setQty((q) => Math.max(minSlots, q - 1))}
+                    disabled={slots <= minSlots || busy}
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface disabled:opacity-40 apple-transition"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                </Tooltip>
                 <span className="font-bold text-lg text-ink w-8 text-center">{slots}</span>
-                <button
-                  type="button"
-                  onClick={() => setQty((q) => Math.min(50, Math.max(minSlots, q) + 1))}
-                  disabled={slots >= 50 || busy}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface disabled:opacity-40 apple-transition"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+                <Tooltip label={"Increase quantity"}>
+                  <button aria-label="Increase quantity"
+                    type="button"
+                    onClick={() => setQty((q) => Math.min(50, Math.max(minSlots, q) + 1))}
+                    disabled={slots >= 50 || busy}
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface disabled:opacity-40 apple-transition"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </Tooltip>
               </div>
               <button
                 type="button"
                 onClick={handleBuySlots}
                 disabled={busy}
-                className="flex-1 min-w-[160px] py-3 rounded-xl font-bold text-sm bg-primary text-white hover:bg-[#B85F3B] apple-transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 min-w-[160px] py-3 rounded-xl font-bold text-sm bg-primary text-white hover:bg-primary-deep apple-transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : L(`Pay ₹${(slots * rate).toLocaleString("en-IN")} / mo`, `₹${(slots * rate).toLocaleString("en-IN")} / மாதம் செலுத்து`)}
               </button>
@@ -156,7 +163,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
                     className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition flex items-center gap-2 ${period === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
                   >
                     {L("Annual","ஆண்டு")}
-                    <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">{L("Save ~17%","~17% சேமி")}</span>
+                    <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-success">{L("Save ~17%","~17% சேமி")}</span>
                   </button>
                 </div>
               </div>
@@ -172,7 +179,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
                         <span className="font-display font-bold text-2xl tracking-tight">₹{monthly.toLocaleString("en-IN")}</span>
                         <span className="text-[11px] text-ink-muted mb-1">/ mo</span>
                       </div>
-                      <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 bg-sage/15 text-[#3E8388]">
+                      <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 bg-primary/12 text-primary-deep">
                         <Stack weight="bold" className="w-3.5 h-3.5" /> {L(`${p.includedProjects} projects`, `${p.includedProjects} செயல்திட்டங்கள்`)}
                       </div>
                       <button

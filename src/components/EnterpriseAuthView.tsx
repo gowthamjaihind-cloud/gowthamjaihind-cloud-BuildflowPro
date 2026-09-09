@@ -32,6 +32,9 @@ import {
 import { motion } from "motion/react";
 import { handleFirestoreError, OperationType } from "../firebase";
 import { useL } from "../i18n";
+import { toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface EnterpriseAuthViewProps {
   onBack: () => void;
@@ -63,7 +66,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       });
     } catch (err: any) {
       console.error("Error unlinking:", err);
-      alert(L("Failed to unlink bot","போட்டை இணைப்பு நீக்க முடியவில்லை"));
+      toast.error(L("Failed to unlink bot","போட்டை இணைப்பு நீக்க முடியவில்லை"));
     }
   };
 
@@ -224,8 +227,9 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      <div className="h-screen flex items-center justify-center" role="status" aria-busy="true">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" aria-hidden="true" />
+        <span className="sr-only">{L("Loading…", "ஏற்றுகிறது…")}</span>
       </div>
     );
   }
@@ -236,7 +240,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
         <div className="bg-danger/8 border border-danger/30 p-6 rounded-3xl flex items-start gap-4">
           <ShieldAlert className="w-8 h-8 text-danger mt-1" />
           <div>
-            <h3 className="text-lg font-bold text-[#7F1D1D]">
+            <h3 className="text-lg font-bold text-danger">
               {L("Restricted Access","கட்டுப்படுத்தப்பட்ட அணுகல்")}
             </h3>
             <p className="text-danger font-medium">
@@ -273,28 +277,32 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                           <span className="text-success bg-success/10 px-2.5 py-1 rounded-md border border-success/20 flex items-center gap-1 font-bold text-xs">
                             <CheckCircle2 className="w-3.5 h-3.5" /> {L("Telegram Linked","டெலிகிராம் இணைக்கப்பட்டது")}
                           </span>
-                          <button
-                            onClick={() => unlinkBot(u.uid)}
-                            disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
-                            className="text-xs font-semibold text-danger hover:text-danger bg-danger/8 hover:bg-danger/15 px-2 py-1 rounded-md transition-colors disabled:opacity-50"
-                            title={L("Unlink Telegram Bot","டெலிகிராம் போட்டை இணைப்பு நீக்கு")}
-                          >
-                            {L("Unlink","இணைப்பு நீக்கு")}
-                          </button>
+                          <Tooltip label={L("Unlink Telegram Bot","டெலிகிராம் போட்டை இணைப்பு நீக்கு")}>
+                            <button
+                              onClick={() => unlinkBot(u.uid)}
+                              disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
+                              className="text-xs font-semibold text-danger hover:text-danger bg-danger/8 hover:bg-danger/15 px-2 py-1 rounded-md transition-colors disabled:opacity-50"
+                             
+                            >
+                              {L("Unlink","இணைப்பு நீக்கு")}
+                            </button>
+                          </Tooltip>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <span className="text-ink-muted bg-panel px-2.5 py-1 rounded-md border border-divider text-xs font-bold">
                             {L("Telegram Not Linked","டெலிகிராம் இணைக்கப்படவில்லை")}
                           </span>
-                          <button
-                            onClick={() => generateLinkCode(u.uid, u.email)}
-                            disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
-                            className="text-xs font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
-                            title={L("Generate Telegram Link Code","டெலிகிராம் இணைப்புக் குறியீட்டை உருவாக்கு")}
-                          >
-                            <Send className="w-3.5 h-3.5" /> {L("Link Bot","போட்டை இணை")}
-                          </button>
+                          <Tooltip label={L("Generate Telegram Link Code","டெலிகிராம் இணைப்புக் குறியீட்டை உருவாக்கு")}>
+                            <button
+                              onClick={() => generateLinkCode(u.uid, u.email)}
+                              disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
+                              className="text-xs font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                             
+                            >
+                              <Send className="w-3.5 h-3.5" /> {L("Link Bot","போட்டை இணை")}
+                            </button>
+                          </Tooltip>
                         </div>
                       )}
                     </div>
@@ -313,7 +321,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                     ) : (
                       <div className="flex items-center gap-2 text-sm font-bold">
                         {u.role === "Owner" ? (
-                          <span className="text-[#324755] bg-[#324755]/10 px-3 py-1.5 rounded-lg border border-[#324755]/20 flex items-center gap-1.5 w-fit">
+                          <span className="text-surface-dark bg-surface-dark/10 px-3 py-1.5 rounded-lg border border-surface-dark/20 flex items-center gap-1.5 w-fit">
                             <ShieldCheck className="w-4 h-4" /> {L("Owner","உரிமையாளர்")}
                           </span>
                         ) : u.role === "Admin" ? (
@@ -321,7 +329,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                             <ShieldCheck className="w-4 h-4" /> {L("Admin","நிர்வாகி")}
                           </span>
                         ) : u.role === "Project Manager" ? (
-                          <span className="text-[#56778E] bg-[#56778E]/10 px-3 py-1.5 rounded-lg border border-[#56778E]/20 flex items-center gap-1.5 w-fit">
+                          <span className="text-ink-muted bg-ink-muted/10 px-3 py-1.5 rounded-lg border border-success/25 flex items-center gap-1.5 w-fit">
                             <Users className="w-4 h-4" /> {L("Manager","மேலாளர்")}
                           </span>
                         ) : u.role === "Site Engineer" ? (
@@ -412,41 +420,46 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                   <td className="px-8 py-6 text-right">
                     {editingUserId === u.uid ? (
                       <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleUpdateRole(u.uid)}
-                          className="p-2 bg-success text-white rounded-xl hover:bg-success transition-colors"
-                          title={L("Save Role","பங்கைச் சேமி")}
-                        >
-                          <Save className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setEditingUserId(null)}
-                          className="p-2 bg-divider text-ink rounded-xl hover:bg-fossil transition-colors"
-                          title={L("Cancel","ரத்து")}
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        <Tooltip label={L("Save Role","பங்கைச் சேமி")}>
+                          <button
+                            onClick={() => handleUpdateRole(u.uid)}
+                            className="p-2 bg-success text-white rounded-xl hover:bg-success transition-colors"
+                           
+                          >
+                            <Save className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
+                        <Tooltip label={L("Cancel","ரத்து")}>
+                          <button
+                            onClick={() => setEditingUserId(null)}
+                            className="p-2 bg-divider text-ink rounded-xl hover:bg-ink-muted/25 transition-colors"
+                           
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => {
-                          setEditingUserId(u.uid);
-                          setEditingRole(u.role);
-                          const accessMap: Record<
-                            string,
-                            "read" | "write" | "none"
-                          > = {};
-                          projects.forEach((p) => {
-                            accessMap[p.id] = u.projectAccess?.[p.id] || "none";
-                          });
-                          setEditingProjectAccess(accessMap);
-                                                  }}
-                        disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
-                        className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                        title={L("Edit Role","பங்கைத் திருத்து")}
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
+                      <Tooltip label={L("Edit Role","பங்கைத் திருத்து")}>
+                        <button
+                          onClick={() => {
+                            setEditingUserId(u.uid);
+                            setEditingRole(u.role);
+                            const accessMap: Record<
+                              string,
+                              "read" | "write" | "none"
+                            > = {};
+                            projects.forEach((p) => {
+                              accessMap[p.id] = u.projectAccess?.[p.id] || "none";
+                            });
+                            setEditingProjectAccess(accessMap);
+                                                    }}
+                          disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
+                          className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                      </Tooltip>
                     )}
                   </td>
                 </tr>
@@ -459,9 +472,10 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       
 
       {showLinkCode && (
-        <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-md rounded-3xl p-8 border border-divider shadow-2xl relative">
-            <button
+            <DialogBehaviour />
+            <button aria-label={L("Close","மூடு")}
               onClick={() => setShowLinkCode(null)}
               className="absolute right-6 top-6 p-2 bg-panel rounded-full hover:bg-divider transition-colors"
             >
@@ -477,7 +491,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                 /link {showLinkCode.displayCode}
               </code>
             </div>
-            <p className="text-center text-sm font-medium text-[#C0653F] bg-primary/10 py-3 rounded-xl">
+            <p className="text-center text-sm font-medium text-primary bg-primary/10 py-3 rounded-xl">
               {L("Expires in 15 minutes.","15 நிமிடங்களில் காலாவதியாகும்.")}
             </p>
           </div>

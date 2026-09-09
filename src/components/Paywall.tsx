@@ -50,7 +50,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
       <div className="w-full max-w-3xl soft-card p-8 md:p-10 squircle-24">
         <div className="text-center mb-6">
           <div className="bg-primary/10 w-14 h-14 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-primary/20">
-            <Lock className="w-7 h-7 text-[#B85F3B]" />
+            <Lock className="w-7 h-7 text-warning" />
           </div>
           <h2 className="text-2xl font-bold text-ink mb-1">{headline}</h2>
           <p className="text-ink-muted text-[15px]">{t("paywall.choosePlanPre")} <b>{org}</b> {t("paywall.choosePlanPost")}</p>
@@ -70,7 +70,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
               className={`px-4 py-1.5 rounded-full text-sm font-bold apple-transition flex items-center gap-2 ${period === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}
             >
               {t("paywall.annual")}
-              <span className="text-[10px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">{t("paywall.savePct")}</span>
+              <span className="text-[10px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-success">{t("paywall.savePct")}</span>
             </button>
           </div>
         </div>
@@ -95,7 +95,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
                 <p className="text-[11px] text-ink-muted mb-3 h-4">
                   {period === "annual" ? t("paywall.billedYearly", { amount: (p.annual || 0).toLocaleString("en-IN") }) : ""}
                 </p>
-                <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 bg-sage/15 text-[#3E8388]">
+                <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 bg-primary/12 text-primary-deep">
                   <Stack weight="bold" className="w-3.5 h-3.5" /> {t("paywall.upToProjects", { n: p.includedProjects })}
                 </div>
                 <ul className="space-y-1.5 mb-4 text-sm">
@@ -105,7 +105,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
                 <button
                   onClick={() => pay(id, period, () => window.location.reload())}
                   disabled={busy}
-                  className={`mt-auto w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                  className={`mt-auto w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                 >
                   {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("paywall.pay", { amount: (period === "annual" ? p.annual : p.monthly)?.toLocaleString("en-IN") || "" })}
                 </button>
@@ -147,7 +147,7 @@ const SignOutButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
 export const TrialBanner: React.FC<{ daysLeft: number }> = ({ daysLeft }) => {
   const { t } = useTranslation();
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-full bg-onyx text-white text-xs font-bold shadow-lg flex items-center gap-2">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-full bg-surface-dark text-white text-xs font-bold shadow-lg flex items-center gap-2">
       <Lock className="w-3.5 h-3.5" />
       {daysLeft > 1
         ? t("paywall.daysLeft", { n: daysLeft })

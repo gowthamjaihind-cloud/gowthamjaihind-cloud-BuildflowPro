@@ -83,6 +83,9 @@ import { DailyLogEntryScreen } from "./DailyLogEntryScreen";
 import { DailyLogHistory } from "./DailyLogHistory";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
+import { confirmDialog, toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface WBSViewProps {
   projectId: string;
@@ -266,7 +269,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
     const nodes = tasksToTemplateNodes(tasks as any);
     const leaves = countLeaves(nodes);
     if (!nodes.length || !leaves) {
-      alert("There's no breakdown to save yet — add some tasks first.");
+      toast.info("There's no breakdown to save yet — add some tasks first.");
       return;
     }
     const name = window.prompt(
@@ -275,7 +278,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
     );
     if (name === null) return;
     if (!name.trim()) {
-      alert("Give the template a name so you can recognise it later.");
+      toast.info("Give the template a name so you can recognise it later.");
       return;
     }
     setSavingTemplate(true);
@@ -286,14 +289,12 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
         projectId,
         projectName: (tasks as any[])[0]?.projectName,
       });
-      alert(`Saved. "${name.trim()}" will now appear when you create a project.`);
+      toast.success(`Saved. "${name.trim()}" will now appear when you create a project.`);
     } catch (err: any) {
       console.error("Save template failed", err);
-      alert(
-        err?.code === "permission-denied"
+      toast.error(err?.code === "permission-denied"
           ? "Only an Owner, Admin or Manager can save a template."
-          : "Couldn't save the template. Please try again.",
-      );
+          : "Couldn't save the template. Please try again.",);
     } finally {
       setSavingTemplate(false);
     }
@@ -496,7 +497,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
 
   const handleBulkDelete = async () => {
     if (selectedTaskIds.length === 0) return;
-    if (!window.confirm(`Are you sure you want to delete ${selectedTaskIds.length} tasks and their subtasks?`)) return;
+    if (!(await confirmDialog({ title: `Are you sure you want to delete ${selectedTaskIds.length} tasks and their subtasks?` }))) return;
 
     try {
       const getDescendants = (taskId: string, allTasks: Task[]): Task[] => {
@@ -740,7 +741,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
           onDragOver={(e) => handleDragOver(e, task.id)}
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, task)}
-          className={`group flex items-center border-b border-divider/40 hover:bg-panel/50 apple-transition ${dragOverTaskId === task.id ? "bg-[#F7E4DB]/50 ring-2 ring-primary z-10" : ""} ${task.isCritical ? "bg-red-50/10" : ""}`}
+          className={`group flex items-center border-b border-divider/40 hover:bg-panel/50 apple-transition ${dragOverTaskId === task.id ? "bg-warning/12/50 ring-2 ring-primary z-10" : ""} ${task.isCritical ? "bg-red-50/10" : ""}`}
           style={{
             paddingLeft:
               breakpoint === "mobile" ? level * 14 + 12 : level * 28 + 24,
@@ -763,6 +764,8 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                       [task.id]: !prev[task.id],
                     }))
                   }
+                  aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
+                  aria-expanded={isExpanded}
                   className="p-1 hover:bg-surface hover:shadow-md rounded-lg md:rounded-xl apple-transition text-ink-muted hover:text-ink active:scale-90"
                 >
                   {isExpanded ? (
@@ -792,58 +795,64 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
             <div className="flex flex-col min-w-0 flex-1 ml-0.5 md:ml-1">
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span
-                    title={task.name}
-                    className={`leading-tight tracking-tight text-[10px] md:text-sm font-bold truncate ${task.type === "Summary" ? "text-ink border-b-2 border-slate-900/10" : "text-ink/80"} transition-colors`}
-                  >
-                    {task.name || "Unit Missing"}
-                  </span>
-                  {task.status && (
-                    <div
-                      title={task.status}
-                      className={`${
-                        task.status === "Completed"
-                          ? "text-success"
-                          : task.status === "In Progress"
-                            ? "text-primary"
-                            : task.status === "Delayed"
-                              ? "text-danger"
-                              : task.status === "On Hold"
-                                ? "text-ink-muted"
-                                : "text-ink-muted"
-                      }`}
+                  <Tooltip label={task.name}>
+                    <span
+                     
+                      className={`leading-tight tracking-tight text-[10px] md:text-sm font-bold truncate ${task.type === "Summary" ? "text-ink border-b-2 border-slate-900/10" : "text-ink/80"} transition-colors`}
                     >
-                      {task.status === "Completed" && (
-                        <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      )}
-                      {task.status === "In Progress" && (
-                        <Activity className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      )}
-                      {task.status === "Delayed" && (
-                        <AlertCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      )}
-                      {task.status === "On Hold" && (
-                        <PauseCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      )}
-                      {(task.status === "Pending" ||
-                        ![
-                          "Completed",
-                          "In Progress",
-                          "Delayed",
-                          "On Hold",
-                        ].includes(task.status)) && (
-                        <Circle className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      )}
-                    </div>
+                      {task.name || "Unit Missing"}
+                    </span>
+                  </Tooltip>
+                  {task.status && (
+                    <Tooltip label={task.status}>
+                      <div
+                       
+                        className={`${
+                          task.status === "Completed"
+                            ? "text-success"
+                            : task.status === "In Progress"
+                              ? "text-primary"
+                              : task.status === "Delayed"
+                                ? "text-danger"
+                                : task.status === "On Hold"
+                                  ? "text-ink-muted"
+                                  : "text-ink-muted"
+                        }`}
+                      >
+                        {task.status === "Completed" && (
+                          <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        )}
+                        {task.status === "In Progress" && (
+                          <Activity className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        )}
+                        {task.status === "Delayed" && (
+                          <AlertCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        )}
+                        {task.status === "On Hold" && (
+                          <PauseCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        )}
+                        {(task.status === "Pending" ||
+                          ![
+                            "Completed",
+                            "In Progress",
+                            "Delayed",
+                            "On Hold",
+                          ].includes(task.status)) && (
+                          <Circle className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        )}
+                      </div>
+                    </Tooltip>
                   )}
 
                   {task.isCritical && (
-                    <div
-                      title="Critical Path Indicator"
-                      className="text-danger flex items-center"
-                    >
-                      <Flame className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                    </div>
+                    <Tooltip label="Critical Path Indicator">
+                      <div
+                       
+                        className="text-danger flex items-center"
+                      >
+                        <Flame className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                      </div>
+                    </Tooltip>
                   )}
                 </div>
               </div>
@@ -855,10 +864,10 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                   {task.resources?.slice(0, 3).map((res, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-1 bg-[#F7E4DB]/50 px-1.5 py-0.5 rounded-md border border-[#F7E4DB] shrink-0"
+                      className="flex items-center gap-1 bg-warning/12/50 px-1.5 py-0.5 rounded-md border border-warning/25 shrink-0"
                     >
                       <Users className="w-2 h-2 text-primary" />
-                      <span className="text-[8px] font-bold text-[#B85F3B] uppercase tracking-tight">
+                      <span className="text-[8px] font-bold text-warning uppercase tracking-tight">
                         {res.name.split(":")[1] || res.name} ({res.quantity})
                       </span>
                     </div>
@@ -953,7 +962,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                 {task.type !== "Summary" && (
                   <button
                     onClick={() => setDailyLogTaskId(task.id)}
-                    className="text-[8px] font-bold uppercase tracking-widest text-primary bg-[#F7E4DB] px-1.5 py-0.5 rounded focus:outline-none focus:ring-1 hover:bg-[#F7E4DB] transition"
+                    className="text-[8px] font-bold uppercase tracking-widest text-primary bg-warning/12 px-1.5 py-0.5 rounded focus:outline-none focus:ring-1 hover:bg-warning/12 transition"
                   >
                     Log Work
                   </button>
@@ -963,18 +972,22 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
 
             <div className="w-12 md:w-24 flex items-center justify-center gap-0.5 md:gap-1 shrink-0">
               <div className="flex md:gap-1">
-                <button
-                  onClick={() => setEditingTask(task)}
-                  className="p-1 md:p-2.5 text-ink-muted hover:text-ink hover:bg-surface hover:shadow-md rounded-lg md:rounded-2xl apple-transition active:scale-95"
-                >
-                  <Edit2 className="w-3 h-3 md:w-4 md:h-4" />
-                </button>
-                <button
-                  onClick={() => setIsAdding(task.id)}
-                  className="p-1 md:p-2.5 text-primary hover:text-primary hover:bg-[#F7E4DB] rounded-lg md:rounded-2xl apple-transition active:scale-90"
-                >
-                  <Plus className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                </button>
+                <Tooltip label={"Edit task"}>
+                  <button aria-label="Edit task"
+                    onClick={() => setEditingTask(task)}
+                    className="p-1 md:p-2.5 text-ink-muted hover:text-ink hover:bg-surface hover:shadow-md rounded-lg md:rounded-2xl apple-transition active:scale-95"
+                  >
+                    <Edit2 className="w-3 h-3 md:w-4 md:h-4" />
+                  </button>
+                </Tooltip>
+                <Tooltip label={"Add subtask"}>
+                  <button aria-label="Add subtask"
+                    onClick={() => setIsAdding(task.id)}
+                    className="p-1 md:p-2.5 text-primary hover:text-primary hover:bg-warning/12 rounded-lg md:rounded-2xl apple-transition active:scale-90"
+                  >
+                    <Plus className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                  </button>
+                </Tooltip>
               </div>
             </div>
           </div>
@@ -1074,7 +1087,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
               className="bg-surface-dark text-white rounded-[32px] p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl z-20 sticky top-4"
             >
               <div className="flex items-center gap-4">
-                <div className="bg-onyx/40 px-4 py-2 rounded-xl font-bold tracking-widest uppercase text-xs">
+                <div className="bg-surface-dark/40 px-4 py-2 rounded-xl font-bold tracking-widest uppercase text-xs">
                   {selectedTaskIds.length} Selected
                 </div>
                 <button
@@ -1092,7 +1105,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                       e.target.value = "";
                     }
                   }}
-                  className="bg-onyx/40 text-white text-sm font-bold px-4 py-2.5 rounded-xl border-none outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer flex-1 md:flex-none hover:bg-white/10 apple-transition"
+                  className="bg-surface-dark/40 text-white text-sm font-bold px-4 py-2.5 rounded-xl border-none outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer flex-1 md:flex-none hover:bg-white/10 apple-transition"
                   defaultValue=""
                 >
                   <option value="" disabled className="text-ink">
@@ -1116,7 +1129,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-panel p-6 rounded-[32px] border border-divider shadow-[0_10px_40px_rgba(0,0,0,0.03)] gap-6">
             <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-              <div className="bg-[#F7E4DB] p-3 rounded-2xl">
+              <div className="bg-warning/12 p-3 rounded-2xl">
                 <ListTree className="w-6 h-6 text-primary" />
               </div>
               <div>
@@ -1144,7 +1157,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                     ))}
                   </select>
                 </div>
-                <div className="flex items-center gap-2 bg-panel px-4 py-2 rounded-2xl border border-divider shadow-inner group apple-transition hover:bg-[#F7E4DB]/50">
+                <div className="flex items-center gap-2 bg-panel px-4 py-2 rounded-2xl border border-divider shadow-inner group apple-transition hover:bg-warning/12/50">
                   <input
                     type="checkbox"
                     id="autoSchedule"
@@ -1159,21 +1172,25 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                     Auto-Shift
                   </label>
                 </div>
-                <button
-                  onClick={handleRecalculate}
-                  className="p-2 text-ink-muted hover:text-primary hover:bg-surface hover:shadow-sm rounded-xl transition-all"
-                  title="Recalculate all dates"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={handleSaveAsTemplate}
-                  disabled={savingTemplate}
-                  className="p-2 text-ink-muted hover:text-primary hover:bg-surface hover:shadow-sm rounded-xl transition-all disabled:opacity-40"
-                  title="Save this breakdown as a reusable template"
-                >
-                  <BookmarkSimple className="w-4 h-4" />
-                </button>
+                <Tooltip label="Recalculate all dates">
+                  <button
+                    onClick={handleRecalculate}
+                    className="p-2 text-ink-muted hover:text-primary hover:bg-surface hover:shadow-sm rounded-xl transition-all"
+                   
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                </Tooltip>
+                <Tooltip label="Save this breakdown as a reusable template">
+                  <button
+                    onClick={handleSaveAsTemplate}
+                    disabled={savingTemplate}
+                    className="p-2 text-ink-muted hover:text-primary hover:bg-surface hover:shadow-sm rounded-xl transition-all disabled:opacity-40"
+                   
+                  >
+                    <BookmarkSimple className="w-4 h-4" />
+                  </button>
+                </Tooltip>
               </div>
             </div>
             <RoleGuard
@@ -1181,18 +1198,20 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
               projectId={projectId}
               requireWriteAccess
               fallback={
-                <button
-                  disabled
-                  className="w-full md:w-auto bg-divider text-ink-muted px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 font-bold text-sm cursor-not-allowed cursor-help"
-                  title="You don't have permission to add tasks"
-                >
-                  <Plus className="w-5 h-5" /> <span>{t("wbs.addTask")}</span>
-                </button>
+                <Tooltip label="You don't have permission to add tasks">
+                  <button
+                    disabled
+                    className="w-full md:w-auto bg-divider text-ink-muted px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 font-bold text-sm cursor-not-allowed cursor-help"
+                   
+                  >
+                    <Plus className="w-5 h-5" /> <span>{t("wbs.addTask")}</span>
+                  </button>
+                </Tooltip>
               }
             >
               <button
                 onClick={() => setIsAdding("root")}
-                className="w-full md:w-auto bg-onyx text-white px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 hover:bg-onyx/80 apple-transition shadow-2xl shadow-drab/10 font-bold text-sm"
+                className="w-full md:w-auto bg-surface-dark text-white px-8 py-3.5 rounded-2xl flex items-center justify-center gap-3 hover:bg-surface-dark/80 apple-transition shadow-2xl shadow-surface-dark/10 font-bold text-sm"
               >
                 <Plus className="w-5 h-5" /> <span>{t("wbs.addTask")}</span>
               </button>
@@ -1213,7 +1232,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                     }
                   }}
                   className="w-4 h-4 text-primary rounded-lg border-white/20 bg-white/10 focus:ring-primary apple-transition cursor-pointer"
-                  title="Select All"
+                  aria-label="Select All"
                 />
                 WBS
               </div>
@@ -1278,16 +1297,18 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                             </span>
                           </div>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPhaseToDelete(phase);
-                          }}
-                          className="p-2 md:p-3 text-ink-muted hover:text-danger hover:bg-danger/8 rounded-xl apple-transition shrink-0"
-                          title="Delete entire phase"
-                        >
-                          <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
-                        </button>
+                        <Tooltip label="Delete entire phase">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPhaseToDelete(phase);
+                            }}
+                            className="p-2 md:p-3 text-ink-muted hover:text-danger hover:bg-danger/8 rounded-xl apple-transition shrink-0"
+                           
+                          >
+                            <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                          </button>
+                        </Tooltip>
                       </div>
                       {phaseExpanded &&
                         Object.entries(locations).map(
@@ -1302,7 +1323,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                               locTasks.length > 0 && (
                                 <div
                                   key={location}
-                                  className={`border-b last:border-b-0 border-divider ${dragOverTaskId === `loc-${phase}-${location}` ? "bg-[#F7E4DB]/50 ring-2 ring-primary z-10" : ""}`}
+                                  className={`border-b last:border-b-0 border-divider ${dragOverTaskId === `loc-${phase}-${location}` ? "bg-warning/12/50 ring-2 ring-primary z-10" : ""}`}
                                   onDragOver={(e) =>
                                     handleDragOver(
                                       e,
@@ -1374,12 +1395,12 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                 initial={{ opacity: 0, y: 50, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 50, scale: 0.9 }}
-                className={`fixed bottom-10 left-1/2 -translate-x-1/2 p-4 md:p-6 rounded-3xl border-2 shadow-2xl z-[100] transition-all flex items-center gap-4 ${dragOverTaskId === "unnest-task" ? "border-primary bg-[#F7E4DB] scale-105 shadow-[0_20px_60px_rgba(163,113,28,0.2)]" : "border-dashed border-primary bg-surface/90 backdrop-blur"}`}
+                className={`fixed bottom-10 left-1/2 -translate-x-1/2 p-4 md:p-6 rounded-3xl border-2 shadow-2xl z-[100] transition-all flex items-center gap-4 ${dragOverTaskId === "unnest-task" ? "border-primary bg-warning/12 scale-105 shadow-[0_20px_60px_rgba(163,113,28,0.2)]" : "border-dashed border-primary bg-surface/90 backdrop-blur"}`}
                 onDragOver={(e) => handleDragOver(e, "unnest-task")}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDropToUnnest}
               >
-                <div className="w-12 h-12 rounded-full bg-[#F7E4DB] flex items-center justify-center text-primary shadow-inner">
+                <div className="w-12 h-12 rounded-full bg-warning/12 flex items-center justify-center text-primary shadow-inner">
                   <ArrowUpFromLine className="w-6 h-6" />
                 </div>
                 <div>
@@ -1399,13 +1420,14 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
       {/* Modals for Add/Edit/Delete */}
       <AnimatePresence>
         {phaseToDelete && (
-          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="p-6 text-center">
                 <div className="bg-danger/8 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Layers className="w-8 h-8 text-danger" />
@@ -1439,13 +1461,14 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
         )}
 
         {taskToDelete && (
-          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
             >
+              <DialogBehaviour />
               <div className="p-6 text-center">
                 <div className="bg-danger/8 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Trash2 className="w-8 h-8 text-danger" />
@@ -1482,7 +1505,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
             className={
               breakpoint !== "desktop"
                 ? "fixed inset-0 bg-surface z-50 flex flex-col"
-                : "fixed inset-0 bg-onyx/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                : "fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             }
           >
             <motion.div
@@ -1503,6 +1526,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                   : "bg-surface rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden max-h-[90vh] flex flex-col"
               }
             >
+              <DialogBehaviour />
               <div className="bg-surface-dark text-white p-6 flex justify-between items-center shrink-0">
                 <h3 className="text-xl font-bold flex items-center gap-2">
                   {editingTask ? (
@@ -1514,7 +1538,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                     ? t("wbs.editTask", { name: editingTask.name })
                     : t("wbs.createNewTask")}
                 </h3>
-                <button
+                <button aria-label={t("common.close")}
                   type="button"
                   onClick={() => {
                     setIsAdding(null);
@@ -1553,7 +1577,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                         className="w-full flex items-center justify-between p-5 text-left hover:bg-panel transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg shadow-sm bg-[#F7E4DB] text-primary">
+                          <div className="p-2 rounded-lg shadow-sm bg-warning/12 text-primary">
                             <Activity className="w-4 h-4" />
                           </div>
                           <div>
@@ -1657,9 +1681,9 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                             ? setEditingTask({ ...editingTask, isChangeOrder: checked })
                                             : setNewTask({ ...newTask, isChangeOrder: checked });
                                         }}
-                                        className="w-4 h-4 rounded text-[#C0653F] border-divider focus:ring-primary accent-[#C0653F] cursor-pointer"
+                                        className="w-4 h-4 rounded text-primary border-divider focus:ring-primary accent-primary cursor-pointer"
                                       />
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-[#A0522F]">
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-primary-deep">
                                         Change Order Item
                                       </span>
                                     </label>
@@ -1695,7 +1719,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                                 });
                                           }}
                                         />
-                                        <button
+                                        <button aria-label={t("common.close")}
                                           type="button"
                                           onClick={() => {
                                             setIsAddingCustomPhase(false);
@@ -1791,7 +1815,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                                 });
                                           }}
                                         />
-                                        <button
+                                        <button aria-label={t("common.close")}
                                           type="button"
                                           onClick={() => {
                                             setIsAddingCustomLocation(false);
@@ -1927,7 +1951,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                             (editingTask
                                               ? editingTask.type
                                               : newTask.type) === type
-                                              ? "bg-primary border-primary text-white shadow-lg shadow-[#F7E4DB]"
+                                              ? "bg-primary border-primary text-white shadow-lg shadow-primary/15"
                                               : "bg-surface border-divider text-ink-muted hover:border-divider"
                                           }`}
                                         >
@@ -1950,31 +1974,33 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                     ).map((code) => (
                                       <span
                                         key={code}
-                                        className="px-2 py-0.5 md:px-3 md:py-1 bg-[#F7E4DB] text-primary rounded-full text-[10px] md:text-[10px] font-black flex items-center gap-1.5 md:gap-2 group"
+                                        className="px-2 py-0.5 md:px-3 md:py-1 bg-warning/12 text-primary rounded-full text-[10px] md:text-[10px] font-black flex items-center gap-1.5 md:gap-2 group"
                                       >
                                         {code}
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const codes = (
-                                              editingTask?.activityCodes ||
-                                              newTask.activityCodes ||
-                                              []
-                                            ).filter((c) => c !== code);
-                                            editingTask
-                                              ? setEditingTask({
-                                                  ...editingTask,
-                                                  activityCodes: codes,
-                                                })
-                                              : setNewTask({
-                                                  ...newTask,
-                                                  activityCodes: codes,
-                                                });
-                                          }}
-                                          className="hover:text-danger"
-                                        >
-                                          <X className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                                        </button>
+                                        <Tooltip label={"Remove activity code"}>
+                                          <button aria-label="Remove activity code"
+                                            type="button"
+                                            onClick={() => {
+                                              const codes = (
+                                                editingTask?.activityCodes ||
+                                                newTask.activityCodes ||
+                                                []
+                                              ).filter((c) => c !== code);
+                                              editingTask
+                                                ? setEditingTask({
+                                                    ...editingTask,
+                                                    activityCodes: codes,
+                                                  })
+                                                : setNewTask({
+                                                    ...newTask,
+                                                    activityCodes: codes,
+                                                  });
+                                            }}
+                                            className="hover:text-danger"
+                                          >
+                                            <X className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                                          </button>
+                                        </Tooltip>
                                       </span>
                                     ))}
                                   </div>
@@ -2037,7 +2063,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                         className="w-full flex items-center justify-between p-5 text-left hover:bg-panel transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg shadow-sm bg-primary/10 text-[#C0653F]">
+                          <div className="p-2 rounded-lg shadow-sm bg-primary/10 text-primary">
                             <Calendar className="w-4 h-4" />
                           </div>
                           <div>
@@ -2088,7 +2114,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                           >
                             {breakpoint === "desktop" && (
                               <div className="flex items-center gap-4 mb-8">
-                                <div className="p-3 bg-primary/10 text-[#C0653F] rounded-[20px] shadow-sm">
+                                <div className="p-3 bg-primary/10 text-primary rounded-[20px] shadow-sm">
                                   <Calendar className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -2106,13 +2132,13 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                               <div className="space-y-4">
                                 <div className="space-y-2">
                                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-[#E1946F]" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                                     Plan Start
                                   </label>
                                   <input
                                     type="date"
                                     required
-                                    className="w-full bg-panel border border-divider rounded-xl px-3 py-2.5 font-bold text-ink outline-none focus:border-[#E1946F] text-sm"
+                                    className="w-full bg-panel border border-divider rounded-xl px-3 py-2.5 font-bold text-ink outline-none focus:border-primary text-sm"
                                     value={
                                       editingTask
                                         ? editingTask.startDate
@@ -2133,13 +2159,13 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                 </div>
                                 <div className="space-y-2">
                                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-[#C0653F]" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                                     Plan Finish
                                   </label>
                                   <input
                                     type="date"
                                     required
-                                    className="w-full bg-panel border border-divider rounded-xl px-3 py-2.5 font-bold text-ink outline-none focus:border-[#E1946F] text-sm"
+                                    className="w-full bg-panel border border-divider rounded-xl px-3 py-2.5 font-bold text-ink outline-none focus:border-primary text-sm"
                                     value={
                                       editingTask
                                         ? editingTask.endDate
@@ -2169,7 +2195,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                   </label>
                                   <input
                                     type="date"
-                                    className="w-full bg-[#F7E4DB]/30 border border-[#F7E4DB] rounded-xl px-3 py-2.5 font-bold text-ink outline-none focus:border-primary text-sm"
+                                    className="w-full bg-warning/12/30 border border-warning/25 rounded-xl px-3 py-2.5 font-bold text-ink outline-none focus:border-primary text-sm"
                                     value={
                                       editingTask
                                         ? editingTask.actualStartDate || ""
@@ -2195,7 +2221,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                   </label>
                                   <input
                                     type="date"
-                                    className="w-full bg-[#F7E4DB]/30 border border-[#F7E4DB] rounded-xl px-3 py-2.5 font-bold text-ink outline-none focus:border-primary text-sm"
+                                    className="w-full bg-warning/12/30 border border-warning/25 rounded-xl px-3 py-2.5 font-bold text-ink outline-none focus:border-primary text-sm"
                                     value={
                                       editingTask
                                         ? editingTask.actualEndDate || ""
@@ -2385,7 +2411,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                               <option>FF</option>
                                               <option>SF</option>
                                             </select>
-                                            <div className="w-px h-3 bg-fossil" />
+                                            <div className="w-px h-3 bg-divider" />
                                             <input
                                               type="number"
                                               className="w-6 md:w-8 bg-transparent text-[10px] md:text-[10px] font-black text-center outline-none"
@@ -2415,30 +2441,32 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                               D
                                             </span>
                                           </div>
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              const newDeps = (
-                                                editingTask?.advancedDependencies ||
-                                                newTask.advancedDependencies ||
-                                                []
-                                              ).filter((_, i) => i !== idx);
-                                              editingTask
-                                                ? setEditingTask({
-                                                    ...editingTask,
-                                                    advancedDependencies:
-                                                      newDeps,
-                                                  })
-                                                : setNewTask({
-                                                    ...newTask,
-                                                    advancedDependencies:
-                                                      newDeps,
-                                                  });
-                                            }}
-                                            className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded-lg transition-all"
-                                          >
-                                            <X className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                                          </button>
+                                          <Tooltip label={"Remove dependency"}>
+                                            <button aria-label="Remove dependency"
+                                              type="button"
+                                              onClick={() => {
+                                                const newDeps = (
+                                                  editingTask?.advancedDependencies ||
+                                                  newTask.advancedDependencies ||
+                                                  []
+                                                ).filter((_, i) => i !== idx);
+                                                editingTask
+                                                  ? setEditingTask({
+                                                      ...editingTask,
+                                                      advancedDependencies:
+                                                        newDeps,
+                                                    })
+                                                  : setNewTask({
+                                                      ...newTask,
+                                                      advancedDependencies:
+                                                        newDeps,
+                                                    });
+                                              }}
+                                              className="p-1 text-ink-muted hover:text-danger hover:bg-danger/8 rounded-lg transition-all"
+                                            >
+                                              <X className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                                            </button>
+                                          </Tooltip>
                                         </div>
                                       );
                                     })}
@@ -2537,9 +2565,9 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                             )}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10">
                               {/* Resources */}
-                              <div className="bg-[#F7E4DB]/50 rounded-2xl md:rounded-[32px] p-5 md:p-8 border border-[#F7E4DB]/50 space-y-4 md:space-y-6">
+                              <div className="bg-warning/12/50 rounded-2xl md:rounded-[32px] p-5 md:p-8 border border-warning/25/50 space-y-4 md:space-y-6">
                                 <div className="flex items-center justify-between">
-                                  <h5 className="text-[10px] md:text-[10px] font-black uppercase text-[#B85F3B] tracking-tighter flex items-center gap-2">
+                                  <h5 className="text-[10px] md:text-[10px] font-black uppercase text-warning tracking-tighter flex items-center gap-2">
                                     Labor Assignments
                                   </h5>
                                   <div className="flex gap-2">
@@ -2607,7 +2635,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                   ).map((res, idx) => (
                                     <div
                                       key={`res-edit-${res.resourceId || idx}`}
-                                      className="bg-surface p-3 md:p-4 rounded-xl md:rounded-2xl shadow-sm border border-[#F7E4DB] flex items-center gap-3 md:gap-4 group hover:border-primary transition-colors"
+                                      className="bg-surface p-3 md:p-4 rounded-xl md:rounded-2xl shadow-sm border border-warning/25 flex items-center gap-3 md:gap-4 group hover:border-primary transition-colors"
                                     >
                                       <div className="flex-1 min-w-0">
                                         <div className="text-[10px] md:text-xs font-bold text-ink truncate">
@@ -2644,28 +2672,30 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                               });
                                         }}
                                       />
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const newRes = (
-                                            editingTask?.resources ||
-                                            newTask.resources ||
-                                            []
-                                          ).filter((_, i) => i !== idx);
-                                          editingTask
-                                            ? setEditingTask({
-                                                ...editingTask,
-                                                resources: newRes,
-                                              })
-                                            : setNewTask({
-                                                ...newTask,
-                                                resources: newRes,
-                                              });
-                                        }}
-                                        className="text-ink-muted hover:text-danger p-1 transition-colors"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                      </button>
+                                      <Tooltip label={"Remove resource"}>
+                                        <button aria-label="Remove resource"
+                                          type="button"
+                                          onClick={() => {
+                                            const newRes = (
+                                              editingTask?.resources ||
+                                              newTask.resources ||
+                                              []
+                                            ).filter((_, i) => i !== idx);
+                                            editingTask
+                                              ? setEditingTask({
+                                                  ...editingTask,
+                                                  resources: newRes,
+                                                })
+                                              : setNewTask({
+                                                  ...newTask,
+                                                  resources: newRes,
+                                                });
+                                          }}
+                                          className="text-ink-muted hover:text-danger p-1 transition-colors"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                        </button>
+                                      </Tooltip>
                                     </div>
                                   ))}
                                 </div>
@@ -2767,28 +2797,30 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                               });
                                         }}
                                       />
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const newMa = (
-                                            editingTask?.materialAllocations ||
-                                            newTask.materialAllocations ||
-                                            []
-                                          ).filter((_, i) => i !== idx);
-                                          editingTask
-                                            ? setEditingTask({
-                                                ...editingTask,
-                                                materialAllocations: newMa,
-                                              })
-                                            : setNewTask({
-                                                ...newTask,
-                                                materialAllocations: newMa,
-                                              });
-                                        }}
-                                        className="text-ink-muted hover:text-danger p-1 transition-colors"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                      </button>
+                                      <Tooltip label={"Remove material allocation"}>
+                                        <button aria-label="Remove material allocation"
+                                          type="button"
+                                          onClick={() => {
+                                            const newMa = (
+                                              editingTask?.materialAllocations ||
+                                              newTask.materialAllocations ||
+                                              []
+                                            ).filter((_, i) => i !== idx);
+                                            editingTask
+                                              ? setEditingTask({
+                                                  ...editingTask,
+                                                  materialAllocations: newMa,
+                                                })
+                                              : setNewTask({
+                                                  ...newTask,
+                                                  materialAllocations: newMa,
+                                                });
+                                          }}
+                                          className="text-ink-muted hover:text-danger p-1 transition-colors"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                        </button>
+                                      </Tooltip>
                                     </div>
                                   ))}
                                 </div>
@@ -2820,7 +2852,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                           className="w-full flex items-center justify-between p-5 text-left hover:bg-panel transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg shadow-sm bg-[#F7E4DB] text-primary">
+                            <div className="p-2 rounded-lg shadow-sm bg-warning/12 text-primary">
                               <FileText className="w-4 h-4" />
                             </div>
                             <div>
@@ -2871,7 +2903,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                             >
                               {breakpoint === "desktop" && (
                                 <div className="flex items-center gap-4 mb-6">
-                                  <div className="p-3 bg-[#F7E4DB] text-primary rounded-[20px]">
+                                  <div className="p-3 bg-warning/12 text-primary rounded-[20px]">
                                     <FileText className="w-5 h-5" />
                                   </div>
                                   <div>
@@ -3093,7 +3125,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                   <div className="relative">
                                     <input
                                       type="number"
-                                      className="w-full bg-onyx/40 border border-divider rounded-xl md:rounded-2xl px-4 md:px-5 py-2.5 md:py-3 font-black text-primary focus:bg-white/10 outline-none transition-all placeholder:text-white/30 text-sm"
+                                      className="w-full bg-surface-dark/40 border border-divider rounded-xl md:rounded-2xl px-4 md:px-5 py-2.5 md:py-3 font-black text-primary focus:bg-white/10 outline-none transition-all placeholder:text-white/30 text-sm"
                                       placeholder="Additional Budget..."
                                       value={
                                         editingTask
@@ -3140,7 +3172,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                   <div className="flex gap-2 md:gap-4">
                     <button
                       type="submit"
-                      className="bg-primary text-white px-6 md:px-12 py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase tracking-[0.1em] md:tracking-[0.2em] text-[10px] md:text-[10px] hover:bg-surface-dark transition-all shadow-xl shadow-[#F7E4DB]"
+                      className="bg-primary text-white px-6 md:px-12 py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase tracking-[0.1em] md:tracking-[0.2em] text-[10px] md:text-[10px] hover:bg-surface-dark transition-all shadow-xl shadow-primary/15"
                     >
                       {editingTask ? t("cpm.saveChanges") : t("wbs.addTask")}
                     </button>

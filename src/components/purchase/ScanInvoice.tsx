@@ -12,6 +12,8 @@ import { useProjectData } from "../../hooks/useProjectData";
 import { callExtractVendorInvoice } from "../../services/firebaseFunctions";
 import { postInvoiceReceipt } from "../../services/invoiceReceiptService";
 import { PurchaseOrder, VendorBill, InventoryItem } from "../../types";
+import { Tooltip } from "../Tooltip";
+import { DialogBehaviour } from "../../lib/useDialog";
 
 interface ScanInvoiceProps {
   projectId: string;
@@ -130,13 +132,14 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
   const showLoading = step === "review" && !bill;
 
   return (
-    <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
       <div className="bg-surface w-full max-w-2xl rounded-3xl border border-divider shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+        <DialogBehaviour />
         <div className="flex justify-between items-center p-5 border-b border-divider shrink-0">
           <h2 className="font-black text-ink flex items-center gap-2">
             <Sparkle weight="fill" className="w-5 h-5 text-[#6E8CA0]" /> {initialBill ? "Review Vendor Bill" : "Scan Vendor Invoice"}
           </h2>
-          <button onClick={onClose} className="p-2 bg-panel hover:bg-divider rounded-full">
+          <button aria-label="Close" onClick={onClose} className="p-2 bg-panel hover:bg-divider rounded-full">
             <X className="w-5 h-5 text-ink-muted" />
           </button>
         </div>
@@ -173,7 +176,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
           {showReview && bill && (
             <div className="space-y-5">
               {flags.length > 0 && (
-                <div className="p-3 bg-primary/10 text-[#B85F3B] rounded-xl border border-primary/30 text-sm">
+                <div className="p-3 bg-primary/10 text-warning rounded-xl border border-primary/30 text-sm">
                   <div className="font-bold mb-1 flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> Please check:</div>
                   <ul className="list-disc pl-5 space-y-0.5">
                     {flags.map((f, i) => <li key={i}>{f}</li>)}
@@ -224,7 +227,9 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
                               ↳ {inv?.name || "matched to PO"}{code ? ` · ${code}` : ""}
                             </div>
                           ) : (
-                            <span className="text-primary text-[10px] font-semibold" title="Not on PO"> ⚠️ not on PO</span>
+                            <Tooltip label="Not on PO">
+                              <span className="text-primary text-[10px] font-semibold"> ⚠️ not on PO</span>
+                            </Tooltip>
                           )}
                         </td>
                         <td className="p-2 text-right">

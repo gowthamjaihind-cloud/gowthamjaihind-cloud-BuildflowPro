@@ -121,7 +121,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
         <Badge success />
         <h2 className="text-2xl font-bold text-ink mb-2">{t("onb.youreIn")}</h2>
         <p className="text-ink-muted mb-6">{t("onb.joinedLoading")} <b>{joined}</b>{t("onb.joinedLoadingPost")}</p>
-        <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
+        <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" aria-hidden="true" />
       </Card>
     );
   }
@@ -213,7 +213,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
           <div className="inline-flex items-center bg-panel border border-divider rounded-full p-1">
             <button onClick={() => setPeriod("monthly")} className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition ${period === "monthly" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}>{t("paywall.monthly")}</button>
             <button onClick={() => setPeriod("annual")} className={`px-4 py-1.5 rounded-full text-xs font-bold apple-transition flex items-center gap-1.5 ${period === "annual" ? "bg-surface-dark text-white shadow" : "text-ink-muted hover:text-ink"}`}>
-              {t("paywall.annual")} <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded-full bg-success/15 text-[#2E8B6F]">-17%</span>
+              {t("paywall.annual")} <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded-full bg-success/15 text-success">-17%</span>
             </button>
           </div>
         </div>
@@ -231,7 +231,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                   <span className="font-display font-bold text-3xl tracking-tight">₹{monthly.toLocaleString("en-IN")}</span>
                   <span className="text-xs text-ink-muted mb-1.5">{t("paywall.perMo")}</span>
                 </div>
-                <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full my-2 bg-sage/15 text-[#3E8388]">
+                <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full my-2 bg-primary/12 text-primary-deep">
                   <Stack weight="bold" className="w-3.5 h-3.5" /> {t("paywall.upToProjects", { n: p.includedProjects })}
                 </div>
                 <ul className="space-y-1.5 mb-4 text-sm">
@@ -244,7 +244,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                         secondary action (or they pay later, in-app). */}
                     <button
                       onClick={() => startTrial(id)} disabled={!!creating}
-                      className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 bg-primary text-white hover:bg-[#B85F3B]"
+                      className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 bg-primary text-white hover:bg-primary-deep"
                     >
                       {creating === `trial:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{t("onb.startTrial")} <ArrowRight weight="bold" className="w-4 h-4" /></>}
                     </button>
@@ -258,7 +258,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                 ) : (
                   <button
                     onClick={() => payNow(id)} disabled={!!creating}
-                    className={`mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-[#B85F3B]" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                    className={`mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                   >
                     {creating === `pay:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : t("paywall.pay", { amount: payLabel?.toLocaleString("en-IN") || "" })}
                   </button>
@@ -302,7 +302,7 @@ const ErrorBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 const PrimaryButton: React.FC<{ onClick: () => void; busy?: boolean; disabled?: boolean; children: React.ReactNode }> = ({ onClick, busy, disabled, children }) => (
   <button onClick={onClick} disabled={busy || disabled}
-    className="w-full bg-primary text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#B85F3B] transition-colors disabled:opacity-50">
+    className="w-full bg-primary text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-deep transition-colors disabled:opacity-50">
     {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{children} <ArrowRight className="w-4 h-4" /></>}
   </button>
 );

@@ -18,6 +18,9 @@ import { DailyLogEntryScreen } from "./DailyLogEntryScreen";
 import { DailyLogEntry } from "../types";
 import { useAuthStore } from "../store";
 import { useTranslation } from "../i18n";
+import { toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface DailyLogHistoryProps {
   projectId: string;
@@ -46,7 +49,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
       setLogToDelete(null);
     } catch (e) {
       console.error(e);
-      alert(t("dlh.failedDelete"));
+      toast.error(t("dlh.failedDelete"));
     }
   };
 
@@ -77,10 +80,12 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
           className="bg-surface p-5 rounded-2xl border border-divider shadow-sm relative overflow-hidden"
         >
           {log.markComplete ? (
-            <div
-              className="absolute top-0 right-0 border-b-[32px] border-l-[32px] border-b-transparent border-l-emerald-500 w-0 h-0"
-              title={t("dlh.markedComplete")}
-            ></div>
+            <Tooltip label={t("dlh.markedComplete")}>
+              <div
+                className="absolute top-0 right-0 border-b-[32px] border-l-[32px] border-b-transparent border-l-emerald-500 w-0 h-0"
+               
+              ></div>
+            </Tooltip>
           ) : null}
 
           <div className="flex justify-between items-start mb-3">
@@ -177,8 +182,8 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
           )}
 
           {log.note && (
-            <div className="mt-4 bg-amber-50/50 p-3 rounded-xl border border-primary/20 flex gap-2 items-start text-[#5E2F1B]">
-              <MessageSquare className="w-4 h-4 shrink-0 mt-0.5 text-rust-strong opacity-60" />
+            <div className="mt-4 bg-amber-50/50 p-3 rounded-xl border border-primary/20 flex gap-2 items-start text-warning">
+              <MessageSquare className="w-4 h-4 shrink-0 mt-0.5 text-primary-strong opacity-60" />
               <p className="text-[10px] font-medium leading-relaxed italic">
                 {log.note}
               </p>
@@ -189,7 +194,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
             <div className="mt-4 pt-3 flex items-center justify-end gap-2 border-t border-divider/50">
               <button
                 onClick={() => setLogToEdit(log)}
-                className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#F7E4DB] transition"
+                className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-warning/12 transition"
               >
                 <Edit2 className="w-3.5 h-3.5" /> {t("common.edit")}
               </button>
@@ -216,6 +221,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
       {logToDelete && (
         <div className="fixed inset-0 bg-ink/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-sm rounded-[32px] p-8 shadow-2xl relative">
+            <DialogBehaviour />
             <div className="w-16 h-16 bg-danger/8 text-danger rounded-full flex items-center justify-center mb-6 mx-auto">
               <Trash2 className="w-8 h-8" />
             </div>

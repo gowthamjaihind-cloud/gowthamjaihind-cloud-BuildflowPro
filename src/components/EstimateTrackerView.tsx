@@ -41,6 +41,10 @@ import {
 import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
+import { toast } from "../lib/feedback";
+import { Tooltip } from "./Tooltip";
+import { EmptyState } from "./EmptyState";
+import { DialogBehaviour } from "../lib/useDialog";
 
 interface EstimateTrackerViewProps {
   projectId: string;
@@ -146,16 +150,16 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       setSelectedEstimateId(newEstRef.id);
     } catch (error) {
       console.error("Failed to create estimate", error);
-      alert("Failed to create estimate");
+      toast.error("Failed to create estimate");
     }
   };
 
   const getStatusColor = (status: ClientEstimate["status"]) => {
     switch (status) {
       case "Draft":
-        return "bg-ice text-ink/80 border-divider";
+        return "bg-page text-ink/80 border-divider";
       case "Sent to Client":
-        return "bg-[#E2E8ED] text-[#56778E] border-[#C5D2DB]";
+        return "bg-[#E2E8ED] text-ink-muted border-[#C5D2DB]";
       case "Approved":
         return "bg-success/20 text-success border-success/40";
       case "Rejected":
@@ -189,7 +193,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       setEstimateToDelete(null);
     } catch (err) {
       console.error("Failed to delete estimate", err);
-      alert("Failed to delete estimate");
+      toast.error("Failed to delete estimate");
     } finally {
       setIsDeleting(false);
     }
@@ -204,7 +208,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       );
     } catch (err) {
       console.error("Failed to update estimate", err);
-      alert("Failed to update estimate");
+      toast.error("Failed to update estimate");
     }
   };
 
@@ -466,8 +470,9 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
     return (
       <div className="space-y-6">
         {estimateToDelete && (
-          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <div className="bg-panel rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-divider">
+              <DialogBehaviour />
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-11 h-11 rounded-2xl bg-danger/10 flex items-center justify-center shrink-0">
                   <Trash2 className="w-5 h-5 text-danger" />
@@ -506,12 +511,14 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
         )}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSelectedEstimateId(null)}
-              className="p-2 bg-surface border border-divider rounded-xl hover:bg-panel transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-ink" />
-            </button>
+            <Tooltip label={"Back to estimates"}>
+              <button aria-label="Back to estimates"
+                onClick={() => setSelectedEstimateId(null)}
+                className="p-2 bg-surface border border-divider rounded-xl hover:bg-panel transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-ink" />
+              </button>
+            </Tooltip>
             <div>
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold text-ink">
@@ -543,20 +550,22 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
             </button>
             <button
               onClick={handleEstimateExportPDF}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#C0653F] hover:bg-[#A0522F] text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
             >
               <Download className="w-4 h-4" />
               PDF
             </button>
             {isAdminOrOwner && (
-              <button
-                onClick={() => setEstimateToDelete(selectedEstimate)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
-                title="Delete this estimate"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
+              <Tooltip label="Delete this estimate">
+                <button
+                  onClick={() => setEstimateToDelete(selectedEstimate)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                 
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -598,12 +607,14 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     key={item.id}
                     className="bg-panel border border-white/10 rounded-xl p-4 flex flex-col gap-3 group relative"
                   >
-                    <button
-                      onClick={() => removeLineItem(item.id)}
-                      className="absolute top-4 right-4 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-danger transition-all pointer-events-none group-hover:pointer-events-auto"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <Tooltip label={"Remove line item"}>
+                      <button aria-label="Remove line item"
+                        onClick={() => removeLineItem(item.id)}
+                        className="absolute top-4 right-4 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-danger transition-all pointer-events-none group-hover:pointer-events-auto"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-8">
                       <div>
                         <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
@@ -708,7 +719,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                         }}
                         className={`px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase transition-all ${
                           item.isChangeOrder
-                            ? "bg-amber-500/20 text-[#C0653F] border border-amber-500/30"
+                            ? "bg-amber-500/20 text-primary border border-amber-500/30"
                             : "bg-surface/60 text-ink-muted hover:text-ink border border-white/10"
                         }`}
                       >
@@ -742,10 +753,10 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     {/* Change Order Section */}
                     <div className="space-y-4">
                       <div className="flex justify-between items-center border-b border-amber-500/25 pb-2">
-                        <span className="text-xs font-black uppercase tracking-widest text-[#C0653F]">
+                        <span className="text-xs font-black uppercase tracking-widest text-primary">
                           Change Order Items ({changeOrderItems.length})
                         </span>
-                        <span className="text-sm font-black text-[#C0653F] font-mono">
+                        <span className="text-sm font-black text-primary font-mono">
                           Subtotal: ₹{coSubTotal.toLocaleString()}
                         </span>
                       </div>
@@ -828,7 +839,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
             </div>
 
             {uncoveredCost > 0 && (
-              <div className="p-4 rounded-xl border border-primary/40 bg-[#F7E4DB]">
+              <div className="p-4 rounded-xl border border-primary/40 bg-warning/12">
                 <div className="text-primary text-sm font-bold mb-1">
                   ₹{uncoveredCost.toLocaleString()} of cost isn't included in this margin
                 </div>
@@ -948,8 +959,8 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-[#C0653F] font-medium">Change Order Subtotal</span>
-                  <span className="text-[#C0653F] font-bold">
+                  <span className="text-primary font-medium">Change Order Subtotal</span>
+                  <span className="text-primary font-bold">
                     ₹{coSubTotal.toLocaleString()}
                   </span>
                 </div>
@@ -1006,9 +1017,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <button
                       onClick={() => {
                         if (!isAdminOrOwner)
-                          return alert(
-                            "Only Admins and Owners can approve estimates.",
-                          );
+                          return toast.info("Only Admins and Owners can approve estimates.",);
                         updateSelectedEstimate({ status: "Approved" });
                       }}
                       className="w-full bg-success hover:bg-success text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-green-500/20"
@@ -1018,9 +1027,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <button
                       onClick={() => {
                         if (!isAdminOrOwner)
-                          return alert(
-                            "Only Admins and Owners can reject estimates.",
-                          );
+                          return toast.info("Only Admins and Owners can reject estimates.",);
                         updateSelectedEstimate({ status: "Rejected" });
                       }}
                       className="w-full bg-danger hover:bg-danger text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-red-500/20"
@@ -1055,14 +1062,16 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
 
         {/* Sync Modal */}
         {isSyncModalOpen && (
-          <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <div className="bg-surface w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden border border-divider flex flex-col max-h-[80vh]">
+              <DialogBehaviour />
               <div className="bg-panel px-6 py-4 flex justify-between items-center border-b border-white/10 shrink-0">
                 <h3 className="text-[17px] font-bold text-ink flex items-center gap-2">
                   <Link className="w-5 h-5 text-secondary" /> Sync Tasks to
                   Estimate
                 </h3>
                 <button
+                  aria-label={t("common.close")}
                   onClick={() => setIsSyncModalOpen(false)}
                   className="text-ink-muted hover:text-ink transition-colors p-1"
                 >
@@ -1071,15 +1080,12 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
               </div>
               <div className="p-4 overflow-y-auto grow">
                 {projectTasks.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FileText className="w-10 h-10 text-ink-muted/30 mx-auto mb-3" />
-                    <h3 className="text-sm font-bold text-ink">
-                      No Tasks Found
-                    </h3>
-                    <p className="text-xs text-ink-muted">
-                      Create tasks in the Work Breakdown logic first.
-                    </p>
-                  </div>
+                  <EmptyState
+                    size="inline"
+                    icon={FileText}
+                    title="No tasks found"
+                    body="Create tasks in the Work Breakdown first."
+                  />
                 ) : (
                   <div className="space-y-2">
                     {orderTasksByWbs(projectTasks).map((row) => {
@@ -1242,12 +1248,14 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <td className="py-4 px-4 text-right text-ink font-medium">
                       <div className="flex items-center justify-end gap-1.5">
                         {estScopedCost.unlinkedCount > 0 && (
-                          <span 
-                            title="Some line items aren't linked to a WBS task — cost is incomplete."
-                            className="text-primary cursor-help"
-                          >
-                            *
-                          </span>
+                          <Tooltip label="Some line items aren't linked to a WBS task — cost is incomplete.">
+                            <span 
+                             
+                              className="text-primary cursor-help"
+                            >
+                              *
+                            </span>
+                          </Tooltip>
                         )}
                         <span>₹{estScopedCost.actual.toLocaleString()}</span>
                       </div>
@@ -1265,7 +1273,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button className="p-2 text-ink-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                        <button aria-label="Open estimate" className="p-2 text-ink-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
                           <ChevronRight className="w-4 h-4" />
                         </button>
                       </div>
@@ -1275,25 +1283,26 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
             </tbody>
           </table>
           {estimates.length === 0 && (
-            <div className="text-center py-12">
-              <Calculator className="w-12 h-12 text-ink-muted/30 mx-auto mb-3" />
-              <h3 className="text-lg font-bold text-ink">No Estimates Found</h3>
-              <p className="text-ink-muted mb-4">
-                Create your first client estimate to start tracking approvals.
-              </p>
-            </div>
+            <EmptyState
+              size="page"
+              icon={Calculator}
+              title="No estimates yet"
+              body="Create your first client estimate to start tracking approvals."
+            />
           )}
         </div>
       </div>
 
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-onyx/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-divider">
+            <DialogBehaviour />
             <div className="bg-panel px-6 py-4 flex justify-between items-center border-b border-white/10">
               <h3 className="text-[17px] font-bold text-ink flex items-center gap-2">
                 <FileText className="w-5 h-5" /> New Client Estimate
               </h3>
               <button
+                aria-label={t("common.close")}
                 onClick={() => setIsCreateModalOpen(false)}
                 className="text-ink-muted hover:text-ink transition-colors p-1"
               >

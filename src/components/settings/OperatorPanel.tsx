@@ -22,6 +22,8 @@ import {
   OrgUsage,
 } from "../../services/firebaseFunctions";
 import { PLAN_ORDER, PLANS } from "../../lib/plans";
+import { confirmDialog } from "../../lib/feedback";
+import { Tooltip } from "../Tooltip";
 
 // Operator-only console: create a new customer org (30-day trial) and manually
 // manage subscriptions until automated (Razorpay) checkout is wired.
@@ -110,7 +112,7 @@ export const OperatorPanel: React.FC = () => {
       // Offer an explicit override (no projects are deleted — the cap just goes
       // over until the customer archives/removes the excess).
       if (!force && /force to override/i.test(msg)) {
-        if (window.confirm(`${msg}\n\nApply the downgrade anyway? No projects are deleted — the org will simply be over its new cap.`)) {
+        if ((await confirmDialog({ title: `${msg}\n\nApply the downgrade anyway? No projects are deleted — the org will simply be over its new cap.` }))) {
           await applyPlan(true);
           return;
         }
@@ -184,7 +186,7 @@ export const OperatorPanel: React.FC = () => {
           <input value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} placeholder="Owner email (optional)"
             className="flex-1 bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
           <button onClick={provision} disabled={pBusy || !companyName.trim()}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {pBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Provision"}
           </button>
         </div>
@@ -202,10 +204,12 @@ export const OperatorPanel: React.FC = () => {
             <div className="flex items-center gap-2">
               <input readOnly value={provisioned.link}
                 className="flex-1 bg-surface border border-divider px-3 py-2 rounded-lg text-xs font-mono text-ink truncate" />
-              <button onClick={async () => { try { await navigator.clipboard.writeText(provisioned.link); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {} }}
-                className="px-4 py-2 bg-onyx text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shrink-0">
-                {copied ? <><CheckCircle className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
-              </button>
+              <Tooltip label={"Copy activation link"}>
+                <button aria-label="Copy activation link" onClick={async () => { try { await navigator.clipboard.writeText(provisioned.link); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {} }}
+                  className="px-4 py-2 bg-surface-dark text-white rounded-lg text-sm font-bold flex items-center gap-1.5 shrink-0">
+                  {copied ? <><CheckCircle className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
+                </button>
+              </Tooltip>
             </div>
             <p className="text-xs text-ink-muted mt-2">Send this Owner-invite link to the customer.</p>
           </div>
@@ -242,10 +246,10 @@ export const OperatorPanel: React.FC = () => {
           </select>
           {action === "activate" && (
             <input type="number" min={1} value={months} onChange={(e) => setMonths(parseInt(e.target.value) || 1)}
-              className="w-24 bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm" title="Months" />
+              className="w-24 bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm" aria-label="Months" />
           )}
           <button onClick={setSub} disabled={sBusy || !orgId.trim()}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {sBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
           </button>
         </div>
@@ -281,7 +285,7 @@ export const OperatorPanel: React.FC = () => {
             ))}
           </select>
           <button onClick={() => applyPlan()} disabled={planBusy || !orgId.trim()}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {planBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Set plan"}
           </button>
         </div>
@@ -303,7 +307,7 @@ export const OperatorPanel: React.FC = () => {
           </div>
         )}
         <button onClick={loadUsage} disabled={uBusy || !orgId.trim()}
-          className="px-6 py-3 bg-onyx text-white rounded-xl font-bold hover:bg-onyx/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mb-4">
+          className="px-6 py-3 bg-surface-dark text-white rounded-xl font-bold hover:bg-surface-dark/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mb-4">
           {uBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Load usage"}
         </button>
         {usage && (
@@ -318,7 +322,7 @@ export const OperatorPanel: React.FC = () => {
                 {usage.projectCount}{usage.includedProjects === null ? "" : ` / ${usage.includedProjects}`}
               </p>
             </div>
-            <div className={`rounded-xl p-3 border ${usage.overageProjects > 0 ? "bg-[#B85F3B]/10 border-[#B85F3B]/30" : "bg-panel border-divider"}`}>
+            <div className={`rounded-xl p-3 border ${usage.overageProjects > 0 ? "bg-primary-deep/10 border-primary-deep/30" : "bg-panel border-divider"}`}>
               <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Overage</p>
               <p className="font-bold text-ink">{usage.overageProjects} · ₹{usage.overageCost}/mo</p>
             </div>
@@ -342,7 +346,7 @@ export const OperatorPanel: React.FC = () => {
           Paste your Razorpay keys so customers can pay and get their plan activated automatically. {rzpStatus && (
             rzpStatus.configured
               ? <span className="text-success font-semibold">Currently ON — {rzpStatus.mode.toUpperCase()} mode ({rzpStatus.keyId}){rzpStatus.hasWebhookSecret ? "" : " · webhook secret not set"}.</span>
-              : <span className="text-[#B85F3B] font-semibold">Currently OFF — checkout is disabled.</span>
+              : <span className="text-warning font-semibold">Currently OFF — checkout is disabled.</span>
           )}
         </p>
         {rzpErr && (
@@ -361,7 +365,7 @@ export const OperatorPanel: React.FC = () => {
           <input value={rzpWebhook} onChange={(e) => setRzpWebhook(e.target.value)} type="password" placeholder="Webhook secret (optional but recommended)"
             className="w-full bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20" />
           <button onClick={saveRzp} disabled={rzpBusy || !rzpKeyId.trim() || !rzpSecret.trim()}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {rzpBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
           </button>
           <p className="text-[10px] text-ink-muted leading-relaxed">
@@ -383,7 +387,7 @@ export const OperatorPanel: React.FC = () => {
           org or invite a teammate. {emailStatus && (
             emailStatus.configured
               ? <span className="text-success font-semibold">Currently ON — sending from {emailStatus.fromEmail}.</span>
-              : <span className="text-[#B85F3B] font-semibold">Currently OFF — links are copy-only.</span>
+              : <span className="text-warning font-semibold">Currently OFF — links are copy-only.</span>
           )}
         </p>
         {emErr && (
@@ -403,7 +407,7 @@ export const OperatorPanel: React.FC = () => {
             <input value={fromName} onChange={(e) => setFromName(e.target.value)} placeholder="from name"
               className="sm:w-48 bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
             <button onClick={saveEmail} disabled={emBusy || !apiKey.trim() || !fromEmail.trim()}
-              className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-[#B85F3B] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+              className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
               {emBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
             </button>
           </div>

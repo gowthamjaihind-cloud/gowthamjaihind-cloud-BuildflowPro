@@ -8,6 +8,8 @@ import {
 import { useProjectStore } from "../../../store";
 import { Project } from "../../../types";
 import { useTranslation } from "../../../i18n";
+import { toast } from "../../../lib/feedback";
+import { DialogBehaviour } from "../../../lib/useDialog";
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -78,7 +80,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
   const handleUpdateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editedProject.name?.trim()) {
-      alert("Please enter a workspace name.");
+      toast.error("Please enter a workspace name.");
       return;
     }
 
@@ -101,7 +103,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-onyx/60 backdrop-blur-md z-[100] flex items-center justify-center p-6"
+          className="fixed inset-0 bg-surface-dark/60 backdrop-blur-md z-[100] flex items-center justify-center p-6"
         >
           <motion.form
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -110,6 +112,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
             onSubmit={handleUpdateProject}
             className="soft-card w-full max-w-2xl rounded-[40px] p-6 md:p-12 shadow-2xl relative max-h-[90vh] overflow-y-auto"
           >
+            <DialogBehaviour />
             <div className="relative z-10 mb-12 flex justify-between items-start">
               <div>
                 <h2 className="text-[34px] font-bold text-ink mb-2 tracking-tight">
@@ -119,7 +122,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                   {t("cpm.modifyParams")}
                 </p>
               </div>
-              <button
+              <button aria-label={t("common.close")}
                 type="button"
                 onClick={onClose}
                 className="p-3 hover:bg-panel rounded-full transition-colors text-ink-muted hover:text-ink"
@@ -240,7 +243,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               <div className="md:col-span-2 mt-8">
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white py-4 md:py-5 rounded-2xl font-bold text-[17px] hover:bg-[#B85F3B] apple-transition shadow-xl hover:shadow-2xl active:scale-[0.98]"
+                  className="w-full bg-primary text-white py-4 md:py-5 rounded-2xl font-bold text-[17px] hover:bg-primary-deep apple-transition shadow-xl hover:shadow-2xl active:scale-[0.98]"
                 >
                   {t("cpm.saveChanges")}
                 </button>
