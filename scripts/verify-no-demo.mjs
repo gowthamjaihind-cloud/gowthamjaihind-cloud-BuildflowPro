@@ -107,4 +107,28 @@ if (existsSync(demoDir)) {
   demoNote = ` dist/demo carries fixtures (${found.size}/${NEEDLES.length} markers).`;
 }
 
-console.log(`PASS — no demo fixtures in ${DIST}.${demoNote}`);
+// App Check debug token. src/firebase.ts sets the global only under
+// import.meta.env.DEV so Vite folds the branch away. The risk this guards is
+// that guard becoming a RUNTIME condition — `location.hostname ===
+// "localhost"` reads as equivalent and cannot be folded, so it ships.
+// A shipped debug token turns attestation off for anyone who finds it, which
+// is the whole value of enforcing App Check.
+//
+// The bare name legitimately appears in dist: firebase/app-check reads the
+// global itself. So this looks for an ASSIGNMENT to it, not a mention.
+const DEBUG_TOKEN_ASSIGN =
+  /(?:self|window|globalThis)\s*(?:\.|\[["'])FIREBASE_APPCHECK_DEBUG_TOKEN(?:["']\])?\s*=/;
+const debugHits = [];
+for (const f of walk(DIST)) {
+  if (!/\.(js|mjs|cjs|html)$/.test(f)) continue;
+  if (DEBUG_TOKEN_ASSIGN.test(readFileSync(f, "utf8"))) debugHits.push(f);
+}
+if (debugHits.length) {
+  console.error("FAIL — App Check debug token is assigned in the production build:");
+  debugHits.forEach((f) => console.error(`  ${f}`));
+  console.error("\nThe DEV guard in src/firebase.ts must stay a BUILD-time condition");
+  console.error("(`import.meta.env.DEV`). A runtime check cannot be folded away.");
+  process.exit(1);
+}
+
+console.log(`PASS — no demo fixtures in ${DIST}, no App Check debug token.${demoNote}`);

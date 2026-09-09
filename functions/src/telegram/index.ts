@@ -10,7 +10,7 @@ import * as log from "./handlers/log";
 import * as projects from "./handlers/projects";
 import * as agent from "./handlers/agent";
 import * as invoice from "./handlers/invoice";
-import { db } from "../db";
+import { db, FIRESTORE_DATABASE_ID } from "../db";
 const BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = defineSecret("TELEGRAM_WEBHOOK_SECRET");
 // Used by the invoice-photo reader (Gemini vision) in the webhook.
@@ -400,6 +400,8 @@ async function handleUpdate(tg, update, geminiKey) {
 }
 export const onUserUnlinked = onDocumentUpdated({
     document: "users/{userId}",
+    // Without this the trigger listens on "(default)" and never fires.
+    database: FIRESTORE_DATABASE_ID,
     region: "asia-southeast1",
     secrets: [BOT_TOKEN],
 }, async (event) => {

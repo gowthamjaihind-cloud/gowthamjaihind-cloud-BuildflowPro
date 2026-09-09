@@ -1,6 +1,6 @@
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
-import { db } from "../db";
+import { db, FIRESTORE_DATABASE_ID } from "../db";
 
 
 async function handleGRNWritten(
@@ -179,7 +179,14 @@ async function handleGRNWritten(
 }
 
 export const onProjectGRNWritten = onDocumentWritten(
-  "projects/{projectId}/goodsReceiptNotes/{grnId}",
+  // Bound to the app's NAMED Firestore database. A v2 trigger with no
+  // `database` option binds to "(default)" instead, where it never fires --
+  // both the client and the Admin SDK use firestoreDatabaseId, so nothing
+  // this listens for ever lands in "(default)".
+  {
+    document: "projects/{projectId}/goodsReceiptNotes/{grnId}",
+    database: FIRESTORE_DATABASE_ID,
+  },
   async (event: any) => {
     const { projectId } = event.params;
     const beforeData = event.data?.before?.data();
@@ -189,7 +196,10 @@ export const onProjectGRNWritten = onDocumentWritten(
 );
 
 export const onOrgGRNWritten = onDocumentWritten(
-  "organizations/{orgId}/projects/{projectId}/goodsReceiptNotes/{grnId}",
+  {
+    document: "organizations/{orgId}/projects/{projectId}/goodsReceiptNotes/{grnId}",
+    database: FIRESTORE_DATABASE_ID,
+  },
   async (event: any) => {
     const { orgId, projectId } = event.params;
     const beforeData = event.data?.before?.data();
