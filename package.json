@@ -12,6 +12,7 @@
     "lint": "tsc --noEmit",
     "build:demo": "VITE_DEMO=1 vite build --outDir dist-demo",
     "verify:no-demo": "node scripts/verify-no-demo.mjs",
+    "i18n:report": "node scripts/i18n-report.mjs",
     "video": "node marketing/video/build.mjs both",
     "video:preview": "PREVIEW=1 node marketing/video/build.mjs",
     "capture:screens": "node marketing/capture/capture-screens.mjs",

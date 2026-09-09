@@ -51,7 +51,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   onClose,
   user,
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const L = useL();
   // Optional WBS starter structure. "" = start with an empty breakdown.
   const [templateId, setTemplateId] = useState<string>("");
@@ -146,7 +146,14 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     const template = allTemplates.find((x) => x.id === templateId);
     if (!template) return;
     const start = newProject.startDate ? new Date(newProject.startDate) : new Date();
-    const planned = planFromTemplate(template, isNaN(start.getTime()) ? new Date() : start);
+    // The language is chosen here, once: these names are written into
+    // Firestore as task documents and stay editable, so they are data from
+    // this point on rather than text looked up at render time.
+    const planned = planFromTemplate(
+      template,
+      isNaN(start.getTime()) ? new Date() : start,
+      language === "ta" ? "ta" : "en",
+    );
     const path = getProjectSubCollectionPath(projectId, "tasks");
     const batch = writeBatch(db);
     const ids: string[] = planned.map(() => doc(collection(db, path)).id);

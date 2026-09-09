@@ -7,6 +7,19 @@
 
 export interface WbsNode {
   name: string;
+  /**
+   * Tamil name, used when a template is applied by a Tamil user.
+   *
+   * These names are not UI text — applying a template WRITES them into
+   * Firestore as task documents, and they stay editable from then on. So they
+   * cannot be i18n keys looked up at render time: the language is chosen once,
+   * at the moment the project is seeded, and the result is data.
+   *
+   * Optional throughout. A node without it falls back to `name`, so a
+   * half-translated template still produces a complete breakdown rather than
+   * blank rows.
+   */
+  nameTa?: string;
   /** Working days this task is expected to take. Ignored for phases (parents). */
   days?: number;
   /**
@@ -621,7 +634,22 @@ const addDays = (d: Date, n: number) => {
  * deliberately simple, because the planner will re-sequence it against the real
  * site anyway. Every date remains editable afterwards.
  */
-export function planFromTemplate(template: WbsTemplate, startDate: Date): PlannedTask[] {
+/**
+ * `en` keeps the English names; `ta` prefers `nameTa` and falls back to it.
+ * Defaults to English so every existing caller is unchanged.
+ */
+export type TemplateLang = "en" | "ta";
+
+/** The name a node should be seeded with, for the language asked for. */
+export function nodeName(node: WbsNode, lang: TemplateLang = "en"): string {
+  return lang === "ta" && node.nameTa ? node.nameTa : node.name;
+}
+
+export function planFromTemplate(
+  template: WbsTemplate,
+  startDate: Date,
+  lang: TemplateLang = "en",
+): PlannedTask[] {
   const out: PlannedTask[] = [];
 
   // Walk a level of siblings. Each sibling starts once `startAfter` of the
@@ -642,10 +670,11 @@ export function planFromTemplate(template: WbsTemplate, startDate: Date): Planne
 
       const isParent = !!(node.children && node.children.length);
       const index = out.length;
-      const phase = phaseName ?? node.name;
+      const label = nodeName(node, lang);
+      const phase = phaseName ?? label;
 
       out.push({
-        name: node.name,
+        name: label,
         type: isParent ? "Summary" : "Task",
         parentIndex,
         startDate: iso(nodeStart),
