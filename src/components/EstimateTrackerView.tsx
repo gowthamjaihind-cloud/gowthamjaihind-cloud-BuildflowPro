@@ -496,7 +496,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   disabled={isDeleting}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold text-ink bg-surface border border-divider hover:bg-divider transition-colors disabled:opacity-50"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={handleDeleteEstimate}
@@ -563,7 +563,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                  
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {t("common.delete")}
                 </button>
               </Tooltip>
             )}
@@ -635,7 +635,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                       </div>
                       <div>
                         <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
-                          Description
+                          {t("cpay.description")}
                         </label>
                         <input
                           type="text"
@@ -1129,7 +1129,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   onClick={() => setIsSyncModalOpen(false)}
                   className="px-5 py-2.5 rounded-xl font-bold text-ink-muted hover:text-ink hover:bg-surface transition-colors"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={handleSyncTasks}
@@ -1184,10 +1184,10 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   Number
                 </th>
                 <th className="text-left py-3 px-4 text-ink-muted font-bold text-[13px] uppercase tracking-wider">
-                  Date
+                  {t("common.date")}
                 </th>
                 <th className="text-left py-3 px-4 text-ink-muted font-bold text-[13px] uppercase tracking-wider">
-                  Status
+                  {t("common.status")}
                 </th>
                 <th className="text-right py-3 px-4 text-ink-muted font-bold text-[13px] uppercase tracking-wider">
                   Contract (ex-GST)
@@ -1202,7 +1202,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   Total (inc GST)
                 </th>
                 <th className="text-center py-3 px-4 text-ink-muted font-bold text-[13px] uppercase tracking-wider">
-                  Actions
+                  {t("common.actions")}
                 </th>
               </tr>
             </thead>
@@ -1373,7 +1373,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                 onClick={() => setIsCreateModalOpen(false)}
                 className="px-5 py-2.5 rounded-xl font-bold text-ink-muted hover:text-ink hover:bg-surface transition-colors"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleCreate}

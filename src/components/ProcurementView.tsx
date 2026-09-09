@@ -961,7 +961,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   <th className="p-4">PO</th>
                   <th className="p-4 text-right">Grand total</th>
                   <th className="p-4">Match</th>
-                  <th className="p-4">Status</th>
+                  <th className="p-4">{t("common.status")}</th>
                   <th className="p-4 text-right">Action</th>
                 </tr>
               </thead>
@@ -1303,7 +1303,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               <thead>
                 <tr className="bg-surface-dark text-white/75 border-b border-white/10">
                   <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
-                    Timeline
+                    {t("dashboard.timeline")}
                   </th>
                   <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
                     Vendor
@@ -1312,10 +1312,10 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     Reference
                   </th>
                   <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
-                    Items
+                    {t("an.items")}
                   </th>
                   <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80 text-right">
-                    Total
+                    {t("common.total")}
                   </th>
                   {isAdminOrOwner && (
                     <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 text-right">
@@ -1483,7 +1483,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
 
                 <div className="mb-4">
                   <div className="text-[8px] font-bold text-ink-muted uppercase tracking-widest mb-2 tracking-[0.1em]">
-                    Items
+                    {t("an.items")}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {receipt.items.map((item, idx) => (
@@ -1508,13 +1508,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       }}
                       className="flex-1 py-2 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                     >
-                      <Edit2 className="w-4 h-4 mr-1.5" /> Edit
+                      <Edit2 className="w-4 h-4 mr-1.5" /> {t("common.edit")}
                     </button>
                     <button
                       onClick={() => setIsDeletingReceipt(receipt.id)}
                       className="flex-1 py-2 bg-danger/8 border border-danger/20 shadow-sm rounded-full text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                     >
-                      <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                      <Trash2 className="w-4 h-4 mr-1.5" /> {t("common.delete")}
                     </button>
                   </div>
                 )}
@@ -1584,7 +1584,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 <thead>
                   <tr className="bg-surface-dark text-white/75 border-b border-white/10">
                     <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
-                      Timeline
+                      {t("dashboard.timeline")}
                     </th>
                     <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
                       Entity Partner
@@ -1890,13 +1890,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                             }}
                             className="flex-1 py-2 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
-                            <Edit2 className="w-4 h-4 mr-1.5" /> Edit
+                            <Edit2 className="w-4 h-4 mr-1.5" /> {t("common.edit")}
                           </button>
                           <button
                             onClick={() => handleDeleteLedgerEntry(entry.id)}
                             className="flex-1 py-2 bg-danger/8 border border-danger/20 shadow-sm rounded-full text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
-                            <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                            <Trash2 className="w-4 h-4 mr-1.5" /> {t("common.delete")}
                           </button>
                         </>
                       ) : entry.referenceType === "GRN" ? (
@@ -1915,7 +1915,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                             }}
                             className="flex-1 py-2 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
-                            <Edit2 className="w-4 h-4 mr-1.5" /> Edit
+                            <Edit2 className="w-4 h-4 mr-1.5" /> {t("common.edit")}
                           </button>
                           <button
                             onClick={() =>
@@ -1923,7 +1923,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                             }
                             className="flex-1 py-2 bg-danger/8 border border-danger/20 shadow-sm rounded-full text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
-                            <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                            <Trash2 className="w-4 h-4 mr-1.5" /> {t("common.delete")}
                           </button>
                         </>
                       ) : (
@@ -1931,7 +1931,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           onClick={() => handleDeleteLedgerEntry(entry.id)}
                           className="w-full py-2 bg-danger/8 border border-danger/20 shadow-sm rounded-full text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                         >
-                          <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                          <Trash2 className="w-4 h-4 mr-1.5" /> {t("common.delete")}
                         </button>
                       )}
                     </div>
@@ -2194,7 +2194,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         })
                       }
                     >
-                      <option value="Material">Material</option>
+                      <option value="Material">{t("an.catMaterial")}</option>
                       <option value="Labor">Labor</option>
                       <option value="Both">Both</option>
                     </select>
@@ -2204,7 +2204,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       Contact Person
                     </label>
                     <input
-                      placeholder="Name"
+                      placeholder={t("common.name")}
                       className="w-full bg-panel p-4 rounded-xl font-bold border-2 border-transparent focus:border-primary outline-none"
                       value={newVendor.contactPerson}
                       onChange={(e) =>
@@ -2311,7 +2311,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     onClick={() => setIsDeletingVendor(null)}
                     className="flex-1 py-3 bg-panel hover:bg-divider rounded-xl font-bold transition-colors"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={() => handleDeleteVendor(isDeletingVendor)}
@@ -2353,7 +2353,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     disabled={isDeleting}
                     className="flex-1 py-3 bg-panel hover:bg-divider rounded-xl font-bold transition-colors"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={() => handleDeleteReceipt(isDeletingReceipt)}
@@ -2438,7 +2438,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
-                    Date
+                    {t("common.date")}
                   </label>
                   <input
                     type="date"

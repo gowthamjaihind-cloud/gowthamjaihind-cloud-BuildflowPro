@@ -15,6 +15,7 @@ import { PurchaseOrder, VendorBill, InventoryItem } from "../../types";
 import { Tooltip } from "../Tooltip";
 import { DialogBehaviour } from "../../lib/useDialog";
 
+import { useTranslation } from "../../i18n";
 interface ScanInvoiceProps {
   projectId: string;
   onClose: () => void;
@@ -46,6 +47,7 @@ function totalsOf(lines: any[], charges: any) {
 }
 
 export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, onPosted, initialBill }) => {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { data: pos = [] } = useProjectData<PurchaseOrder>(projectId, "purchase_orders");
   const { data: inventory = [] } = useProjectData<InventoryItem>(projectId, "inventory");
@@ -139,7 +141,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
           <h2 className="font-black text-ink flex items-center gap-2">
             <Sparkle weight="fill" className="w-5 h-5 text-info" /> {initialBill ? "Review Vendor Bill" : "Scan Vendor Invoice"}
           </h2>
-          <button aria-label="Close" onClick={onClose} className="p-2 bg-panel hover:bg-divider rounded-full">
+          <button aria-label={t("common.close")} onClick={onClose} className="p-2 bg-panel hover:bg-divider rounded-full">
             <X className="w-5 h-5 text-ink-muted" />
           </button>
         </div>
@@ -283,7 +285,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
         {showReview && bill && (
           <div className="p-5 border-t border-divider shrink-0 flex gap-3">
             <button onClick={onClose} className="px-5 py-3 bg-panel text-ink font-bold rounded-xl hover:bg-divider">
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               onClick={confirm}

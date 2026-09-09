@@ -37,6 +37,7 @@ const DigestMetrics: React.FC<{
   atRisk: number;
   logs7d: number;
 }> = ({ completion, budgetPct, variance, atRisk, logs7d }) => {
+  const { t } = useTranslation();
   const overspent = variance < 0;
   const bar = (pct: number, tone: string) => (
     <div className="h-1.5 w-full rounded-full bg-ink/10 overflow-hidden mt-1.5">
@@ -74,7 +75,7 @@ const DigestMetrics: React.FC<{
       </div>
       <div className="rounded-xl border border-divider bg-panel p-3">
         <div className="text-[9px] font-black uppercase tracking-widest text-ink-muted">
-          At risk
+          {t("an.atRisk")}
         </div>
         <div
           className={`text-xl font-black tabular-nums ${atRisk > 0 ? "text-danger" : "text-success"}`}

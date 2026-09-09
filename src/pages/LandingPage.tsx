@@ -375,9 +375,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <div className="flex items-center justify-between mb-5">
               <div>
                 <p className="font-display font-bold text-lg tracking-tight">Your Project</p>
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary">Control Center</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary">{t("header.controlCenter")}</p>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-success bg-success/12 px-3 py-1.5 rounded-full">Active</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-success bg-success/12 px-3 py-1.5 rounded-full">{t("status.active")}</span>
             </div>
 
             <div className="bg-surface-dark rounded-2xl p-5 text-white mb-4">
@@ -399,7 +399,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 <p className="font-mono font-bold text-lg">₹24.8L</p>
               </div>
               <div className="soft-card rounded-2xl p-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Manpower</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{t("an.viewManpower")}</p>
                 <p className="font-mono font-bold text-lg">42</p>
               </div>
             </div>
@@ -701,7 +701,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               <button
                 onClick={() => setConsentOpen(false)}
                 className="absolute top-5 right-5 text-ink-muted hover:text-ink apple-transition"
-                aria-label="Close"
+                aria-label={t("common.close")}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -743,7 +743,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                     </>
                   ) : (
                     <>
-                      Continue with Google <ArrowRight weight="bold" className="w-4 h-4" />
+                      {t("login.continueGoogle")} <ArrowRight weight="bold" className="w-4 h-4" />
                     </>
                   )}
                 </button>

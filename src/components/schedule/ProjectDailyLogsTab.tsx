@@ -22,6 +22,7 @@ import { toast } from "../../lib/feedback";
 import { EmptyState } from "../EmptyState";
 import { DialogBehaviour } from "../../lib/useDialog";
 
+import { useTranslation } from "../../i18n";
 interface ProjectDailyLogsTabProps {
   projectId: string;
 }
@@ -29,6 +30,7 @@ interface ProjectDailyLogsTabProps {
 export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
   projectId,
 }) => {
+  const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }))
       .toISOString()
@@ -141,7 +143,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                           {log.progressPercent}%
                         </span>
                         <span className="text-[8px] font-bold text-ink-muted uppercase tracking-widest block text-right mt-1">
-                          Cum. Progress
+                          {t("dlh.cumProgress")}
                         </span>
                       </div>
                     </div>
@@ -150,7 +152,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                         {log.materials.length > 0 && (
                           <div>
                             <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest flex items-center gap-1 mb-1.5 opacity-70">
-                              <Box className="w-3 h-3" /> Materials
+                              <Box className="w-3 h-3" /> {t("dlh.materials")}
                             </span>
                             <ul className="space-y-1 text-xs">
                               {log.materials.map((m, i) => (
@@ -221,13 +223,13 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                           onClick={() => setLogToEdit(log)}
                           className="text-xs font-bold text-ink-muted hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-warning/12 transition"
                         >
-                          <Edit2 className="w-3.5 h-3.5" /> Edit
+                          <Edit2 className="w-3.5 h-3.5" /> {t("common.edit")}
                         </button>
                         <button
                           onClick={() => setLogToDelete(log)}
                           className="text-xs font-bold text-ink-muted hover:text-danger flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-danger/8 transition"
                         >
-                          <Trash2 className="w-3.5 h-3.5" /> Delete
+                          <Trash2 className="w-3.5 h-3.5" /> {t("common.delete")}
                         </button>
                       </div>
                     )}
@@ -266,7 +268,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                     <Box className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-bold text-ink-muted">
-                    Materials Consumed
+                    {t("dlog.materialsConsumed")}
                   </span>
                 </div>
                 {materialsRollup.length === 0 ? (
@@ -323,7 +325,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
               <Trash2 className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-black text-center text-ink mb-2">
-              Delete Log Entry?
+              {t("dlh.deleteTitle")}
             </h3>
             <p className="text-sm font-medium text-ink-muted text-center mb-8">
               This will update the task's progress, dates, and material/labour
@@ -334,13 +336,13 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                 onClick={() => setLogToDelete(null)}
                 className="py-3.5 px-6 rounded-2xl font-bold bg-panel hover:bg-divider text-ink transition cursor-pointer"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleDelete}
                 className="py-3.5 px-6 rounded-2xl font-bold bg-danger hover:bg-danger text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
               >
-                Delete
+                {t("common.delete")}
               </button>
             </div>
           </div>

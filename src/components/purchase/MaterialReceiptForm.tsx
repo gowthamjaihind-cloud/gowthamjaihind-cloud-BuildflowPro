@@ -26,6 +26,7 @@ import { Tooltip } from "../Tooltip";
 import { EmptyState } from "../EmptyState";
 import { DialogBehaviour } from "../../lib/useDialog";
 
+import { useTranslation } from "../../i18n";
 interface MaterialReceiptFormProps {
   projectId: string;
   vendors: Vendor[];
@@ -45,6 +46,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
   existingReceipt,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -287,7 +289,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                <span className="text-white/80 text-[10px] font-bold uppercase tracking-widest">{overallMatchStatus}</span>
             </div>
           </div>
-          <button aria-label="Close" onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+          <button aria-label={t("common.close")} onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
             <X className="w-5 h-5 md:w-6 md:h-6" />
           </button>
         </div>
@@ -370,7 +372,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
               />
             </div>
             <div className="space-y-1.5 md:space-y-2">
-              <label className="text-[10px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">Date</label>
+              <label className="text-[10px] md:text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">{t("common.date")}</label>
               <input
                 type="date"
                 required
@@ -399,13 +401,13 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
                  <table className="w-full text-left">
                     <thead>
                        <tr className="bg-panel text-[10px] uppercase font-black tracking-widest text-ink-muted border-b border-divider">
-                          <th className="p-3">Material</th>
+                          <th className="p-3">{t("an.catMaterial")}</th>
                           <th className="p-3 text-right">PO Rate</th>
                           <th className="p-3 text-right border-l border-divider/50">Ord Qty</th>
                           <th className="p-3 text-right">Rec Qty (GRN)</th>
                           <th className="p-3 text-right border-l border-divider/50 bg-warning/12/50">Inv Qty</th>
                           <th className="p-3 text-right bg-warning/12/50">Inv Rate</th>
-                          <th className="p-3 bg-warning/12/50">Status</th>
+                          <th className="p-3 bg-warning/12/50">{t("common.status")}</th>
                           <th className="p-3"></th>
                        </tr>
                     </thead>
@@ -471,7 +473,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
             {!poId && items.map((item, idx) => (
               <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-panel p-4 rounded-2xl border border-divider">
                 <div className="col-span-1 md:col-span-4 space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Material</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{t("an.catMaterial")}</label>
                   <select
                     required
                     className="w-full bg-surface border rounded-xl p-2.5 text-xs font-bold"
@@ -559,7 +561,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
 
           <div className="flex justify-end gap-4 pt-4">
             <button type="button" onClick={onClose} className="px-6 py-3 bg-panel hover:bg-divider text-ink text-xs font-bold uppercase tracking-widest rounded-xl transition">
-              Cancel
+              {t("common.cancel")}
             </button>
             <button type="submit" disabled={isSubmitting || items.length === 0 || !supplierId} className="px-8 py-3 bg-success hover:bg-success text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 shadow-[0_4px_20px_rgba(5,150,105,0.2)] disabled:opacity-50 disabled:shadow-none">
               <Save className="w-4 h-4" /> Save Invoice

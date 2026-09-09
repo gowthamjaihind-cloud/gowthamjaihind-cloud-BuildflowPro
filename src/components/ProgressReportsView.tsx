@@ -588,7 +588,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                           {latestLog.progressPercent}%
                         </span>
                         <span className="block text-[8px] font-bold uppercase tracking-widest text-ink-muted/80 mt-1">
-                          Cum. Progress
+                          {t("dlh.cumProgress")}
                         </span>
                       </div>
                     </div>
@@ -600,7 +600,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                           {taskAgg.materialsRollup.length > 0 && (
                             <div>
                               <h5 className="text-[10px] font-bold uppercase tracking-widest text-ink-muted/80 mb-2">
-                                Materials
+                                {t("dlh.materials")}
                               </h5>
                               <ul className="text-xs space-y-1">
                                 {taskAgg.materialsRollup.map((m, i) => (
@@ -620,7 +620,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                           {taskAgg.laborByRole.length > 0 && (
                             <div>
                               <h5 className="text-[10px] font-bold uppercase tracking-widest text-ink-muted/80 mb-2">
-                                Labour
+                                {t("dlh.labor")}
                               </h5>
                               <ul className="text-xs space-y-1">
                                 {taskAgg.laborByRole.map((l, i) => (
@@ -787,7 +787,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
           <div className="bg-panel w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
             <DialogBehaviour />
             <h3 className="text-xl font-bold text-ink mb-2 text-center">
-              Delete Log Entry?
+              {t("dlh.deleteTitle")}
             </h3>
             <p className="text-sm font-medium text-ink-muted text-center mb-8">
               This will update the task's progress, dates, and material/labour
@@ -798,13 +798,13 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                 onClick={() => setLogToDelete(null)}
                 className="py-3.5 px-6 rounded-2xl font-bold bg-panel hover:bg-divider text-ink transition cursor-pointer"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={confirmDeleteLog}
                 className="py-3.5 px-6 rounded-2xl font-bold bg-danger hover:bg-danger text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
               >
-                Delete
+                {t("common.delete")}
               </button>
             </div>
           </div>

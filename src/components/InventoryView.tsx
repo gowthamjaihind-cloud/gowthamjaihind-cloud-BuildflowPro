@@ -695,7 +695,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               </span>
             </div>
             <p className="text-[8px] md:text-[10px] font-bold text-ink-muted mb-0.5 md:mb-1 uppercase tracking-widest">
-              Low Stock
+              {t("an.lowStock")}
             </p>
             <h3 className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-ink tracking-tight tabular-nums">
               <CountUp value={stats.lowStock} />{" "}
@@ -900,7 +900,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             {item.quantity - (item.consumed || 0) <=
                               item.minThreshold && (
                               <span className="text-[10px] font-bold text-danger uppercase tracking-widest bg-danger/8 px-1.5 py-0.5 rounded border border-danger/20">
-                                Low Stock
+                                {t("an.lowStock")}
                               </span>
                             )}
                           </div>
@@ -1002,7 +1002,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">{item.groupCode || item.category}</span>
                             {(item.quantity - (item.consumed || 0)) <= item.minThreshold && (
                               <span className="text-[10px] font-bold text-danger uppercase tracking-widest bg-danger/8 px-1.5 py-0.5 rounded border border-danger/20">
-                                Low Stock
+                                {t("an.lowStock")}
                               </span>
                             )}
                           </div>
@@ -1077,7 +1077,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         Physical Count
                       </th>
                       <th className="px-3 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/80 text-center">
-                        Variance
+                        {t("an.variance")}
                       </th>
                       <th className="px-3 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/30 text-right">
                         Action
@@ -1632,7 +1632,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                   onClick={() => setItemToDelete(null)}
                   className="w-full py-3 bg-panel text-ink rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-divider"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
               </div>
             </motion.div>
@@ -1838,8 +1838,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                           : setNewItem({ ...newItem, category: e.target.value })
                       }
                     >
-                      <option>Material</option>
-                      <option>Equipment</option>
+                      <option>{t("an.catMaterial")}</option>
+                      <option>{t("dlh.equipment")}</option>
                       <option>Other</option>
                     </select>
                   </div>
@@ -2005,7 +2005,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     }}
                     className="px-6 md:px-8 bg-panel text-ink-muted py-3 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-divider"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                 </div>
               </form>

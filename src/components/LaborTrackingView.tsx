@@ -739,7 +739,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
             </div>
             <div>
               <h2 className="text-2xl md:text-3xl font-black text-ink tracking-tight leading-none mb-1 md:mb-2">
-                Archive
+                {t("views.archive")}
               </h2>
               <p className="text-ink-muted font-bold text-xs md:text-sm tracking-tight uppercase tracking-[0.1em]">
                 All fiscal certifications.
@@ -866,7 +866,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         Ref No.
                       </th>
                       <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/30 italic">
-                        Date
+                        {t("common.date")}
                       </th>
                       <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/80">
                         Vendor
@@ -878,7 +878,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         Net Amount
                       </th>
                       <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/80 text-center">
-                        Status
+                        {t("common.status")}
                       </th>
                       {isAdminOrOwner && (
                         <th className="px-6 md:px-10 py-4 md:py-6 text-right"></th>
@@ -1195,7 +1195,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                   onClick={() => setIsDeletingRate(null)}
                   className="flex-1 bg-panel text-ink py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-divider transition-all"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={() => handleDeleteRate(isDeletingRate)}

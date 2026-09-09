@@ -366,7 +366,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             {activeTab === "appearance" && (
               <section className="soft-card p-8 squircle-24">
                 <h3 className="text-xl font-bold text-ink mb-6 flex items-center gap-2">
-                  <Monitor className="w-6 h-6 text-primary" /> Appearance
+                  <Monitor className="w-6 h-6 text-primary" /> {t("settings.tabAppearance")}
                 </h3>
                 <div className="space-y-8">
                   <div>

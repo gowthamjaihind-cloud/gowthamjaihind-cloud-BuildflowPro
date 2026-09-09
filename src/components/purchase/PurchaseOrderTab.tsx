@@ -13,11 +13,13 @@ import { format } from "date-fns";
 import { Receipt } from "@phosphor-icons/react";
 import { EmptyState } from "../EmptyState";
 
+import { useTranslation } from "../../i18n";
 interface PurchaseOrderTabProps {
   projectId: string;
 }
 
 export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId }) => {
+  const { t } = useTranslation();
   const { data: pos = [], isLoading } = useProjectData<PurchaseOrder>(projectId, "purchase_orders", "createdAt", "desc");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
@@ -78,10 +80,10 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
              <thead>
                 <tr className="bg-panel border-b border-divider">
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">PO Number</th>
-                  <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">Date</th>
+                  <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">{t("common.date")}</th>
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">Vendor</th>
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest text-right whitespace-nowrap">Amount</th>
-                  <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">Status</th>
+                  <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">{t("common.status")}</th>
                 </tr>
              </thead>
              <tbody>

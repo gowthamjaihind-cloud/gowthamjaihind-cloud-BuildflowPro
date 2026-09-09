@@ -395,7 +395,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   onClick={handleBulkDelete}
                   className="flex items-center gap-2 px-4 py-2.5 bg-red-900/40 hover:bg-red-900/60 text-danger rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
                 >
-                  <Trash2 size={14} /> Delete
+                  <Trash2 size={14} /> {t("common.delete")}
                 </button>
                 <div className="relative group">
                   <button className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
@@ -444,7 +444,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
             value={filterTaskId}
             onChange={(e) => setFilterTaskId(e.target.value)}
           >
-            <option value="">All Tasks</option>
+            <option value="">{t("an.allTasks")}</option>
             {orderTasksByWbs(tasks).map((row) => (
               <option key={row.id} value={row.id}>
                 {wbsOptionLabel(row)}
@@ -678,7 +678,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 disabled={isUploadingFile}
                 className="px-4 lg:px-6 py-3 lg:py-4 rounded-2xl text-ink-muted hover:bg-panel transition-colors disabled:opacity-50"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
@@ -737,7 +737,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   Category
                 </th>
                 <th className="px-4 lg:px-6 py-3 lg:py-5 text-right text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                  Actions
+                  {t("common.actions")}
                 </th>
               </tr>
             </thead>

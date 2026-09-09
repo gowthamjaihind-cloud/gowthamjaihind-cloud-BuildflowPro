@@ -954,7 +954,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <table className="w-full text-[10px] md:text-[10px] min-w-[600px]">
                     <thead>
                       <tr className="bg-warning/12 text-warning font-bold uppercase tracking-wider">
-                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">{t("common.date")}</th>
                         <th className="p-2 text-left">Contractor</th>
                         <th className="p-2 text-left">Role</th>
                         <th className="p-2 text-right">Headcount</th>
@@ -1054,7 +1054,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <table className="w-full text-[10px] md:text-[10px] min-w-[500px]">
                     <thead>
                       <tr className="bg-panel text-ink font-bold uppercase tracking-wider">
-                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">{t("common.date")}</th>
                         <th className="p-2 text-left">Material Name</th>
                         <th className="p-2 text-right">Quantity</th>
                         <th className="p-2 text-right">Unit Rate</th>
@@ -1316,7 +1316,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     {actualOnly ? (
                       <div>
                         <div className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1">
-                          Actual
+                          {t("an.actual")}
                         </div>
                         <div className="text-2xl font-bold text-primary tracking-tight">
                           ₹
@@ -1348,7 +1348,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           </div>
                           <div className="min-w-0">
                             <div className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1">
-                              Actual
+                              {t("an.actual")}
                             </div>
                             <div className="text-base lg:text-lg xl:text-xl font-bold text-primary tracking-tight tabular-nums">
                               ₹
@@ -1377,7 +1377,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
                         <div className="flex justify-between items-center pt-2 border-t border-white/10">
                           <div className="text-xs font-medium text-ink-muted">
-                            Variance
+                            {t("an.variance")}
                           </div>
                           <div
                             className={`text-sm font-bold ${
@@ -1422,7 +1422,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <div className="flex items-center gap-2">
                     <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-primary" />
                     <span className="text-[10px] md:text-[13px] font-medium text-ink-muted">
-                      Actual
+                      {t("an.actual")}
                     </span>
                   </div>
                 </div>
@@ -1636,29 +1636,29 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     </th>
                     <th className="p-3 text-right">Actual Spent</th>
                     <th className="p-3 text-center hidden sm:table-cell">
-                      Status
+                      {t("common.status")}
                     </th>
                     <th className="p-3 w-12 md:w-20"></th>
                   </tr>
                   <tr className="bg-surface-dark text-white/50 text-[8px] font-black uppercase tracking-[0.2em] border-t border-white/5">
-                    <th className="p-1 px-3 text-left">Items</th>
+                    <th className="p-1 px-3 text-left">{t("an.items")}</th>
                     <th className="p-1 text-center hidden md:table-cell border-l border-white/5">
-                      Budget
+                      {t("dashboard.budget")}
                     </th>
                     <th className="p-1 text-center hidden md:table-cell">
-                      Spent
+                      {t("dashboard.spent")}
                     </th>
                     <th className="p-1 text-center hidden md:table-cell border-l border-white/5">
-                      Budget
+                      {t("dashboard.budget")}
                     </th>
                     <th className="p-1 text-center hidden md:table-cell">
-                      Spent
+                      {t("dashboard.spent")}
                     </th>
                     <th className="p-1 text-center hidden xl:table-cell border-l border-white/5">
-                      Budget
+                      {t("dashboard.budget")}
                     </th>
                     <th className="p-1 text-center hidden xl:table-cell">
-                      Spent
+                      {t("dashboard.spent")}
                     </th>
                     <th
                       className="p-1 text-right border-l border-white/5"
@@ -1753,8 +1753,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             <table className="w-full text-sm text-left">
               <thead className="bg-panel border-b text-[10px] font-black uppercase tracking-wider text-ink-muted">
                 <tr>
-                  <th className="p-4 rounded-tl-xl">Date</th>
-                  <th className="p-4">Description</th>
+                  <th className="p-4 rounded-tl-xl">{t("common.date")}</th>
+                  <th className="p-4">{t("cpay.description")}</th>
                   <th className="p-4">Category (Head)</th>
                   <th className="p-4">Type</th>
                   <th className="p-4 text-right">Amount (₹)</th>
@@ -1860,7 +1860,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
             <div className="bg-panel p-4 md:p-6 rounded-2xl border">
               <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
-                Material
+                {t("an.catMaterial")}
               </div>
               <div className="flex justify-between items-end">
                 <div>
@@ -1870,7 +1870,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[10px] opacity-50">Actual</div>
+                  <div className="text-[10px] opacity-50">{t("an.actual")}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-success">
@@ -1895,7 +1895,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[10px] opacity-50">Actual</div>
+                  <div className="text-[10px] opacity-50">{t("an.actual")}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-success">
@@ -1910,7 +1910,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </div>
             <div className="bg-panel p-4 md:p-6 rounded-2xl border">
               <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
-                Equipment
+                {t("dlh.equipment")}
               </div>
               <div className="flex justify-between items-end">
                 <div>
@@ -1920,7 +1920,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[10px] opacity-50">Actual</div>
+                  <div className="text-[10px] opacity-50">{t("an.actual")}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] opacity-50">Actuals only</div>
@@ -1929,7 +1929,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </div>
             <div className="bg-panel p-4 md:p-6 rounded-2xl border">
               <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
-                Direct Cost
+                {t("an.catDirectCost")}
               </div>
               <div className="flex justify-between items-end">
                 <div>
@@ -1939,7 +1939,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[10px] opacity-50">Actual</div>
+                  <div className="text-[10px] opacity-50">{t("an.actual")}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-success">
@@ -1980,10 +1980,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     Actual Total
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
-                    Variance
+                    {t("an.variance")}
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
-                    Status
+                    {t("common.status")}
                   </th>
                 </tr>
               </thead>
@@ -2068,7 +2068,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     </div>
                   </td>
                   <td className="p-4 text-right">
-                    <div className="text-[10px] text-white/70">Actual</div>
+                    <div className="text-[10px] text-white/70">{t("an.actual")}</div>
                     <div className="text-sm font-bold">
                       ₹
                       {stats.equipmentActual.toLocaleString("en-IN", {
@@ -2199,7 +2199,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
-                      Description
+                      {t("cpay.description")}
                     </label>
                     <input
                       required
@@ -2292,7 +2292,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           Transport...)
                         </option>
                         <option value="Labor">Labor</option>
-                        <option value="Equipment">Equipment</option>
+                        <option value="Equipment">{t("dlh.equipment")}</option>
                         <option value="Subcontractor">Subcontractor</option>
                         <option value="Transport">Transport</option>
                         <option value="Other">Other</option>
@@ -2303,7 +2303,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
-                        Date
+                        {t("common.date")}
                       </label>
                       <input
                         type="date"
@@ -2356,7 +2356,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     onClick={() => setDeletingId(null)}
                     className="flex-1 py-3.5 bg-panel hover:bg-divider rounded-2xl font-bold transition-colors"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={() => {
@@ -2365,7 +2365,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     }}
                     className="flex-1 py-3.5 bg-danger hover:bg-danger text-white rounded-2xl font-bold transition-colors"
                   >
-                    Delete
+                    {t("common.delete")}
                   </button>
                 </div>
               </div>

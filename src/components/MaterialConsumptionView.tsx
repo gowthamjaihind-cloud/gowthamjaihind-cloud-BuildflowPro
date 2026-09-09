@@ -538,7 +538,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               }`}
             >
               <Package className="w-3.5 h-3.5" />
-              <span>Material Consumption</span>
+              <span>{t("reports.materialConsumption")}</span>
               <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-black ${activeTab !== "labor" ? "bg-white/20 text-white" : "bg-surface text-ink-muted"}`}>
                 {allRecords.length}
               </span>
@@ -567,9 +567,9 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               {/* LABOR FILTERS */}
               <div className="bg-panel p-4 rounded-2xl border border-divider grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3" id="labor-filters">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Task</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">{t("an.filterByTask")}</label>
                   <select value={laborTask} onChange={(e) => setLaborTask(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-surface-dark outline-none">
-                    <option value="">All Tasks</option>
+                    <option value="">{t("an.allTasks")}</option>
                     {distinctLaborTasks.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
@@ -638,10 +638,10 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   <table className="w-full text-left min-w-[600px]">
                     <thead>
                       <tr className="bg-panel border-b border-divider">
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Task</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.filterByTask")}</th>
                         <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Entries</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Manpower</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Cost</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.viewManpower")}</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.moduleCost")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-divider/40">
@@ -671,12 +671,12 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   <table className="w-full text-left min-w-[760px]">
                     <thead>
                       <tr className="bg-panel border-b border-divider">
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Date</th>
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Task</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("common.date")}</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.filterByTask")}</th>
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Role</th>
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Vendor</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Manpower</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Cost</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.viewManpower")}</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.moduleCost")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-divider/40">
@@ -822,7 +822,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       onChange={(e) => setAdvTask(e.target.value)}
                       className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-primary outline-none"
                     >
-                      <option value="">All Tasks</option>
+                      <option value="">{t("an.allTasks")}</option>
                       {distinctTasks.map((t) => (
                         <option key={t} value={t}>{t}</option>
                       ))}
@@ -957,7 +957,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   <table className="w-full text-left min-w-[800px]">
                     <thead>
                       <tr className="bg-panel border-b border-divider">
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Date</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("common.date")}</th>
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Material Name</th>
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Consumed In Task</th>
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Channel</th>

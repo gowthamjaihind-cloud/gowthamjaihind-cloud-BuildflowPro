@@ -473,7 +473,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               <form onSubmit={handleAddPayment} className="p-6 space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-ink-muted">
-                    Date
+                    {t("common.date")}
                   </label>
                   <input
                     type="date"
@@ -508,7 +508,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-ink-muted">
-                    Description
+                    {t("cpay.description")}
                   </label>
                   <input
                     type="text"
@@ -571,7 +571,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     onClick={() => setIsAdding(false)}
                     className="flex-1 px-4 py-3 bg-panel hover:bg-surface border rounded-xl font-bold text-ink-muted transition-colors"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="submit"

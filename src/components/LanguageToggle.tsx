@@ -2,12 +2,14 @@ import React from "react";
 import { useUIStore } from "../store";
 import { Tooltip } from "./Tooltip";
 
+import { useTranslation } from "../i18n";
 /**
  * Segmented EN / தமிழ் language switcher for the top bar. Reads and writes the
  * active language in the UI store (persisted to localStorage), so the whole app
  * re-renders in the chosen language instantly.
  */
 export const LanguageToggle: React.FC = () => {
+  const { t } = useTranslation();
   const language = useUIStore((s) => s.language);
   const setLanguage = useUIStore((s) => s.setLanguage);
 
@@ -20,7 +22,7 @@ export const LanguageToggle: React.FC = () => {
     <div data-tour="lang"
       className="flex items-center bg-surface/40 border border-divider rounded-full p-0.5 shadow-sm shrink-0"
       role="group"
-      aria-label="Language"
+      aria-label={t("lang.label")}
     >
       {options.map((opt) => (
         <Tooltip label={opt.code === "en" ? "English" : "தமிழ்"} key={opt.code}>
