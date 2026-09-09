@@ -13,6 +13,7 @@ import { UserProfile } from "../types";
 import { useAuthStore } from "../store";
 import { readPendingConsent, clearPendingConsent, TERMS_VERSION } from "../lib/legal";
 import { demoRequested } from "../demo";
+import { callSyncMyClaims } from "../services/firebaseFunctions";
 
 export function useAuthInit() {
   const setUser = useAuthStore((state) => state.setUser);
@@ -45,6 +46,20 @@ export function useAuthInit() {
       }
 
       if (firebaseUser) {
+        // Storage rules can only see tenancy through a custom claim, so make
+        // sure this account has one before anything tries to read a file. A
+        // fresh claim is not in the token we already hold, hence the forced
+        // refresh. Never fatal: failing here must not block sign-in, it just
+        // means uploads stay denied until the next attempt.
+        void (async () => {
+          try {
+            const { changed } = await callSyncMyClaims();
+            if (changed) await firebaseUser.getIdToken(true);
+          } catch (e) {
+            console.warn("claim sync skipped", e);
+          }
+        })();
+
         try {
           unsubscribeUser = onSnapshot(
             doc(db, "users", firebaseUser.uid),

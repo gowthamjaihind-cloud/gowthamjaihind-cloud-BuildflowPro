@@ -3,6 +3,8 @@ import { randomBytes } from "crypto";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
 import { sendInviteEmail, APP_URL } from "./email";
+import { syncOrgClaimsQuietly } from "./claims";
+import { CALLABLE_OPTS } from "./callable";
 
 // Roles a teammate can be invited as. "Owner" is intentionally excluded — an
 // org has exactly one owner (the creator), and you don't invite people as Owner.
@@ -13,7 +15,7 @@ const genCode = () => randomBytes(6).toString("hex").toUpperCase(); // 12 hex ch
 
 // Owner/Admin of an org mints an invite code for a teammate.
 // Returns a code the owner shares as a link (…/?invite=CODE) or verbally.
-export const createInvite = onCall({ timeoutSeconds: 60 }, async (request) => {
+export const createInvite = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const uid = request.auth.uid;
   const email = String(request.data?.email || "").trim().toLowerCase();
@@ -66,7 +68,7 @@ export const createInvite = onCall({ timeoutSeconds: 60 }, async (request) => {
 // A signed-in user redeems an invite code and joins the org with the invited
 // role. Runs with the Admin SDK, so it can write the org's members map and the
 // user's profile even though the caller isn't a member yet.
-export const acceptInvite = onCall({ timeoutSeconds: 60 }, async (request) => {
+export const acceptInvite = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const uid = request.auth.uid;
   const code = String(request.data?.code || "").trim().toUpperCase();
@@ -97,6 +99,8 @@ export const acceptInvite = onCall({ timeoutSeconds: 60 }, async (request) => {
     { used: true, usedByUid: uid, usedAt: new Date().toISOString() },
     { merge: true },
   );
+
+  await syncOrgClaimsQuietly(uid);
 
   return { orgId, role, orgName: invite.orgName || "" };
 });

@@ -2,8 +2,9 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { logAuditEvent } from "../audit/logEvent";
 import { db } from "../db";
+import { CALLABLE_OPTS } from "../callable";
 
-export const processCostAnalysisData = onCall({ timeoutSeconds: 300 }, async (request) => {
+export const processCostAnalysisData = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 300 }, async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be logged in.");
   }

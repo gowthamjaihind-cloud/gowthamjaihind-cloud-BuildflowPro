@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { chargeAiUsage, orgIdForUser } from "./usage";
+import { CALLABLE_OPTS } from "../callable";
 
 // The Gemini API key lives in Secret Manager (never in the client bundle), so
 // the model is only ever called server-side. Create it once with:
@@ -26,7 +27,7 @@ interface Insights {
 // Region is left as the default (us-central1) to match the other callables the
 // web app already invokes via getFunctions(getApp()).
 export const generateProjectInsights = onCall(
-  { secrets: [GEMINI_API_KEY], timeoutSeconds: 120 },
+  { ...CALLABLE_OPTS, secrets: [GEMINI_API_KEY], timeoutSeconds: 120 },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "You must be signed in.");

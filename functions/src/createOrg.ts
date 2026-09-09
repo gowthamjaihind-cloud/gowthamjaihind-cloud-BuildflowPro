@@ -3,6 +3,8 @@ import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
 import { isPlanId, planPatch, PLANS, OVERAGE_RATE, PlanId } from "./plans";
 import { sendWelcomeEmail, APP_URL } from "./email";
+import { syncOrgClaimsQuietly } from "./claims";
+import { CALLABLE_OPTS } from "./callable";
 
 const TRIAL_MS = 14 * 24 * 60 * 60 * 1000;
 // Only this plan is offered as a self-serve trial. Since there's a permanent
@@ -16,7 +18,7 @@ const TRIAL_PLAN = "starter";
 //  • paid plan + startTrial      → 30-day trial of that plan (no card).
 //  • paid plan without startTrial → created on Free; the client then runs
 //    Razorpay checkout to upgrade (the webhook activates the paid plan).
-export const createOrganization = onCall({ timeoutSeconds: 60 }, async (request) => {
+export const createOrganization = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const uid = request.auth.uid;
   const companyName = String(request.data?.companyName || "").trim();
@@ -97,6 +99,10 @@ export const createOrganization = onCall({ timeoutSeconds: 60 }, async (request)
       link: APP_URL,
     });
   }
+
+  // Mint membership into the token now rather than waiting for the members
+  // trigger, so the client can refresh once and upload straight away.
+  await syncOrgClaimsQuietly(uid);
 
   return {
     orgId,

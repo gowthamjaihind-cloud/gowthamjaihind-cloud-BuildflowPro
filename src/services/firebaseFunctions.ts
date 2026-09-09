@@ -255,3 +255,18 @@ export const callDeleteMyAccount = async () => {
   const res = await fn({});
   return res.data;
 };
+
+// Bring the signed-in user's org membership into their ID token as a custom
+// claim. Cloud Storage rules cannot read Firestore, so tenancy can only be
+// checked there from a claim; this is what puts it in reach. Called on
+// sign-in, and it backfills accounts that predate claims.
+//
+// Returns `changed`, because a new claim does not appear in the token the
+// client is already holding — it has to be refreshed. See syncMyClaims in the
+// functions codebase.
+export const callSyncMyClaims = async () => {
+  const fn = httpsCallable<Record<string, never>, { orgIds: string[]; changed: boolean }>(
+    getFunctionsInstance(), 'syncMyClaims');
+  const res = await fn({} as Record<string, never>);
+  return res.data;
+};

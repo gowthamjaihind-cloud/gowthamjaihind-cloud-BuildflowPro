@@ -4,6 +4,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
 import { isPlanId, PlanId, planPatch } from "./plans";
 import { captureError } from "./sentry";
+import { CALLABLE_OPTS } from "./callable";
 
 // Self-serve plan changes for an org's Owner/Admin.
 //
@@ -41,7 +42,7 @@ async function assertOrgManager(request: any, orgId: string) {
 }
 
 // Schedule a downgrade to a lower plan, effective at the end of the paid cycle.
-export const scheduleDowngrade = onCall({ timeoutSeconds: 30 }, async (request) => {
+export const scheduleDowngrade = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
   const target = String(request.data?.targetPlan || "");
@@ -74,7 +75,7 @@ export const scheduleDowngrade = onCall({ timeoutSeconds: 30 }, async (request) 
 });
 
 // Cancel a scheduled downgrade — the org keeps its current plan.
-export const cancelScheduledPlanChange = onCall({ timeoutSeconds: 30 }, async (request) => {
+export const cancelScheduledPlanChange = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   const orgId = await resolveOrgId(request);
   await assertOrgManager(request, orgId);
   await db.doc(`organizations/${orgId}`).set(

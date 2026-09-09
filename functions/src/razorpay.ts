@@ -4,6 +4,7 @@ import * as crypto from "crypto";
 import { db } from "./db";
 import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE } from "./plans";
 import { captureError } from "./sentry";
+import { CALLABLE_OPTS } from "./callable";
 
 // Razorpay integration (TEST MODE until KYC is completed and live keys are set).
 // Flow: the app creates an order (server-priced) -> Razorpay Checkout collects
@@ -46,7 +47,7 @@ async function placeRazorpayOrder(
 }
 
 // ---- Operator config (super-admin) ----
-export const setRazorpayConfig = onCall({ timeoutSeconds: 30 }, async (request) => {
+export const setRazorpayConfig = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   assertSuperAdmin(request);
   const keyId = String(request.data?.keyId || "").trim();
   const keySecret = String(request.data?.keySecret || "").trim();
@@ -59,7 +60,7 @@ export const setRazorpayConfig = onCall({ timeoutSeconds: 30 }, async (request) 
   return { ok: true };
 });
 
-export const getRazorpayConfigStatus = onCall({ timeoutSeconds: 30 }, async (request) => {
+export const getRazorpayConfigStatus = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   assertSuperAdmin(request);
   const snap = await db.doc("app_config/razorpay").get();
   const d: any = snap.exists ? snap.data() : {};
@@ -72,7 +73,7 @@ export const getRazorpayConfigStatus = onCall({ timeoutSeconds: 30 }, async (req
 });
 
 // ---- Checkout: create a server-priced order ----
-export const createRazorpayOrder = onCall({ timeoutSeconds: 30 }, async (request) => {
+export const createRazorpayOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const uid = request.auth.uid;
   const plan = String(request.data?.plan || "");
@@ -123,7 +124,7 @@ export const createRazorpayOrder = onCall({ timeoutSeconds: 30 }, async (request
 // ---- Checkout: buy extra project slots (₹99/project overage) ----
 // An Owner/Admin on a paid plan buys N additional project slots for the current
 // cycle. Server-priced at the overage rate; payment raises includedProjects.
-export const createSlotOrder = onCall({ timeoutSeconds: 30 }, async (request) => {
+export const createSlotOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const uid = request.auth.uid;
   const quantity = Math.floor(Number(request.data?.quantity) || 0);
@@ -226,7 +227,7 @@ async function activateOrgFromOrder(orderId: string): Promise<boolean> {
 }
 
 // ---- Client-side verify (backup to the webhook) ----
-export const verifyRazorpayPayment = onCall({ timeoutSeconds: 30 }, async (request) => {
+export const verifyRazorpayPayment = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const orderId = String(request.data?.razorpay_order_id || "");
   const paymentId = String(request.data?.razorpay_payment_id || "");

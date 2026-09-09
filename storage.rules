@@ -7,17 +7,43 @@ rules_version = '2';
 // uploaded drawing, invoice and site photo. Nothing deployed them, so the
 // production bucket ran whatever was last set by hand in the console.
 //
-// NOTE ON TENANT ISOLATION: Storage rules cannot read Firestore, and this
-// project sets no custom auth claims, so org membership cannot be verified
-// here. Any signed-in user can therefore still reach another organisation's
-// objects if they know the path. Closing that needs an orgId custom claim
-// minted on sign-in (and on org switch), then an
-// `request.auth.token.orgId == orgId` check below.
+// TENANT ISOLATION. Storage rules cannot read Firestore, so membership travels
+// in the ID token instead: functions/src/claims.ts mints an `orgIds` custom
+// claim from `organizations/{orgId}.members`, and `memberOf()` below checks it.
+// Before this, any signed-in user could reach another organisation's drawings,
+// invoices and site photos if they knew the path.
+//
+// The claim is built from the org's own members map, never from
+// `users/{uid}.orgIds` — firestore.rules lets a user update their own document,
+// so that mirror is client-writable and trusting it would let anyone grant
+// themselves another tenant's files.
+//
+// DEPLOY ORDER MATTERS. Claims are minted by Cloud Functions, which deploy on
+// merge to main; these rules deploy only from the manual "Deploy Firestore
+// Rules" workflow. Ship the functions first and let clients pick the claim up
+// on sign-in, then deploy these. Reversed, anyone holding an hour-old token is
+// denied their own files until it refreshes.
+//
+// STILL OPEN: the legacy `/projects/{projectId}` prefix below. Those paths
+// predate organisations and carry no orgId, so there is nothing to check a
+// claim against — the client still writes there whenever a user has no
+// currentOrgId. Closing it means migrating those objects under an
+// organisations/ prefix; until then it stays signed-in-only.
 service firebase.storage {
   match /b/{bucket}/o {
 
     function signedIn() {
       return request.auth != null;
+    }
+
+    // Membership, as minted into the token by functions/src/claims.ts. The
+    // presence check matters: a token issued before the claim existed has no
+    // orgIds key at all, and indexing a missing key would error rather than
+    // deny.
+    function memberOf(orgId) {
+      return signedIn()
+          && 'orgIds' in request.auth.token
+          && orgId in request.auth.token.orgIds;
     }
 
     // 25 MB ceiling: large enough for a drawing set or a scanned bill,
@@ -37,12 +63,13 @@ service firebase.storage {
 
     // Document Vault, daily-log photos, goods-receipt scans, vendor bills.
     match /organizations/{orgId}/projects/{projectId}/{allPaths=**} {
-      allow read:          if signedIn();
-      allow create, update: if signedIn() && sizeOk() && typeOk();
-      allow delete:        if signedIn();
+      allow read:           if memberOf(orgId);
+      allow create, update: if memberOf(orgId) && sizeOk() && typeOk();
+      allow delete:         if memberOf(orgId);
     }
 
-    // Legacy projects created before organisations existed. Same shape.
+    // Legacy projects created before organisations existed. No orgId in the
+    // path, so no claim to check — see STILL OPEN in the header.
     match /projects/{projectId}/{allPaths=**} {
       allow read:          if signedIn();
       allow create, update: if signedIn() && sizeOk() && typeOk();
