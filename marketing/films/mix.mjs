@@ -89,8 +89,11 @@ export function mixWithManifest(id, manifest, videoIn, videoOut) {
   );
 
   const musicWav = join(voDir, "score.wav");
-  console.error(`  score: ${seconds.toFixed(1)}s`);
-  execFileSync("python3", [join(ROOT, "marketing/music/score.py"), id, musicWav, String(seconds)], {
+  console.error(`  score: ${seconds.toFixed(1)}s${manifest.bpm ? ` @ ${manifest.bpm} BPM` : ""}`);
+  // The score is rendered at the film's own tempo, so the music and the cuts
+  // share one grid rather than each having their own.
+  const bpm = manifest.bpm ? [String(manifest.bpm)] : [];
+  execFileSync("python3", [join(ROOT, "marketing/music/score.py"), id, musicWav, String(seconds), ...bpm], {
     stdio: ["ignore", "ignore", "inherit"],
     cwd: ROOT,
   });

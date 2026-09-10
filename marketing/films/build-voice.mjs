@@ -71,6 +71,9 @@ export async function buildVoice(id) {
   });
   writeFileSync(rawManifest, stdout);
 
+  const rawManifestVoice =
+    JSON.parse(stdout).voice ?? "synthesised locally";
+
   console.error(`${id}: mastering`);
   const mastered = masterLines(rawManifest, outDir);
 
@@ -98,7 +101,8 @@ export async function buildVoice(id) {
 
   const manifest = {
     id,
-    voice: "en_US-joe-medium (Piper, CC0), synthesised locally",
+    bpm: film.bpm ?? 100,
+    voice: rawManifestVoice,
     seconds: Number(at.toFixed(3)),
     beats,
   };
@@ -131,6 +135,7 @@ export async function buildVoice(id) {
       "// narration rather than the other way round. Re-run build-voice after any",
       "// script change and the film retimes itself.",
       `// voice: ${manifest.voice}`,
+      `// tempo: ${manifest.bpm} BPM -> ${(1800 / manifest.bpm).toFixed(2)} frames per beat at 30fps`,
       "",
       "export interface Beat {",
       "  id: string;",
@@ -147,6 +152,9 @@ export async function buildVoice(id) {
       "}",
       "",
       `export const TOTAL_SECONDS = ${manifest.seconds};`,
+      "",
+      "/** The tempo the picture is cut to. See the film's script for why. */",
+      `export const BPM = ${manifest.bpm};`,
       "",
       "export const BEATS: Beat[] = [",
       ...beats.map(

@@ -43,6 +43,58 @@ npm run film:launch                           # voice -> picture -> mix
 npm run film:walkthrough                      # voice -> record -> mix
 ```
 
+### The edit
+
+Both films are cut on a **musical grid**. The launch cue runs at 100 BPM, which
+is chosen for the picture rather than the music: at 30fps that is exactly 18
+frames to the beat and 72 to the bar, so every shot boundary lands on the grid
+without rounding. The walkthrough uses 90 BPM (20 frames) for its punch-ins.
+The score is rendered at the film's own tempo, so the two share one grid — cuts
+that land on the music read as driven; cuts a frame either side of it read as
+merely quick.
+
+**The launch film is a shot list, not one shot per line.** A narration beat
+still owns its span, but the long beats hold two or three shots inside it, cut
+hard. 29 shots across 78 seconds — a cut every 2.7s, against 16 shots across 84
+seconds and a cut every 5.3s before. Hard cuts are the default and cost no
+frames; `Flash` (4 frames) marks an arrival, `Whip` (6) carries the eye
+sideways between two views of the same screen, and `Defocus` survives only at
+the three places where the film genuinely changes subject. Every shot opens on
+a `Punch` — a few frames of scale settling — which is the cheapest thing that
+makes a hard cut read as deliberate rather than abrupt.
+
+`Cut.tsx` holds the scheduler. It divides a beat's span between its shots by
+largest remainder in half-beat units; a property test over 1,105 span/shot-count
+combinations checks it never loses a frame or produces a shot below the grid's
+floor. The obvious version — round each share and hand the difference to the
+longest shot — failed both ways, producing a zero-length shot and splitting a
+105-frame beat as [15, 90] because correcting a three-frame overshoot with a
+whole half-beat flipped the error's sign and the loop oscillated.
+
+**The walkthrough gets a lighter treatment on purpose.** It is an explainer; a
+viewer has to be able to follow it, and a tour that never stops moving is
+unreadable. What it gets is a punch-in at every module change, a slow push
+across the screens that cannot scroll, and beats that fill themselves.
+
+That last one mattered most, and finding it took a measurement. Each beat waits
+for its narration to finish, and most lines outlast their clicks — so **52 of
+the 160 seconds were a motionless page**. Two causes, both invisible until
+counted:
+
+1. `glideScroll` called `window.scrollTo`, and **this app does not scroll the
+   window** — Layout scrolls an inner `div.flex-1.overflow-y-auto`. Every
+   scroll in every walkthrough ever recorded did nothing. `DESIGN.md` already
+   carried the warning from the modal work; the recorder had never been held to
+   it.
+2. Five of the twelve modules fit in one viewport with the demo's data, so
+   their scroll range is exactly **zero**. No scrolling code would ever have
+   fixed those. Moving the pointer around them did not help either — a 22px
+   cursor on a 1920px frame is not motion, to a measurement or to a viewer.
+   When the subject cannot move, the camera does: those beats get a slow push.
+
+Motionless stretches over five seconds, across the four cuts: **11 → 7 → 7 → 2**,
+longest 14.8s → 7.0s.
+
 ### Timing is measured, never written
 
 Both films lay their beats out from the **measured** length of each spoken line.

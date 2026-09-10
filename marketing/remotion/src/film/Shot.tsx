@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, Focus, SRC_H, SRC_W } from "../theme";
-import { Grain, Marker, Vignette, ramp, smooth } from "./Cinema";
+import { Grain, Marker, Vignette, arrive, ramp, smooth } from "./Cinema";
 
 /**
  * One shot of the product: a crop of a screenshot, moving, with the option of a
@@ -35,7 +35,10 @@ export const Shot: React.FC<{
   marks?: Rect[];
   /** Frame at which the highlights start drawing on. */
   markAt?: number;
-}> = ({ src, from, to, moveFrames, marks, markAt = 10 }) => {
+  /** Source size, for images that are not the 3200x2000 app captures. */
+  srcW?: number;
+  srcH?: number;
+}> = ({ src, from, to, moveFrames, marks, markAt = 10, srcW = SRC_W, srcH = SRC_H }) => {
   const frame = useCurrentFrame();
   const { width, height, durationInFrames } = useVideoConfig();
   const span = moveFrames ?? durationInFrames;
@@ -50,8 +53,8 @@ export const Shot: React.FC<{
   // Keep the crop inside the image, or the edge of the screenshot shows.
   const halfW = cw / 2;
   const halfH = ch / 2;
-  const clampedX = Math.min(Math.max(cx, halfW), SRC_W - halfW);
-  const clampedY = Math.min(Math.max(cy, halfH), SRC_H - halfH);
+  const clampedX = Math.min(Math.max(cx, halfW), srcW - halfW);
+  const clampedY = Math.min(Math.max(cy, halfH), srcH - halfH);
 
   const scale = width / cw;
   const left = -(clampedX - halfW) * scale;
@@ -71,14 +74,16 @@ export const Shot: React.FC<{
         src={staticFile(src)}
         style={{
           position: "absolute",
-          width: SRC_W * scale,
-          height: SRC_H * scale,
+          width: srcW * scale,
+          height: srcH * scale,
           left,
           top,
         }}
       />
       {marks?.map((r, i) => {
-        const p = ramp(frame, [markAt + i * 7, markAt + i * 7 + 30]);
+        // Six frames, not thirty. A highlight that takes a third of a second to
+        // appear is longer than some of the shots it sits on now.
+        const p = ramp(frame, [markAt + i * 4, markAt + i * 4 + 6], arrive);
         return <Marker key={i} {...project(r)} progress={p} label={r.label} />;
       })}
       {/* Light on a product shot, not just on the title cards: a screenshot
@@ -105,7 +110,7 @@ export const Caption: React.FC<{
 }> = ({ kicker, title, at = 6 }) => {
   const frame = useCurrentFrame();
   const { height } = useVideoConfig();
-  const p = ramp(frame, [at, at + 22]);
+  const p = ramp(frame, [at, at + 9], arrive);
   const bandH = height * 0.185;
   return (
     <div

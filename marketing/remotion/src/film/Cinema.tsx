@@ -166,6 +166,99 @@ export const Wipe: React.FC<{
   );
 };
 
+/* ------------------------------------------------------------ hard cuts -- */
+
+/**
+ * The transitions a fast cut is actually made of.
+ *
+ * The first version of this film crossfaded every shot over sixteen frames.
+ * That is half a second of two pictures at once, sixteen times, and it is what
+ * made a ninety-second film feel stately: a dissolve says "time is passing",
+ * and this film wants to say "keep up". So the default is now a HARD CUT --
+ * nothing at all, zero frames -- and everything below exists for the handful of
+ * places where a cut needs help.
+ *
+ * The rule they follow: a transition should be doing narrative work or it
+ * should not be there. `Flash` marks an arrival, `Whip` carries momentum
+ * sideways between two views of the same thing, and `Defocus` survives only for
+ * the three section changes where the film genuinely does change subject.
+ */
+
+/**
+ * Two or three frames of light between shots.
+ *
+ * Almost subliminal, and it does two things at once: it hides the discontinuity
+ * of a hard cut between dissimilar frames, and it reads as an impact. Long
+ * enough to see is too long -- past about four frames it stops being a cut and
+ * starts being an effect.
+ */
+export const Flash: React.FC<{ progress: number; tint?: string }> = ({
+  progress,
+  tint = "#DCE6FF",
+}) => {
+  const p = Math.min(Math.max(progress, 0), 1);
+  if (p <= 0 || p >= 1) return null;
+  // Sharp attack, quick decay -- a light source, not a fade.
+  const a = p < 0.35 ? p / 0.35 : 1 - (p - 0.35) / 0.65;
+  return (
+    <AbsoluteFill style={{ background: tint, opacity: a * 0.9, pointerEvents: "none" }} />
+  );
+};
+
+/**
+ * A whip pan: the frame slides out under motion blur while the next slides in.
+ *
+ * Used only between two shots of the SAME screen, where the eye is being
+ * carried from one part of it to another. Between unrelated screens it reads as
+ * a slideshow transition, which is exactly the thing this is meant to avoid.
+ */
+export const Whip: React.FC<{
+  progress: number;
+  /** -1 slides left, 1 slides right. */
+  direction?: number;
+  incoming?: boolean;
+  children: React.ReactNode;
+}> = ({ progress, direction = 1, incoming = false, children }) => {
+  const p = Math.min(Math.max(progress, 0), 1);
+  const t = incoming ? 1 - p : p;
+  // Blur peaks mid-move, so the frame is sharp at both ends of the whip.
+  const blur = Math.sin(Math.min(p, 1) * Math.PI) * 26;
+  const shift = incoming ? -direction * t * 100 : direction * t * 100;
+  return (
+    <AbsoluteFill
+      style={{
+        transform: `translateX(${shift}%)`,
+        filter: `blur(${blur.toFixed(1)}px)`,
+      }}
+    >
+      {children}
+    </AbsoluteFill>
+  );
+};
+
+/**
+ * The snap every shot opens on.
+ *
+ * A few frames of scale settling to 1. It is the single cheapest thing that
+ * makes a hard cut feel deliberate rather than abrupt -- the frame arrives with
+ * a little momentum and stops, the way a camera operator lands a move. Without
+ * it a jump-cut sequence reads as a stack of stills.
+ */
+export const Punch: React.FC<{
+  progress: number;
+  /** How far in it starts, as a fraction. 0.05 is a firm punch. */
+  amount?: number;
+  children: React.ReactNode;
+}> = ({ progress, amount = 0.045, children }) => {
+  const p = Math.min(Math.max(progress, 0), 1);
+  const eased = 1 - Math.pow(1 - p, 4);
+  return (
+    <AbsoluteFill style={{ transform: `scale(${1 + amount * (1 - eased)})` }}>
+      {children}
+    </AbsoluteFill>
+  );
+};
+
 /**
  * A dissolve where the outgoing layer defocuses and the incoming resolves.
  *

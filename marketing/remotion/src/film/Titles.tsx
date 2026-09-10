@@ -23,7 +23,10 @@ const MaskedLine: React.FC<{
   lineHeight?: number;
 }> = ({ children, delay, size, weight = 800, colour = C.white, lineHeight = 1.08 }) => {
   const frame = useCurrentFrame();
-  const p = ramp(frame, [delay, delay + 26], arrive);
+  // Nine frames -- a half-beat at 100 BPM. It was 26, which is nearly a second
+  // for a line of type and reads as a title card easing in rather than a cut
+  // landing on the music.
+  const p = ramp(frame, [delay, delay + 9], arrive);
   return (
     <div style={{ overflow: "hidden", paddingBottom: size * 0.06 }}>
       <div
@@ -57,7 +60,8 @@ export const Statement: React.FC<{
   const frame = useCurrentFrame();
   const { width } = useVideoConfig();
   // A very slow push, so a card of pure type is never completely static.
-  const scale = 1 + ramp(frame, [0, 240]) * 0.02;
+  // A faster drift than before: these cards are on screen for a beat or two now.
+  const scale = 1 + ramp(frame, [0, 90]) * 0.022;
   return (
     <AbsoluteFill style={{ backgroundColor: C.surfaceDark }}>
       {/* A soft light from above left, so the ground is not a flat fill. */}
@@ -83,7 +87,7 @@ export const Statement: React.FC<{
                 letterSpacing: "0.28em",
                 textTransform: "uppercase",
                 color: C.primaryOnDark,
-                opacity: ramp(frame, [4, 26]),
+                opacity: ramp(frame, [0, 8], arrive),
               }}
             >
               {kicker}
@@ -93,7 +97,7 @@ export const Statement: React.FC<{
         {lines.map((line, i) => (
           <MaskedLine
             key={i}
-            delay={8 + i * 9}
+            delay={2 + i * 5}
             size={size}
             colour={i === accent ? C.primaryOnDark : C.white}
           >
@@ -103,7 +107,7 @@ export const Statement: React.FC<{
         {sub ? (
           <div style={{ marginTop: 30, maxWidth: width * 0.56 }}>
             <MaskedLine
-              delay={12 + lines.length * 9}
+              delay={4 + lines.length * 5}
               size={28}
               weight={500}
               colour="#B6C4DE"
@@ -170,8 +174,8 @@ export const Mark: React.FC<{ unit: number; progress: number }> = ({ unit, progr
 export const TitleCard: React.FC = () => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
-  const build = ramp(frame, [6, 46], arrive);
-  const word = ramp(frame, [20, 50], arrive);
+  const build = ramp(frame, [1, 20], arrive);
+  const word = ramp(frame, [7, 24], arrive);
   const unit = height * 0.17;
   return (
     <AbsoluteFill style={{ backgroundColor: C.surfaceDark }}>
@@ -214,7 +218,7 @@ export const TitleCard: React.FC = () => {
           letterSpacing: "0.34em",
           textTransform: "uppercase",
           color: C.primaryOnDark,
-          opacity: ramp(frame, [44, 70]),
+          opacity: ramp(frame, [22, 34], arrive),
         }}
       >
         Construction management, reported from site
@@ -229,7 +233,7 @@ export const TitleCard: React.FC = () => {
 export const EndCard: React.FC = () => {
   const frame = useCurrentFrame();
   const { height } = useVideoConfig();
-  const build = ramp(frame, [2, 40], arrive);
+  const build = ramp(frame, [1, 22], arrive);
   const unit = height * 0.13;
   return (
     <AbsoluteFill style={{ backgroundColor: C.surfaceDark }}>
@@ -248,7 +252,7 @@ export const EndCard: React.FC = () => {
               fontWeight: 800,
               letterSpacing: "-0.03em",
               color: C.white,
-              opacity: ramp(frame, [14, 42]),
+              opacity: ramp(frame, [8, 24], arrive),
             }}
           >
             Sitetru
@@ -260,7 +264,7 @@ export const EndCard: React.FC = () => {
             fontSize: 30,
             fontWeight: 600,
             color: "#B6C4DE",
-            opacity: ramp(frame, [30, 58]),
+            opacity: ramp(frame, [20, 34], arrive),
           }}
         >
           Free to start · ₹999/month · English &amp; தமிழ்
@@ -273,7 +277,7 @@ export const EndCard: React.FC = () => {
             fontWeight: 800,
             letterSpacing: "0.02em",
             color: C.primaryOnDark,
-            opacity: ramp(frame, [42, 70]),
+            opacity: ramp(frame, [30, 46], arrive),
           }}
         >
           sitetru.com

@@ -229,9 +229,14 @@ def arc(position):
     return 0.45 + (position - 0.86) / 0.14 * 0.55       # and arrive
 
 
-def launch(total):
+def launch(total, bpm=100):
     """
-    D minor, 84 BPM, resolving to F major.
+    D minor, resolving to F major. 100 BPM by default, which is chosen for the
+    PICTURE rather than the music: at 30fps that is exactly 18 frames to the
+    beat and 72 to the bar, so every cut in the film can land on the grid
+    without rounding. At the original 84 the beat was 21.43 frames and cuts
+    drifted a frame either side of the music, which is the difference between
+    an edit that feels driven and one that feels merely quick.
 
     The shape is the script's shape. It opens on almost nothing -- one low note
     and a room -- because the film opens on a question. The arpeggio arrives
@@ -239,9 +244,8 @@ def launch(total):
     making its case. Everything pulls back before the last line so the voice has
     the frame to itself, then the resolve lands on the logo.
     """
-    bpm = 84
     beat = 60 / bpm
-    bar = 4 * beat                                   # 2.857s
+    bar = 4 * beat
     t = Track(total)
 
     # i - VI - III - VII, the progression that sounds like resolve without
@@ -294,16 +298,15 @@ def launch(total):
     return t.out(total)
 
 
-def walkthrough(total):
+def walkthrough(total, bpm=72):
     """
-    A minor, 72 BPM, no drums.
+    A minor, no drums.
 
     A three-minute explainer needs a floor, not a track. This is two chords
     breathing against each other with a note falling through them every couple
     of bars -- enough that the room is alive, little enough that a listener
     concentrating on the narration never has to push it aside.
     """
-    bpm = 72
     beat = 60 / bpm
     bar = 4 * beat
     t = Track(total)
@@ -358,20 +361,21 @@ def write_wav(path, mono):
 
 
 def main():
-    if len(sys.argv) != 4:
-        print("usage: score.py <launch|walkthrough> <out.wav> <seconds>", file=sys.stderr)
+    if len(sys.argv) not in (4, 5):
+        print("usage: score.py <launch|walkthrough> <out.wav> <seconds> [bpm]", file=sys.stderr)
         return 1
     cue, out, seconds = sys.argv[1], sys.argv[2], float(sys.argv[3])
+    bpm = float(sys.argv[4]) if len(sys.argv) == 5 else None
     if cue not in CUES:
         print(f"unknown cue {cue!r}; have {', '.join(CUES)}", file=sys.stderr)
         return 1
-    audio = CUES[cue](seconds)
+    audio = CUES[cue](seconds) if bpm is None else CUES[cue](seconds, bpm)
     audio = reverb(audio, mix=0.30 if cue == "launch" else 0.34)
     # Nothing in either cue needs to be below 45 Hz; leaving it there only eats
     # headroom that the limiter then takes back out of the music.
     audio = high_pass(audio, 45)
     write_wav(out, audio)
-    print(f"{cue}: {seconds:.1f}s -> {out}", file=sys.stderr)
+    print(f"{cue}: {seconds:.1f}s @ {bpm or 'default'} BPM -> {out}", file=sys.stderr)
     return 0
 
 

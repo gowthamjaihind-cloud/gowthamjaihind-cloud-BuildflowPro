@@ -33,6 +33,8 @@ export const WALKTHROUGH = {
    * than felt, and a viewer pausing to read a screen should not be chased.
    */
   speed: 0.96,
+  /** 90 BPM: 20 frames to the beat at 30fps, so the punch-ins land on it. */
+  bpm: 90,
   beats: [
     {
       id: "portfolio",
