@@ -606,7 +606,12 @@ filters.push(
 last = "punched";
 args.push("-filter_complex", filters.join(";"), "-map", `[${last}]`);
 args.push(
-  "-c:v", "libx264", "-preset", "slow", "-crf", "20",
+  // crf 24, not 20. The per-frame push and punch-in defeat x264's ability to
+  // reuse a static frame, so the same picture that encoded to 7 MB as a mostly
+  // motionless take came out at 27 MB once it moved -- and the narrated cut
+  // went past the 30 MB most places will accept for an upload. Screen content
+  // at crf 24 is still visually clean; this is flat UI, not film grain.
+  "-c:v", "libx264", "-preset", "slow", "-crf", "24",
   "-pix_fmt", "yuv420p",                        // required by most players
   "-movflags", "+faststart",
   "-r", "30",
