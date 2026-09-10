@@ -12,11 +12,11 @@ import {
 import { useProjectCostTotals } from "../../hooks/useProjectCostTotals";
 import { useProjectDataQuery, useTasksQuery } from "../../hooks/queries";
 import { CostEntry, Task } from "../../types";
-import { useUIStore } from "../../store";
 import { useTranslation } from "../../i18n";
 import { ChartLineUp, TrendUp, TrendDown } from "@phosphor-icons/react";
 import { Tooltip as HintTooltip } from "../Tooltip";
 
+import { chartChrome, chartSeries } from "../../lib/chartTheme";
 interface CostAnalyticsDashboardProps {
   projectId: string;
   /** Compact mode renders only the KPI row + gauge (for the Dashboard snapshot). */
@@ -39,7 +39,6 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
   compact = false,
 }) => {
   const { t } = useTranslation();
-  const dark = useUIStore((s) => s.darkMode);
   const { stats, getTaskTotals } = useProjectCostTotals(projectId);
   const { data: costEntries = [] } = useProjectDataQuery<CostEntry>(projectId, "costs");
   // Actual spend is not only manual cost entries: materials issued from stock,
@@ -63,13 +62,10 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
 
   // Validated palettes (dataviz checker): 2-series budget/actual + status, and a
   // 4-hue categorical set for the composition donut (order keeps the similar
-  // orange/yellow non-adjacent, and every slice is directly labelled).
-  const S = dark
-    ? { budget: "#2A86C4", actual: "#5B87FF", under: "#46B08C", over: "#FF8A80", amber: "#E0A63E" }
-    : { budget: "#0F79B8", actual: "#1D4ED8", under: "#2E8B6F", over: "#B3261E", amber: "#C0872A" };
-  const CAT = dark
-    ? ["#3987e5", "#d95926", "#199e70", "#c98500"]
-    : ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];
+  // orange/yellow non-adjacent, and every slice is directly labelled). The
+  // values live in chartTheme so Labor cannot drift from Cost.
+  const S = chartSeries;
+  const CAT = S.categories;
 
   const catLabel = (name: string) => t(`an.cat${name.replace(/\s+/g, "")}`);
 
@@ -85,7 +81,7 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
         color: CAT[i % CAT.length],
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [stats.chartData, dark, t],
+    [stats.chartData, t],
   );
 
   // Actual composition for the donut — either the whole project or one task.
@@ -107,7 +103,7 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
       key: k, name: catLabel(k), actual: Math.max(0, Math.round(map[k])), color: CAT[i],
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [compTask, rows, filterTasks, dark, t]);
+  }, [compTask, rows, filterTasks, t]);
 
   const totalBudget = stats.totalBudgeted || 0;
   const totalActual = stats.totalActual || 0;
@@ -193,7 +189,7 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
         }`}
         icon={variance === 0 ? null : overBudget ? <TrendUp className="w-3.5 h-3.5" /> : <TrendDown className="w-3.5 h-3.5" />}
       />
-      <GaugeTile pct={consumedPct} label={t("an.consumed")} color={statusColor(consumedPct)} track={dark ? "#2E2820" : "#ECE6DD"} />
+      <GaugeTile pct={consumedPct} label={t("an.consumed")} color={statusColor(consumedPct)} track={chartChrome.track} />
     </div>
   );
 
@@ -228,7 +224,7 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
             key={v.id}
             onClick={() => setView(v.id)}
             className={`px-3.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest whitespace-nowrap apple-transition shrink-0 ${
-              view === v.id ? "bg-primary text-white shadow-sm" : "bg-panel border border-divider text-ink-muted hover:text-ink"
+              view === v.id ? "bg-primary text-on-primary shadow-sm" : "bg-panel border border-divider text-ink-muted hover:text-ink"
             }`}
           >
             {v.label}
@@ -237,22 +233,21 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
       </div>
 
       <div className="soft-card rounded-2xl p-4 md:p-6">
-        {view === "utilisation" && <UtilisationView rows={rows} statusColor={statusColor} dark={dark} t={t} />}
+        {view === "utilisation" && <UtilisationView rows={rows} statusColor={statusColor} t={t} />}
         {view === "composition" && (
           <CompositionView
             rows={compRows}
             excluded={excluded}
             setExcluded={setExcluded}
-            dark={dark}
             t={t}
             tasks={filterTasks}
             selectedTask={compTask}
             onSelectTask={setCompTask}
           />
         )}
-        {view === "bullet" && <BulletView rows={rows} S={S} dark={dark} t={t} />}
+        {view === "bullet" && <BulletView rows={rows} S={S} t={t} />}
         {view === "variance" && <VarianceView rows={rows} S={S} t={t} />}
-        {view === "trend" && <TrendView data={trend} budget={totalBudget} S={S} dark={dark} t={t} />}
+        {view === "trend" && <TrendView data={trend} budget={totalBudget} S={S} t={t} />}
       </div>
     </div>
   );
@@ -264,7 +259,7 @@ const StatTile: React.FC<{
   label: string; value: string; hint?: string;
   tone?: "default" | "danger" | "success"; icon?: React.ReactNode;
 }> = ({ label, value, hint, tone = "default", icon }) => {
-  const c = tone === "danger" ? "text-danger" : tone === "success" ? "text-[#2E8B6F]" : "text-ink";
+  const c = tone === "danger" ? "text-danger" : tone === "success" ? "text-success" : "text-ink";
   return (
     <div className="soft-card rounded-2xl p-4 flex flex-col gap-1">
       <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{label}</span>
@@ -339,12 +334,15 @@ const arc = (cx: number, cy: number, ro: number, ri: number, start: number, end:
   return `M${x1},${y1} A${ro},${ro} 0 ${large} 0 ${x2},${y2} L${x3},${y3} A${ri},${ri} 0 ${large} 1 ${x4},${y4} Z`;
 };
 
-const CompositionView: React.FC<any> = ({ rows, excluded, setExcluded, dark, t, tasks, selectedTask, onSelectTask }) => {
+const CompositionView: React.FC<any> = ({ rows, excluded, setExcluded, t, tasks, selectedTask, onSelectTask }) => {
   const [active, setActive] = useState<string | null>(null);
   const included = rows.filter((r: any) => !excluded.has(r.key) && r.actual > 0);
   const total = included.reduce((s: number, r: any) => s + r.actual, 0);
   const cx = 100, cy = 100, ro = 92, ri = 58;
-  const surface = dark ? "#221D18" : "#FFFFFF";
+  // The gaps between donut segments are cut in the colour of the card
+  // BEHIND the donut, so this has to be --panel. It was #221D18, a warm
+  // dark brown, which showed as a visible seam in dark mode.
+  const surface = chartChrome.surface;
 
   let cursor = 0;
   const segs = included.map((r: any) => {
@@ -404,7 +402,7 @@ const CompositionView: React.FC<any> = ({ rows, excluded, setExcluded, dark, t, 
           <text x={cx} y={cy - 6} textAnchor="middle" className="font-mono" style={{ fill: "var(--ink, currentColor)" }} fontSize="20" fontWeight="800">
             {activeRow ? `${Math.round((activeRow.actual / total) * 100)}%` : inrCompact(total)}
           </text>
-          <text x={cx} y={cy + 14} textAnchor="middle" fontSize="9" style={{ fill: "#8a8078" }} fontWeight="700">
+          <text x={cx} y={cy + 14} textAnchor="middle" fontSize="9" style={{ fill: chartChrome.axis }} fontWeight="700">
             {activeRow ? activeRow.name : t("an.totalSpent")}
           </text>
         </svg>
@@ -440,7 +438,7 @@ const CompositionView: React.FC<any> = ({ rows, excluded, setExcluded, dark, t, 
 
 /* ---------------- Bullet (actual vs budget target) ---------------- */
 
-const BulletView: React.FC<any> = ({ rows, S, dark, t }) => {
+const BulletView: React.FC<any> = ({ rows, S, t }) => {
   const max = Math.max(...rows.map((r: any) => Math.max(r.actual, r.budget)), 1) * 1.08;
   return (
     <div className="space-y-4">
@@ -451,8 +449,8 @@ const BulletView: React.FC<any> = ({ rows, S, dark, t }) => {
           return (
             <div key={r.key} className="flex items-center gap-3">
               <span className="w-20 md:w-24 text-xs font-bold text-ink truncate shrink-0">{r.name}</span>
-              <div className="relative flex-1 h-6 rounded-lg overflow-hidden" style={{ background: dark ? "#2E2820" : "#ECE6DD" }}>
-                <div className="absolute inset-y-0 rounded-lg" style={{ width: `${(r.budget / max) * 100}%`, background: dark ? "#3a332b" : "#dfd8cd" }} />
+              <div className="relative flex-1 h-6 rounded-lg overflow-hidden" style={{ background: chartChrome.track }}>
+                <div className="absolute inset-y-0 rounded-lg" style={{ width: `${(r.budget / max) * 100}%`, background: chartChrome.trackStep }} />
                 <div className="absolute inset-y-1 rounded-md transition-[width] duration-700" style={{ width: `${(r.actual / max) * 100}%`, background: over ? S.over : S.under }} />
                 <HintTooltip label={`${t("an.budgetTarget")}: ${inr(r.budget)}`}>
                   <div className="absolute inset-y-[-2px] w-[3px] rounded bg-ink" style={{ left: `calc(${(r.budget / max) * 100}% - 1.5px)` }} />
@@ -504,9 +502,8 @@ const VarianceView: React.FC<any> = ({ rows, S, t }) => {
 
 /* ---------------- Trend (burn-up) ---------------- */
 
-const TrendView: React.FC<any> = ({ data, budget, S, dark, t }) => {
-  const axis = dark ? "#A99E92" : "#786F67";
-  const grid = dark ? "rgba(169,158,146,.15)" : "rgba(120,111,103,.12)";
+const TrendView: React.FC<any> = ({ data, budget, S, t }) => {
+  const { axis, grid } = chartChrome;
   if (!data || data.length < 2) {
     return (
       <div className="py-10 text-center text-ink-muted text-sm font-bold">{t("an.noTrend")}</div>

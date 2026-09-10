@@ -46,7 +46,7 @@ export const AnalyticsTabs: React.FC<AnalyticsTabsProps> = ({ projectId }) => {
             onClick={() => setActive(m.id)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest whitespace-nowrap apple-transition shrink-0 ${
               active === m.id
-                ? "bg-primary text-white shadow-md shadow-primary/20"
+                ? "bg-primary text-on-primary shadow-md shadow-primary/20"
                 : "bg-panel border border-divider text-ink-muted hover:text-ink"
             }`}
           >

@@ -1,6 +1,6 @@
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
-import { db } from "../db";
+import { db, FIRESTORE_DATABASE_ID } from "../db";
 
 
 async function deletePhotos(photoUrls: string[]) {
@@ -161,7 +161,14 @@ async function handleInventoryRollup(
 }
 
 export const onProjectDailyLogWritten = onDocumentWritten(
-  "projects/{projectId}/dailyLogs/{logId}",
+  // Bound to the app's NAMED Firestore database. A v2 trigger with no
+  // `database` option binds to "(default)" instead, where it never fires --
+  // both the client and the Admin SDK use firestoreDatabaseId, so nothing
+  // this listens for ever lands in "(default)".
+  {
+    document: "projects/{projectId}/dailyLogs/{logId}",
+    database: FIRESTORE_DATABASE_ID,
+  },
   async (event: any) => {
     const { projectId } = event.params;
     const beforeData = event.data?.before?.data();
@@ -187,7 +194,10 @@ export const onProjectDailyLogWritten = onDocumentWritten(
 );
 
 export const onOrgDailyLogWritten = onDocumentWritten(
-  "organizations/{orgId}/projects/{projectId}/dailyLogs/{logId}",
+  {
+    document: "organizations/{orgId}/projects/{projectId}/dailyLogs/{logId}",
+    database: FIRESTORE_DATABASE_ID,
+  },
   async (event: any) => {
     const { orgId, projectId } = event.params;
     const beforeData = event.data?.before?.data();

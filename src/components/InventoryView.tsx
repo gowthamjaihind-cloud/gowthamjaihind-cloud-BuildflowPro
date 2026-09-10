@@ -695,7 +695,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               </span>
             </div>
             <p className="text-[8px] md:text-[10px] font-bold text-ink-muted mb-0.5 md:mb-1 uppercase tracking-widest">
-              Low Stock
+              {t("an.lowStock")}
             </p>
             <h3 className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-ink tracking-tight tabular-nums">
               <CountUp value={stats.lowStock} />{" "}
@@ -764,7 +764,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
           </button>
           <button
             onClick={handleExportPDF}
-            className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-deep text-white rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest transition shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-deep text-on-primary rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest transition shadow-sm cursor-pointer"
           >
             <Download className="w-3 h-3" />
             <span>PDF</span>
@@ -807,7 +807,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             </Tooltip>
             <button
               onClick={() => setIsAdding(true)}
-              className="bg-primary text-white w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary-deep apple-transition shadow-lg shadow-primary/20"
+              className="bg-primary text-on-primary w-full sm:w-auto px-6 py-3 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary-deep apple-transition shadow-lg shadow-primary/20"
             >
               <Plus className="w-3 h-3" /> <span>Add Item</span>
             </button>
@@ -828,7 +828,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
           <button
             onClick={tidyStoredNumbers}
             disabled={masterBusy}
-            className="shrink-0 px-4 py-2 rounded-xl bg-primary text-white text-[11px] font-bold uppercase tracking-widest disabled:opacity-50"
+            className="shrink-0 px-4 py-2 rounded-xl bg-primary text-on-primary text-[11px] font-bold uppercase tracking-widest disabled:opacity-50"
           >
             {masterBusy ? "Working…" : "Tidy"}
           </button>
@@ -900,7 +900,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             {item.quantity - (item.consumed || 0) <=
                               item.minThreshold && (
                               <span className="text-[10px] font-bold text-danger uppercase tracking-widest bg-danger/8 px-1.5 py-0.5 rounded border border-danger/20">
-                                Low Stock
+                                {t("an.lowStock")}
                               </span>
                             )}
                           </div>
@@ -1002,7 +1002,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">{item.groupCode || item.category}</span>
                             {(item.quantity - (item.consumed || 0)) <= item.minThreshold && (
                               <span className="text-[10px] font-bold text-danger uppercase tracking-widest bg-danger/8 px-1.5 py-0.5 rounded border border-danger/20">
-                                Low Stock
+                                {t("an.lowStock")}
                               </span>
                             )}
                           </div>
@@ -1077,7 +1077,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         Physical Count
                       </th>
                       <th className="px-3 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/80 text-center">
-                        Variance
+                        {t("an.variance")}
                       </th>
                       <th className="px-3 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/30 text-right">
                         Action
@@ -1156,7 +1156,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                     physicalCounts[item.id] === undefined ||
                                     physicalCounts[item.id] === available
                                       ? "bg-panel text-ink-muted pointer-events-none"
-                                      : "bg-success text-white hover:bg-success shadow-sm"
+                                      : "bg-success text-on-success hover:bg-success shadow-sm"
                                   }`}
                                 >
                                   Sync
@@ -1318,7 +1318,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                 });
                                 handleAddConfig();
                               }}
-                              className="p-1 bg-primary text-white rounded-lg"
+                              className="p-1 bg-primary text-on-primary rounded-lg"
                             >
                               <Plus className="w-3.5 h-3.5" />
                             </button>
@@ -1419,7 +1419,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                 });
                                 handleAddConfig();
                               }}
-                              className="p-1 bg-primary text-white rounded-lg"
+                              className="p-1 bg-primary text-on-primary rounded-lg"
                             >
                               <Plus className="w-3.5 h-3.5" />
                             </button>
@@ -1520,7 +1520,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                                 });
                                 handleAddConfig();
                               }}
-                              className="p-1 bg-primary text-white rounded-lg"
+                              className="p-1 bg-primary text-on-primary rounded-lg"
                             >
                               <Plus className="w-3.5 h-3.5" />
                             </button>
@@ -1624,7 +1624,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               <div className="flex flex-col gap-2">
                 <button
                   onClick={confirmDelete}
-                  className="w-full py-3 bg-danger text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-danger transition-all shadow-sm"
+                  className="w-full py-3 bg-danger text-on-danger rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-danger transition-all shadow-sm"
                 >
                   Delete Item
                 </button>
@@ -1632,7 +1632,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                   onClick={() => setItemToDelete(null)}
                   className="w-full py-3 bg-panel text-ink rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-divider"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
               </div>
             </motion.div>
@@ -1838,8 +1838,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                           : setNewItem({ ...newItem, category: e.target.value })
                       }
                     >
-                      <option>Material</option>
-                      <option>Equipment</option>
+                      <option>{t("an.catMaterial")}</option>
+                      <option>{t("dlh.equipment")}</option>
                       <option>Other</option>
                     </select>
                   </div>
@@ -1993,7 +1993,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                 <div className="flex gap-4 pt-2">
                   <button
                     type="submit"
-                    className="flex-1 bg-primary text-white py-3 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-primary-deep transition-all shadow-sm"
+                    className="flex-1 bg-primary text-on-primary py-3 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-primary-deep transition-all shadow-sm"
                   >
                     {editingItem ? "Save Changes" : "Add Item"}
                   </button>
@@ -2005,7 +2005,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     }}
                     className="px-6 md:px-8 bg-panel text-ink-muted py-3 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-divider"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                 </div>
               </form>

@@ -335,7 +335,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-panel p-5 md:p-6 rounded-2xl border border-divider shadow-sm gap-6">
         <h2 className="text-xl md:text-2xl font-black flex items-center gap-3 md:gap-4 text-ink tracking-tight">
-          <div className="p-2.5 md:p-3 bg-primary text-white rounded-2xl shadow-lg shadow-primary/15">
+          <div className="p-2.5 md:p-3 bg-primary text-on-primary rounded-2xl shadow-lg shadow-primary/15">
             <FileText className="w-5 h-5 md:w-6 md:h-6" />
           </div>
           {t("dv.title")}
@@ -357,7 +357,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
           </div>
           <button
             onClick={() => setIsUploading(true)}
-            className="flex-1 md:flex-none bg-primary text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] md:text-[10px] flex items-center justify-center gap-2 hover:bg-primary/80 apple-transition shadow-xl shadow-primary/20"
+            className="flex-1 md:flex-none bg-primary text-on-primary px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] md:text-[10px] flex items-center justify-center gap-2 hover:bg-primary/80 apple-transition shadow-xl shadow-primary/20"
           >
             <Upload className="w-4 h-4" /> {t("dv.upload")}
           </button>
@@ -367,7 +367,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
       {selectedDocIds.length > 0 && (
         <div className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] md:bottom-10 left-1/2 -translate-x-1/2 z-50 bg-surface-dark text-white rounded-3xl p-4 md:p-6 shadow-2xl flex flex-col md:flex-row items-center gap-6 animate-in slide-in-from-bottom-10 w-[90%] md:w-auto">
           <div className="flex items-center gap-4">
-            <div className="bg-primary text-white w-10 h-10 rounded-2xl flex items-center justify-center font-black">
+            <div className="bg-primary text-on-primary w-10 h-10 rounded-2xl flex items-center justify-center font-black">
               {selectedDocIds.length}
             </div>
             <div>
@@ -380,12 +380,12 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
             </div>
           </div>
 
-          <div className="h-px md:h-10 w-full md:w-px bg-[#3A4F5F]" />
+          <div className="h-px md:h-10 w-full md:w-px bg-white/15" />
 
           <div className="flex items-center gap-2">
             <button
               onClick={handleBulkDownload}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#3A4F5F] hover:bg-[#465D6E] rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
             >
               <Download size={14} /> Download Set
             </button>
@@ -395,19 +395,19 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   onClick={handleBulkDelete}
                   className="flex items-center gap-2 px-4 py-2.5 bg-red-900/40 hover:bg-red-900/60 text-danger rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
                 >
-                  <Trash2 size={14} /> Delete
+                  <Trash2 size={14} /> {t("common.delete")}
                 </button>
                 <div className="relative group">
-                  <button className="flex items-center gap-2 px-4 py-2.5 bg-[#3A4F5F] hover:bg-[#465D6E] rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
+                  <button className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
                     <ShieldCheck size={14} /> Access Level
                   </button>
-                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-[#3A4F5F] rounded-2xl p-2 border border-[#465D6E] shadow-2xl min-w-[160px]">
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-surface-dark rounded-2xl p-2 border border-surface-edge shadow-2xl min-w-[160px]">
                     {(["Public", "Internal", "Confidential"] as const).map(
                       (level) => (
                         <button
                           key={level}
                           onClick={() => handleBulkUpdateAccess(level)}
-                          className="w-full text-left px-4 py-2 hover:bg-[#465D6E] rounded-xl text-[10px] font-black uppercase tracking-widest text-ink-muted hover:text-white transition-colors"
+                          className="w-full text-left px-4 py-2 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white transition-colors"
                         >
                           Set to {level}
                         </button>
@@ -444,7 +444,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
             value={filterTaskId}
             onChange={(e) => setFilterTaskId(e.target.value)}
           >
-            <option value="">All Tasks</option>
+            <option value="">{t("an.allTasks")}</option>
             {orderTasksByWbs(tasks).map((row) => (
               <option key={row.id} value={row.id}>
                 {wbsOptionLabel(row)}
@@ -678,12 +678,12 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                 disabled={isUploadingFile}
                 className="px-4 lg:px-6 py-3 lg:py-4 rounded-2xl text-ink-muted hover:bg-panel transition-colors disabled:opacity-50"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 disabled={isUploadingFile}
-                className="bg-primary text-white px-12 py-4 rounded-2xl hover:bg-primary-deep shadow-xl shadow-primary/15 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-primary text-on-primary px-12 py-4 rounded-2xl hover:bg-primary-deep shadow-xl shadow-primary/15 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isUploadingFile ? (
                   <span className="flex items-center gap-2">
@@ -737,7 +737,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                   Category
                 </th>
                 <th className="px-4 lg:px-6 py-3 lg:py-5 text-right text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                  Actions
+                  {t("common.actions")}
                 </th>
               </tr>
             </thead>
@@ -893,7 +893,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         }}
                         className={`p-2 rounded-xl backdrop-blur-md shadow-lg transition-all ${
                           isSelected
-                            ? "bg-primary text-white"
+                            ? "bg-primary text-on-primary"
                             : "bg-surface/90 text-ink-muted hover:text-primary"
                         }`}
                       >
@@ -919,7 +919,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         {photo.tags.map((tag, i) => (
                           <span
                             key={i}
-                            className="text-[8px] px-1.5 py-0.5 bg-primary text-white rounded font-bold uppercase tracking-tighter"
+                            className="text-[8px] px-1.5 py-0.5 bg-primary text-on-primary rounded font-bold uppercase tracking-tighter"
                           >
                             #{tag}
                           </span>

@@ -1,12 +1,221 @@
 # Marketing asset pipeline
 
-Everything needed to regenerate the Sitetru walkthrough videos and the
-Telegram bot stills, from the demo build, with no external services.
+Everything needed to regenerate the Sitetru films and the Telegram bot stills,
+from the demo build, with no external services.
 
-Two things this pipeline does NOT do: it has no text-to-speech, so the videos
-carry their narration as on-screen text rather than voice; and it does not
-talk to any hosted video tool. Renders happen locally with a headless browser
-and ffmpeg.
+**Nothing here calls a hosted service.** The voice is a neural TTS model running
+on this machine, the music is composed and synthesised by a script in this
+repository, and the picture is rendered by a headless browser and ffmpeg. There
+is no API key to hold, no per-render cost, no third party that has to still
+exist in two years, and no licence attached to any frame or any second of audio.
+That last one is the reason the music is generated rather than chosen: a library
+track carries a licence, and a licence is exactly the sort of thing that
+surfaces later, when a video is doing well.
+
+## The two films
+
+| File | What it is | Length |
+| --- | --- | --- |
+| `remotion/out/sitetru-launch.mp4` | The launch film. Argues. Cut from stills. | ~83s |
+| `walkthrough/out/sitetru-walkthrough.mp4` | The walkthrough. Explains. The product actually running. | ~2:30 |
+
+Different jobs, on purpose. The launch film opens on the evening a contractor
+spends finding out what happened today, names the one genuinely unusual thing
+about the product — the site engineer reports over Telegram, on a phone he
+already has — and then spends its middle following a single log from site
+through the plan, the stock, the purchase order, the task cost and the client
+bill. That chain is the product; the features are just where it surfaces.
+
+The walkthrough does not sell. It is a tour of the real app being clicked, in
+the order a JOB runs rather than the order the sidebar lists: plan it, run the
+day, buy the material, pay the people, watch the money, bill the client, keep
+the paperwork. A tour that goes down the menu teaches the menu.
+
+Build either from cold:
+
+```bash
+bash marketing/voice/fetch-voice.sh          # once: ~117 MB of voice model
+npm run build:demo
+node marketing/capture/serve-demo.mjs &
+npm run capture:screens                      # only when the UI changes
+
+npm run film:launch                           # voice -> picture -> mix
+npm run film:walkthrough                      # voice -> record -> mix
+```
+
+### The edit
+
+Both films are cut on a **musical grid**. The launch cue runs at 100 BPM, which
+is chosen for the picture rather than the music: at 30fps that is exactly 18
+frames to the beat and 72 to the bar, so every shot boundary lands on the grid
+without rounding. The walkthrough uses 90 BPM (20 frames) for its punch-ins.
+The score is rendered at the film's own tempo, so the two share one grid — cuts
+that land on the music read as driven; cuts a frame either side of it read as
+merely quick.
+
+**The launch film is a shot list, not one shot per line.** A narration beat
+still owns its span, but the long beats hold two or three shots inside it, cut
+hard. 29 shots across 78 seconds — a cut every 2.7s, against 16 shots across 84
+seconds and a cut every 5.3s before. Hard cuts are the default and cost no
+frames; `Flash` (4 frames) marks an arrival, `Whip` (6) carries the eye
+sideways between two views of the same screen, and `Defocus` survives only at
+the three places where the film genuinely changes subject. Every shot opens on
+a `Punch` — a few frames of scale settling — which is the cheapest thing that
+makes a hard cut read as deliberate rather than abrupt.
+
+`Cut.tsx` holds the scheduler. It divides a beat's span between its shots by
+largest remainder in half-beat units; a property test over 1,105 span/shot-count
+combinations checks it never loses a frame or produces a shot below the grid's
+floor. The obvious version — round each share and hand the difference to the
+longest shot — failed both ways, producing a zero-length shot and splitting a
+105-frame beat as [15, 90] because correcting a three-frame overshoot with a
+whole half-beat flipped the error's sign and the loop oscillated.
+
+**The walkthrough gets a lighter treatment on purpose.** It is an explainer; a
+viewer has to be able to follow it, and a tour that never stops moving is
+unreadable. What it gets is a punch-in at every module change, a slow push
+across the screens that cannot scroll, and beats that fill themselves.
+
+That last one mattered most, and finding it took a measurement. Each beat waits
+for its narration to finish, and most lines outlast their clicks — so **52 of
+the 160 seconds were a motionless page**. Two causes, both invisible until
+counted:
+
+1. `glideScroll` called `window.scrollTo`, and **this app does not scroll the
+   window** — Layout scrolls an inner `div.flex-1.overflow-y-auto`. Every
+   scroll in every walkthrough ever recorded did nothing. `DESIGN.md` already
+   carried the warning from the modal work; the recorder had never been held to
+   it.
+2. Five of the twelve modules fit in one viewport with the demo's data, so
+   their scroll range is exactly **zero**. No scrolling code would ever have
+   fixed those. Moving the pointer around them did not help either — a 22px
+   cursor on a 1920px frame is not motion, to a measurement or to a viewer.
+   When the subject cannot move, the camera does: those beats get a slow push.
+
+Motionless stretches over five seconds, across the four cuts: **11 → 7 → 7 → 2**,
+longest 14.8s → 7.0s.
+
+### Timing is measured, never written
+
+Both films lay their beats out from the **measured** length of each spoken line.
+`marketing/films/build-voice.mjs` synthesises the script and writes a manifest
+of what each line actually takes to say; the launch film's Remotion composition
+imports those numbers, and the walkthrough recorder pads every beat until its
+narration has had time to finish.
+
+Edit a sentence and the film retimes itself. The alternative — frame counts kept
+by hand next to a script — is what the earlier pipeline did, and it had already
+drifted: a line that takes eleven seconds read over a beat that runs for six
+leaves the voice talking across the next screen, and every beat after it slides
+further out.
+
+### The voice
+
+`marketing/voice/` — **Kokoro-82M** (Apache-2.0), a StyleTTS2-derived model,
+running locally. `fetch-voice.sh` gets the weights; they are not committed.
+Kokoro's own files live on Hugging Face, which this sandbox cannot reach; the
+identical model and voice embeddings are bundled inside the `expo-kokoro` npm
+package, which it can.
+
+The films are voiced by **`af_bella`**, a female voice chosen by measurement
+rather than preference. Any of the 59 names in `model/voices` works — change
+`DEFAULT_VOICE` in `synth.py`, or set `voice` on a film's script.
+
+**This replaced Piper (`en_US-joe-medium`), because the first cut sounded
+robotic and that turned out to be measurable rather than a matter of taste.**
+Two numbers say it, on the same three lines:
+
+| | octave-jumps | HNR |
+| --- | --- | --- |
+| piper `en_US-joe-medium` | **17.2%** | **0.63 dB** |
+| kokoro `af_bella` | 0.3% | 6.71 dB |
+
+*Octave-jumps* is how often an autocorrelation pitch track moves more than six
+semitones between adjacent 10 ms frames. A real voice glides; a tracker jumping
+means the waveform is not cleanly periodic. *HNR* is harmonics-to-noise — 0.63 dB
+is as much noise energy as harmonic energy, which is what "robotic" actually
+sounds like. Kokoro is roughly ten times cleaner on the first and six decibels
+better on the second, and the same gap holds across the finished films.
+
+Eleven female voices were auditioned this way before `af_bella` was picked: it
+had the cleanest pitch track and the best HNR of the set, at a mid register
+(198 Hz) that reads as composed rather than bright. The runners-up, if this ever
+wants changing: `bf_alice` (British, 217 Hz, brighter), `af_aoede` (176 Hz,
+warmer), `af_kore` (153 Hz, lowest).
+
+**Piper is still installed, and still used — as the PHONEMIZER.** Its espeak
+bridge emits exactly the IPA character set Kokoro's vocabulary expects and it
+keeps terminal punctuation, which Kokoro uses for phrasing. The espeak-ng CLI
+does neither: it injects zero-width joiners into diphthongs (`sˈa‍ɪt`) and drops
+the full stop. So pronunciation is unchanged by the voice swap, and every
+finding from `pronounce.py` still holds.
+
+`master.mjs` is the chain that makes it a voiceover rather than a TTS demo, and
+it was **re-tuned when the voice changed** — applying Piper's settings to a
+different model would have made things worse. Measured on the same line:
+
+| band | kokoro | piper | what it means |
+| --- | --- | --- | --- |
+| 300–800 Hz | 22.9% | 36.2% | Piper was boxy; Kokoro is not |
+| 2–4 kHz | 6.1% | 11.5% | Kokoro needs the presence help more |
+| 4–7 kHz | 11.5% | 20.5% | Piper's sibilance was its worst fault |
+| 7–11 kHz | 20.2% | 3.1% | Kokoro has real air; Piper had none |
+
+The two settings that did the most work for Piper are the two that would hurt
+here: its 380 Hz cut was fixing energy piling up in the boxy region, and its
+heavy de-esser was taming a voice with a fifth of its energy in the sibilant
+band. Both are gone. Nothing rolls off the top, either — that 20% of air above
+7 kHz is a large part of why this voice reads as present rather than synthetic.
+
+**You cannot hear a render in CI, but you can check it.** `pronounce.py` prints
+the IPA the phonemizer will actually use for every word in a script:
+
+```bash
+npm run voice:check marketing/films/launch.script.mjs
+```
+
+It has already earned its place. "Madurai" comes out /mˈædʒuːɹˌaɪ/ — MAD-joo-rye
+— so the word is out of both scripts. "Sitetru" is right on its own
+(/sˈaɪttɹuː/, SITE-troo), which is not something you would think to check and
+not something you would want to discover in a finished film.
+
+To hand a film to a human voice later, `films/out/<id>/script.txt` is the
+timestamped script and every line is already a separate WAV — swapping one line
+does not mean re-rendering a film.
+
+### The music
+
+`marketing/music/score.py` composes and renders both cues from oscillators and
+noise. Two cues with different jobs:
+
+- **launch** — D minor, 84 BPM, resolving to F major. Its shape is the script's
+  shape: almost nothing under the opening question, an arpeggio when the product
+  arrives, percussion under the middle where the film makes its case, pulled
+  back for the last line so the voice has the frame, then the resolve on the
+  mark.
+- **walkthrough** — A minor, 72 BPM, no percussion, almost no movement. Its
+  whole job is to stop the room sounding dead under a voice that talks for two
+  and a half minutes. If you notice it, it is too loud.
+
+`mix.mjs` places each line at its beat and ducks the score under the voice with
+`sidechaincompress`, then delivers at −14 LUFS with a −1 dBTP ceiling, which is
+what every platform normalises to. It prints what actually came out, and fails
+if the audio graph ended before the picture did — which it silently did once,
+trimming 2.7 seconds off the end card.
+
+### The brand
+
+`marketing/brand.mjs` is the single copy of the palette for everything under
+`marketing/`, and `brand.test.mjs` reads `../src/index.css` and fails if it
+drifts or if any renderer still holds a retired value. It runs in `npm test`
+via `brand.spec.ts`.
+
+This existed because the opposite was true for a long time. Five renderers each
+carried their own hexes, and when the product moved to navy and cobalt not one
+of them came along — so the films were rendered in the retired brand around
+screenshots that show the current one, the walkthrough's click ring pinged
+orange over a cobalt product, and nothing caught any of it, because
+`marketing/` is a separate package with no CI step of its own.
 
 ## Requirements
 
@@ -14,8 +223,15 @@ and ffmpeg.
 - `playwright-core` — a devDependency, so `npm install` covers it. It ships
   no browser; point `CHROME_PATH` at a Chromium binary if yours is not at the
   sandbox default `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
-- Google Fonts must be reachable — Manrope and Noto Sans Tamil are pulled at
-  render time. Tamil renders as tofu boxes without the latter.
+- `ffmpeg` needs the `flite`, `deesser`, `acompressor`, `alimiter`, `loudnorm`
+  and `sidechaincompress` filters. Ubuntu's build has all of them.
+- `python3` with `numpy` and `scipy` (the score), `onnxruntime` (the voice) and
+  `piper-tts` (the phonemizer).
+- Fonts are served from `walkthrough/fonts/` on disk, not from Google. Left to
+  the network they are a render-blocking third-party request that has stalled a
+  load here before — and it fails SILENTLY: the frame renders in whatever the
+  fallback stack resolves to, so a whole film comes out in the wrong typeface
+  and nothing reports an error. That is exactly what the first render did.
 
 ## 1. Regenerate the screenshots (only when the UI changes)
 

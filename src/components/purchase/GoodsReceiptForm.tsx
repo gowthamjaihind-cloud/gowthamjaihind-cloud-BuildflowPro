@@ -18,6 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Tooltip } from "../Tooltip";
 import { DialogBehaviour } from "../../lib/useDialog";
 
+import { useTranslation } from "../../i18n";
 interface GoodsReceiptFormProps {
   po: PurchaseOrder;
   projectId: string;
@@ -25,6 +26,7 @@ interface GoodsReceiptFormProps {
 }
 
 export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectId, onClose }) => {
+  const { t } = useTranslation();
   const user = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
   
@@ -353,7 +355,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
              <h2 className="text-xl font-bold text-ink">Record Goods Receipt</h2>
              <p className="text-xs text-ink-muted mt-1 uppercase tracking-widest font-bold">PO: {po.poNumber}</p>
           </div>
-          <button aria-label="Close" onClick={onClose} className="p-2 hover:bg-divider rounded-full transition text-ink cursor-pointer">
+          <button aria-label={t("common.close")} onClick={onClose} className="p-2 hover:bg-divider rounded-full transition text-ink cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -396,7 +398,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                        <tr className="bg-divider/30 text-[10px] font-bold text-ink-muted uppercase tracking-widest border-b border-divider">
                           <th className="p-4">Item</th>
                           <th className="p-4 text-right">Ordered</th>
-                          <th className="p-4 text-right">Remaining</th>
+                          <th className="p-4 text-right">{t("dashboard.remaining")}</th>
                           <th className="p-4 text-right">Received</th>
                           <th className="p-4 text-right">Accepted</th>
                           <th className="p-4 text-right">Rejected</th>
@@ -537,7 +539,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
            <button 
              onClick={handleSubmit} 
              disabled={isSubmitting} 
-             className="px-8 py-4 bg-primary hover:bg-primary-deep text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] disabled:opacity-50"
+             className="px-8 py-4 bg-primary hover:bg-primary-deep text-on-primary text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] disabled:opacity-50"
            >
              {isSubmitting ? <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span> : <Save className="w-4 h-4" />} Save Receipt
            </button>

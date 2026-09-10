@@ -84,7 +84,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           className={`mt-5 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider apple-transition ${
             variant === "filtered"
               ? "border border-divider text-ink hover:bg-page"
-              : "bg-primary text-white hover:bg-primary-deep"
+              : "bg-primary text-on-primary hover:bg-primary-deep"
           }`}
         >
           {action.label}

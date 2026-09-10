@@ -5,16 +5,15 @@ import {
 import { useProjectCostTotals } from "../../hooks/useProjectCostTotals";
 import { useProjectDataQuery } from "../../hooks/queries";
 import { DailyLaborLog } from "../../types";
-import { useUIStore } from "../../store";
 import { useTranslation } from "../../i18n";
 import { Users, TrendUp, TrendDown } from "@phosphor-icons/react";
 import { inr, inrCompact, StatTile, GaugeTile, RankedBars } from "./shared";
 
+import { chartChrome, chartSeries } from "../../lib/chartTheme";
 type ViewId = "byRole" | "manpower" | "trend";
 
 export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ projectId }) => {
   const { t } = useTranslation();
-  const dark = useUIStore((s) => s.darkMode);
   const { stats } = useProjectCostTotals(projectId);
   const { data: laborLogs = [] } = useProjectDataQuery<DailyLaborLog>(projectId, "labor_logs");
   // Labour also arrives through the daily log (the DPR / Telegram field path),
@@ -25,9 +24,7 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
   const { data: laborRates = [] } = useProjectDataQuery<any>(projectId, "labor_rate_cards");
   const [view, setView] = useState<ViewId>("byRole");
 
-  const S = dark
-    ? { actual: "#5B87FF", under: "#46B08C", over: "#FF8A80", amber: "#E0A63E", bar: "#2A86C4" }
-    : { actual: "#1D4ED8", under: "#2E8B6F", over: "#B3261E", amber: "#C0872A", bar: "#0F79B8" };
+  const S = chartSeries;
 
   const budget = stats.laborPlanned || 0;
   const actual = stats.laborActual || 0;
@@ -105,8 +102,7 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
     { id: "trend", label: t("an.viewTrend") },
   ];
 
-  const axis = dark ? "#A99E92" : "#786F67";
-  const grid = dark ? "rgba(169,158,146,.15)" : "rgba(120,111,103,.12)";
+  const { axis, grid } = chartChrome;
 
   return (
     <div className="space-y-5">
@@ -128,7 +124,7 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
           icon={variance === 0 ? null : overBudget ? <TrendUp className="w-3.5 h-3.5" /> : <TrendDown className="w-3.5 h-3.5" />}
         />
         {budget > 0
-          ? <GaugeTile pct={consumedPct} label={t("an.consumed")} color={statusColor} track={dark ? "#2E2820" : "#ECE6DD"} />
+          ? <GaugeTile pct={consumedPct} label={t("an.consumed")} color={statusColor} track={chartChrome.track} />
           : <StatTile label={t("an.headcountDays")} value={String(Math.round(headcountDays))} />}
       </div>
 
@@ -136,7 +132,7 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
         {views.map((v) => (
           <button key={v.id} onClick={() => setView(v.id)}
             className={`px-3.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest whitespace-nowrap apple-transition shrink-0 ${
-              view === v.id ? "bg-primary text-white shadow-sm" : "bg-panel border border-divider text-ink-muted hover:text-ink"}`}>
+              view === v.id ? "bg-primary text-on-primary shadow-sm" : "bg-panel border border-divider text-ink-muted hover:text-ink"}`}>
             {v.label}
           </button>
         ))}
@@ -176,15 +172,14 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
             ) : <div className="py-8 text-center text-ink-muted text-sm font-bold">{t("an.noTrend")}</div>}
           </div>
         )}
-        {view === "trend" && <LaborTrend data={trendData} S={S} dark={dark} t={t} />}
+        {view === "trend" && <LaborTrend data={trendData} S={S} t={t} />}
       </div>
     </div>
   );
 };
 
-const LaborTrend: React.FC<any> = ({ data, S, dark, t }) => {
-  const axis = dark ? "#A99E92" : "#786F67";
-  const grid = dark ? "rgba(169,158,146,.15)" : "rgba(120,111,103,.12)";
+const LaborTrend: React.FC<any> = ({ data, S, t }) => {
+  const { axis, grid } = chartChrome;
   if (!data || data.length < 2) return <div className="py-8 text-center text-ink-muted text-sm font-bold">{t("an.noTrend")}</div>;
   return (
     <div className="space-y-4">

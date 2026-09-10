@@ -1,23 +1,22 @@
 import React, { useState, useMemo } from "react";
 import { useProjectDataQuery } from "../../hooks/queries";
 import { InventoryItem } from "../../types";
-import { useUIStore } from "../../store";
 import { useTranslation } from "../../i18n";
 import { Package, Warning } from "@phosphor-icons/react";
 import { inr, inrCompact, StatTile, RankedBars } from "./shared";
 
+import { chartSeries } from "../../lib/chartTheme";
 type ViewId = "stock" | "consumption" | "low";
 
 export const InventoryAnalyticsDashboard: React.FC<{ projectId: string }> = ({ projectId }) => {
   const { t } = useTranslation();
-  const dark = useUIStore((s) => s.darkMode);
   const { data: items = [] } = useProjectDataQuery<InventoryItem>(projectId, "inventory");
   // Consumption is derived from the material-issue records, which every daily
   // log writes. The inventory item's `consumed` field is only back-filled by a
   // Cloud Function, so relying on it alone left this view empty.
   const { data: issues = [] } = useProjectDataQuery<any>(projectId, "material_issues");
   const [view, setView] = useState<ViewId>("stock");
-  const bar = dark ? "#2A86C4" : "#0F79B8";
+  const bar = chartSeries.bar;
 
   const { stockValue, itemsCount, lowCount, consumedValue, stockRows, consRows, lowRows } = useMemo(() => {
     let stockValue = 0, consumedValue = 0, lowCount = 0;
@@ -90,7 +89,7 @@ export const InventoryAnalyticsDashboard: React.FC<{ projectId: string }> = ({ p
         {views.map((v) => (
           <button key={v.id} onClick={() => setView(v.id)}
             className={`px-3.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest whitespace-nowrap apple-transition shrink-0 ${
-              view === v.id ? "bg-primary text-white shadow-sm" : "bg-panel border border-divider text-ink-muted hover:text-ink"}`}>
+              view === v.id ? "bg-primary text-on-primary shadow-sm" : "bg-panel border border-divider text-ink-muted hover:text-ink"}`}>
             {v.label}
           </button>
         ))}

@@ -69,6 +69,7 @@ import { Tooltip as HintTooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
 import { DialogBehaviour } from "../lib/useDialog";
 
+import { chartChrome, chartSeries } from "../lib/chartTheme";
 interface CostManagementProps {
   projectId: string;
 }
@@ -909,7 +910,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 <HintTooltip label={"Save task costs"}>
                   <button aria-label="Save task costs"
                     onClick={() => handleSaveTaskCosts(task.id)}
-                    className="p-1 bg-success/20 text-success rounded hover:bg-[#A7F3D0]"
+                    className="p-1 bg-success/20 text-success rounded hover:bg-success/35"
                   >
                     <Check className="w-4 h-4" />
                   </button>
@@ -953,7 +954,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <table className="w-full text-[10px] md:text-[10px] min-w-[600px]">
                     <thead>
                       <tr className="bg-warning/12 text-warning font-bold uppercase tracking-wider">
-                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">{t("common.date")}</th>
                         <th className="p-2 text-left">Contractor</th>
                         <th className="p-2 text-left">Role</th>
                         <th className="p-2 text-right">Headcount</th>
@@ -1041,7 +1042,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           <tr className="bg-panel">
             <td colSpan={11} className="p-2 md:p-6 border-b border-divider">
               <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
-                <div className="bg-[#3A4F5F] px-4 py-2 flex justify-between items-center">
+                <div className="bg-surface-dark px-4 py-2 flex justify-between items-center">
                   <span className="text-[10px] md:text-[10px] font-black text-white uppercase tracking-widest">
                     Material Consumption Breakdown
                   </span>
@@ -1053,7 +1054,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                   <table className="w-full text-[10px] md:text-[10px] min-w-[500px]">
                     <thead>
                       <tr className="bg-panel text-ink font-bold uppercase tracking-wider">
-                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">{t("common.date")}</th>
                         <th className="p-2 text-left">Material Name</th>
                         <th className="p-2 text-right">Quantity</th>
                         <th className="p-2 text-right">Unit Rate</th>
@@ -1240,7 +1241,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               });
               setIsAdding(true);
             }}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-white px-8 py-3.5 md:py-2.5 rounded-xl text-[10px] sm:text-xs md:text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/80 apple-transition shadow-xl shadow-primary/20"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-on-primary px-8 py-3.5 md:py-2.5 rounded-xl text-[10px] sm:text-xs md:text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/80 apple-transition shadow-xl shadow-primary/20"
           >
             <Plus className="w-4 h-4" /> <span>Add Transaction</span>
           </button>
@@ -1315,7 +1316,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     {actualOnly ? (
                       <div>
                         <div className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1">
-                          Actual
+                          {t("an.actual")}
                         </div>
                         <div className="text-2xl font-bold text-primary tracking-tight">
                           ₹
@@ -1347,7 +1348,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           </div>
                           <div className="min-w-0">
                             <div className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1">
-                              Actual
+                              {t("an.actual")}
                             </div>
                             <div className="text-base lg:text-lg xl:text-xl font-bold text-primary tracking-tight tabular-nums">
                               ₹
@@ -1376,7 +1377,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
                         <div className="flex justify-between items-center pt-2 border-t border-white/10">
                           <div className="text-xs font-medium text-ink-muted">
-                            Variance
+                            {t("an.variance")}
                           </div>
                           <div
                             className={`text-sm font-bold ${
@@ -1411,17 +1412,29 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     Planned vs Actual spending
                   </p>
                 </div>
+                {/* The legend is hand-rolled, so its dots have to be driven by
+                    the same values as the bars below. They were bg-success and
+                    bg-primary, which happened to look right while the Budget
+                    bar was a stray emerald and stopped the moment it moved to
+                    the shared chart palette -- a green dot labelled Planned
+                    above a blue bar. */}
                 <div className="flex gap-4 md:gap-6">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-success" />
+                    <div
+                      className="w-2 md:w-3 h-2 md:h-3 rounded-full"
+                      style={{ background: chartSeries.budget }}
+                    />
                     <span className="text-[10px] md:text-[13px] font-medium text-ink-muted">
-                      Planned
+                      {t("dashboard.budget")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-primary" />
+                    <div
+                      className="w-2 md:w-3 h-2 md:h-3 rounded-full"
+                      style={{ background: chartSeries.actual }}
+                    />
                     <span className="text-[10px] md:text-[13px] font-medium text-ink-muted">
-                      Actual
+                      {t("an.actual")}
                     </span>
                   </div>
                 </div>
@@ -1435,22 +1448,22 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     <CartesianGrid
                       strokeDasharray="3 3"
                       vertical={false}
-                      stroke="rgba(0,0,0,0.05)"
+                      stroke={chartChrome.grid}
                     />
                     <XAxis
                       dataKey="name"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#6E8CA0", fontWeight: 600, fontSize: 13 }}
+                      tick={{ fill: chartChrome.axis, fontWeight: 600, fontSize: 13 }}
                     />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#6E8CA0", fontWeight: 600, fontSize: 13 }}
+                      tick={{ fill: chartChrome.axis, fontWeight: 600, fontSize: 13 }}
                       tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
                     />
                     <Tooltip
-                      cursor={{ fill: "rgba(0,0,0,0.02)" }}
+                      cursor={{ fill: "var(--ink)", fillOpacity: 0.04 }}
                       contentStyle={{
                         borderRadius: "24px",
                         border: "1px solid var(--divider)",
@@ -1472,13 +1485,13 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     />
                     <Bar
                       dataKey="Budget"
-                      fill="#059669"
+                      fill={chartSeries.budget}
                       radius={[8, 8, 0, 0]}
                       barSize={40}
                     />
                     <Bar
                       dataKey="Actual"
-                      fill="var(--primary)"
+                      fill={chartSeries.actual}
                       radius={[8, 8, 0, 0]}
                       barSize={40}
                     />
@@ -1635,29 +1648,29 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     </th>
                     <th className="p-3 text-right">Actual Spent</th>
                     <th className="p-3 text-center hidden sm:table-cell">
-                      Status
+                      {t("common.status")}
                     </th>
                     <th className="p-3 w-12 md:w-20"></th>
                   </tr>
-                  <tr className="bg-[#3A4F5F] text-white/50 text-[8px] font-black uppercase tracking-[0.2em] border-t border-white/5">
-                    <th className="p-1 px-3 text-left">Items</th>
+                  <tr className="bg-surface-dark text-white/50 text-[8px] font-black uppercase tracking-[0.2em] border-t border-white/5">
+                    <th className="p-1 px-3 text-left">{t("an.items")}</th>
                     <th className="p-1 text-center hidden md:table-cell border-l border-white/5">
-                      Budget
+                      {t("dashboard.budget")}
                     </th>
                     <th className="p-1 text-center hidden md:table-cell">
-                      Spent
+                      {t("dashboard.spent")}
                     </th>
                     <th className="p-1 text-center hidden md:table-cell border-l border-white/5">
-                      Budget
+                      {t("dashboard.budget")}
                     </th>
                     <th className="p-1 text-center hidden md:table-cell">
-                      Spent
+                      {t("dashboard.spent")}
                     </th>
                     <th className="p-1 text-center hidden xl:table-cell border-l border-white/5">
-                      Budget
+                      {t("dashboard.budget")}
                     </th>
                     <th className="p-1 text-center hidden xl:table-cell">
-                      Spent
+                      {t("dashboard.spent")}
                     </th>
                     <th
                       className="p-1 text-right border-l border-white/5"
@@ -1676,7 +1689,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           className="p-4 px-6 border-y border-divider"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary text-white rounded-lg shadow-sm">
+                            <div className="p-2 bg-primary text-on-primary rounded-lg shadow-sm">
                               <Layers className="w-4 h-4" />
                             </div>
                             <div>
@@ -1743,7 +1756,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 });
                 setIsAdding(true);
               }}
-              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors"
             >
               <Plus className="w-4 h-4" /> Add Direct Cost
             </button>
@@ -1752,8 +1765,8 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             <table className="w-full text-sm text-left">
               <thead className="bg-panel border-b text-[10px] font-black uppercase tracking-wider text-ink-muted">
                 <tr>
-                  <th className="p-4 rounded-tl-xl">Date</th>
-                  <th className="p-4">Description</th>
+                  <th className="p-4 rounded-tl-xl">{t("common.date")}</th>
+                  <th className="p-4">{t("cpay.description")}</th>
                   <th className="p-4">Category (Head)</th>
                   <th className="p-4">Type</th>
                   <th className="p-4 text-right">Amount (₹)</th>
@@ -1790,7 +1803,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         </td>
                         <td className="p-4">
                           <span
-                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-success/20 text-success" : "bg-[#E2E8ED] text-ink-muted"}`}
+                            className={`px-2 py-1 rounded text-[10px] font-bold ${entry.type === "Actual" ? "bg-success/20 text-success" : "bg-divider text-ink-muted"}`}
                           >
                             {entry.type}
                           </span>
@@ -1859,7 +1872,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
             <div className="bg-panel p-4 md:p-6 rounded-2xl border">
               <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
-                Material
+                {t("an.catMaterial")}
               </div>
               <div className="flex justify-between items-end">
                 <div>
@@ -1869,7 +1882,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[10px] opacity-50">Actual</div>
+                  <div className="text-[10px] opacity-50">{t("an.actual")}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-success">
@@ -1894,7 +1907,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[10px] opacity-50">Actual</div>
+                  <div className="text-[10px] opacity-50">{t("an.actual")}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-success">
@@ -1909,7 +1922,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </div>
             <div className="bg-panel p-4 md:p-6 rounded-2xl border">
               <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
-                Equipment
+                {t("dlh.equipment")}
               </div>
               <div className="flex justify-between items-end">
                 <div>
@@ -1919,7 +1932,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[10px] opacity-50">Actual</div>
+                  <div className="text-[10px] opacity-50">{t("an.actual")}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] opacity-50">Actuals only</div>
@@ -1928,7 +1941,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             </div>
             <div className="bg-panel p-4 md:p-6 rounded-2xl border">
               <div className="text-[10px] font-bold uppercase opacity-50 mb-2">
-                Direct Cost
+                {t("an.catDirectCost")}
               </div>
               <div className="flex justify-between items-end">
                 <div>
@@ -1938,7 +1951,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       maximumFractionDigits: 0,
                     })}
                   </div>
-                  <div className="text-[10px] opacity-50">Actual</div>
+                  <div className="text-[10px] opacity-50">{t("an.actual")}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-success">
@@ -1979,10 +1992,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     Actual Total
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
-                    Variance
+                    {t("an.variance")}
                   </th>
                   <th className="text-right py-4 font-black uppercase tracking-widest text-[10px]">
-                    Status
+                    {t("common.status")}
                   </th>
                 </tr>
               </thead>
@@ -1995,7 +2008,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         className="p-4 px-6 border-y border-divider"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-primary text-white rounded-lg shadow-sm">
+                          <div className="p-2 bg-primary text-on-primary rounded-lg shadow-sm">
                             <Layers className="w-4 h-4" />
                           </div>
                           <div>
@@ -2067,7 +2080,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     </div>
                   </td>
                   <td className="p-4 text-right">
-                    <div className="text-[10px] text-white/70">Actual</div>
+                    <div className="text-[10px] text-white/70">{t("an.actual")}</div>
                     <div className="text-sm font-bold">
                       ₹
                       {stats.equipmentActual.toLocaleString("en-IN", {
@@ -2165,7 +2178,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
             >
               <DialogBehaviour />
-              <div className="bg-primary p-5 md:p-6 text-white flex justify-between items-center">
+              <div className="bg-primary p-5 md:p-6 text-on-primary flex justify-between items-center">
                 <div>
                   <h3 className="text-xl font-bold">
                     {newEntry.id ? "Edit Transaction" : "Add Transaction"}
@@ -2198,7 +2211,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
-                      Description
+                      {t("cpay.description")}
                     </label>
                     <input
                       required
@@ -2291,7 +2304,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           Transport...)
                         </option>
                         <option value="Labor">Labor</option>
-                        <option value="Equipment">Equipment</option>
+                        <option value="Equipment">{t("dlh.equipment")}</option>
                         <option value="Subcontractor">Subcontractor</option>
                         <option value="Transport">Transport</option>
                         <option value="Other">Other</option>
@@ -2302,7 +2315,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
-                        Date
+                        {t("common.date")}
                       </label>
                       <input
                         type="date"
@@ -2319,7 +2332,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-primary/80 transition-all shadow-xl shadow-primary/20"
+                  className="w-full bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-primary/80 transition-all shadow-xl shadow-primary/20"
                 >
                   Save Transaction
                 </button>
@@ -2355,16 +2368,16 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     onClick={() => setDeletingId(null)}
                     className="flex-1 py-3.5 bg-panel hover:bg-divider rounded-2xl font-bold transition-colors"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={() => {
                       const entry = entries.find((e) => e.id === deletingId);
                       if (entry) handleDeleteEntry(entry);
                     }}
-                    className="flex-1 py-3.5 bg-danger hover:bg-danger text-white rounded-2xl font-bold transition-colors"
+                    className="flex-1 py-3.5 bg-danger hover:bg-danger text-on-danger rounded-2xl font-bold transition-colors"
                   >
-                    Delete
+                    {t("common.delete")}
                   </button>
                 </div>
               </div>

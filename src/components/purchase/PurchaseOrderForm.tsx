@@ -19,6 +19,7 @@ import { toast } from "../../lib/feedback";
 import { Tooltip } from "../Tooltip";
 import { DialogBehaviour } from "../../lib/useDialog";
 
+import { useTranslation } from "../../i18n";
 interface PurchaseOrderFormProps {
   projectId: string;
   onClose: () => void;
@@ -27,6 +28,7 @@ interface PurchaseOrderFormProps {
 }
 
 export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId, onClose, existingPO }) => {
+  const { t } = useTranslation();
   const user = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
   const isEditing = !!existingPO;
@@ -240,7 +242,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
              <h2 className="text-xl font-black text-ink tracking-tight mb-1">{isEditing ? `Edit ${existingPO?.poNumber || "Purchase Order"}` : "Create Purchase Order"}</h2>
              <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Draft Order</p>
            </div>
-           <button aria-label="Close" type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
+           <button aria-label={t("common.close")} type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
              <X className="w-5 h-5" />
            </button>
          </div>
@@ -419,7 +421,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
 
             <div className="mt-4 mb-4 p-6 bg-warning/12 border border-warning/25/50 rounded-[20px] space-y-2">
                <div className="flex justify-between text-xs font-bold text-warning/80">
-                  <span>Materials</span>
+                  <span>{t("dlh.materials")}</span>
                   <span className="font-mono">₹{money(materialTotal)}</span>
                </div>
                {chargesTotal > 0 && (
@@ -448,7 +450,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
               <button
                 type="submit"
                 disabled={isSubmitting || !vendorId || totalAmount <= 0}
-                className="w-full py-4 bg-primary hover:bg-primary-deep disabled:bg-divider disabled:cursor-not-allowed text-white text-sm font-bold uppercase tracking-widest rounded-xl transition flex justify-center items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)]"
+                className="w-full py-4 bg-primary hover:bg-primary-deep disabled:bg-divider disabled:cursor-not-allowed disabled:text-ink-muted text-on-primary text-sm font-bold uppercase tracking-widest rounded-xl transition flex justify-center items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)]"
               >
                 {isSubmitting ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> {isEditing ? "Updating PO..." : "Saving PO..."}</>

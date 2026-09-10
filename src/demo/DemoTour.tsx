@@ -290,7 +290,7 @@ export const DemoTour: React.FC = () => {
           )}
           <button
             onClick={() => (last ? finish() : setStep(step + 1))}
-            className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-wider hover:bg-primary-deep apple-transition"
+            className="px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-black uppercase tracking-wider hover:bg-primary-deep apple-transition"
           >
             {last ? t("demoTour.done") : t("demoTour.next")}
           </button>

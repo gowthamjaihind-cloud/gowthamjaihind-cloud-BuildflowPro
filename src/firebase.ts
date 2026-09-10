@@ -45,6 +45,26 @@ const APPCHECK_SITE_KEY =
   "6LcbyY8tAAAAALNiKcUMNdJmSBRGuBff2y6KjS2C"; // reCAPTCHA v3 site key (public)
 if (APPCHECK_SITE_KEY) {
   try {
+    // Debug token, dev builds only.
+    //
+    // reCAPTCHA attests a registered domain, and localhost is not one, so the
+    // moment enforcement is switched on every request from `npm run dev`
+    // starts failing. The documented way out is a debug token: this prints one
+    // to the browser console on first load, and it is registered once under
+    // Firebase console -> App Check -> Apps -> Manage debug tokens.
+    //
+    // Guarded on import.meta.env.DEV, which Vite folds to a literal — so in
+    // any production build (including the demo, which builds in production
+    // mode) the branch is removed entirely and cannot weaken attestation.
+    // scripts/verify-no-demo.mjs fails the build if an assignment to the
+    // global ever survives into dist.
+    // Keep this a build-time condition. Measured: Vite folds the literal form
+    // away, and folds a cast of it too. What it cannot fold is a RUNTIME
+    // condition — swap this for `location.hostname === "localhost"` and the
+    // assignment ships, turning attestation off for anyone who finds it.
+    if (import.meta.env.DEV) {
+      (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    }
     initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider(APPCHECK_SITE_KEY),
       isTokenAutoRefreshEnabled: true,

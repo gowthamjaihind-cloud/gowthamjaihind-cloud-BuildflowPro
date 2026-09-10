@@ -221,7 +221,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
             <button
               onClick={generateCode}
               disabled={loading}
-              className="px-4 py-2 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="px-4 py-2 bg-primary text-on-primary font-semibold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               {isLinked ? L("Generate New Link Code","புதிய இணைப்புக் குறியீட்டை உருவாக்கு") : L("Link Telegram Bot","டெலிகிராம் போட்டை இணை")}
@@ -242,7 +242,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
             ].map((s) => (
               <div key={s.n} className="relative bg-panel rounded-2xl p-4 border border-divider">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="w-7 h-7 rounded-full bg-primary text-white text-sm font-black flex items-center justify-center shrink-0">{s.n}</span>
+                  <span className="w-7 h-7 rounded-full bg-primary text-on-primary text-sm font-black flex items-center justify-center shrink-0">{s.n}</span>
                   <span className="text-2xl leading-none">{s.emoji}</span>
                 </div>
                 <div className="font-bold text-ink text-sm">{L(s.title, s.taTitle)}</div>
@@ -254,7 +254,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
             <button
               onClick={generateCode}
               disabled={loading}
-              className="mt-5 w-full sm:w-auto px-5 py-3 bg-[#229ED9] hover:bg-[#1c8dc4] text-white font-bold rounded-xl transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
+              className="mt-5 w-full sm:w-auto px-5 py-3 bg-telegram hover:bg-telegram-deep text-white font-bold rounded-xl transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
             >
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <TelegramLogo weight="fill" className="w-5 h-5" />}
               {L("Start — get my connect link","தொடங்கு — என் இணைப்பு லிங்கைப் பெறு")}
@@ -264,10 +264,10 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
       )}
 
       {activeCode && (
-        <div className="bg-blue-50/50 p-6 rounded-[20px] border border-[#6E8CA0]/20 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-[#6E8CA0]"></div>
-          <h4 className="font-bold text-[#27363F] mb-2">{L("Connect your Telegram","உங்கள் டெலிகிராமை இணைக்கவும்")}</h4>
-          <p className="text-sm text-[#46617C] mb-4">
+        <div className="bg-blue-50/50 p-6 rounded-[20px] border border-info/20 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-info"></div>
+          <h4 className="font-bold text-ink mb-2">{L("Connect your Telegram","உங்கள் டெலிகிராமை இணைக்கவும்")}</h4>
+          <p className="text-sm text-info mb-4">
             {L("On this phone, tap", "இந்த ஃபோனில்,")} <b>Connect Telegram</b> {L("(on a computer, scan the QR with your phone's camera). This link expires in 15 minutes.", "என்பதைத் தட்டவும் (கணினியில், உங்கள் ஃபோன் கேமராவால் QR ஐ ஸ்கேன் செய்யவும்). இந்த லிங்க் 15 நிமிடங்களில் காலாவதியாகும்.")}
           </p>
 
@@ -277,7 +277,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
                 <img
                   src={qrDataUrl}
                   alt="Scan to connect Telegram"
-                  className="w-32 h-32 rounded-xl bg-white p-1.5 border border-[#6E8CA0]/30 shrink-0"
+                  className="w-32 h-32 rounded-xl bg-white p-1.5 border border-info/30 shrink-0"
                 />
               )}
               <div className="flex-1 w-full">
@@ -285,21 +285,21 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
                   href={deepLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#229ED9] hover:bg-[#1c8dc4] text-white font-bold rounded-xl transition-colors"
+                  className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-telegram hover:bg-telegram-deep text-white font-bold rounded-xl transition-colors"
                 >
                   <TelegramLogo weight="fill" className="w-5 h-5" /> {L("Connect Telegram","டெலிகிராமை இணை")}
                 </a>
-                <p className="text-[10px] text-[#46617C] mt-2 text-center sm:text-left">
+                <p className="text-[10px] text-info mt-2 text-center sm:text-left">
                   {L("Opens the bot and links your account automatically — no typing.","போட்டைத் திறந்து உங்கள் கணக்கைத் தானாக இணைக்கிறது — தட்டச்சு இல்லை.")}
                 </p>
               </div>
             </div>
           )}
 
-          <p className="text-[10px] font-black text-[#46617C]/70 uppercase tracking-widest mb-2">
+          <p className="text-[10px] font-black text-ink-muted uppercase tracking-widest mb-2">
             {L("Or send this command to the bot","அல்லது இந்தக் கட்டளையை போட்டுக்கு அனுப்பவும்")}
           </p>
-          <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-[#6E8CA0]/30">
+          <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-info/30">
             <code className="flex-1 font-mono text-lg font-bold text-ink text-center">
               /link {displayCode}
             </code>
@@ -318,7 +318,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
              <button
                 onClick={generateCode}
                 disabled={loading}
-                className="text-sm font-medium text-ink-muted hover:text-[#46617C] flex items-center gap-1"
+                className="text-sm font-medium text-ink-muted hover:text-info flex items-center gap-1"
              >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                 {L("Generate new code","புதிய குறியீட்டை உருவாக்கு")}

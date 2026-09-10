@@ -192,7 +192,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     <button
                       onClick={() => doUpgrade(id)}
                       disabled={working}
-                      className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-white hover:bg-primary-deep apple-transition disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-on-primary hover:bg-primary-deep apple-transition disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {payBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ArrowUp weight="bold" className="w-4 h-4" /> {L("Upgrade", "மேம்படுத்து")}</>}
                     </button>

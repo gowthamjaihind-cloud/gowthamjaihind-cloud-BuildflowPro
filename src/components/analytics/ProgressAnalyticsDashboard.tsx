@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { useTasksQuery } from "../../hooks/queries";
 import { Task } from "../../types";
-import { useUIStore } from "../../store";
 import { useTranslation } from "../../i18n";
 import { ChartBar } from "@phosphor-icons/react";
 import { StatTile, RankedBars } from "./shared";
 
+import { chartSeries } from "../../lib/chartTheme";
 type ViewId = "byPhase" | "byStatus";
 
 const STATUS_KEYS: Record<string, string> = {
@@ -18,10 +18,9 @@ const STATUS_KEYS: Record<string, string> = {
 
 export const ProgressAnalyticsDashboard: React.FC<{ projectId: string }> = ({ projectId }) => {
   const { t } = useTranslation();
-  const dark = useUIStore((s) => s.darkMode);
   const { data: tasks = [] } = useTasksQuery(projectId);
   const [view, setView] = useState<ViewId>("byPhase");
-  const bar = dark ? "#2A86C4" : "#0F79B8";
+  const bar = chartSeries.bar;
 
   const leaf = useMemo(
     () => (tasks as Task[]).filter((tk) => tk.type !== "Summary" && !tk.isSystemGenerated),
@@ -93,7 +92,7 @@ export const ProgressAnalyticsDashboard: React.FC<{ projectId: string }> = ({ pr
         {views.map((v) => (
           <button key={v.id} onClick={() => setView(v.id)}
             className={`px-3.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest whitespace-nowrap apple-transition shrink-0 ${
-              view === v.id ? "bg-primary text-white shadow-sm" : "bg-panel border border-divider text-ink-muted hover:text-ink"}`}>
+              view === v.id ? "bg-primary text-on-primary shadow-sm" : "bg-panel border border-divider text-ink-muted hover:text-ink"}`}>
             {v.label}
           </button>
         ))}

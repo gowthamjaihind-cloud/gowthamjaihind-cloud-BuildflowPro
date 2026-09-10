@@ -13,11 +13,13 @@ import { format } from "date-fns";
 import { Receipt } from "@phosphor-icons/react";
 import { EmptyState } from "../EmptyState";
 
+import { useTranslation } from "../../i18n";
 interface PurchaseOrderTabProps {
   projectId: string;
 }
 
 export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId }) => {
+  const { t } = useTranslation();
   const { data: pos = [], isLoading } = useProjectData<PurchaseOrder>(projectId, "purchase_orders", "createdAt", "desc");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
@@ -66,7 +68,7 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
         
         <button
           onClick={() => setIsFormOpen(true)}
-          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-deep text-white text-xs font-bold uppercase tracking-widest rounded-xl transition"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-deep text-on-primary text-xs font-bold uppercase tracking-widest rounded-xl transition"
         >
           <Plus className="w-4 h-4" /> New PO
         </button>
@@ -78,10 +80,10 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
              <thead>
                 <tr className="bg-panel border-b border-divider">
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">PO Number</th>
-                  <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">Date</th>
+                  <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">{t("common.date")}</th>
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">Vendor</th>
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest text-right whitespace-nowrap">Amount</th>
-                  <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">Status</th>
+                  <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">{t("common.status")}</th>
                 </tr>
              </thead>
              <tbody>
@@ -131,7 +133,7 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                       <td className="p-4 align-middle">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                           po.status === 'Draft' ? 'bg-page text-ink-muted' :
-                          po.status === 'Approved' ? 'bg-[#E2E8ED] text-ink-muted' :
+                          po.status === 'Approved' ? 'bg-divider text-ink-muted' :
                           po.status === 'Partially Received' ? 'bg-primary/10 text-primary' :
                           'bg-success/12 text-success'
                         }`}>

@@ -23,6 +23,7 @@ import { useProjectCostTotals } from "../../hooks/useProjectCostTotals";
 import { Tooltip } from "../Tooltip";
 import { EmptyState } from "../EmptyState";
 
+import { useTranslation } from "../../i18n";
 export interface TabletWBSViewProps {
   projectId: string;
   onOpenFullForm: (task?: Task, parentId?: string | null) => void;
@@ -34,6 +35,7 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
   onOpenFullForm,
   onOpenDailyLog,
 }) => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId
     ? `organizations/${user.currentOrgId}/projects/${projectId}`
@@ -336,9 +338,9 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
       >
         <div className="absolute bottom-6 right-6 z-20">
           <Tooltip label={"Add task"}>
-            <button aria-label="Add task"
+            <button aria-label={t("wbs.addTask")}
               onClick={openAddSheet}
-              className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-primary-deep active:scale-95 transition-all cursor-pointer"
+              className="bg-primary text-on-primary w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-primary-deep active:scale-95 transition-all cursor-pointer"
             >
               <Plus className="w-6 h-6" />
             </button>
@@ -385,6 +387,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
   onOpenFullForm,
   onOpenDailyLog,
 }) => {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const basePath = user?.currentOrgId
     ? `organizations/${user.currentOrgId}/projects/${projectId}`
@@ -485,7 +488,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
               </span>
             )}
           </div>
-          <button aria-label="Close"
+          <button aria-label={t("common.close")}
             onClick={onClose}
             className="p-2 bg-panel rounded-full text-ink hover:bg-divider"
           >
@@ -511,18 +514,18 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
 
             <div>
               <label className="text-xs font-black uppercase tracking-widest text-ink-muted block mb-1.5">
-                Status
+                {t("common.status")}
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 className="w-full bg-panel border-none rounded-xl px-4 py-3 text-sm font-bold text-ink focus:ring-2 focus:ring-primary uppercase tracking-widest"
               >
-                <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-                <option value="Delayed">Delayed</option>
-                <option value="On Hold">On Hold</option>
+                <option value="Pending">{t("an.stPending")}</option>
+                <option value="In Progress">{t("an.inProgressKpi")}</option>
+                <option value="Completed">{t("status.completed")}</option>
+                <option value="Delayed">{t("an.stDelayed")}</option>
+                <option value="On Hold">{t("status.onHold")}</option>
               </select>
             </div>
           </div>
@@ -538,7 +541,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
           <div className="bg-warning/12/50 rounded-2xl p-4 md:p-6 border border-warning/25 flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-xs font-bold text-ink-muted uppercase tracking-widest">
-                Progress
+                {t("an.moduleProgress")}
               </span>
               <span className="text-2xl font-black text-primary font-mono">
                 {computedProgress}%
@@ -556,7 +559,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
                   onClose();
                   onOpenDailyLog(task.id);
                 }}
-                className="bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary-deep transition"
+                className="bg-primary text-on-primary px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary-deep transition"
               >
                 Log Work
               </button>
@@ -615,7 +618,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full bg-primary text-white py-4 rounded-xl font-bold text-sm hover:bg-primary-deep transition disabled:opacity-50"
+              className="w-full bg-primary text-on-primary py-4 rounded-xl font-bold text-sm hover:bg-primary-deep transition disabled:opacity-50"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>

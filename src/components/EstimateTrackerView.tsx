@@ -159,7 +159,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       case "Draft":
         return "bg-page text-ink/80 border-divider";
       case "Sent to Client":
-        return "bg-[#E2E8ED] text-ink-muted border-[#C5D2DB]";
+        return "bg-divider text-ink-muted border-ink-muted/20";
       case "Approved":
         return "bg-success/20 text-success border-success/40";
       case "Rejected":
@@ -496,12 +496,12 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   disabled={isDeleting}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold text-ink bg-surface border border-divider hover:bg-divider transition-colors disabled:opacity-50"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={handleDeleteEstimate}
                   disabled={isDeleting}
-                  className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-danger hover:bg-danger transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold text-on-danger bg-danger hover:bg-danger transition-colors disabled:opacity-50"
                 >
                   {isDeleting ? "Deleting…" : "Delete estimate"}
                 </button>
@@ -550,7 +550,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
             </button>
             <button
               onClick={handleEstimateExportPDF}
-              className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-deep text-on-primary rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
             >
               <Download className="w-4 h-4" />
               PDF
@@ -563,7 +563,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                  
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {t("common.delete")}
                 </button>
               </Tooltip>
             )}
@@ -635,7 +635,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                       </div>
                       <div>
                         <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 block">
-                          Description
+                          {t("cpay.description")}
                         </label>
                         <input
                           type="text"
@@ -1007,7 +1007,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     onClick={() =>
                       updateSelectedEstimate({ status: "Sent to Client" })
                     }
-                    className="w-full bg-primary hover:bg-primary/80 text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-primary/20"
+                    className="w-full bg-primary hover:bg-primary/80 text-on-primary font-bold py-2 rounded-xl transition-colors shadow-lg shadow-primary/20"
                   >
                     Mark as Sent
                   </button>
@@ -1020,7 +1020,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                           return toast.info("Only Admins and Owners can approve estimates.",);
                         updateSelectedEstimate({ status: "Approved" });
                       }}
-                      className="w-full bg-success hover:bg-success text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-green-500/20"
+                      className="w-full bg-success hover:bg-success text-on-success font-bold py-2 rounded-xl transition-colors shadow-lg shadow-green-500/20"
                     >
                       Approve
                     </button>
@@ -1030,7 +1030,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                           return toast.info("Only Admins and Owners can reject estimates.",);
                         updateSelectedEstimate({ status: "Rejected" });
                       }}
-                      className="w-full bg-danger hover:bg-danger text-white font-bold py-2 rounded-xl transition-colors shadow-lg shadow-red-500/20"
+                      className="w-full bg-danger hover:bg-danger text-on-danger font-bold py-2 rounded-xl transition-colors shadow-lg shadow-red-500/20"
                     >
                       Reject
                     </button>
@@ -1129,12 +1129,12 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   onClick={() => setIsSyncModalOpen(false)}
                   className="px-5 py-2.5 rounded-xl font-bold text-ink-muted hover:text-ink hover:bg-surface transition-colors"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={handleSyncTasks}
                   disabled={selectedTaskIds.size === 0}
-                  className="bg-primary text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <Plus className="w-5 h-5" /> Import Selected (
                   {selectedTaskIds.size})
@@ -1158,7 +1158,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
         </div>
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="bg-primary text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+          className="bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
         >
           <Plus className="w-5 h-5" /> New Estimate
         </button>
@@ -1184,10 +1184,10 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   Number
                 </th>
                 <th className="text-left py-3 px-4 text-ink-muted font-bold text-[13px] uppercase tracking-wider">
-                  Date
+                  {t("common.date")}
                 </th>
                 <th className="text-left py-3 px-4 text-ink-muted font-bold text-[13px] uppercase tracking-wider">
-                  Status
+                  {t("common.status")}
                 </th>
                 <th className="text-right py-3 px-4 text-ink-muted font-bold text-[13px] uppercase tracking-wider">
                   Contract (ex-GST)
@@ -1202,7 +1202,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                   Total (inc GST)
                 </th>
                 <th className="text-center py-3 px-4 text-ink-muted font-bold text-[13px] uppercase tracking-wider">
-                  Actions
+                  {t("common.actions")}
                 </th>
               </tr>
             </thead>
@@ -1373,11 +1373,11 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                 onClick={() => setIsCreateModalOpen(false)}
                 className="px-5 py-2.5 rounded-xl font-bold text-ink-muted hover:text-ink hover:bg-surface transition-colors"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleCreate}
-                className="bg-primary text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors"
+                className="bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors"
               >
                 Create Estimate
               </button>

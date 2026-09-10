@@ -324,7 +324,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
             </button>
             <button
               onClick={handleExportPDF}
-              className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-deep text-on-primary rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition cursor-pointer"
             >
               <Download className="w-4 h-4" />
               PDF
@@ -332,7 +332,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
             {isAdminOrOwner && (
               <button
                 onClick={() => setIsAdding(true)}
-                className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors ml-1"
+                className="flex items-center gap-1.5 bg-primary text-on-primary px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors ml-1"
               >
                 <Plus className="w-4 h-4" /> {t("cpay.addPayment")}
               </button>
@@ -460,7 +460,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
             >
               <DialogBehaviour />
-              <div className="bg-primary p-6 text-white flex justify-between items-center">
+              <div className="bg-primary p-6 text-on-primary flex justify-between items-center">
                 <h3 className="text-lg font-bold">{t("cpay.recordPayment")}</h3>
                 <button aria-label={t("common.close")}
                   onClick={() => setIsAdding(false)}
@@ -473,7 +473,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               <form onSubmit={handleAddPayment} className="p-6 space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-ink-muted">
-                    Date
+                    {t("common.date")}
                   </label>
                   <input
                     type="date"
@@ -508,7 +508,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-ink-muted">
-                    Description
+                    {t("cpay.description")}
                   </label>
                   <input
                     type="text"
@@ -571,11 +571,11 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                     onClick={() => setIsAdding(false)}
                     className="flex-1 px-4 py-3 bg-panel hover:bg-surface border rounded-xl font-bold text-ink-muted transition-colors"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-3 bg-success hover:bg-success text-white rounded-xl font-bold shadow-md transition-colors"
+                    className="flex-1 px-4 py-3 bg-success hover:bg-success text-on-success rounded-xl font-bold shadow-md transition-colors"
                   >
                     Save Payment
                   </button>
