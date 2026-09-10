@@ -423,7 +423,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                         <Tooltip label={L("Save Role","பங்கைச் சேமி")}>
                           <button
                             onClick={() => handleUpdateRole(u.uid)}
-                            className="p-2 bg-success text-white rounded-xl hover:bg-success transition-colors"
+                            className="p-2 bg-success text-on-success rounded-xl hover:bg-success transition-colors"
                            
                           >
                             <Save className="w-4 h-4" />

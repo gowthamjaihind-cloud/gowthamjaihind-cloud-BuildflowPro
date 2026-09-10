@@ -111,7 +111,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   : "w-12 h-12 md:w-14 md:h-14 mx-auto justify-center"
               } rounded-[14px] md:rounded-[18px] ${
                 activeTab === item.id
-                  ? "bg-primary text-white shadow-xl shadow-primary/20 ring-1 ring-primary/50"
+                  ? "bg-primary text-on-primary shadow-xl shadow-primary/20 ring-1 ring-primary/50"
                   : "text-ink-muted hover:text-ink hover:bg-surface/40"
               } ${uiMode === "site" ? (showLabels ? "!py-3 !rounded-lg" : "!rounded-lg") : ""}`}
             >

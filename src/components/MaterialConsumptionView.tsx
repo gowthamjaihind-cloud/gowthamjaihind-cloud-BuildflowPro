@@ -484,7 +484,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
             </button>
             <button
               onClick={handleExportLabourPDF}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-deep text-on-primary rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm cursor-pointer"
             >
               <Download className="w-4 h-4" />
               {t("common.exportPdf")}
@@ -507,7 +507,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               id="export-current-pdf-btn"
               onClick={() => handleExportPDF(advancedFilteredRecords)}
               disabled={advancedFilteredRecords.length === 0}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-deep text-on-primary rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <Download className="w-4 h-4" />
               {t("common.exportPdf")}
@@ -533,7 +533,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               onClick={() => setSelectedTab("material")}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
                 activeTab !== "labor"
-                  ? "bg-primary border-primary text-white shadow-md shadow-primary/10"
+                  ? "bg-primary border-primary text-on-primary shadow-md shadow-primary/10"
                   : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
               }`}
             >

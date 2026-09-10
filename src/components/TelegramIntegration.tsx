@@ -221,7 +221,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
             <button
               onClick={generateCode}
               disabled={loading}
-              className="px-4 py-2 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="px-4 py-2 bg-primary text-on-primary font-semibold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               {isLinked ? L("Generate New Link Code","புதிய இணைப்புக் குறியீட்டை உருவாக்கு") : L("Link Telegram Bot","டெலிகிராம் போட்டை இணை")}
@@ -242,7 +242,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
             ].map((s) => (
               <div key={s.n} className="relative bg-panel rounded-2xl p-4 border border-divider">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="w-7 h-7 rounded-full bg-primary text-white text-sm font-black flex items-center justify-center shrink-0">{s.n}</span>
+                  <span className="w-7 h-7 rounded-full bg-primary text-on-primary text-sm font-black flex items-center justify-center shrink-0">{s.n}</span>
                   <span className="text-2xl leading-none">{s.emoji}</span>
                 </div>
                 <div className="font-bold text-ink text-sm">{L(s.title, s.taTitle)}</div>

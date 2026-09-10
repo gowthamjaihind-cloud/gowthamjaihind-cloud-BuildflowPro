@@ -1009,7 +1009,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 )}
               {breakpoint === "mobile" && (
                 <button
-                  className="w-full mt-2 py-1.5 bg-primary hover:bg-primary-deep text-white text-xs font-bold rounded-lg pointer-events-auto"
+                  className="w-full mt-2 py-1.5 bg-primary hover:bg-primary-deep text-on-primary text-xs font-bold rounded-lg pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     setHoveredTask(null);

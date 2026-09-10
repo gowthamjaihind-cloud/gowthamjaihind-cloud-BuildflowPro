@@ -68,7 +68,7 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
         
         <button
           onClick={() => setIsFormOpen(true)}
-          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-deep text-white text-xs font-bold uppercase tracking-widest rounded-xl transition"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-deep text-on-primary text-xs font-bold uppercase tracking-widest rounded-xl transition"
         >
           <Plus className="w-4 h-4" /> New PO
         </button>

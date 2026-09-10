@@ -1241,7 +1241,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               });
               setIsAdding(true);
             }}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-white px-8 py-3.5 md:py-2.5 rounded-xl text-[10px] sm:text-xs md:text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/80 apple-transition shadow-xl shadow-primary/20"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-on-primary px-8 py-3.5 md:py-2.5 rounded-xl text-[10px] sm:text-xs md:text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/80 apple-transition shadow-xl shadow-primary/20"
           >
             <Plus className="w-4 h-4" /> <span>Add Transaction</span>
           </button>
@@ -1689,7 +1689,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           className="p-4 px-6 border-y border-divider"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary text-white rounded-lg shadow-sm">
+                            <div className="p-2 bg-primary text-on-primary rounded-lg shadow-sm">
                               <Layers className="w-4 h-4" />
                             </div>
                             <div>
@@ -1756,7 +1756,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 });
                 setIsAdding(true);
               }}
-              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors"
             >
               <Plus className="w-4 h-4" /> Add Direct Cost
             </button>
@@ -2008,7 +2008,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         className="p-4 px-6 border-y border-divider"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-primary text-white rounded-lg shadow-sm">
+                          <div className="p-2 bg-primary text-on-primary rounded-lg shadow-sm">
                             <Layers className="w-4 h-4" />
                           </div>
                           <div>
@@ -2178,7 +2178,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
             >
               <DialogBehaviour />
-              <div className="bg-primary p-5 md:p-6 text-white flex justify-between items-center">
+              <div className="bg-primary p-5 md:p-6 text-on-primary flex justify-between items-center">
                 <div>
                   <h3 className="text-xl font-bold">
                     {newEntry.id ? "Edit Transaction" : "Add Transaction"}
@@ -2332,7 +2332,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
 
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-primary/80 transition-all shadow-xl shadow-primary/20"
+                  className="w-full bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-primary/80 transition-all shadow-xl shadow-primary/20"
                 >
                   Save Transaction
                 </button>
@@ -2375,7 +2375,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                       const entry = entries.find((e) => e.id === deletingId);
                       if (entry) handleDeleteEntry(entry);
                     }}
-                    className="flex-1 py-3.5 bg-danger hover:bg-danger text-white rounded-2xl font-bold transition-colors"
+                    className="flex-1 py-3.5 bg-danger hover:bg-danger text-on-danger rounded-2xl font-bold transition-colors"
                   >
                     {t("common.delete")}
                   </button>

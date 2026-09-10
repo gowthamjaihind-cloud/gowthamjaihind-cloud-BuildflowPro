@@ -205,7 +205,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             }
                           }}
                           disabled={settingUp}
-                          className="mt-3 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50"
+                          className="mt-3 px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50"
                         >
                           {settingUp ? L("Setting up… (may take a minute)","அமைக்கிறது… (ஒரு நிமிடம் ஆகலாம்)") : L("Set up organization & migrate data","நிறுவனத்தை அமைத்து தரவை நகர்த்து")}
                         </button>
@@ -252,7 +252,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             }
                           }}
                           disabled={claiming}
-                          className="mt-3 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50"
+                          className="mt-3 px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50"
                         >
                           {claiming ? L("Claiming…","கோருகிறது…") : L("Claim organization","நிறுவனத்தைக் கோரு")}
                         </button>
@@ -290,7 +290,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             setCompanyName(draftCompanyName);
                             setIsEditingCompany(false);
                           }}
-                          className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors"
+                          className="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-deep transition-colors"
                         >
                           {L("Save","சேமி")}
                         </button>
@@ -354,7 +354,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           target.innerHTML = originalText;
                         }, 2000);
                       }}
-                      className="bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-primary-deep transition-colors apple-transition active:scale-95"
+                      className="bg-primary text-on-primary px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-primary-deep transition-colors apple-transition active:scale-95"
                     >
                       <Save className="w-5 h-5" /> {L("Save Configuration","அமைப்பைச் சேமி")}
                     </button>

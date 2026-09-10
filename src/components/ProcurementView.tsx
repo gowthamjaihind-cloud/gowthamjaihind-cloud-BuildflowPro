@@ -2013,7 +2013,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           </button>
           <button
             onClick={handleExportPDF}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-primary text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-primary-deep apple-transition shadow-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-primary text-on-primary px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-primary-deep apple-transition shadow-sm"
           >
             <Download className="w-3.5 h-3.5" /> {t("common.exportPdf")}
           </button>
@@ -2278,7 +2278,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/15 hover:bg-primary-deep apple-transition mt-4"
+                  className="w-full bg-primary text-on-primary py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/15 hover:bg-primary-deep apple-transition mt-4"
                 >
                   {isEditingVendor ? "Update Profile" : "Register Party"}
                 </button>
@@ -2316,7 +2316,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   <button
                     onClick={() => handleDeleteVendor(isDeletingVendor)}
                     disabled={isDeleting}
-                    className="flex-1 py-3 bg-danger hover:bg-danger text-white rounded-xl font-bold transition-colors disabled:opacity-50"
+                    className="flex-1 py-3 bg-danger hover:bg-danger text-on-danger rounded-xl font-bold transition-colors disabled:opacity-50"
                   >
                     {isDeleting ? "Deleting..." : "Delete"}
                   </button>
@@ -2358,7 +2358,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   <button
                     onClick={() => handleDeleteReceipt(isDeletingReceipt)}
                     disabled={isDeleting}
-                    className="flex-1 py-3 bg-danger hover:bg-danger text-white rounded-xl font-bold transition-colors disabled:opacity-50"
+                    className="flex-1 py-3 bg-danger hover:bg-danger text-on-danger rounded-xl font-bold transition-colors disabled:opacity-50"
                   >
                     {isDeleting ? "Deleting..." : "Delete"}
                   </button>
@@ -2376,7 +2376,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden"
             >
               <DialogBehaviour />
-              <div className="bg-success p-5 md:p-6 text-white flex justify-between items-center">
+              <div className="bg-success p-5 md:p-6 text-on-success flex justify-between items-center">
                 <h3 className="text-xl font-black">
                   {editingPaymentId ? "Edit Payment" : "Record Payment"}
                 </h3>
@@ -2530,7 +2530,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-success text-white py-4 rounded-xl font-black uppercase tracking-widest"
+                  className="w-full bg-success text-on-success py-4 rounded-xl font-black uppercase tracking-widest"
                 >
                   {editingPaymentId ? "Update Payment" : "Post Payment"}
                 </button>

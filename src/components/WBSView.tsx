@@ -1450,7 +1450,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                   </button>
                   <button
                     onClick={confirmDeletePhase}
-                    className="flex-1 px-4 py-3 bg-danger text-white rounded-xl font-bold hover:bg-danger transition-all shadow-lg shadow-danger/20"
+                    className="flex-1 px-4 py-3 bg-danger text-on-danger rounded-xl font-bold hover:bg-danger transition-all shadow-lg shadow-danger/20"
                   >
                     Delete Phase
                   </button>
@@ -1490,7 +1490,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                   </button>
                   <button
                     onClick={confirmDelete}
-                    className="flex-1 px-4 py-3 bg-danger text-white rounded-xl font-bold hover:bg-danger transition-all shadow-lg shadow-danger/20"
+                    className="flex-1 px-4 py-3 bg-danger text-on-danger rounded-xl font-bold hover:bg-danger transition-all shadow-lg shadow-danger/20"
                   >
                     Delete Task
                   </button>
@@ -1951,7 +1951,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                             (editingTask
                                               ? editingTask.type
                                               : newTask.type) === type
-                                              ? "bg-primary border-primary text-white shadow-lg shadow-primary/15"
+                                              ? "bg-primary border-primary text-on-primary shadow-lg shadow-primary/15"
                                               : "bg-surface border-divider text-ink-muted hover:border-divider"
                                           }`}
                                         >
@@ -3172,7 +3172,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                   <div className="flex gap-2 md:gap-4">
                     <button
                       type="submit"
-                      className="bg-primary text-white px-6 md:px-12 py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase tracking-[0.1em] md:tracking-[0.2em] text-[10px] md:text-[10px] hover:bg-surface-dark transition-all shadow-xl shadow-primary/15"
+                      className="bg-primary text-on-primary px-6 md:px-12 py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase tracking-[0.1em] md:tracking-[0.2em] text-[10px] md:text-[10px] hover:bg-primary-deep transition-all shadow-xl shadow-primary/15"
                     >
                       {editingTask ? t("cpm.saveChanges") : t("wbs.addTask")}
                     </button>

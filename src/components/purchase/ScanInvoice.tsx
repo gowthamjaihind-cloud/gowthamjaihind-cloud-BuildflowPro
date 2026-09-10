@@ -290,7 +290,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
             <button
               onClick={confirm}
               disabled={step === "posting" || !bill.poId}
-              className="flex-1 px-5 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 px-5 py-3 bg-primary text-on-primary font-bold rounded-xl hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {step === "posting" ? <><RefreshCw className="w-4 h-4 animate-spin" /> Posting…</> : "Confirm & Post"}
             </button>
@@ -298,7 +298,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
         )}
         {step === "done" && (
           <div className="p-5 border-t border-divider shrink-0">
-            <button onClick={onClose} className="w-full px-5 py-3 bg-primary text-white font-bold rounded-xl">Done</button>
+            <button onClick={onClose} className="w-full px-5 py-3 bg-primary text-on-primary font-bold rounded-xl">Done</button>
           </div>
         )}
       </div>

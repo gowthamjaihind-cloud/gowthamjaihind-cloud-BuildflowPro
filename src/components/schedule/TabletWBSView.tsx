@@ -340,7 +340,7 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
           <Tooltip label={"Add task"}>
             <button aria-label={t("wbs.addTask")}
               onClick={openAddSheet}
-              className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-primary-deep active:scale-95 transition-all cursor-pointer"
+              className="bg-primary text-on-primary w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-primary-deep active:scale-95 transition-all cursor-pointer"
             >
               <Plus className="w-6 h-6" />
             </button>
@@ -559,7 +559,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
                   onClose();
                   onOpenDailyLog(task.id);
                 }}
-                className="bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary-deep transition"
+                className="bg-primary text-on-primary px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary-deep transition"
               >
                 Log Work
               </button>
@@ -618,7 +618,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full bg-primary text-white py-4 rounded-xl font-bold text-sm hover:bg-primary-deep transition disabled:opacity-50"
+              className="w-full bg-primary text-on-primary py-4 rounded-xl font-bold text-sm hover:bg-primary-deep transition disabled:opacity-50"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>

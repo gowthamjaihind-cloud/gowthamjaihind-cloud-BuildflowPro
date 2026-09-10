@@ -89,7 +89,7 @@ export const InventoryAnalyticsDashboard: React.FC<{ projectId: string }> = ({ p
         {views.map((v) => (
           <button key={v.id} onClick={() => setView(v.id)}
             className={`px-3.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest whitespace-nowrap apple-transition shrink-0 ${
-              view === v.id ? "bg-primary text-white shadow-sm" : "bg-panel border border-divider text-ink-muted hover:text-ink"}`}>
+              view === v.id ? "bg-primary text-on-primary shadow-sm" : "bg-panel border border-divider text-ink-muted hover:text-ink"}`}>
             {v.label}
           </button>
         ))}

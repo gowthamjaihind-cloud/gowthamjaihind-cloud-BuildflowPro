@@ -563,7 +563,7 @@ export const MaterialReceiptForm: React.FC<MaterialReceiptFormProps> = ({
             <button type="button" onClick={onClose} className="px-6 py-3 bg-panel hover:bg-divider text-ink text-xs font-bold uppercase tracking-widest rounded-xl transition">
               {t("common.cancel")}
             </button>
-            <button type="submit" disabled={isSubmitting || items.length === 0 || !supplierId} className="px-8 py-3 bg-success hover:bg-success text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 shadow-[0_4px_20px_rgba(5,150,105,0.2)] disabled:opacity-50 disabled:shadow-none">
+            <button type="submit" disabled={isSubmitting || items.length === 0 || !supplierId} className="px-8 py-3 bg-success hover:bg-success text-on-success text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 shadow-[0_4px_20px_rgba(5,150,105,0.2)] disabled:opacity-50 disabled:shadow-none">
               <Save className="w-4 h-4" /> Save Invoice
             </button>
           </div>

@@ -334,7 +334,7 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
         <button
           onClick={handleGenerate}
           disabled={loading || !hasData}
-          className="shrink-0 px-5 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="shrink-0 px-5 py-3 bg-primary text-on-primary font-bold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading ? (
             <><RefreshCw className="w-4 h-4 animate-spin" /> {t("insights.analyzing")}</>

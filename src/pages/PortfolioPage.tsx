@@ -284,7 +284,7 @@ export const PortfolioPage: React.FC = () => {
 
               <button
                 onClick={() => setIsCreatingProject(true)}
-                className="cta-shine w-full lg:w-auto justify-center bg-primary text-white px-6 sm:px-8 md:px-10 py-4 md:py-5 rounded-2xl md:rounded-3xl font-bold text-[15px] sm:text-[17px] flex items-center gap-3 shadow-lg shadow-primary/30 hover:bg-primary/90 apple-transition sm:hover:-translate-y-1 active:scale-95 shrink-0"
+                className="cta-shine w-full lg:w-auto justify-center bg-primary text-on-primary px-6 sm:px-8 md:px-10 py-4 md:py-5 rounded-2xl md:rounded-3xl font-bold text-[15px] sm:text-[17px] flex items-center gap-3 shadow-lg shadow-primary/30 hover:bg-primary/90 apple-transition sm:hover:-translate-y-1 active:scale-95 shrink-0"
               >
                 <Plus weight="bold" className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
                 <span className="truncate">{t("portfolio.initializeWorkspace")}</span>
@@ -481,7 +481,7 @@ export const PortfolioPage: React.FC = () => {
               </button>
               <button
                 onClick={confirmDeleteProject}
-                className="px-4 py-2 bg-danger hover:bg-danger text-white font-medium rounded-xl shadow-sm transition-colors"
+                className="px-4 py-2 bg-danger hover:bg-danger text-on-danger font-medium rounded-xl shadow-sm transition-colors"
               >
                 {t("common.delete")}
               </button>

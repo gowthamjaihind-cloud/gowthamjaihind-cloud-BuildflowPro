@@ -152,7 +152,7 @@ export const PrivacyPanel: React.FC<{ currentUser: UserProfile }> = ({ currentUs
         <button
           onClick={handleExport}
           disabled={exporting}
-          className="px-6 py-3 bg-primary text-white rounded-xl font-bold flex items-center gap-2 hover:bg-primary-deep transition-colors disabled:opacity-50"
+          className="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold flex items-center gap-2 hover:bg-primary-deep transition-colors disabled:opacity-50"
         >
           {exporting ? (
             <>
@@ -207,7 +207,7 @@ export const PrivacyPanel: React.FC<{ currentUser: UserProfile }> = ({ currentUs
               <button
                 onClick={handleDeleteOrg}
                 disabled={deletingOrg || !settings.companyName || orgConfirm.trim() !== settings.companyName}
-                className="px-6 py-3 bg-danger text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-danger/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-danger text-on-danger rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-danger/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {deletingOrg ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
                 {L("Delete organization", "நிறுவனத்தை நீக்கு")}
@@ -247,7 +247,7 @@ export const PrivacyPanel: React.FC<{ currentUser: UserProfile }> = ({ currentUs
             <button
               onClick={handleDeleteAccount}
               disabled={deletingAcct || acctConfirm !== "DELETE"}
-              className="px-6 py-3 bg-danger text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-danger/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-6 py-3 bg-danger text-on-danger rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-danger/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {deletingAcct ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
               {L("Delete my account", "என் கணக்கை நீக்கு")}

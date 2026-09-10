@@ -389,7 +389,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
               setNewRate({ vendorId: "", role: "", rate: 0, unit: "Shift" });
               setIsAddingRate(true);
             }}
-            className="w-full sm:w-auto bg-primary text-white px-8 py-4 rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-primary-deep apple-transition shadow-lg shadow-primary/10 text-[10px]"
+            className="w-full sm:w-auto bg-primary text-on-primary px-8 py-4 rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-primary-deep apple-transition shadow-lg shadow-primary/10 text-[10px]"
           >
             <Plus className="w-4 h-4" /> Global Rate Entry
           </button>
@@ -1053,7 +1053,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
           </button>
           <button
             onClick={handleExportPDF}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-primary text-white px-4 md:px-5 py-2.5 md:py-3 rounded-lg md:rounded-2xl text-[10px] md:text-[10px] font-black uppercase tracking-[0.15em] hover:bg-primary-deep apple-transition shadow-lg shadow-primary/20"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-primary text-on-primary px-4 md:px-5 py-2.5 md:py-3 rounded-lg md:rounded-2xl text-[10px] md:text-[10px] font-black uppercase tracking-[0.15em] hover:bg-primary-deep apple-transition shadow-lg shadow-primary/20"
           >
             <Download className="w-3.5 h-3.5" /> {t("common.exportPdf")}
           </button>
@@ -1200,7 +1200,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                 <button
                   onClick={() => handleDeleteRate(isDeletingRate)}
                   disabled={isProcessing}
-                  className="flex-1 bg-danger text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-danger transition-all shadow-xl shadow-danger/10 disabled:opacity-50"
+                  className="flex-1 bg-danger text-on-danger py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-danger transition-all shadow-xl shadow-danger/10 disabled:opacity-50"
                 >
                   {isProcessing ? "Deleting..." : "Delete Rate"}
                 </button>

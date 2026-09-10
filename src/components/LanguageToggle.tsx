@@ -33,7 +33,7 @@ export const LanguageToggle: React.FC = () => {
            
             className={`inline-flex items-center justify-center min-h-[40px] min-w-[44px] sm:min-h-[32px] sm:min-w-[38px] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-black tracking-tight apple-transition active:scale-95 ${
               language === opt.code
-                ? "bg-primary text-white shadow"
+                ? "bg-primary text-on-primary shadow"
                 : "text-ink-muted hover:text-ink"
             }`}
           >

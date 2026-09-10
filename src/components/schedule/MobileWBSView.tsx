@@ -266,7 +266,7 @@ export const MobileWBSView: React.FC<MobileWBSViewProps> = ({
           <Tooltip label={"Add task"}>
             <button aria-label={t("wbs.addTask")}
               onClick={openAddSheet}
-              className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-primary-deep active:scale-95 transition-all cursor-pointer"
+              className="bg-primary text-on-primary w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-primary-deep active:scale-95 transition-all cursor-pointer"
             >
               <Plus className="w-6 h-6" />
             </button>
@@ -486,7 +486,7 @@ const MobileTaskSheet: React.FC<MobileTaskSheetProps> = ({
                   onClose();
                   onOpenDailyLog(task.id);
                 }}
-                className="bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary-deep transition"
+                className="bg-primary text-on-primary px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary-deep transition"
               >
                 Log Work
               </button>
@@ -545,7 +545,7 @@ const MobileTaskSheet: React.FC<MobileTaskSheetProps> = ({
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full bg-primary text-white py-4 rounded-xl font-bold text-sm hover:bg-primary-deep transition disabled:opacity-50"
+              className="w-full bg-primary text-on-primary py-4 rounded-xl font-bold text-sm hover:bg-primary-deep transition disabled:opacity-50"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>

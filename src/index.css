@@ -57,6 +57,18 @@
      whose order keeps the similar orange and yellow non-adjacent. */
   --chart-budget: #0F79B8;
   --chart-actual: var(--primary);
+  /* The foreground for a SATURATED FILLED surface -- a primary button, a
+     danger button, a success pill. It is NOT --ink and NOT white; it is
+     whichever of the two the fill can carry, and it flips with the theme.
+
+     It exists because the status tokens flip lightness between themes. Light
+     mode fills are dark (#1D4ED8 / #B3261E / #046A4E) and take white. Dark
+     mode fills are light (#5B87FF / #F87171 / #34D399) and a white label on
+     them measures 3.30, 2.77 and 1.92 -- the last of those is a white word on
+     mint green, which is barely a word at all. A fixed foreground cannot
+     serve both, so the foreground has to flip too. */
+  --on-fill: #FFFFFF;
+
   --chart-under: #2E8B6F;   /* a FILL. As text it is 4.17 -- use --success */
   --chart-over: var(--danger);
   --chart-amber: #C0872A;
@@ -75,6 +87,15 @@
      surface-1 and 6.31 on the canvas. #3E70FF also clears 4.5, but only just,
      leaving no headroom for a nested surface. */
   --primary: #5B87FF;
+  /* Hover and press were never redefined here, so they stayed at the light
+     values -- #1A3FAF and #14307F. A primary button therefore INVERTED its own
+     lightness on hover: resting #5B87FF wants a dark label, hovered #1A3FAF
+     wants white, and no single foreground survives that. Lifting them keeps
+     the whole state ladder on one side of the label. This also repairs the 14
+     `text-primary-deep` sites, which measured 2.15 on the dark panel. */
+  --primary-deep: #7BA0FF;  /* hover. 7.07 under --on-fill, 7.54 as text */
+  --primary-press: #8FB2FF; /* pressed. 8.48 under --on-fill */
+  --on-fill: #0F172A;       /* the near-navy ink; see :root */
   --primary-strong: #5B87FF;
   --primary-on-dark: #A8C2FF;
   --success-on-dark: #34D399;
@@ -187,6 +208,13 @@
      and does not change in dark mode. Named rather than pasted so a reader can
      tell it apart from a leftover -- every other bare hex in the components
      WAS a leftover, and looked exactly like this one. */
+  /* One value, three names. A call site writes the surface it sits on
+     (`bg-primary text-on-primary`) and never a literal colour, so the pair
+     stays correct when either side of it moves. */
+  --color-on-primary: var(--on-fill);
+  --color-on-danger: var(--on-fill);
+  --color-on-success: var(--on-fill);
+
   --color-telegram: #229ED9;
   --color-telegram-deep: #1C8DC4;
 }
