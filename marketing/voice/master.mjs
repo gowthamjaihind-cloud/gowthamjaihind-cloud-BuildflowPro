@@ -2,25 +2,39 @@
 /**
  * Master the raw synthesised lines, and lay them out on a timeline.
  *
- * Raw Piper output is intelligible but it is not broadcast: it peaks at full
- * scale, its sibilance is harsh enough to fatigue over ninety seconds, and it
- * has no consistent level to sit against music. This is the chain that makes it
- * sound like a voiceover rather than a text-to-speech demo.
+ * This chain is TUNED TO THE VOICE, and it was re-tuned when the voice changed
+ * from Piper to Kokoro, because applying the old settings to a different model
+ * would have made things worse rather than better. Measured on the same line:
  *
- * Every stage earns its place -- measured on the actual output, not applied out
- * of habit:
+ *   band              kokoro   piper     what it means
+ *   300-800 Hz         22.9%   36.2%     Piper was boxy; Kokoro is not
+ *   2-4 kHz             6.1%   11.5%     Kokoro needs the presence help more
+ *   4-7 kHz            11.5%   20.5%     Piper's sibilance was its worst fault
+ *   7-11 kHz           20.2%    3.1%     Kokoro has real air; Piper had none
  *
- *   highpass 85     nothing the voice says lives below this; it only makes the
- *                   music's low end fight the read.
- *   deesser         the model's /s/ is its worst artefact. This is the single
- *                   biggest audible improvement in the chain.
- *   equalizer       a shelf out of the boxy 300-500 Hz region and a presence
- *                   lift at 3 kHz, which is where consonants live and where a
- *                   voice wins against a music bed.
- *   acompressor     4:1 with a slow release, so the level stops moving without
- *                   the read starting to pump.
+ * So the two settings that did the most work for Piper are the two that would
+ * hurt here. Its 380 Hz cut was fixing 36% of the energy piling up in the boxy
+ * region -- Kokoro sits at 23% and cutting there just hollows it out. Its
+ * de-esser was doing the single biggest audible job on a voice with 20% of its
+ * energy in the sibilant band; at Kokoro's 11.5% the same setting dulls the
+ * consonants instead.
+ *
+ * What survives, and why:
+ *
+ *   highpass 75     gentler than before. Kokoro carries 19% of its energy
+ *                   below 300 Hz and that warmth is worth keeping.
+ *   deesser         light. Present because a de-essed /s/ still sits better
+ *                   against a music bed, not because this voice hisses.
+ *   equalizer       +2 dB at 2.8 kHz. Consonants live here and this is where a
+ *                   voice wins against music; it is Kokoro's leanest band.
+ *   acompressor     3:1, gentler than Piper needed -- Kokoro peaks at 0.64
+ *                   rather than clipping at 1.0, so there is less to tame.
  *   alimiter        a ceiling, so a plosive cannot spike into the mix.
  *   loudnorm        -16 LUFS integrated, the level web video is mixed to.
+ *
+ * Nothing rolls off the top: that 20% of air above 7 kHz is a large part of why
+ * this voice reads as present rather than synthetic, and it is exactly what a
+ * habitual "tame the highs" move would throw away.
  *
  * Usage:
  *   node master.mjs <manifest.json> <outDir>
@@ -30,11 +44,10 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, basename } from "node:path";
 
 export const VOICE_CHAIN = [
-  "highpass=f=85",
-  "deesser=i=0.45:m=0.5:f=0.35",
-  "equalizer=f=380:t=q:w=1.1:g=-2.5",
-  "equalizer=f=3000:t=q:w=1.4:g=2.5",
-  "acompressor=threshold=-20dB:ratio=4:attack=6:release=180:makeup=2",
+  "highpass=f=75",
+  "deesser=i=0.18:m=0.5:f=0.30",
+  "equalizer=f=2800:t=q:w=1.6:g=2",
+  "acompressor=threshold=-18dB:ratio=3:attack=8:release=200:makeup=1.5",
   "alimiter=limit=0.95",
   "loudnorm=I=-16:TP=-1.5:LRA=11",
   "aresample=48000",

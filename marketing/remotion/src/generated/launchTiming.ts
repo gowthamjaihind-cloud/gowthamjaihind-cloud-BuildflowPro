@@ -19,25 +19,25 @@ export interface Beat {
   text: string;
 }
 
-export const TOTAL_SECONDS = 82.923;
+export const TOTAL_SECONDS = 84.335;
 
 export const BEATS: Beat[] = [
-  {"id":"open","shot":"cold-open","seconds":3.437,"hold":1.1,"startsAt":0,"beatSeconds":4.537,"text":"It's six in the evening. Do you know what happened on your site today?"},
-  {"id":"honest","shot":"cold-open-2","seconds":5.178,"hold":0.7,"startsAt":4.537,"beatSeconds":5.878,"text":"Most days you find out by calling. A photo on WhatsApp. A number in somebody's notebook."},
-  {"id":"money","shot":"cold-open-3","seconds":2.937,"hold":1.3,"startsAt":10.415,"beatSeconds":4.237,"text":"And where the money went, you find out next month."},
-  {"id":"title","shot":"title","seconds":1.138,"hold":1.5,"startsAt":14.652,"beatSeconds":2.638,"text":"This is Sitetru."},
-  {"id":"mechanism","shot":"mechanism","seconds":4.249,"hold":0.8,"startsAt":17.29,"beatSeconds":5.049,"text":"It doesn't start in your office. It starts on your site engineer's phone."},
-  {"id":"telegram","shot":"telegram","seconds":8.487,"hold":0.9,"startsAt":22.339,"beatSeconds":9.387,"text":"He already has Telegram. He taps what he's logging — progress, labour, material — and sends it. Nothing to install. Nobody to train."},
-  {"id":"lands","shot":"logs","seconds":3.715,"hold":0.8,"startsAt":31.726,"beatSeconds":4.515,"text":"It arrives as today's log, against the task it belongs to."},
-  {"id":"chain-1","shot":"wbs","seconds":4.342,"hold":0.7,"startsAt":36.241,"beatSeconds":5.042,"text":"And then it moves. The task advances. The phase timeline moves with it."},
-  {"id":"chain-2","shot":"inventory","seconds":2.02,"hold":0.5,"startsAt":41.283,"beatSeconds":2.52,"text":"The material comes out of stock."},
-  {"id":"chain-3","shot":"procurement","seconds":4.075,"hold":0.7,"startsAt":43.803,"beatSeconds":4.775,"text":"The order it was bought on is reconciled, and the supplier's account with it."},
-  {"id":"chain-4","shot":"cost","seconds":4.574,"hold":1,"startsAt":48.578,"beatSeconds":5.574,"text":"The cost lands against the budget for that task. Not the project. The task."},
-  {"id":"variance","shot":"insights","seconds":3.773,"hold":1,"startsAt":54.152,"beatSeconds":4.773,"text":"Which is why the variance on this screen is today's, and not last month's."},
-  {"id":"client","shot":"estimates","seconds":5.909,"hold":0.8,"startsAt":58.925,"beatSeconds":6.709,"text":"Bill your client off the same breakdown you already built. No re-typing, and no second version of the truth."},
-  {"id":"scale","shot":"portfolio","seconds":1.718,"hold":1,"startsAt":65.634,"beatSeconds":2.718,"text":"One job, or all of them."},
-  {"id":"thesis","shot":"thesis","seconds":5.085,"hold":1.4,"startsAt":68.352,"beatSeconds":6.485,"text":"A building site doesn't stop for paperwork. So the paperwork has to keep up with the site."},
-  {"id":"end","shot":"end","seconds":5.886,"hold":2.2,"startsAt":74.837,"beatSeconds":8.086,"text":"Sitetru. Free to start, nine hundred and ninety nine rupees a month. Sitetru dot com."},
+  {"id":"open","shot":"cold-open","seconds":3.497,"hold":1.1,"startsAt":0,"beatSeconds":4.597,"text":"It's six in the evening. Do you know what happened on your site today?"},
+  {"id":"honest","shot":"cold-open-2","seconds":5.564,"hold":0.7,"startsAt":4.597,"beatSeconds":6.264,"text":"Most days you find out by calling. A photo on WhatsApp. A number in somebody's notebook."},
+  {"id":"money","shot":"cold-open-3","seconds":2.547,"hold":1.3,"startsAt":10.861,"beatSeconds":3.847,"text":"And where the money went, you find out next month."},
+  {"id":"title","shot":"title","seconds":1.059,"hold":1.5,"startsAt":14.708,"beatSeconds":2.559,"text":"This is Sitetru."},
+  {"id":"mechanism","shot":"mechanism","seconds":3.951,"hold":0.8,"startsAt":17.267,"beatSeconds":4.751,"text":"It doesn't start in your office. It starts on your site engineer's phone."},
+  {"id":"telegram","shot":"telegram","seconds":8.739,"hold":0.9,"startsAt":22.018,"beatSeconds":9.639,"text":"He already has Telegram. He taps what he's logging — progress, labour, material — and sends it. Nothing to install. Nobody to train."},
+  {"id":"lands","shot":"logs","seconds":3.78,"hold":0.8,"startsAt":31.657,"beatSeconds":4.58,"text":"It arrives as today's log, against the task it belongs to."},
+  {"id":"chain-1","shot":"wbs","seconds":4.632,"hold":0.7,"startsAt":36.237,"beatSeconds":5.332,"text":"And then it moves. The task advances. The phase timeline moves with it."},
+  {"id":"chain-2","shot":"inventory","seconds":1.675,"hold":0.5,"startsAt":41.569,"beatSeconds":2.175,"text":"The material comes out of stock."},
+  {"id":"chain-3","shot":"procurement","seconds":4.449,"hold":0.7,"startsAt":43.744,"beatSeconds":5.149,"text":"The order it was bought on is reconciled, and the supplier's account with it."},
+  {"id":"chain-4","shot":"cost","seconds":4.789,"hold":1,"startsAt":48.893,"beatSeconds":5.789,"text":"The cost lands against the budget for that task. Not the project. The task."},
+  {"id":"variance","shot":"insights","seconds":4.098,"hold":1,"startsAt":54.682,"beatSeconds":5.098,"text":"Which is why the variance on this screen is today's, and not last month's."},
+  {"id":"client","shot":"estimates","seconds":6.646,"hold":0.8,"startsAt":59.78,"beatSeconds":7.446,"text":"Bill your client off the same breakdown you already built. No re-typing, and no second version of the truth."},
+  {"id":"scale","shot":"portfolio","seconds":1.574,"hold":1,"startsAt":67.226,"beatSeconds":2.574,"text":"One job, or all of them."},
+  {"id":"thesis","shot":"thesis","seconds":5.126,"hold":1.4,"startsAt":69.8,"beatSeconds":6.526,"text":"A building site doesn't stop for paperwork. So the paperwork has to keep up with the site."},
+  {"id":"end","shot":"end","seconds":5.809,"hold":2.2,"startsAt":76.326,"beatSeconds":8.009,"text":"Sitetru. Free to start, nine hundred and ninety nine rupees a month. Sitetru dot com."},
 ];
 
 /** Beat lookup by id, for a composition that names its shots. */

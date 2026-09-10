@@ -25,7 +25,7 @@ import { masterLines } from "../voice/master.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
-const MODEL = join(ROOT, "marketing/voice/model/en_US-joe-medium.onnx");
+const MODEL = join(ROOT, "marketing/voice/model/kokoro.onnx");
 
 const SCRIPTS = {
   launch: "./launch.script.mjs",
@@ -47,13 +47,17 @@ export async function buildVoice(id) {
   mkdirSync(rawDir, { recursive: true });
 
   const spec = {
-    model: MODEL,
     outDir: rawDir,
-    length: film.length ?? 1.0,
+    // Kokoro's `speed` is the inverse of Piper's old `length_scale`: 1.0 is its
+    // natural pace and it genuinely is natural, so the films no longer stretch
+    // it. The scripts kept a `length` of 1.04 and 1.07 to slow Piper down,
+    // which was compensating for a voice that read like a form.
+    ...(film.voice ? { voice: film.voice } : {}),
+    ...(film.speed ? { speed: film.speed } : {}),
     lines: film.beats.map((b) => ({
       id: b.id,
       text: b.vo,
-      ...(b.length ? { length: b.length } : {}),
+      ...(b.speed ? { speed: b.speed } : {}),
     })),
   };
 

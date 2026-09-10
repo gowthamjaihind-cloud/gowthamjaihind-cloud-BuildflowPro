@@ -30,8 +30,12 @@
  */
 export const LAUNCH = {
   id: "launch",
-  /** Slightly under natural pace: this is a film, not an announcement. */
-  length: 1.04,
+  /**
+   * Kokoro reads at a natural pace at 1.0, so nothing is stretched here.
+   * This was 1.04 to slow Piper down, which was papering over a voice that
+   * read like a form rather than a person.
+   */
+  speed: 1.0,
   beats: [
     {
       id: "open",

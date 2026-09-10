@@ -7,3 +7,6 @@ voice/model/
 
 # Rendered audio and the generated manifests that go with it.
 films/out/
+
+# Python bytecode from the voice scripts.
+__pycache__/

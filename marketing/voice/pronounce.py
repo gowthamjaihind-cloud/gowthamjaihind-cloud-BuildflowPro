@@ -28,6 +28,10 @@ from pathlib import Path
 
 from piper import PiperVoice
 
+# The PHONEMIZER's model, not the voice. The films speak with Kokoro; Piper's
+# espeak bridge is kept because it emits exactly the IPA character set Kokoro's
+# vocabulary expects and keeps terminal punctuation. So this file audits what
+# the films will actually say, unchanged by the voice swap.
 MODEL = Path("marketing/voice/model/en_US-joe-medium.onnx")
 
 # Words whose reading carries the brand or a number, so a wrong one is not a

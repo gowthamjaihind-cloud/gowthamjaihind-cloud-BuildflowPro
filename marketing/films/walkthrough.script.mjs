@@ -28,8 +28,11 @@
  */
 export const WALKTHROUGH = {
   id: "walkthrough",
-  /** A touch slower than the launch film: this one is being followed, not felt. */
-  length: 1.07,
+  /**
+   * A touch slower than the launch film: this one is being followed rather
+   * than felt, and a viewer pausing to read a screen should not be chased.
+   */
+  speed: 0.96,
   beats: [
     {
       id: "portfolio",

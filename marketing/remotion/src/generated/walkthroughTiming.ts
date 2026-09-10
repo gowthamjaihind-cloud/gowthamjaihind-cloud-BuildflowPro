@@ -19,23 +19,23 @@ export interface Beat {
   text: string;
 }
 
-export const TOTAL_SECONDS = 140.997;
+export const TOTAL_SECONDS = 154.366;
 
 export const BEATS: Beat[] = [
-  {"id":"portfolio","seconds":5.445,"hold":0.6,"startsAt":0,"beatSeconds":6.045,"text":"This is Sitetru. Every job you have running, and what stage each one is at, on one screen."},
-  {"id":"open","seconds":3.228,"hold":0.5,"startsAt":6.045,"beatSeconds":3.728,"text":"Open one, and everything about it is in the same place."},
-  {"id":"dashboard","seconds":10.217,"hold":0.7,"startsAt":9.773,"beatSeconds":10.917,"text":"The dashboard is the answer to how's it going. Forty-three percent built. Fifty percent of the budget used. Fifty-four lakh still uncommitted, and one task that wants looking at."},
-  {"id":"wbs","seconds":11.831,"hold":0.8,"startsAt":20.69,"beatSeconds":12.631,"text":"It starts with the work breakdown. You split the job the way you'd write it on paper — substructure, ground floor, first floor — and each piece carries its own dates, quantities and budget. You do this once."},
-  {"id":"logs","seconds":11.633,"hold":0.8,"startsAt":33.321,"beatSeconds":12.433,"text":"Then the site starts reporting. A daily log is progress, headcount, material used and a photo, filed against the task it belongs to — so the plan and what actually happened stay attached to each other."},
-  {"id":"telegram","seconds":13.572,"hold":0.9,"startsAt":45.754,"beatSeconds":14.472,"text":"And this is where it comes from. Your engineer doesn't get an app. He gets a Telegram chat, on the phone already in his pocket. He taps what he's logging, types a number, and it's filed. Nothing to install on site. Nobody to train."},
-  {"id":"labour","seconds":7.964,"hold":0.7,"startsAt":60.226,"beatSeconds":8.664,"text":"Labour is the same idea from the other end. Rate cards per role, headcount from the logs, and what you owe each contractor worked out for you."},
-  {"id":"inventory","seconds":7.535,"hold":0.7,"startsAt":68.89,"beatSeconds":8.235,"text":"Material is tracked as stock on the job, not as receipts in a drawer. What came in, what's been issued, and what's running low."},
-  {"id":"procurement","seconds":12.945,"hold":0.8,"startsAt":77.125,"beatSeconds":13.745,"text":"Buying it works the way you already buy. Raise a purchase order against the job. Receive it when the lorry arrives — part loads included. Stock, the supplier's ledger and the order's own status all move on that one entry."},
-  {"id":"cost","seconds":11.807,"hold":0.8,"startsAt":90.87,"beatSeconds":12.607,"text":"Which is what makes this screen worth anything. Budget against actual, on every head, for every task — built from the logs and the receipts rather than typed in afterwards. A gap shows up the day it opens."},
-  {"id":"insights","seconds":7.558,"hold":0.8,"startsAt":103.477,"beatSeconds":8.358,"text":"And if you'd rather be told than go looking: insights reads the costs, the schedule and the logs, and says plainly what needs attention."},
-  {"id":"estimates","seconds":8.858,"hold":0.7,"startsAt":111.835,"beatSeconds":9.558,"text":"Client side, you bill from the same breakdown. Contract value, cost to date, margin, G S T — and a running account bill you can send."},
-  {"id":"vault","seconds":6.757,"hold":0.7,"startsAt":121.393,"beatSeconds":7.457,"text":"Drawings, approvals and invoices sit with the job, so the file you need on site is on your phone rather than in the office."},
-  {"id":"close","seconds":10.147,"hold":2,"startsAt":128.85,"beatSeconds":12.147,"text":"That's Sitetru. One place, fed from site, in English or Tamil. Free to start, nine hundred and ninety nine rupees a month after that. Sitetru dot com."},
+  {"id":"portfolio","seconds":5.703,"hold":0.6,"startsAt":0,"beatSeconds":6.303,"text":"This is Sitetru. Every job you have running, and what stage each one is at, on one screen."},
+  {"id":"open","seconds":3.365,"hold":0.5,"startsAt":6.303,"beatSeconds":3.865,"text":"Open one, and everything about it is in the same place."},
+  {"id":"dashboard","seconds":11.451,"hold":0.7,"startsAt":10.168,"beatSeconds":12.151,"text":"The dashboard is the answer to how's it going. Forty-three percent built. Fifty percent of the budget used. Fifty-four lakh still uncommitted, and one task that wants looking at."},
+  {"id":"wbs","seconds":12.757,"hold":0.8,"startsAt":22.319,"beatSeconds":13.557,"text":"It starts with the work breakdown. You split the job the way you'd write it on paper — substructure, ground floor, first floor — and each piece carries its own dates, quantities and budget. You do this once."},
+  {"id":"logs","seconds":13.472,"hold":0.8,"startsAt":35.876,"beatSeconds":14.272,"text":"Then the site starts reporting. A daily log is progress, headcount, material used and a photo, filed against the task it belongs to — so the plan and what actually happened stay attached to each other."},
+  {"id":"telegram","seconds":14.825,"hold":0.9,"startsAt":50.148,"beatSeconds":15.725,"text":"And this is where it comes from. Your engineer doesn't get an app. He gets a Telegram chat, on the phone already in his pocket. He taps what he's logging, types a number, and it's filed. Nothing to install on site. Nobody to train."},
+  {"id":"labour","seconds":9.24,"hold":0.7,"startsAt":65.873,"beatSeconds":9.94,"text":"Labour is the same idea from the other end. Rate cards per role, headcount from the logs, and what you owe each contractor worked out for you."},
+  {"id":"inventory","seconds":8.141,"hold":0.7,"startsAt":75.813,"beatSeconds":8.841,"text":"Material is tracked as stock on the job, not as receipts in a drawer. What came in, what's been issued, and what's running low."},
+  {"id":"procurement","seconds":14.617,"hold":0.8,"startsAt":84.654,"beatSeconds":15.417,"text":"Buying it works the way you already buy. Raise a purchase order against the job. Receive it when the lorry arrives — part loads included. Stock, the supplier's ledger and the order's own status all move on that one entry."},
+  {"id":"cost","seconds":13.078,"hold":0.8,"startsAt":100.071,"beatSeconds":13.878,"text":"Which is what makes this screen worth anything. Budget against actual, on every head, for every task — built from the logs and the receipts rather than typed in afterwards. A gap shows up the day it opens."},
+  {"id":"insights","seconds":8.233,"hold":0.8,"startsAt":113.949,"beatSeconds":9.033,"text":"And if you'd rather be told than go looking: insights reads the costs, the schedule and the logs, and says plainly what needs attention."},
+  {"id":"estimates","seconds":9.38,"hold":0.7,"startsAt":122.982,"beatSeconds":10.08,"text":"Client side, you bill from the same breakdown. Contract value, cost to date, margin, G S T — and a running account bill you can send."},
+  {"id":"vault","seconds":7.788,"hold":0.7,"startsAt":133.062,"beatSeconds":8.488,"text":"Drawings, approvals and invoices sit with the job, so the file you need on site is on your phone rather than in the office."},
+  {"id":"close","seconds":10.816,"hold":2,"startsAt":141.55,"beatSeconds":12.816,"text":"That's Sitetru. One place, fed from site, in English or Tamil. Free to start, nine hundred and ninety nine rupees a month after that. Sitetru dot com."},
 ];
 
 /** Beat lookup by id, for a composition that names its shots. */

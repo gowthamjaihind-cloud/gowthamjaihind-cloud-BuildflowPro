@@ -34,7 +34,7 @@ the paperwork. A tour that goes down the menu teaches the menu.
 Build either from cold:
 
 ```bash
-bash marketing/voice/fetch-voice.sh          # once: the ~58 MB voice model
+bash marketing/voice/fetch-voice.sh          # once: ~117 MB of voice model
 npm run build:demo
 node marketing/capture/serve-demo.mjs &
 npm run capture:screens                      # only when the UI changes
@@ -59,27 +59,67 @@ further out.
 
 ### The voice
 
-`marketing/voice/` — Piper (VITS, neural) with the CC0 `en_US-joe-medium` model,
-run locally. `fetch-voice.sh` gets the weights; they are not committed.
+`marketing/voice/` — **Kokoro-82M** (Apache-2.0), a StyleTTS2-derived model,
+running locally. `fetch-voice.sh` gets the weights; they are not committed.
+Kokoro's own files live on Hugging Face, which this sandbox cannot reach; the
+identical model and voice embeddings are bundled inside the `expo-kokoro` npm
+package, which it can.
 
-Piper normally ships a sidecar JSON beside each model with the phoneme table in
-it, and the CC0 package on npm carries only the weights, so `synth.py` rebuilds
-that config from Piper's own `DEFAULT_PHONEME_ID_MAP` — the same table every
-espeak Piper voice uses, which is why this works rather than being a lucky
-guess.
+The films are voiced by **`af_bella`**, a female voice chosen by measurement
+rather than preference. Any of the 59 names in `model/voices` works — change
+`DEFAULT_VOICE` in `synth.py`, or set `voice` on a film's script.
 
-`master.mjs` is the chain that makes it sound like a voiceover rather than a
-TTS demo: high-pass, de-esser (the single biggest audible improvement — the
-model's /s/ is its worst artefact), a shelf out of the boxy 300–500 Hz region,
-a presence lift at 3 kHz where consonants live, 4:1 compression with a slow
-release, a limiter, and `loudnorm` to −16 LUFS.
+**This replaced Piper (`en_US-joe-medium`), because the first cut sounded
+robotic and that turned out to be measurable rather than a matter of taste.**
+Two numbers say it, on the same three lines:
+
+| | octave-jumps | HNR |
+| --- | --- | --- |
+| piper `en_US-joe-medium` | **17.2%** | **0.63 dB** |
+| kokoro `af_bella` | 0.3% | 6.71 dB |
+
+*Octave-jumps* is how often an autocorrelation pitch track moves more than six
+semitones between adjacent 10 ms frames. A real voice glides; a tracker jumping
+means the waveform is not cleanly periodic. *HNR* is harmonics-to-noise — 0.63 dB
+is as much noise energy as harmonic energy, which is what "robotic" actually
+sounds like. Kokoro is roughly ten times cleaner on the first and six decibels
+better on the second, and the same gap holds across the finished films.
+
+Eleven female voices were auditioned this way before `af_bella` was picked: it
+had the cleanest pitch track and the best HNR of the set, at a mid register
+(198 Hz) that reads as composed rather than bright. The runners-up, if this ever
+wants changing: `bf_alice` (British, 217 Hz, brighter), `af_aoede` (176 Hz,
+warmer), `af_kore` (153 Hz, lowest).
+
+**Piper is still installed, and still used — as the PHONEMIZER.** Its espeak
+bridge emits exactly the IPA character set Kokoro's vocabulary expects and it
+keeps terminal punctuation, which Kokoro uses for phrasing. The espeak-ng CLI
+does neither: it injects zero-width joiners into diphthongs (`sˈa‍ɪt`) and drops
+the full stop. So pronunciation is unchanged by the voice swap, and every
+finding from `pronounce.py` still holds.
+
+`master.mjs` is the chain that makes it a voiceover rather than a TTS demo, and
+it was **re-tuned when the voice changed** — applying Piper's settings to a
+different model would have made things worse. Measured on the same line:
+
+| band | kokoro | piper | what it means |
+| --- | --- | --- | --- |
+| 300–800 Hz | 22.9% | 36.2% | Piper was boxy; Kokoro is not |
+| 2–4 kHz | 6.1% | 11.5% | Kokoro needs the presence help more |
+| 4–7 kHz | 11.5% | 20.5% | Piper's sibilance was its worst fault |
+| 7–11 kHz | 20.2% | 3.1% | Kokoro has real air; Piper had none |
+
+The two settings that did the most work for Piper are the two that would hurt
+here: its 380 Hz cut was fixing energy piling up in the boxy region, and its
+heavy de-esser was taming a voice with a fifth of its energy in the sibilant
+band. Both are gone. Nothing rolls off the top, either — that 20% of air above
+7 kHz is a large part of why this voice reads as present rather than synthetic.
 
 **You cannot hear a render in CI, but you can check it.** `pronounce.py` prints
-the IPA Piper will actually use for every word in a script, which turns
-pronunciation into something verifiable:
+the IPA the phonemizer will actually use for every word in a script:
 
 ```bash
-python3 marketing/voice/pronounce.py marketing/films/launch.script.mjs
+npm run voice:check marketing/films/launch.script.mjs
 ```
 
 It has already earned its place. "Madurai" comes out /mˈædʒuːɹˌaɪ/ — MAD-joo-rye
@@ -133,7 +173,8 @@ orange over a cobalt product, and nothing caught any of it, because
   sandbox default `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 - `ffmpeg` needs the `flite`, `deesser`, `acompressor`, `alimiter`, `loudnorm`
   and `sidechaincompress` filters. Ubuntu's build has all of them.
-- `python3` with `numpy` and `scipy` (the score), and `piper-tts` (the voice).
+- `python3` with `numpy` and `scipy` (the score), `onnxruntime` (the voice) and
+  `piper-tts` (the phonemizer).
 - Fonts are served from `walkthrough/fonts/` on disk, not from Google. Left to
   the network they are a render-blocking third-party request that has stalled a
   load here before — and it fails SILENTLY: the frame renders in whatever the
