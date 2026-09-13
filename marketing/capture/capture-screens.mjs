@@ -43,6 +43,9 @@ const SUBTABS = {
 };
 
 const browser = await chromium.launch({ executablePath: CHROME, args: ["--no-sandbox"] });
+/** Which theme the app is captured in. See the init script below. */
+const THEME = process.env.FILM_THEME || "dark";
+
 const ctx = await browser.newContext({
   viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 2, serviceWorkers: "block",
 });
@@ -51,13 +54,29 @@ const ctx = await browser.newContext({
 // stopped regenerating after the tour shipped. record.mjs already marks the
 // tour done for the same reason; this does the same, and hides the demo
 // banner and the replay pill so they stay out of the frame.
-await ctx.addInitScript(() => {
+await ctx.addInitScript((THEME) => {
   try {
     localStorage.setItem("sitetru.demo.tour.done", "1");
   } catch {
     /* private mode: the CSS below still keeps it out of the shot */
   }
-});
+  // Dark mode, set BEFORE the app boots.
+  //
+  // uiStore reads `localStorage.darkMode` once, at store creation, and toggles
+  // the `dark` class from it -- so flipping the theme after load would mean
+  // capturing the light frames first and a re-layout on top. This way the app
+  // has never been in light mode.
+  //
+  // The films want dark because the launch film opens and closes on dark brand
+  // cards and its middle was white product screenshots: a 185-luma jump in two
+  // frames at 29.3s, the single worst "not premium" moment in it. Light capture
+  // is still a run away -- FILM_THEME=light.
+  try {
+    localStorage.setItem("darkMode", String(THEME !== "light"));
+  } catch {
+    /* private mode: the app falls back to light, and the run is still valid */
+  }
+}, THEME);
 
 const page = await ctx.newPage();
 page.on("pageerror", (e) => console.log("  page error:", String(e).slice(0, 110)));

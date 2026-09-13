@@ -42,6 +42,9 @@ const W = 1920, H = 1080;
  * Not zero: a beat of the portfolio before the first line lands is a better
  * opening than the voice starting over a still-arriving screen.
  */
+/** Which theme the app is recorded in. See the init script. */
+const THEME = process.env.FILM_THEME || "dark";
+
 const HEAD_TRIM = 2.6;
 
 rmSync(RAW, { recursive: true, force: true });
@@ -389,11 +392,22 @@ await ctx.route("https://www.google.com/recaptcha/**", (r) =>
 // The guided tour opens over the demo and its backdrop swallows clicks, which
 // is right for a visitor and wrong for a scripted run -- it blocked every
 // navigation the first time this met it. Mark it seen before anything loads.
-await ctx.addInitScript(() => {
+await ctx.addInitScript((THEME) => {
   try {
     localStorage.setItem("sitetru.demo.tour.done", "1");
   } catch {
     /* private mode: the tour will open and the run will report the failures */
+  }
+  // Dark mode, set BEFORE the app boots.
+  //
+  // uiStore reads `localStorage.darkMode` once, at store creation, and toggles
+  // the `dark` class from it. Flipping the theme after load would put light
+  // frames at the head of the recording and a re-layout on top of them; this
+  // way the app has never been in light mode. FILM_THEME=light to go back.
+  try {
+    localStorage.setItem("darkMode", String(THEME !== "light"));
+  } catch {
+    /* private mode: the app falls back to light, and the run is still valid */
   }
   // The demo's own furniture -- the LIVE DEMO bar, the Replay tour pill -- is a
   // property of the demo, not of the product, so it must never be in frame.
@@ -434,7 +448,7 @@ await ctx.addInitScript(() => {
     }, 8);
     setTimeout(() => clearInterval(timer), 8000);
   }
-});
+}, THEME);
 
 const page = await ctx.newPage();
 // Recording begins the moment the page exists, so this -- not the first beat
