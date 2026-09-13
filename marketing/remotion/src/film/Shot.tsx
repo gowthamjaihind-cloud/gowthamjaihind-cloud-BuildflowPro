@@ -144,6 +144,19 @@ export const Caption: React.FC<{
         right: 0,
         bottom: 0,
         height: bandH,
+        /*
+          Above every shot, including the NEXT beat's.
+
+          Beats render in document order, so a beat's shots are painted after
+          the previous beat's caption. Overlapping the captions was therefore
+          not enough on its own: on the boundary frame the incoming beat's
+          full-frame shot covered the outgoing caption, while the incoming
+          caption's own band was still at zero. One frame with no caption at
+          all, at every boundary -- the nine-frame blink shortened to one
+          rather than disappearing. Ordering cannot fix this without
+          restructuring the film; a stacking order can.
+        */
+        zIndex: 5,
         // Opaque well before the type starts. The first version ramped to 86%
         // at 42% of the band and the app's own text was still legible behind
         // the caption, which reads as two layers fighting rather than one frame.

@@ -28,13 +28,21 @@ if (!file) {
 
 /** Mean luma per frame, 0..255, straight from the decoder. */
 function luma(path) {
-  const out = execFileSync(
-    "ffprobe",
-    ["-v", "error", "-f", "lavfi", "-i", `movie=${path},signalstats`,
-     "-show_entries", "frame=pts_time:frame_tags=lavfi.signalstats.YAVG",
-     "-of", "csv=p=0"],
-    { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
-  );
+  let out;
+  try {
+    out = probe(path);
+  } catch (err) {
+    // Reading a file that is still being muxed gives "moov atom not found".
+    // That is not a defect in the film, it is a race with the renderer, and it
+    // should not look like one.
+    const msg = String(err?.stderr ?? err?.message ?? err);
+    if (/moov atom not found|Invalid data found/.test(msg)) {
+      console.error(`${path}: not a complete mp4 yet -- still being written?`);
+      process.exit(2);
+    }
+    console.error(`${path}: could not decode\n${msg}`);
+    process.exit(2);
+  }
   const rows = [];
   for (const line of out.split("\n")) {
     const [t, y] = line.split(",");
@@ -45,6 +53,16 @@ function luma(path) {
     }
   }
   return rows;
+}
+
+function probe(path) {
+  return execFileSync(
+    "ffprobe",
+    ["-v", "error", "-f", "lavfi", "-i", `movie=${path},signalstats`,
+     "-show_entries", "frame=pts_time:frame_tags=lavfi.signalstats.YAVG",
+     "-of", "csv=p=0"],
+    { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+  );
 }
 
 /**
