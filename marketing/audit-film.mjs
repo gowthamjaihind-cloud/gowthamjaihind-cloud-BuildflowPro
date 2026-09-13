@@ -70,10 +70,26 @@ function probe(path) {
  *
  * This is the signature of background showing through a transition, and it is
  * specific: a real cut steps from one level to another and stays there, while a
- * hole dips for a frame or two and recovers. The threshold is well below the
- * smallest real instance (37) and far below the whip flashes (54-58).
+ * hole dips for a frame and comes BACK to roughly where it was, because nothing
+ * actually changed except that one frame.
  */
 const DIP = 22;
+
+/**
+ * How far the recovery may fall short of the original level, as a fraction of
+ * the drop, before this is read as a real cut rather than a hole.
+ *
+ * Without this the check has a false positive, and it had one: the film cuts
+ * from Client Estimates (luma 217) to the Portfolio hero, which is dark navy,
+ * and four frames later a white Flash transition lifts it again -- 217 down to
+ * 124, back to 149. That satisfies "darker than both neighbours" while being an
+ * ordinary cut to a darker screen. It is the opposite of a hole: the picture
+ * genuinely changed and never returns.
+ *
+ * Every real instance recovers to within 20 luma of where it started, against a
+ * drop of 54-58. This cut recovers 68 short of a drop of 93.
+ */
+const RECOVERY = 0.5;
 
 function dips(rows) {
   const out = [];
@@ -81,7 +97,9 @@ function dips(rows) {
     const [, a] = rows[i - 1];
     const [t, b] = rows[i];
     const [, c] = rows[i + 1];
-    if (a - b > DIP && c - b > DIP) out.push({ t, from: a, to: b, back: c, drop: a - b });
+    if (!(a - b > DIP && c - b > DIP)) continue;
+    if (Math.abs(c - a) > (a - b) * RECOVERY) continue; // a cut, not a hole
+    out.push({ t, from: a, to: b, back: c, drop: a - b });
   }
   return out;
 }
