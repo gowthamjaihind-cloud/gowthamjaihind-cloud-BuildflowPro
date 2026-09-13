@@ -7,6 +7,9 @@ import {
   useVideoConfig,
 } from "remotion";
 import { C } from "../theme";
+import { TRAVEL, whipShift } from "../../../whip";
+
+export { whipShift } from "../../../whip";
 
 /**
  * The things that make a rendered timeline look photographed.
@@ -28,6 +31,17 @@ export const smooth = Easing.bezier(0.33, 0.0, 0.15, 1.0);
 export const arrive = Easing.bezier(0.16, 1.0, 0.3, 1.0);
 /** For anything leaving: gathers speed and goes. */
 export const depart = Easing.bezier(0.7, 0.0, 0.84, 0.0);
+/**
+ * For a transition that TRAVELS, as opposed to one that arrives.
+ *
+ * `arrive` is an extreme ease-out -- correct for a shot landing and settling,
+ * and wrong for a whip, because it spends the move immediately: over the six
+ * frames a whip is given it reaches 0.686 by frame 1. Sixty-nine per cent of
+ * the pan happens in a single frame and the remaining five do almost nothing,
+ * so the eye reads two smeared frames rather than a camera move. This is
+ * symmetric: no frame carries more than a quarter of the distance.
+ */
+export const travel = Easing.bezier(...TRAVEL);
 
 /** 0..1 across a range of frames, eased. */
 export const ramp = (
@@ -40,6 +54,16 @@ export const ramp = (
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
+
+/**
+ * Frames a caption outlives its beat, so the next one can dissolve over it.
+ *
+ * Shared by Beat (which extends the caption's Sequence) and Caption (which
+ * fades its type out across the same window). If the two disagreed the band
+ * would either flicker or double up. It lives here because both files already
+ * import this one, and neither should have to import the other.
+ */
+export const CAPTION_LAP = 7;
 
 /* ---------------------------------------------------------------- grain -- */
 
@@ -219,19 +243,33 @@ export const Whip: React.FC<{
   incoming?: boolean;
   children: React.ReactNode;
 }> = ({ progress, direction = 1, incoming = false, children }) => {
+  // Unique per instance: the two halves of one whip are two Whips on screen at
+  // once, and a shared filter id would make them share a blur amount.
+  const uid = React.useId().replace(/[^a-zA-Z0-9]/g, "");
   const p = Math.min(Math.max(progress, 0), 1);
-  const t = incoming ? 1 - p : p;
   // Blur peaks mid-move, so the frame is sharp at both ends of the whip.
-  const blur = Math.sin(Math.min(p, 1) * Math.PI) * 26;
-  const shift = incoming ? -direction * t * 100 : direction * t * 100;
+  const blur = Math.sin(p * Math.PI) * 26;
+  const shift = whipShift(p, direction, incoming);
   return (
-    <AbsoluteFill
-      style={{
-        transform: `translateX(${shift}%)`,
-        filter: `blur(${blur.toFixed(1)}px)`,
-      }}
-    >
-      {children}
+    <AbsoluteFill style={{ transform: `translateX(${shift}%)` }}>
+      {/*
+        Blur along the axis of travel only.
+
+        `filter: blur()` is isotropic, which is what a lens does when it loses
+        focus and not what a camera does when it pans. The difference is the
+        whole effect: a frame blurred equally in both directions reads as "out
+        of focus", a frame blurred only horizontally reads as "moving fast".
+        feGaussianBlur takes a two-number stdDeviation, so the vertical term
+        is simply zero.
+      */}
+      <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
+        <filter id={`whip${uid}`} x="-10%" y="-2%" width="120%" height="104%">
+          <feGaussianBlur stdDeviation={`${blur.toFixed(1)} 0`} />
+        </filter>
+      </svg>
+      <AbsoluteFill style={{ filter: blur > 0.2 ? `url(#whip${uid})` : undefined }}>
+        {children}
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
@@ -276,10 +314,28 @@ export const Defocus: React.FC<{
 }> = ({ progress, incoming = false, maxBlur = 18, children }) => {
   const p = Math.min(Math.max(progress, 0), 1);
   const t = incoming ? 1 - p : p;
+  /*
+    An arriving shot stays OPAQUE and resolves out of blur. It used to fade up
+    from `opacity: p`, and that only looked like a cross-dissolve because a
+    cross-dissolve needs two pictures -- there is only ever one here. Dissolves
+    in this film sit at beat boundaries, where the outgoing shot belongs to the
+    previous Beat and this one cannot reach it. So the layer underneath was not
+    the shot being left, it was the background, and a partly transparent frame
+    over a dark background is simply a dark frame.
+
+    It was hidden rather than absent: with the old `arrive` easing, progress hit
+    0.686 one frame in, so the dip lasted a frame and measured 37 luma. Pacing
+    the transition properly across its frames exposed it at 136 -- the fix to
+    the whip made this one visible, which is the useful kind of regression.
+
+    Opacity pinned at 1, the transition rides blur and scale alone: a focus
+    pull, which says "new subject" just as clearly and cannot show background
+    at any progress or under any easing curve.
+  */
   return (
     <AbsoluteFill
       style={{
-        opacity: incoming ? p : 1 - p * 0.9,
+        opacity: incoming ? 1 : 1 - p * 0.9,
         filter: `blur(${(t * maxBlur).toFixed(2)}px)`,
         transform: `scale(${1 + t * 0.035})`,
       }}

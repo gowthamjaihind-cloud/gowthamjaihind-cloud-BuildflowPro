@@ -26,15 +26,23 @@ const bubble = (html, tap) => `
 
 const me = (t) => `<div class="row me"><div class="b mine">${t}</div></div>`;
 
-const phone = (title, inner) => `
+/*
+  No label under the phone.
+
+  These used to carry "What can be logged" and "What comes back" -- captions
+  for a composite that is only ever seen inside the film, where the film's own
+  Caption band is already doing that job. Worse than redundant: the beat pans
+  down across the image, so "WHAT COMES BACK" drifted into frame for exactly
+  one frame at 29.27s. A single frame of type nobody can read is not a caption,
+  it is a flash.
+*/
+const phone = (inner) => `
   <div class="phone">
     <div class="bar"><div class="av">S</div><div><div class="who">Sitetru</div><div class="sub">bot</div></div></div>
     <div class="chat">${inner}</div>
-    <div class="cap">${title}</div>
   </div>`;
 
 const menu = phone(
-  "What can be logged",
   me("/log") +
     bubble(
       `<b>Brickwork / blockwork</b> — 65%
@@ -48,7 +56,6 @@ const menu = phone(
 );
 
 const done = phone(
-  "What comes back",
   bubble(`<b>Which role?</b>
       <div class="kb">
         <div class="k">Mason</div><div class="k">Helper</div>
@@ -99,8 +106,6 @@ const page = (w, h, stack, standalone = false) => `<!doctype html><html><head><m
   .tap{color:#7FC4F5;font-size:12px;font-weight:700;letter-spacing:.05em;
     text-align:center;margin-top:7px}
   b{font-weight:800}
-  .cap{color:${BRAND.primaryOnDark};font-size:13px;font-weight:800;letter-spacing:.18em;
-    text-transform:uppercase;text-align:center;padding:0 0 16px}
 </style></head><body>${menu}${done}</body></html>`;
 
 const FONT_FILE = resolve(HERE, "../walkthrough/fonts/Manrope-var.woff2");

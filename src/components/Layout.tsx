@@ -28,6 +28,7 @@ import { useAuthStore, useUIStore, useProjectStore } from "../store";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { useTranslation } from "../i18n";
 import { Tooltip } from "./Tooltip";
+import { initialsOf } from "../utils/initials";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -138,14 +139,32 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           {user && showLabels && (
             <div className="flex items-center gap-3 md:gap-4">
               <div className="relative">
-                <img
-                  src={
-                    user.photoURL ||
-                    `https://ui-avatars.com/api/?name=${user.displayName}`
-                  }
-                  className={`w-10 h-10 md:w-12 md:h-12 rounded-[12px] md:rounded-[16px] object-cover shadow-2xl ${uiMode === "site" ? "!rounded-full" : ""}`}
-                  alt=""
-                />
+                {/*
+                  Initials, not a third-party image.
+
+                  The fallback here used to be ui-avatars.com, which meant every
+                  signed-in user's sidebar made a request to someone else's
+                  server carrying their display name in the query string -- a
+                  name leak on every page load, for a coloured square with a
+                  letter in it. It also failed visibly: demo data sets photoURL
+                  to undefined, so anywhere that host is unreachable the sidebar
+                  rendered a broken-image icon. That is what was sitting in
+                  nearly every frame of the walkthrough film.
+                */}
+                {user.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    className={`w-10 h-10 md:w-12 md:h-12 rounded-[12px] md:rounded-[16px] object-cover shadow-2xl ${uiMode === "site" ? "!rounded-full" : ""}`}
+                    alt=""
+                  />
+                ) : (
+                  <div
+                    aria-hidden
+                    className={`w-10 h-10 md:w-12 md:h-12 rounded-[12px] md:rounded-[16px] shadow-2xl bg-primary text-on-primary flex items-center justify-center font-display font-bold text-[15px] md:text-[17px] tracking-tight select-none ${uiMode === "site" ? "!rounded-full" : ""}`}
+                  >
+                    {initialsOf(user.displayName)}
+                  </div>
+                )}
                 <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 md:w-4 md:h-4 bg-success border-2 border-white rounded-full shadow-sm" />
               </div>
               <div className="flex-1 min-w-0">

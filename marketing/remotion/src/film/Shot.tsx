@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, Focus, SRC_H, SRC_W } from "../theme";
-import { Grain, Marker, Vignette, arrive, ramp, smooth } from "./Cinema";
+import { CAPTION_LAP, Grain, Marker, Vignette, arrive, ramp, smooth } from "./Cinema";
 
 /**
  * One shot of the product: a crop of a screenshot, moving, with the option of a
@@ -107,10 +107,34 @@ export const Caption: React.FC<{
   title: string;
   /** Frame the band starts arriving. */
   at?: number;
-}> = ({ kicker, title, at = 6 }) => {
+  /**
+   * The beat's own length. Beat injects it; the caption runs CAPTION_LAP
+   * frames past this, dissolving out while the next one dissolves in.
+   */
+  span?: number;
+}> = ({ kicker, title, at = 0, span }) => {
   const frame = useCurrentFrame();
   const { height } = useVideoConfig();
-  const p = ramp(frame, [at, at + 9], arrive);
+  /*
+    The band and the type fade on different curves, and that is the whole fix.
+
+    This used to be one opacity on one ramp starting at frame 6, so a caption
+    was INVISIBLE for its first six frames and still arriving until frame 15 --
+    a third of a second of empty band at every beat boundary, measured eight
+    times across the film. Worse, each gap landed on the same frame as a cut,
+    so the picture smeared and the caption vanished together and the pair read
+    as one glitch.
+
+    Now the band rises fast (3 frames) and holds, while the type takes longer
+    and fades out over the lap. Because consecutive captions overlap and the
+    band is identical in both, the outgoing band is still opaque underneath
+    while the incoming one rises: the bar never breaks, and only the words
+    cross-dissolve.
+  */
+  const band = ramp(frame, [at, at + 3], arrive);
+  const typeIn = ramp(frame, [at + 1, at + 10], arrive);
+  const typeOut = span === undefined ? 1 : 1 - ramp(frame, [span, span + CAPTION_LAP], arrive);
+  const p = Math.min(typeIn, typeOut);
   const bandH = height * 0.185;
   return (
     <div
@@ -128,8 +152,8 @@ export const Caption: React.FC<{
         flexDirection: "column",
         justifyContent: "flex-end",
         padding: `0 ${height * 0.075}px ${height * 0.052}px`,
-        opacity: p,
-        transform: `translateY(${(1 - p) * 26}px)`,
+        opacity: band,
+        transform: `translateY(${(1 - band) * 26}px)`,
       }}
     >
       <div
@@ -140,11 +164,20 @@ export const Caption: React.FC<{
           textTransform: "uppercase",
           color: C.primaryOnDark,
           marginBottom: 10,
+          opacity: p,
         }}
       >
         {kicker}
       </div>
-      <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: "-0.02em", color: C.white }}>
+      <div
+        style={{
+          fontSize: 44,
+          fontWeight: 800,
+          letterSpacing: "-0.02em",
+          color: C.white,
+          opacity: p,
+        }}
+      >
         {title}
       </div>
     </div>

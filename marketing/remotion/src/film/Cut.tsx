@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Sequence, useCurrentFrame } from "remotion";
-import { Defocus, Flash, Punch, Whip, arrive, ramp } from "./Cinema";
+import { CAPTION_LAP, Defocus, Flash, Punch, Whip, arrive, ramp, travel } from "./Cinema";
 import { BPM } from "../generated/launchTiming";
 
 /**
@@ -103,17 +103,50 @@ export function schedule(frames: number, shots: ShotDef[]): number[] {
   return lens;
 }
 
-/** One shot, with its arrival treatment. */
-const Take: React.FC<{ shot: ShotDef; length: number }> = ({ shot, length }) => {
+/**
+ * How a shot LEAVES, which is decided by how the next one arrives.
+ *
+ * A whip is two moving frames, not one. The first cut of this rendered only
+ * the incoming half sliding in over whatever was behind it, and the shot it
+ * replaced was already gone -- each shot's Sequence outlived its own span by a
+ * single frame. So one frame into every whip the incoming picture was still
+ * 31% off-screen and that 31% of the frame was bare background: a hard-edged
+ * dark band down one side, eight times in the film. It reads as a dropped
+ * frame, which is exactly what the whip was supposed to disguise.
+ */
+interface Exit {
+  kind: CutKind;
+  /** Frames the transition takes; the outgoing shot is held this much longer. */
+  cost: number;
+  dir: -1 | 1;
+  /** Local frame the exit begins -- the end of this shot's own span. */
+  at: number;
+}
+
+/** One shot, with its arrival treatment and its departure. */
+const Take: React.FC<{ shot: ShotDef; length: number; exit?: Exit }> = ({
+  shot,
+  length,
+  exit,
+}) => {
   const frame = useCurrentFrame();
   const kind = shot.cut ?? "hard";
   const cost = COST[kind];
-  const p = cost ? ramp(frame, [0, cost], arrive) : 1;
+  // `travel`, not `arrive`: see the note on the easing itself.
+  const p = cost ? ramp(frame, [0, cost], travel) : 1;
   // Every shot lands with a small settle, whatever its transition. It is the
   // cheapest thing that makes a hard cut read as deliberate rather than abrupt.
   const punch = ramp(frame, [0, Math.min(10, Math.max(6, length))], arrive);
 
-  const body =
+  // The outgoing half of the NEXT shot's whip. Same curve, same frames, so the
+  // two pictures stay edge to edge: the incoming covers [-100(1-p), 100p] and
+  // this covers [100p, 100+100p]. They tile exactly, and no background shows.
+  const leaving =
+    exit && exit.kind === "whip" && exit.cost > 0
+      ? ramp(frame - exit.at, [0, exit.cost], travel)
+      : 0;
+
+  let body: React.ReactNode =
     kind === "whip" ? (
       <Whip progress={p} direction={shot.dir ?? 1} incoming>
         {shot.node}
@@ -125,6 +158,14 @@ const Take: React.FC<{ shot: ShotDef; length: number }> = ({ shot, length }) => 
     ) : (
       shot.node
     );
+
+  if (leaving > 0) {
+    body = (
+      <Whip progress={leaving} direction={exit!.dir}>
+        {body}
+      </Whip>
+    );
+  }
 
   return (
     <AbsoluteFill>
@@ -160,22 +201,44 @@ export const Beat: React.FC<{
       {shots.map((shot, i) => {
         const start = at;
         at += lens[i];
+        const next = shots[i + 1];
+        // A shot must outlive its own span by however long the next shot's
+        // transition takes, because for that whole stretch it is still on
+        // screen and still moving. One frame -- what this used to hold -- is
+        // enough only for a hard cut.
+        const exit: Exit | undefined = next
+          ? {
+              kind: next.cut ?? "hard",
+              cost: COST[next.cut ?? "hard"],
+              dir: next.dir ?? 1,
+              at: lens[i],
+            }
+          : undefined;
         return (
           <Sequence
             key={i}
             from={start}
             // A frame of overlap, so a hard cut never shows the background
-            // through a seam on a rounding boundary.
-            durationInFrames={lens[i] + 1}
+            // through a seam on a rounding boundary; more when the next shot
+            // transitions in over this one.
+            durationInFrames={lens[i] + Math.max(1, exit?.cost ?? 0)}
             layout="none"
           >
-            <Take shot={shot} length={lens[i]} />
+            <Take shot={shot} length={lens[i]} exit={exit} />
           </Sequence>
         );
       })}
       {caption ? (
-        <Sequence from={from} durationInFrames={frames} layout="none">
-          {caption}
+        // Runs past its own beat by CAPTION_LAP so consecutive captions
+        // overlap and dissolve into one another. Without it the band went
+        // fully transparent for nine frames at every beat boundary -- eight
+        // times in the film, each one landing on the same frame as a cut.
+        <Sequence from={from} durationInFrames={frames + CAPTION_LAP} layout="none">
+          {React.isValidElement(caption)
+            ? React.cloneElement(caption as React.ReactElement<{ span?: number }>, {
+                span: frames,
+              })
+            : caption}
         </Sequence>
       ) : null}
     </>
