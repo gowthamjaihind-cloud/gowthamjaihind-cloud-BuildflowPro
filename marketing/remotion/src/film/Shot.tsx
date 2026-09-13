@@ -95,6 +95,57 @@ export const Shot: React.FC<{
 };
 
 /**
+ * A phone screenshot, sat in frame.
+ *
+ * The app captures are 3200x2000 and get cropped to a 16:9 window that fills
+ * the frame. A phone screenshot cannot: these are 1320x2868, so the widest
+ * 16:9 window they contain is 742px tall -- not enough to hold the log menu,
+ * which runs 1330. Filling the frame with one would mean showing a quarter
+ * of it.
+ *
+ * So the phone sits ON something instead, the way the composed still it
+ * replaces did. The ground is the brand's dark navy rather than a neutral,
+ * which also stops this beat being a light-mode island between two dark ones.
+ *
+ * These are real screenshots of the real bot. The drawing they replace had the
+ * Save button in the wrong place, no Cancel at all, and roles in a 2x2 grid
+ * the bot has never rendered.
+ */
+export const Plate: React.FC<{
+  src: string;
+  /** Height as a fraction of the frame. Kept clear of the caption band. */
+  fit?: number;
+  /** Slow push across the shot, so a still is never wholly still. */
+  push?: number;
+}> = ({ src, fit = 0.74, push = 0.035 }) => {
+  const frame = useCurrentFrame();
+  const { height, durationInFrames } = useVideoConfig();
+  const e = ramp(frame, [0, durationInFrames], smooth);
+  return (
+    <AbsoluteFill
+      style={{
+        background: C.surfaceDark,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Img
+        src={staticFile(src)}
+        style={{
+          height: height * fit,
+          width: "auto",
+          // Up a little, so the plate clears the caption band rather than
+          // running behind it.
+          transform: `translateY(-4%) scale(${(1 + push * e).toFixed(4)})`,
+          borderRadius: 26,
+          boxShadow: "0 42px 120px rgba(0,0,0,0.55)",
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+
+/**
  * The band that carries the on-screen line.
  *
  * Full bleed across the foot of the frame, never a floating chip, and the text

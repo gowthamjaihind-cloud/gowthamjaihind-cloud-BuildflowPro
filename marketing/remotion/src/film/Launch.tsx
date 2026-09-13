@@ -4,7 +4,7 @@ import { C, Focus } from "../theme";
 import { Still } from "../Still";
 import { Grain, Letterbox, Vignette, arrive, ramp } from "./Cinema";
 import { Fonts, typeStyle } from "./Fonts";
-import { Caption, Rect, Shot } from "./Shot";
+import { Caption, Plate, Rect, Shot } from "./Shot";
 import { EndCard, Statement, TitleCard } from "./Titles";
 import { Beat } from "./Cut";
 import { BEATS, TOTAL_SECONDS, beat } from "../generated/launchTiming";
@@ -144,14 +144,6 @@ const Bars: React.FC = () => {
   return <Letterbox progress={p} />;
 };
 
-/** Telegram beat still, authored at frame size rather than as an app capture. */
-const TG = { w: 1920, h: 1080 };
-const TGF = {
-  wide: { cx: 960, cy: 540, w: 1920 } as Focus,
-  left: { cx: 545, cy: 545, w: 880 } as Focus,
-  right: { cx: 1385, cy: 545, w: 880 } as Focus,
-};
-
 export const Launch: React.FC = () => (
   <AbsoluteFill style={{ backgroundColor: C.surfaceDark, ...typeStyle }}>
     <Fonts />
@@ -224,27 +216,31 @@ export const Launch: React.FC = () => (
     />
 
     {/*
-      A still held for nearly nine seconds was dead air with a caption on it.
-      Whipping between the two phones turns it into three shots that follow
-      what the line is describing: he taps, and it comes back logged.
+      Three real screens of the real bot, in the order the line describes them.
+
+      This beat used to be a composed still -- an HTML drawing of Telegram. It
+      was wrong about the product in ways a viewer who uses the bot would spot
+      immediately: Save at the bottom of the menu instead of alone at the top,
+      no Cancel at all, and roles laid out in a 2x2 grid the bot has never
+      rendered (it puts one per row, from the project's own rate cards).
+
+      The narration is "he taps what he's logging -- progress, labour, material
+      -- and sends it. Nothing to install. Nobody to train." So: the command
+      list, which is the whole surface area and carries /language, English and
+      Tamil, the one thing in the bot this film had never shown; then the log
+      menu, which IS that sentence; then the material picker, drawn from the
+      project's own list, which is what "nothing to train" means in practice.
+
+      Real screenshots are portrait, so these are Plates rather than Shots --
+      see the note on the component.
     */}
     <Beat
       {...span("telegram")}
       caption={<Caption kicker="on telegram" title="He taps what he's logging. That's the whole job." />}
       shots={[
-        { node: <Shot src="telegram-beat-full.png" from={TGF.wide} srcW={TG.w} srcH={TG.h} /> },
-        {
-          cut: "whip",
-          dir: 1,
-          weight: 1.15,
-          node: <Shot src="telegram-beat-full.png" from={TGF.left} srcW={TG.w} srcH={TG.h} />,
-        },
-        {
-          cut: "whip",
-          dir: 1,
-          weight: 1.15,
-          node: <Shot src="telegram-beat-full.png" from={TGF.right} srcW={TG.w} srcH={TG.h} />,
-        },
+        { node: <Plate src="p-help.png" fit={0.66} /> },
+        { cut: "whip", dir: 1, weight: 1.35, node: <Plate src="p-menu.png" /> },
+        { cut: "whip", dir: 1, weight: 1.1, node: <Plate src="p-mats.png" /> },
       ]}
     />
 

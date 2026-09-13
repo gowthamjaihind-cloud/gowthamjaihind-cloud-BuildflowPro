@@ -74,7 +74,13 @@ export const WALKTHROUGH = {
       // a project has no Telegram screen to navigate to -- it lives in
       // Settings, reachable only from the portfolio. So this beat cuts to the
       // bot itself, composited over exactly the window the beat occupied.
-      cutTo: "telegram-beat-full.png",
+      //
+      // Real screenshots, not the HTML imitation this used to show. That
+      // drawing was wrong about the product in ways anyone who has used the
+      // bot would catch: Save at the foot of the log menu rather than alone at
+      // its head, no Cancel at all, and labour roles in a 2x2 grid the bot has
+      // never rendered. Built by ../telegram/build-walk-plate.mjs.
+      cutTo: "telegram-real-full.png",
       vo: "And this is where it comes from. Your engineer doesn't get an app. He gets a Telegram chat, on the phone already in his pocket. He taps what he's logging, types a number, and it's filed. Nothing to install on site. Nobody to train.",
       hold: 0.9,
       nav: null,
