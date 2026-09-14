@@ -240,7 +240,7 @@ export const DailyLogHistory: React.FC<DailyLogHistoryProps> = ({
               </button>
               <button
                 onClick={handleDelete}
-                className="py-3.5 px-6 rounded-2xl font-bold bg-danger hover:bg-danger text-white transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
+                className="py-3.5 px-6 rounded-2xl font-bold bg-danger hover:bg-danger text-on-danger transition shadow-[0_4px_20px_rgba(239,68,68,0.3)] cursor-pointer"
               >
                 {t("common.delete")}
               </button>

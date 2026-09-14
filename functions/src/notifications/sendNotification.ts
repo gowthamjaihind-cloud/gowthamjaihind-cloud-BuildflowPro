@@ -1,9 +1,13 @@
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
-import { db } from "../db";
+import { db, FIRESTORE_DATABASE_ID } from "../db";
 
 // Example of a background trigger function for notifications
-export const onApprovalCreated = onDocumentCreated("approvals/{approvalId}", async (event) => {
+// Bound to the app's NAMED Firestore database; without `database` a v2
+// trigger listens on "(default)", where no approval is ever written.
+export const onApprovalCreated = onDocumentCreated(
+  { document: "approvals/{approvalId}", database: FIRESTORE_DATABASE_ID },
+  async (event) => {
   const snapshot = event.data;
   if (!snapshot) return;
 

@@ -19,7 +19,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build:demo:hosted": "VITE_DEMO=1 vite build --outDir dist-demo --base=/demo/",
-    "walkthrough": "node marketing/walkthrough/record.mjs"
+    "walkthrough": "node marketing/walkthrough/record.mjs",
+    "film:launch": "node marketing/films/build-voice.mjs launch && npm run film:launch:render",
+    "film:launch:render": "cd marketing/remotion && npx remotion render Launch out/sitetru-launch-silent.mp4 --browser-executable=${CHROME_HEADLESS_SHELL:-/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell} --concurrency=4 --jpeg-quality=95 && node ../films/mix.mjs launch out/sitetru-launch-silent.mp4 out/sitetru-launch.mp4",
+    "film:walkthrough": "node marketing/films/build-voice.mjs walkthrough && npm run walkthrough",
+    "voice:check": "python3 marketing/voice/pronounce.py",
+    "brand:check": "node marketing/brand.test.mjs"
   },
   "dependencies": {
     "@fontsource/noto-sans-tamil": "^5.3.0",

@@ -46,7 +46,7 @@ export const Screen: React.FC<{
   const top = -(clampedY - halfH) * scale;
 
   return (
-    <AbsoluteFill style={{ backgroundColor: C.ice, overflow: "hidden" }}>
+    <AbsoluteFill style={{ backgroundColor: C.page, overflow: "hidden" }}>
       <Img
         src={staticFile(src)}
         style={{

@@ -498,7 +498,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   refY="2"
                   orient="auto"
                 >
-                  <path d="M0,0 L6,2 L0,4 Z" fill="#EF4444" />
+                  <path d="M0,0 L6,2 L0,4 Z" className="fill-danger" />
                 </marker>
                 <marker
                   id="arrowhead-linking"
@@ -508,7 +508,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                   refY="2"
                   orient="auto"
                 >
-                  <path d="M0,0 L6,2 L0,4 Z" fill="#6E8CA0" />
+                  <path d="M0,0 L6,2 L0,4 Z" className="fill-ink-muted" />
                 </marker>
               </defs>
               {filteredTasks.map((task) => {
@@ -589,7 +589,6 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       key={`dep-${dep.id}-${task.id}-${depIdx}`}
                       d={`M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`}
                       fill="none"
-                      stroke={isCritical ? "#EF4444" : "#6E8CA0"}
                       strokeWidth={isCritical ? "2.5" : "1.5"}
                       strokeDasharray={dep.type !== "FS" ? "4 4" : "none"}
                       markerEnd={
@@ -597,7 +596,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                           ? "url(#arrowhead-critical)"
                           : "url(#arrowhead)"
                       }
-                      className="transition-all duration-300"
+                      className={`transition-all duration-300 ${isCritical ? "stroke-danger" : "stroke-ink-muted"}`}
                     />
                   );
                 });
@@ -608,7 +607,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 <path
                   d={`M ${linkingFrom.x} ${linkingFrom.y} L ${mousePos.x} ${mousePos.y}`}
                   fill="none"
-                  stroke="#6E8CA0"
+                  className="stroke-ink-muted"
                   strokeWidth="2"
                   strokeDasharray="4 2"
                   markerEnd="url(#arrowhead-linking)"
@@ -688,7 +687,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                         task.type === "Milestone"
                           ? "bg-gradient-to-br from-primary to-primary rotate-45 shadow-sm"
                           : task.type === "Summary"
-                            ? "bg-[#465D6E] shadow-sm"
+                            ? "bg-surface-dark shadow-sm"
                             : isCritical
                               ? "bg-gradient-to-r from-danger to-danger shadow-[0_0_10px_rgba(239,68,68,0.4)]"
                               : "bg-primary shadow-sm"
@@ -720,14 +719,24 @@ export const GanttChart: React.FC<GanttChartProps> = ({
 
                     {/* Task Bar */}
                     <div
-                      className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] text-white font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${task.type !== "Summary" ? "touch-none" : ""} ${isDraggingThis ? "opacity-70 ring-2 ring-primary ring-offset-1" : ""} ${
+                      /*
+                        The label colour travels with the bar, rather than
+                        being white for all of them.
+
+                        A Summary bar is `bg-surface-dark`, which is dark in
+                        both themes, so white is right there. The others are
+                        `bg-primary` and `bg-danger`, which INVERT between
+                        themes -- white on the dark-mode primary measures 3.30,
+                        and every task name on the Gantt was sitting at it.
+                      */
+                      className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${task.type !== "Summary" ? "touch-none" : ""} ${isDraggingThis ? "opacity-70 ring-2 ring-primary ring-offset-1" : ""} ${
                         task.type === "Milestone"
-                          ? "bg-gradient-to-br from-primary to-primary w-7 !rounded-sm rotate-45 justify-center border-2 border-white cursor-pointer"
+                          ? "bg-gradient-to-br from-primary to-primary text-on-primary w-7 !rounded-sm rotate-45 justify-center border-2 border-white cursor-pointer"
                           : task.type === "Summary"
-                            ? "bg-[#465D6E] cursor-pointer"
+                            ? "bg-surface-dark text-white cursor-pointer"
                             : isCritical
-                              ? "bg-gradient-to-r from-danger to-danger cursor-move"
-                              : "bg-primary cursor-move"
+                              ? "bg-gradient-to-r from-danger to-danger text-on-danger cursor-move"
+                              : "bg-primary text-on-primary cursor-move"
                       }`}
                       style={{
                         left: left,
@@ -1010,7 +1019,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 )}
               {breakpoint === "mobile" && (
                 <button
-                  className="w-full mt-2 py-1.5 bg-primary hover:bg-primary-deep text-white text-xs font-bold rounded-lg pointer-events-auto"
+                  className="w-full mt-2 py-1.5 bg-primary hover:bg-primary-deep text-on-primary text-xs font-bold rounded-lg pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     setHoveredTask(null);

@@ -484,7 +484,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
             </button>
             <button
               onClick={handleExportLabourPDF}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-deep text-on-primary rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm cursor-pointer"
             >
               <Download className="w-4 h-4" />
               {t("common.exportPdf")}
@@ -507,7 +507,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               id="export-current-pdf-btn"
               onClick={() => handleExportPDF(advancedFilteredRecords)}
               disabled={advancedFilteredRecords.length === 0}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-deep text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-deep text-on-primary rounded-xl text-xs font-bold uppercase tracking-wider transition duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <Download className="w-4 h-4" />
               {t("common.exportPdf")}
@@ -533,12 +533,12 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               onClick={() => setSelectedTab("material")}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-tight uppercase transition duration-150 flex items-center gap-2 shrink-0 border cursor-pointer ${
                 activeTab !== "labor"
-                  ? "bg-primary border-primary text-white shadow-md shadow-primary/10"
+                  ? "bg-primary border-primary text-on-primary shadow-md shadow-primary/10"
                   : "bg-panel hover:bg-divider border-divider text-ink-muted hover:text-ink"
               }`}
             >
               <Package className="w-3.5 h-3.5" />
-              <span>Material Consumption</span>
+              <span>{t("reports.materialConsumption")}</span>
               <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-black ${activeTab !== "labor" ? "bg-white/20 text-white" : "bg-surface text-ink-muted"}`}>
                 {allRecords.length}
               </span>
@@ -567,9 +567,9 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               {/* LABOR FILTERS */}
               <div className="bg-panel p-4 rounded-2xl border border-divider grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3" id="labor-filters">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">Task</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted block ml-1">{t("an.filterByTask")}</label>
                   <select value={laborTask} onChange={(e) => setLaborTask(e.target.value)} className="w-full bg-surface border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-surface-dark outline-none">
-                    <option value="">All Tasks</option>
+                    <option value="">{t("an.allTasks")}</option>
                     {distinctLaborTasks.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
@@ -624,7 +624,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Deployment Entries</p>
                     <p className="text-2xl font-black text-ink font-mono">{laborTotals.entries}</p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-info/10 text-ink-muted flex items-center justify-center border border-[#6E8CA0]/20"><FileText className="w-5 h-5" /></div>
+                  <div className="w-10 h-10 rounded-xl bg-info/10 text-ink-muted flex items-center justify-center border border-info/20"><FileText className="w-5 h-5" /></div>
                 </div>
               </div>
 
@@ -638,10 +638,10 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   <table className="w-full text-left min-w-[600px]">
                     <thead>
                       <tr className="bg-panel border-b border-divider">
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Task</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.filterByTask")}</th>
                         <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Entries</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Manpower</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Cost</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.viewManpower")}</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.moduleCost")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-divider/40">
@@ -671,12 +671,12 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   <table className="w-full text-left min-w-[760px]">
                     <thead>
                       <tr className="bg-panel border-b border-divider">
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Date</th>
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Task</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("common.date")}</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.filterByTask")}</th>
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Role</th>
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Vendor</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Manpower</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Cost</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.viewManpower")}</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.moduleCost")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-divider/40">
@@ -749,7 +749,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       <CountUp value={advancedInsights.count} />
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-info/10 text-ink-muted flex items-center justify-center border border-[#6E8CA0]/20">
+                  <div className="w-10 h-10 rounded-xl bg-info/10 text-ink-muted flex items-center justify-center border border-info/20">
                     <FileText className="w-5 h-5" />
                   </div>
                 </div>
@@ -822,7 +822,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                       onChange={(e) => setAdvTask(e.target.value)}
                       className="w-full bg-panel border border-divider rounded-xl p-2.5 text-xs font-bold text-ink focus:border-primary outline-none"
                     >
-                      <option value="">All Tasks</option>
+                      <option value="">{t("an.allTasks")}</option>
                       {distinctTasks.map((t) => (
                         <option key={t} value={t}>{t}</option>
                       ))}
@@ -957,7 +957,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   <table className="w-full text-left min-w-[800px]">
                     <thead>
                       <tr className="bg-panel border-b border-divider">
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Date</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("common.date")}</th>
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Material Name</th>
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Consumed In Task</th>
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Channel</th>
@@ -994,7 +994,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                                 className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                                   record.source === "Material Issue"
                                     ? "bg-primary/10 text-primary border border-primary/20"
-                                    : "bg-info/10 text-[#46617C] border border-[#6E8CA0]/20"
+                                    : "bg-info/10 text-info border border-info/20"
                                 }`}
                               >
                                 {record.source}

@@ -25,7 +25,7 @@ export const TypeCard: React.FC<{
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: C.slate,
+        backgroundColor: C.surfaceDark,
         justifyContent: "center",
         alignItems: align === "center" ? "center" : "flex-start",
         padding: `0 ${width * 0.075}px`,
@@ -42,7 +42,7 @@ export const TypeCard: React.FC<{
               lineHeight: 1.14,
               fontWeight: 800,
               letterSpacing: "-0.02em",
-              color: i === accentLine ? C.rust : C.ice,
+              color: i === accentLine ? C.primary : C.page,
             }}
           >
             {l}
@@ -56,7 +56,7 @@ export const TypeCard: React.FC<{
               fontSize: size * 0.34,
               lineHeight: 1.45,
               fontWeight: 500,
-              color: C.sage,
+              color: C.primaryOnDark,
             }}
           >
             {sub}
@@ -91,7 +91,7 @@ export const Caption: React.FC<{
       <div
         style={{
           width: "100%",
-          background: C.slate,
+          background: C.surfaceDark,
           padding: `${height * 0.035}px ${pad}px ${height * 0.042}px`,
           opacity: o,
           transform: `translateY(${(1 - o) * 40}px)`,
@@ -103,7 +103,7 @@ export const Caption: React.FC<{
             fontWeight: 800,
             letterSpacing: "0.2em",
             textTransform: "uppercase",
-            color: C.rust,
+            color: C.primary,
             marginBottom: height * 0.014,
           }}
         >
@@ -114,7 +114,7 @@ export const Caption: React.FC<{
             fontSize: width * 0.036,
             fontWeight: 800,
             letterSpacing: "-0.015em",
-            color: C.ice,
+            color: C.page,
             lineHeight: 1.12,
           }}
         >
@@ -126,7 +126,7 @@ export const Caption: React.FC<{
               marginTop: height * 0.016,
               fontSize: width * 0.0185,
               fontWeight: 500,
-              color: C.sage,
+              color: C.primaryOnDark,
               lineHeight: 1.4,
             }}
           >
@@ -151,7 +151,7 @@ export const EndCard: React.FC = () => {
           width: unit * 6,
           height: unit * 6,
           borderRadius: unit * 1.55,
-          background: C.slateDeep,
+          background: C.surfaceEdge,
           display: "flex",
           alignItems: "flex-end",
           justifyContent: "center",
@@ -159,11 +159,11 @@ export const EndCard: React.FC = () => {
           paddingBottom: unit * 1.5,
         }}
       >
-        <div style={{ width: unit * 0.85, height: unit * 1.2, background: C.rust, borderRadius: unit * 0.3 }} />
-        <div style={{ width: unit * 0.85, height: unit * 1.9, background: C.rust, borderRadius: unit * 0.3 }} />
-        <div style={{ width: unit * 0.85, height: unit * 2.7, background: C.sage, borderRadius: unit * 0.3 }} />
+        <div style={{ width: unit * 0.85, height: unit * 1.2, background: C.primary, borderRadius: unit * 0.3 }} />
+        <div style={{ width: unit * 0.85, height: unit * 1.9, background: C.primary, borderRadius: unit * 0.3 }} />
+        <div style={{ width: unit * 0.85, height: unit * 2.7, background: C.primaryOnDark, borderRadius: unit * 0.3 }} />
       </div>
-      <div style={{ fontSize: unit * 4.4, fontWeight: 800, color: C.ice, letterSpacing: "-0.02em" }}>
+      <div style={{ fontSize: unit * 4.4, fontWeight: 800, color: C.page, letterSpacing: "-0.02em" }}>
         Sitetru
       </div>
     </div>
@@ -172,7 +172,7 @@ export const EndCard: React.FC = () => {
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: C.slate,
+        backgroundColor: C.surfaceDark,
         fontFamily: FONT,
         justifyContent: "center",
         padding: `0 ${width * 0.075}px`,
@@ -185,7 +185,7 @@ export const EndCard: React.FC = () => {
           marginTop: height * 0.045,
           fontSize: width * 0.042,
           fontWeight: 800,
-          color: C.rust,
+          color: C.primary,
           letterSpacing: "-0.015em",
         }}
       >
@@ -200,13 +200,13 @@ export const EndCard: React.FC = () => {
           gap: `${height * 0.022}px ${width * 0.028}px`,
           fontSize: width * 0.021,
           fontWeight: 700,
-          color: C.ice,
+          color: C.page,
         }}
       >
         <span>Free plan to start</span>
-        <span style={{ color: C.sage }}>·</span>
+        <span style={{ color: C.primaryOnDark }}>·</span>
         <span>From ₹999 / month</span>
-        <span style={{ color: C.sage }}>·</span>
+        <span style={{ color: C.primaryOnDark }}>·</span>
         <span>14-day trial, no card</span>
       </div>
       <div
@@ -215,7 +215,7 @@ export const EndCard: React.FC = () => {
           marginTop: height * 0.055,
           fontSize: width * 0.028,
           fontWeight: 800,
-          color: C.sage,
+          color: C.primaryOnDark,
           letterSpacing: "0.02em",
         }}
       >

@@ -14,7 +14,7 @@ export const Still: React.FC<{ src: string }> = ({ src }) => {
     extrapolateRight: "clamp",
   });
   return (
-    <AbsoluteFill style={{ backgroundColor: C.slate, overflow: "hidden" }}>
+    <AbsoluteFill style={{ backgroundColor: C.surfaceDark, overflow: "hidden" }}>
       <Img
         src={staticFile(src)}
         style={{ width: "100%", height: "100%", objectFit: "cover", transform: `scale(${scale})` }}

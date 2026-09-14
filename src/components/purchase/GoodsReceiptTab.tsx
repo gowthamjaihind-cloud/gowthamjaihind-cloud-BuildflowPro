@@ -8,11 +8,13 @@ import { GoodsReceiptDetails } from "./GoodsReceiptDetails";
 import { Package } from "@phosphor-icons/react";
 import { EmptyState } from "../EmptyState";
 
+import { useTranslation } from "../../i18n";
 interface GoodsReceiptTabProps {
   projectId: string;
 }
 
 export const GoodsReceiptTab: React.FC<GoodsReceiptTabProps> = ({ projectId }) => {
+  const { t } = useTranslation();
   const { data: grns = [], isLoading } = useProjectData<GoodsReceiptNote>(projectId, "goodsReceiptNotes", "createdAt", "desc");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGRN, setSelectedGRN] = useState<GoodsReceiptNote | null>(null);
@@ -48,7 +50,7 @@ export const GoodsReceiptTab: React.FC<GoodsReceiptTabProps> = ({ projectId }) =
              <thead>
                 <tr className="bg-panel border-b border-divider">
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">GRN Number</th>
-                  <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">Date</th>
+                  <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">{t("common.date")}</th>
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">PO Number</th>
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">Vendor</th>
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">Recorded By</th>

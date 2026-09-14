@@ -75,7 +75,18 @@ export function VirtualTable<T>({
   return (
     <div
       ref={parentRef}
-      className={`relative w-full overflow-auto bg-white border border-divider rounded-lg shadow-sm ${className}`}
+      /*
+        bg-panel, not bg-white.
+
+        `bg-white` is a Tailwind literal and does not flip with the theme, so in
+        dark mode this container stayed white while its text went near-white:
+        every row of every table built on VirtualTable was white-on-white, a
+        contrast of 1.06. Inventory, Procurement and Cost all use it. It took
+        re-recording the walkthrough in dark mode to see it, because the audit
+        that should have caught it was only checking elements that painted
+        their own background -- a table cell does not.
+      */
+      className={`relative w-full overflow-auto bg-panel border border-divider rounded-lg shadow-sm ${className}`}
       style={{
         maxHeight: "600px", // Can be overridden by className, e.g. h-[600px]
       }}

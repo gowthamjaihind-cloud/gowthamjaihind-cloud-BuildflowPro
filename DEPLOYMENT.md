@@ -123,6 +123,21 @@ user at once.
 Monitoring first is the point: it shows what enforcement *would* have broken
 before it breaks it.
 
+**Before you enforce, register a debug token.** reCAPTCHA attests a registered
+domain and `localhost` is not one, so once enforcement is on, every request
+from `npm run dev` fails. `src/firebase.ts` sets
+`FIREBASE_APPCHECK_DEBUG_TOKEN` under `import.meta.env.DEV`, which prints a
+token to the browser console on first load; register it once under **App Check
+→ Apps → Manage debug tokens**. The guard must stay a *build-time* condition —
+Vite folds it away, so the assignment never reaches production, and
+`verify:no-demo` fails the build if it ever does. A runtime check such as
+`location.hostname === "localhost"` reads as equivalent but cannot be folded,
+so it would ship and switch attestation off for anyone who found it.
+
+`razorpayWebhook` is an `onRequest` endpoint, so App Check never applies to it.
+It authenticates by verifying `x-razorpay-signature` (HMAC-SHA256 against the
+webhook secret) instead, which is correct for a server-to-server callback.
+
 ## 7. Tamil coverage — where the real gap is
 
 The translation table is **complete**: 478 keys, both locales, no missing
@@ -176,3 +191,34 @@ shipped template yields non-empty names in both languages.
 
 Adding the Tamil is pure data entry against that one file: `nameTa: "…"` beside
 each `name`.
+
+
+## 9. Firestore triggers must name the database
+
+This project's data lives in a **named** Firestore database. The client passes
+`firebaseConfig.firestoreDatabaseId` to `initializeFirestore` and the Admin SDK
+passes `FIRESTORE_DATABASE_ID` to `getFirestore` — but a v2 trigger does not
+inherit that. Declared without a `database` option it binds to `"(default)"`,
+where nothing this app writes ever lands. It deploys cleanly, reports healthy,
+and never fires once.
+
+Six triggers were in exactly that state, and nothing surfaced it, because a
+trigger that never runs produces no logs and no errors:
+
+| Trigger | What had never run |
+|---|---|
+| `onProjectDailyLogWritten`, `onOrgDailyLogWritten` | Storage cleanup of photos on log deletion, and the task rollup that derives actual start and status from a task's logs |
+| `onProjectGRNWritten`, `onOrgGRNWritten` | Recomputing a purchase order's received quantities and status from its goods receipts |
+| `onApprovalCreated` | Approval notifications |
+| `onUserUnlinked` | Telegram unlink cleanup and its confirmation message |
+
+All six are now bound, and `functions/src/triggers.test.ts` asserts that every
+`onDocument*` trigger names the database and uses the shared constant rather
+than a pasted id.
+
+Both data-touching handlers **recompute from scratch** rather than increment —
+the GRN handler rebuilds received quantities from all of a PO's receipts, and
+the rollup queries every log for a task — so enabling them cannot double-count
+what the client already wrote. They correct derived fields the next time each
+document is written; they do not retroactively repair documents that are never
+touched again.

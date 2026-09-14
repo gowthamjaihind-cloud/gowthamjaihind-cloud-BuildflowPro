@@ -807,7 +807,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                       type="button"
                       onClick={saveNewEquipment}
                       disabled={!newEquipmentName.trim() || savingEquipment}
-                      className="px-3 py-2 text-xs font-bold text-white bg-primary hover:bg-primary-deep rounded-lg disabled:opacity-50 flex items-center gap-1.5"
+                      className="px-3 py-2 text-xs font-bold text-on-primary bg-primary hover:bg-primary-deep rounded-lg disabled:opacity-50 flex items-center gap-1.5"
                     >
                       {savingEquipment ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -917,7 +917,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             form="daily-log-form"
             type="submit"
             disabled={saveMutation.isPending || !selectedTaskId}
-            className="w-full bg-primary text-white rounded-2xl py-4 text-sm font-bold shadow-lg hover:bg-primary-deep active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-50"
+            className="w-full bg-primary text-on-primary rounded-2xl py-4 text-sm font-bold shadow-lg hover:bg-primary-deep active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-50"
           >
             {saveMutation.isPending ? (
               t("dlog.saving")

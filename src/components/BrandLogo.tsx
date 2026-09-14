@@ -17,6 +17,9 @@ export const BrandLogo: React.FC<{ className?: string }> = ({ className }) => (
     role="img"
     aria-label="Sitetru"
   >
+    {/* Fixed, not tokenised: a brand mark has to be the same drawing in
+        both themes, and it is also rasterised into favicons and the PWA
+        icons where no CSS variable exists. */}
     <rect width="512" height="512" rx="116" fill="#1D4ED8" />
     <rect x="136" y="272" width="72" height="104" rx="22" fill="#FFFFFF" />
     <rect x="222" y="212" width="72" height="164" rx="22" fill="#FFFFFF" />

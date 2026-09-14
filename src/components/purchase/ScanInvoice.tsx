@@ -15,6 +15,7 @@ import { PurchaseOrder, VendorBill, InventoryItem } from "../../types";
 import { Tooltip } from "../Tooltip";
 import { DialogBehaviour } from "../../lib/useDialog";
 
+import { useTranslation } from "../../i18n";
 interface ScanInvoiceProps {
   projectId: string;
   onClose: () => void;
@@ -46,6 +47,7 @@ function totalsOf(lines: any[], charges: any) {
 }
 
 export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, onPosted, initialBill }) => {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { data: pos = [] } = useProjectData<PurchaseOrder>(projectId, "purchase_orders");
   const { data: inventory = [] } = useProjectData<InventoryItem>(projectId, "inventory");
@@ -137,9 +139,9 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
         <DialogBehaviour />
         <div className="flex justify-between items-center p-5 border-b border-divider shrink-0">
           <h2 className="font-black text-ink flex items-center gap-2">
-            <Sparkle weight="fill" className="w-5 h-5 text-[#6E8CA0]" /> {initialBill ? "Review Vendor Bill" : "Scan Vendor Invoice"}
+            <Sparkle weight="fill" className="w-5 h-5 text-info" /> {initialBill ? "Review Vendor Bill" : "Scan Vendor Invoice"}
           </h2>
-          <button aria-label="Close" onClick={onClose} className="p-2 bg-panel hover:bg-divider rounded-full">
+          <button aria-label={t("common.close")} onClick={onClose} className="p-2 bg-panel hover:bg-divider rounded-full">
             <X className="w-5 h-5 text-ink-muted" />
           </button>
         </div>
@@ -153,7 +155,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
           )}
 
           {step === "upload" && (
-            <label className="block border-2 border-dashed border-divider rounded-2xl p-10 text-center cursor-pointer hover:border-[#6E8CA0]/50 transition-colors">
+            <label className="block border-2 border-dashed border-divider rounded-2xl p-10 text-center cursor-pointer hover:border-info/50 transition-colors">
               <Upload className="w-10 h-10 mx-auto text-ink-muted mb-3" />
               <div className="font-bold text-ink">Upload the GST invoice</div>
               <div className="text-sm text-ink-muted mt-1">Photo or PDF · reads it and matches your PO</div>
@@ -283,12 +285,12 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
         {showReview && bill && (
           <div className="p-5 border-t border-divider shrink-0 flex gap-3">
             <button onClick={onClose} className="px-5 py-3 bg-panel text-ink font-bold rounded-xl hover:bg-divider">
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               onClick={confirm}
               disabled={step === "posting" || !bill.poId}
-              className="flex-1 px-5 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 px-5 py-3 bg-primary text-on-primary font-bold rounded-xl hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {step === "posting" ? <><RefreshCw className="w-4 h-4 animate-spin" /> Posting…</> : "Confirm & Post"}
             </button>
@@ -296,7 +298,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
         )}
         {step === "done" && (
           <div className="p-5 border-t border-divider shrink-0">
-            <button onClick={onClose} className="w-full px-5 py-3 bg-primary text-white font-bold rounded-xl">Done</button>
+            <button onClick={onClose} className="w-full px-5 py-3 bg-primary text-on-primary font-bold rounded-xl">Done</button>
           </div>
         )}
       </div>

@@ -49,6 +49,8 @@ export function useRazorpayCheckout() {
         description,
         order_id: order.orderId,
         prefill: { email: user?.email || "", name: user?.displayName || "" },
+        // Razorpay renders its own iframe, so this cannot be a CSS variable.
+        // It must stay equal to --primary in index.css; palette.test.ts checks.
         theme: { color: "#1D4ED8" },
         handler: async (resp: any) => {
           try {
