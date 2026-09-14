@@ -3,7 +3,8 @@
 // The measured length of every spoken line, so the picture is cut to the
 // narration rather than the other way round. Re-run build-voice after any
 // script change and the film retimes itself.
-// voice: en_US-joe-medium (Piper, CC0), synthesised locally
+// voice: kokoro af_bella
+// tempo: 90 BPM -> 20.00 frames per beat at 30fps
 
 export interface Beat {
   id: string;
@@ -20,6 +21,9 @@ export interface Beat {
 }
 
 export const TOTAL_SECONDS = 154.366;
+
+/** The tempo the picture is cut to. See the film's script for why. */
+export const BPM = 90;
 
 export const BEATS: Beat[] = [
   {"id":"portfolio","seconds":5.703,"hold":0.6,"startsAt":0,"beatSeconds":6.303,"text":"This is Sitetru. Every job you have running, and what stage each one is at, on one screen."},

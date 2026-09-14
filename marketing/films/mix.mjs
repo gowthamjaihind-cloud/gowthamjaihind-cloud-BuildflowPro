@@ -129,7 +129,19 @@ export function mixWithManifest(id, manifest, videoIn, videoOut) {
     `[voxa][musd]amix=inputs=2:normalize=0:dropout_transition=0[pre]`,
     // Guard the ceiling before loudnorm measures, so a plosive over a downbeat
     // cannot set the integrated level.
-    `[pre]alimiter=limit=0.97,loudnorm=I=-14:TP=-1.0:LRA=11[mixed]`,
+    //
+    // Then a TRUE-PEAK limiter after it, because loudnorm's TP target is a
+    // request rather than a guarantee: in its single-pass form it predicts the
+    // gain it needs and applies it, and the prediction can miss. Asking for
+    // -1.0 gave the launch film -1.5 and the walkthrough -0.9 -- over the
+    // ceiling, on the film that had more music under more voice.
+    //
+    // `alimiter` alone is not enough either: limit=0.97 is a SAMPLE peak of
+    // -0.26 dBFS, and the inter-sample peaks a lossy encoder reconstructs can
+    // sit above that. level=disabled keeps it from re-normalising what
+    // loudnorm just set; asr oversamples so it measures between samples.
+    `[pre]alimiter=limit=0.97,loudnorm=I=-14:TP=-1.0:LRA=11,` +
+      `alimiter=level_in=1:level_out=1:limit=-1.2dB:asc=1:level=disabled[mixed]`,
   ].join(";");
 
   console.error("  mixing voice + score");
