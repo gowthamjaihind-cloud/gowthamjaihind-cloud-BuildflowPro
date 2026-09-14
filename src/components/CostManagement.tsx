@@ -1201,7 +1201,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
-              className={`flex-1 md:flex-none px-4 md:px-8 py-2 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.2em] apple-transition whitespace-nowrap ${viewMode === mode ? "bg-primary text-white shadow-lg" : "text-ink-muted hover:text-ink"}`}
+              className={`flex-1 md:flex-none px-4 md:px-8 py-2 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.2em] apple-transition whitespace-nowrap ${viewMode === mode ? "bg-primary text-on-primary shadow-lg" : "text-ink-muted hover:text-ink"}`}
             >
               {mode === "dashboard"
                 ? "Overview"

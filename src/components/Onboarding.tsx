@@ -258,7 +258,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                 ) : (
                   <button
                     onClick={() => payNow(id)} disabled={!!creating}
-                    className={`mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                    className={`mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-on-primary hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                   >
                     {creating === `pay:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : t("paywall.pay", { amount: payLabel?.toLocaleString("en-IN") || "" })}
                   </button>

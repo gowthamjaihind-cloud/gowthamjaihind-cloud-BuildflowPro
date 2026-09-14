@@ -633,7 +633,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                   label={L(p.cta, (p as any).taCta)}
                   href={(p as any).contactHref}
                   full
-                  className={`mt-auto text-sm py-3.5 rounded-2xl ${p.highlight ? "bg-primary text-white hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                  className={`mt-auto text-sm py-3.5 rounded-2xl ${p.highlight ? "bg-primary text-on-primary hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                 />
               </div>
             );

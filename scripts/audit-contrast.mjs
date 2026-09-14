@@ -23,7 +23,28 @@ import { chromium } from "playwright-core";
 
 const BASE = "http://localhost:4173";
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
-const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+/*
+  Mark the guided tour seen BEFORE anything loads.
+
+  Without this the tour opens over the demo and its backdrop swallows clicks,
+  so every nav click silently does nothing and the sweep measures the FIRST
+  screen ten times with a modal on top of it. That is what the first version of
+  this script did, and it is why it reported "no text node below its WCAG
+  threshold across ten screens in both themes" -- a result which was measuring
+  one screen, behind a dialog.
+
+  record.mjs carries the same line, with the same warning. I wrote that one and
+  then failed to apply it here.
+*/
+await ctx.addInitScript(() => {
+  try {
+    localStorage.setItem("sitetru.demo.tour.done", "1");
+  } catch {
+    /* private mode: the tour opens and the assertion below catches it */
+  }
+});
+const page = await ctx.newPage();
 await page.goto(`${BASE}/?demo=1`, { waitUntil: "networkidle" });
 await page.waitForTimeout(2500);
 
@@ -55,8 +76,32 @@ async function audit() {
       // report the child's colour against its own background.
       if (!t || el.children.length > 0) continue;
       const s = getComputedStyle(el);
-      if (!/^rgb\(/.test(s.backgroundColor)) continue;   // solid fills only
       if (s.visibility === "hidden" || s.opacity === "0") continue;
+      /*
+        Resolve the background the text ACTUALLY sits on, by walking up to the
+        first painted ancestor.
+
+        This used to skip any element whose own background was transparent,
+        which is nearly all text -- a table cell, a heading, a label. So the
+        sweep that reported "no text node below its WCAG threshold across ten
+        screens" had only ever examined nodes that painted their own
+        background, and the claim was far weaker than it sounded.
+
+        What it missed: VirtualTable's container carries a hardcoded `bg-white`,
+        a Tailwind literal that does not flip with the theme. In dark mode the
+        table stayed white while its text went near-white, so every row of the
+        inventory, procurement and cost tables was white-on-white -- contrast
+        1.0, completely unreadable. It took re-recording the walkthrough in
+        dark mode to see it.
+      */
+      let bg = s.backgroundColor;
+      let at = el;
+      while (at && (bg === "rgba(0, 0, 0, 0)" || bg === "transparent")) {
+        at = at.parentElement;
+        if (!at) break;
+        bg = getComputedStyle(at).backgroundColor;
+      }
+      if (!/^rgb\(/.test(bg)) continue;   // nothing opaque underneath
       const px = parseFloat(s.fontSize);
       const bold = parseInt(s.fontWeight, 10) >= 700;
       // WCAG large text: 24px, or 18.66px bold.
@@ -64,9 +109,9 @@ async function audit() {
       const need = large ? 3 : 4.5;
       const p = (c) => c.match(/\d+/g).slice(0, 3).map(Number);
       const L = (v) => { const l = p(v).map((x) => (x /= 255) <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4); return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2]; };
-      const [a, b] = [L(s.color), L(s.backgroundColor)];
+      const [a, b] = [L(s.color), L(bg)];
       const r = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-      if (r < need) out.push(`${r.toFixed(2)}:1 (needs ${need}) ${s.color} on ${s.backgroundColor} "${t.slice(0, 30)}"`);
+      if (r < need) out.push(`${r.toFixed(2)}:1 (needs ${need}) ${s.color} on ${bg} "${t.slice(0, 30)}"`);
     }
     return [...new Set(out)];
   });
@@ -86,6 +131,15 @@ for (const name of SCREENS) {
   if (!(await btn.count())) { console.log(`  [${name}] not reachable`); continue; }
   await btn.click({ timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(1400);
+  // A click that silently does nothing is the failure mode this sweep had, so
+  // check the screen actually changed rather than assuming it did.
+  const landed = await page.evaluate((n) => {
+    const active = [...document.querySelectorAll("button")].find(
+      (b) => b.textContent?.trim() === n && /bg-primary|aria-current/.test(b.className + b.outerHTML),
+    );
+    return Boolean(active);
+  }, name);
+  if (!landed) { console.log(`  [${name}] click did not land -- NOT MEASURED`); continue; }
   const bad = await audit();
   total += bad.length;
   console.log(`  [${name}] ${bad.length ? "\n     " + bad.join("\n     ") : "clean"}`);

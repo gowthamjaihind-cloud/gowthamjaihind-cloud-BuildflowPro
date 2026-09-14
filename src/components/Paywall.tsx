@@ -105,7 +105,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
                 <button
                   onClick={() => pay(id, period, () => window.location.reload())}
                   disabled={busy}
-                  className={`mt-auto w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-white hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                  className={`mt-auto w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-on-primary hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                 >
                   {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("paywall.pay", { amount: (period === "annual" ? p.annual : p.monthly)?.toLocaleString("en-IN") || "" })}
                 </button>

@@ -1104,7 +1104,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                             }}
                           >
                             <div
-                              className={`w-5 h-5 rounded border flex items-center justify-center ${isSelected ? "bg-primary border-primary text-white" : "border-white/30"}`}
+                              className={`w-5 h-5 rounded border flex items-center justify-center ${isSelected ? "bg-primary border-primary text-on-primary" : "border-white/30"}`}
                             >
                               {isSelected && (
                                 <CheckCircle2 className="w-3.5 h-3.5" />

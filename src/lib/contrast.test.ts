@@ -69,6 +69,10 @@ describe("filled controls, in both themes", () => {
     ["primary-press", "on-fill"],
     ["danger", "on-fill"],
     ["success", "on-fill"],
+    // Added when the cost dashboard's utilisation bars moved off the chart
+    // series palette onto the status tokens: they carry a label, so they are
+    // filled controls, and --warning had never been pinned.
+    ["warning", "on-fill"],
   ];
 
   for (const [mode, selector] of [
@@ -110,16 +114,42 @@ describe("no component pairs a solid status fill with a fixed white label", () =
     return out;
   }
 
+  /**
+   * Every class list in a file, as separate units.
+   *
+   * Scanning a whole template literal as one string is both too coarse and too
+   * fine. Too coarse, because a literal holding three conditional branches
+   * would flag `bg-primary` from one branch against `text-white` from another,
+   * which is a false positive. Too fine -- and this is the bug that let the
+   * defect through -- because the backtick alternative swallowed the nested
+   * quotes, so the tokens came out as `"bg-success` with the quote still
+   * attached, and never matched.
+   *
+   * So: each quoted string is its own class list, and so is each static
+   * segment of a template literal between its `${...}` holes. That is exactly
+   * the granularity at which a class list is actually written.
+   */
+  function classLists(src: string): string[] {
+    const out: string[] = [];
+    for (const m of src.matchAll(/"([^"\n]{0,900})"|'([^'\n]{0,900})'/g)) {
+      out.push(m[1] ?? m[2] ?? "");
+    }
+    for (const lit of src.matchAll(/`([^`]{0,4000})`/g)) {
+      // The static parts: what is left once the ${...} holes are removed.
+      for (const seg of lit[1].split(/\$\{[^}]*\}/s)) out.push(seg);
+    }
+    return out;
+  }
+
   it("has none left", () => {
     const found: string[] = [];
     for (const file of sources("src")) {
       const src = readFileSync(file, "utf8");
-      for (const m of src.matchAll(/(?:"([^"\n]{0,900})"|`([^`\n]{0,900})`)/g)) {
-        const body = m[1] ?? m[2] ?? "";
+      for (const body of classLists(src)) {
         const toks = body.split(/\s+/);
         if (!toks.some((t) => SOLID.test(t))) continue;
         if (!toks.some((t) => t.startsWith("text-white"))) continue;
-        found.push(`${file.replace("src/", "")}: ${body.slice(0, 70)}`);
+        found.push(`${file.replace("src/", "")}: ${body.trim().slice(0, 70)}`);
       }
     }
     expect(found).toEqual([]);

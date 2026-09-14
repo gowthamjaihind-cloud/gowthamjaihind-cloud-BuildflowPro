@@ -113,8 +113,22 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
   const overBudget = variance > 0;
   const hasData = totalBudget > 0 || totalActual > 0;
 
+  /*
+    Status TOKENS, not the chart series palette.
+
+    chartTheme says of the series colours: "These are FILLS." This bar puts a
+    label inside one, which makes it a filled control rather than a chart mark,
+    and the series palette is not built to carry text: white on `--chart-under`
+    measures 4.17 in light and 2.68 in dark. It failed in both themes, and the
+    audit missed it because the fill is set through an inline `style`, which no
+    scan of class names can see.
+
+    The status tokens are built for exactly this -- they invert between themes
+    so that one foreground, `--on-fill`, is correct on all three, and
+    contrast.test.ts pins every one of those pairs.
+  */
   const statusColor = (pct: number) =>
-    pct >= 100 ? S.over : pct >= 90 ? S.amber : S.under;
+    pct >= 100 ? "var(--danger)" : pct >= 90 ? "var(--warning)" : "var(--success)";
 
   // Cumulative dated actual spend, grouped by month, for the trend view.
   const trend = useMemo(() => {
@@ -308,7 +322,8 @@ const UtilisationView: React.FC<any> = ({ rows, statusColor, t }) => (
               <div className="absolute inset-y-0 border-r-2 border-dashed border-ink/25" style={{ left: `${(100 / 120) * 100}%` }} />
               <div className="h-full rounded-lg flex items-center justify-end pr-2 transition-[width] duration-700"
                 style={{ width: `${(shown / 120) * 100}%`, background: statusColor(r.pct), minWidth: 26 }}>
-                <span className="text-[10px] font-black font-mono text-white">{r.pct > 900 ? "—" : `${Math.round(r.pct)}%`}</span>
+                {/* One foreground for all three fills: --on-fill flips with the theme. */}
+                <span className="text-[10px] font-black font-mono text-on-success">{r.pct > 900 ? "—" : `${Math.round(r.pct)}%`}</span>
               </div>
             </div>
           </div>

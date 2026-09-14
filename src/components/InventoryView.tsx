@@ -1204,7 +1204,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                             <button
                               disabled={!hasChange}
                               onClick={() => handleReconcile(item)}
-                              className={`w-full mt-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest apple-transition ${hasChange ? "bg-success text-white hover:bg-success shadow-sm" : "bg-panel text-ink-muted pointer-events-none"}`}
+                              className={`w-full mt-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest apple-transition ${hasChange ? "bg-success text-on-success hover:bg-success shadow-sm" : "bg-panel text-ink-muted pointer-events-none"}`}
                             >
                               Sync
                             </button>

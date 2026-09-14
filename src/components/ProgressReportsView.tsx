@@ -401,7 +401,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             <button aria-label={t("common.exportPdf")}
               onClick={handleExportPDF}
               disabled={logs.length === 0 || !canExport || isGeneratingPdf}
-              className={`flex items-center gap-2 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-primary text-white hover:bg-primary/80 active:scale-95 cursor-pointer"}`}
+              className={`flex items-center gap-2 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-primary text-on-primary hover:bg-primary/80 active:scale-95 cursor-pointer"}`}
             >
               {isGeneratingPdf ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

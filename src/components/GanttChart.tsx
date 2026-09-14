@@ -719,14 +719,24 @@ export const GanttChart: React.FC<GanttChartProps> = ({
 
                     {/* Task Bar */}
                     <div
-                      className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] text-white font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${task.type !== "Summary" ? "touch-none" : ""} ${isDraggingThis ? "opacity-70 ring-2 ring-primary ring-offset-1" : ""} ${
+                      /*
+                        The label colour travels with the bar, rather than
+                        being white for all of them.
+
+                        A Summary bar is `bg-surface-dark`, which is dark in
+                        both themes, so white is right there. The others are
+                        `bg-primary` and `bg-danger`, which INVERT between
+                        themes -- white on the dark-mode primary measures 3.30,
+                        and every task name on the Gantt was sitting at it.
+                      */
+                      className={`absolute top-2.5 h-7 rounded-lg flex items-center px-1.5 text-[10px] font-medium overflow-visible shadow-sm hover:shadow-md transition-shadow group/bar ${task.type !== "Summary" ? "touch-none" : ""} ${isDraggingThis ? "opacity-70 ring-2 ring-primary ring-offset-1" : ""} ${
                         task.type === "Milestone"
-                          ? "bg-gradient-to-br from-primary to-primary w-7 !rounded-sm rotate-45 justify-center border-2 border-white cursor-pointer"
+                          ? "bg-gradient-to-br from-primary to-primary text-on-primary w-7 !rounded-sm rotate-45 justify-center border-2 border-white cursor-pointer"
                           : task.type === "Summary"
-                            ? "bg-surface-dark cursor-pointer"
+                            ? "bg-surface-dark text-white cursor-pointer"
                             : isCritical
-                              ? "bg-gradient-to-r from-danger to-danger cursor-move"
-                              : "bg-primary cursor-move"
+                              ? "bg-gradient-to-r from-danger to-danger text-on-danger cursor-move"
+                              : "bg-primary text-on-primary cursor-move"
                       }`}
                       style={{
                         left: left,
