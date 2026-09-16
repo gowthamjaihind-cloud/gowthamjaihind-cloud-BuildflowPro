@@ -134,6 +134,15 @@ export const WALKTHROUGH = {
     },
     {
       id: "close",
+      // The end card, held from six seconds into this beat to the end of the
+      // film. The line here is a call to action -- "Free to start, nine hundred
+      // and ninety nine rupees a month" -- and it used to play over a
+      // half-scrolled Gantt chart before the film simply stopped. Six seconds
+      // in leaves the product on screen for "That's Sitetru. One place, fed
+      // from site, in English or Tamil" and gives the card the offer.
+      cutTo: "walk-endcard.png",
+      cutAfter: 6,
+      cutHold: true,
       vo: "That's Sitetru. One place, fed from site, in English or Tamil. Free to start, nine hundred and ninety nine rupees a month after that. Sitetru dot com.",
       hold: 2.0,
       nav: "Dashboard",

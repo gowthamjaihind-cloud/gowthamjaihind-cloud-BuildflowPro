@@ -84,3 +84,42 @@ describe("film scripts", () => {
     }
   });
 });
+
+describe("the manifest carries everything the recorder reads from it", () => {
+  /*
+    THE DEFECT, twice.
+
+    The walkthrough recorder reads a beat's cut-away settings from the MANIFEST
+    that build-voice.mjs writes, not from the script. So a field added to the
+    script and not copied through build-voice is silently ignored: the script
+    says one thing, the film does another, and nothing fails.
+
+    It cost two wasted recordings. First `cutTo` was repointed at the real
+    Telegram screens and the film kept compositing the drawing, because the run
+    went through `npm run walkthrough` (record only) rather than
+    `film:walkthrough` (rebuild the manifest, then record). Then `cutAfter` and
+    `cutHold` were added for the end card and were not copied through at all.
+
+    Neither is visible in a diff and neither fails a typecheck. The only cheap
+    check is this one: every `cut*` key the script uses must appear in the
+    manifest builder.
+  */
+  const script = readFileSync(new URL("./films/walkthrough.script.mjs", import.meta.url), "utf8");
+  const builder = readFileSync(new URL("./films/build-voice.mjs", import.meta.url), "utf8");
+
+  // Comments in both files discuss these keys, so strip them before matching.
+  const strip = (s: string) =>
+    s.replace(/\/\*[\s\S]*?\*\//g, "").split("\n").filter((l) => !l.trim().startsWith("//")).join("\n");
+
+  const used = [...new Set([...strip(script).matchAll(/\b(cut[A-Z]\w*)\s*:/g)].map((m) => m[1]))];
+
+  it("uses at least one cut field, or this check is vacuous", () => {
+    expect(used.length).toBeGreaterThan(0);
+  });
+
+  for (const key of used) {
+    it(`build-voice copies ${key} into the manifest`, () => {
+      expect(strip(builder)).toMatch(new RegExp(`\\b${key}\\b`));
+    });
+  }
+});

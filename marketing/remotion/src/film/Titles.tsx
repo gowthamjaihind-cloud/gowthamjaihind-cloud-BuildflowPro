@@ -1,6 +1,7 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, FONT } from "../theme";
+import { Fonts, typeStyle } from "./Fonts";
 import { Grain, Vignette, arrive, ramp } from "./Cinema";
 
 /**
@@ -288,3 +289,29 @@ export const EndCard: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+
+/**
+ * The end card on its own, for the walkthrough to close on.
+ *
+ * The walkthrough is a screen recording assembled by ffmpeg, so it cannot
+ * mount a component -- it composites a still. Taking that still from the launch
+ * film would drag the launch film's letterbox with it: 56px of black top and
+ * bottom, deliberate there and wrong on a full-frame recording.
+ *
+ * Mounting `Fonts` matters. Manrope loads through `delayRender`, and without it
+ * the card renders in whatever the browser falls back to -- which is exactly
+ * how the first launch film came out in Helvetica.
+ *
+ * The composition runs 70 frames so the still can be taken at 60, past the
+ * LAST of the card's staggered ramps -- the URL arrives over [30, 46], well
+ * after the mark's own [1, 22] build. A still at 30 renders the logo and the
+ * price line correctly and drops "sitetru.com" entirely, which is the one line
+ * on the card that tells anyone what to do next.
+ */
+export const WalkEndCard: React.FC = () => (
+  <AbsoluteFill style={{ backgroundColor: C.surfaceDark, ...typeStyle }}>
+    <Fonts />
+    <EndCard />
+  </AbsoluteFill>
+);

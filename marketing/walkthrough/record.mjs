@@ -358,6 +358,8 @@ const BEATS = VOICE.beats.map((b) => ({
   id: b.id,
   say: b.text,
   cutTo: b.cutTo,
+  cutAfter: b.cutAfter,
+  cutHold: b.cutHold,
   /** Seconds the narration needs; the runner pads the beat to cover it. */
   voice: b.seconds,
   hold: b.hold,
@@ -586,9 +588,34 @@ const zoomExpr =
 const inputs = [];
 const filters = [];
 let last = "0:v";
+/*
+  The film's own end, so a cut-away can be held to it.
+
+  `shifted` is in FILM time already, so its last beat's end is where the picture
+  stops -- give or take the tail the mix pads on, which the overlay covers by
+  running a second past it.
+*/
+const FILM_END = (shifted.at(-1)?.end ?? 0) / 1000;
+
 cuts.forEach((c, i) => {
-  const from = c.start / 1000;
-  const to = c.end / 1000;
+  /*
+    `cutAfter` starts the still partway into its beat, and `cutHold` runs it to
+    the end of the film instead of the end of the beat.
+
+    Both exist for the end card. The closing beat runs nearly thirteen seconds
+    and the line under it -- "That's Sitetru. One place, fed from site, in
+    English or Tamil. Free to start..." -- is a call to action, but the picture
+    it played over was a half-scrolled Gantt chart, and then the film simply
+    stopped. The launch film has an end card; this had the voice for one and no
+    picture.
+
+    A held card also wants neither of the treatments a mid-film cut-away gets:
+    no slow push, because a logo that drifts looks like a mistake rather than a
+    move, and no fade-out, because there is nothing after it to fade to.
+  */
+  const from = (c.start + (c.cutAfter ?? 0) * 1000) / 1000;
+  const to = c.cutHold ? FILM_END + 1 : c.end / 1000;
+  const hold = Boolean(c.cutHold);
   inputs.push("-loop", "1", "-t", String(to - from + 1), "-i", join(STILLS, c.cutTo));
   const idx = i + 1;
   // Fade the still up and out on its own alpha, then hold it over the frame
@@ -597,12 +624,17 @@ cuts.forEach((c, i) => {
   // beat is a fifteen-second freeze frame in the middle of the film -- by far
   // the longest motionless stretch, and the one a viewer notices.
   const push = 1 + 0.1;
-  filters.push(
-    `[${idx}:v]scale=w='${W}*(1+0.10*min(1,(t/${(to - from).toFixed(2)})))':` +
+  const scale = hold
+    ? `scale=${W}:${H}`
+    : `scale=w='${W}*(1+0.10*min(1,(t/${(to - from).toFixed(2)})))':` +
       `h='${H}*(1+0.10*min(1,(t/${(to - from).toFixed(2)})))':eval=frame,` +
-    `crop=${W}:${H},format=rgba,` +
-    `fade=t=in:st=0:d=${FADE}:alpha=1,` +
-    `fade=t=out:st=${(to - from - FADE).toFixed(2)}:d=${FADE}:alpha=1,` +
+      `crop=${W}:${H}`;
+  const fades = hold
+    ? `fade=t=in:st=0:d=${FADE}:alpha=1`
+    : `fade=t=in:st=0:d=${FADE}:alpha=1,` +
+      `fade=t=out:st=${(to - from - FADE).toFixed(2)}:d=${FADE}:alpha=1`;
+  filters.push(
+    `[${idx}:v]${scale},format=rgba,${fades},` +
     `setpts=PTS-STARTPTS+${from.toFixed(3)}/TB[ov${idx}]`,
     `[${last}][ov${idx}]overlay=0:0:enable='between(t,${from.toFixed(3)},${to.toFixed(3)})'[bg${idx}]`,
   );

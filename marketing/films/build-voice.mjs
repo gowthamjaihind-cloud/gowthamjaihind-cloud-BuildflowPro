@@ -94,6 +94,14 @@ export async function buildVoice(id) {
       ...(beat?.nav !== undefined ? { nav: beat.nav } : {}),
       ...(beat?.scroll ? { scroll: beat.scroll } : {}),
       ...(beat?.cutTo ? { cutTo: beat.cutTo } : {}),
+      // How the cut-away is placed: cutAfter delays it into the beat, cutHold
+      // runs it to the end of the film instead of the end of the beat. The
+      // recorder reads these from the MANIFEST, not the script, so a script
+      // edit that is not rebuilt here is silently ignored -- which is how a
+      // walkthrough once shipped compositing a still the script no longer
+      // named.
+      ...(beat?.cutAfter !== undefined ? { cutAfter: beat.cutAfter } : {}),
+      ...(beat?.cutHold ? { cutHold: beat.cutHold } : {}),
     };
     at += row.beatSeconds;
     return row;
