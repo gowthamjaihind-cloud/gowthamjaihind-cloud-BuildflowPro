@@ -93,7 +93,18 @@ export function mixWithManifest(id, manifest, videoIn, videoOut) {
   // The score is rendered at the film's own tempo, so the music and the cuts
   // share one grid rather than each having their own.
   const bpm = manifest.bpm ? [String(manifest.bpm)] : [];
-  execFileSync("python3", [join(ROOT, "marketing/music/score.py"), id, musicWav, String(seconds), ...bpm], {
+  // Where the narration actually stops, so the cue can lift onto the silence
+  // rather than near it. This is only knowable here: the picture cuts to the
+  // end card while the closing line is still playing, so a bloom placed by a
+  // guessed fraction of the runtime fired seven seconds early, underneath the
+  // line it was meant to make room for.
+  const lastBeat = manifest.beats[manifest.beats.length - 1];
+  const voiceEnds = (lastBeat?.startsAt ?? 0) + (lastBeat?.seconds ?? 0);
+  const bloom = voiceEnds > 0 && voiceEnds < seconds ? ["--bloom", voiceEnds.toFixed(3)] : [];
+  if (bloom.length) {
+    console.error(`  voice ends ${voiceEnds.toFixed(1)}s, ${(seconds - voiceEnds).toFixed(1)}s of bed alone`);
+  }
+  execFileSync("python3", [join(ROOT, "marketing/music/score.py"), id, musicWav, String(seconds), ...bpm, ...bloom], {
     stdio: ["ignore", "ignore", "inherit"],
     cwd: ROOT,
   });
@@ -111,6 +122,20 @@ export function mixWithManifest(id, manifest, videoIn, videoOut) {
     manifest.beats.map((_, i) => `[v${i}]`).join("") +
     `amix=inputs=${manifest.beats.length}:normalize=0:dropout_transition=0[vo]`;
 
+  // The arrival ramp, placed against where the narration actually stops.
+  // Sized per film, because both deflate but not by the same amount: measured
+  // against where the voice stops, the walkthrough's tail sat 5.2 dB under its
+  // CTA and the launch film's 2.2 dB under its body. The launch cue also
+  // already resolves on purpose, so it gets a correction rather than an event.
+  const LIFT = { launch: 3.0, walkthrough: 7.5 };
+  const LIFT_DB = LIFT[id] ?? 0, LEAD = 1.5, RISE = 2.3;
+  const lin = 10 ** (LIFT_DB / 20) - 1;
+  const t0 = voiceEnds - LEAD;
+  const tailLift =
+    LIFT_DB > 0 && voiceEnds > 0 && voiceEnds < seconds
+      ? [`[musd]volume='1+${lin.toFixed(4)}*min(max((t-${t0.toFixed(3)})/${RISE},0),1)':eval=frame[musl]`]
+      : [];
+
   const filter = [
     ...legs,
     voMix,
@@ -126,7 +151,18 @@ export function mixWithManifest(id, manifest, videoIn, videoOut) {
     // A broadcast duck: enough to get out of the way, not enough to disappear.
     // ratio 7 with a low threshold was a gate wearing a compressor's name.
     `[mus][voxb]sidechaincompress=threshold=0.05:ratio=4:attack=12:release=380:makeup=1[musd]`,
-    `[voxa][musd]amix=inputs=2:normalize=0:dropout_transition=0[pre]`,
+    // THE ARRIVAL. When the narration stops the voice bus goes silent, the duck
+    // releases into bare bed, and the film ends smaller than it ran: measured
+    // on the walkthrough, a CTA at -13.5 LUFS falling to -18.7 over the final
+    // 3.4 seconds, a 5 LU cliff onto the closing title.
+    //
+    // This is automation rather than a composition gain because the cue is
+    // peak-normalised: writing the lift into the score just scales the whole
+    // cue back down again. It starts LEAD before the voice stops, while the
+    // duck is still holding the bed down and the rise is inaudible, so that
+    // the moment the duck releases the bed is already up.
+    ...tailLift,
+    `[voxa][${tailLift.length ? "musl" : "musd"}]amix=inputs=2:normalize=0:dropout_transition=0[pre]`,
     // Guard the ceiling before loudnorm measures, so a plosive over a downbeat
     // cannot set the integrated level.
     //
