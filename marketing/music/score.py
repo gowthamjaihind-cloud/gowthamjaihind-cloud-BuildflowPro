@@ -298,6 +298,40 @@ def launch(total, bpm=100):
     return t.out(total)
 
 
+def walk_arc(position):
+    """
+    The walkthrough's dynamic shape, 0..1 across the film, as a multiplier.
+
+    `launch` has had `arc` from early on; this cue never did, and measuring the
+    finished film is what made that impossible to ignore. Short-term loudness in
+    twelve blocks came out -13.5, -13.7, -14.0, -13.8, -14.3, -14.2, -14.1,
+    -14.1, -14.1, -14.0, -14.3, -14.9: a straight line for two and three quarter
+    minutes. Worse, the quietest block is the LAST one -- the end card holds for
+    twelve seconds with no narration over it, the voice bus goes silent, the
+    duck releases into bare bed, and the film ends by getting smaller. A closing
+    title that deflates is the one moment a viewer is most likely to remember.
+
+    The swing is deliberately narrower than `arc`'s. That cue drops to 0.34 and
+    gets away with it over 78 seconds of drums; here the bed's whole job is to
+    keep the room alive under close explanation, and at 0.34 under a 16 dB duck
+    there would be nothing left to hear. This runs 0.72 to 1.18 -- held back
+    under the opening so the first line arrives without an announcement, settled
+    through the middle, easing off for the closing line, and opening up into the
+    end card so the last thing the film does is arrive rather than fade.
+    """
+    if position < 0.05:
+        return 0.72                       # the first line, unaccompanied-ish
+    if position < 0.28:
+        return 0.72 + (position - 0.05) / 0.23 * 0.20
+    if position < 0.70:
+        return 0.92 + (position - 0.28) / 0.42 * 0.08
+    if position < 0.86:
+        return 1.00 - (position - 0.70) / 0.16 * 0.18   # room for the close
+    if position < 0.92:
+        return 0.82                       # under the closing line
+    return 0.82 + (position - 0.92) / 0.08 * 0.36       # the end card blooms
+
+
 def walkthrough(total, bpm=72):
     """
     A minor, no drums.
@@ -322,18 +356,23 @@ def walkthrough(total, bpm=72):
         if at > total:
             break
         notes, bass = progression[b % 4]
-        chord(t, at, notes, bar * 1.05, pad, 0.9)
+        g = walk_arc(at / total)
+        chord(t, at, notes, bar * 1.05, pad, 0.9 * g)
         # The sub is held well back here. At 0.65 this cue measured 56% of its
         # energy below 200 Hz, which under three minutes of narration is not
         # warmth, it is mud -- and the voice chain high-passes at 85 Hz, so the
         # two do not even overlap usefully.
-        t.add(at, sub(hz(bass), bar * 0.9), 0.34)
+        t.add(at, sub(hz(bass), bar * 0.9), 0.34 * g)
         # One falling note every other bar. Any more and it becomes a melody,
         # and a melody competes with speech.
         if b % 2 == 0:
-            t.add(at + beat * 2, pluck(hz(notes[2]) * 2, beat * 2.5), 0.30)
+            t.add(at + beat * 2, pluck(hz(notes[2]) * 2, beat * 2.5), 0.30 * g)
         if b % 4 == 1:
-            t.add(at + beat * 3, pluck(hz(notes[1]) * 2, beat * 2.0), 0.22)
+            t.add(at + beat * 3, pluck(hz(notes[1]) * 2, beat * 2.0), 0.22 * g)
+    # One breath as the picture turns to the end card, so the bloom reads as
+    # intentional rather than as the duck letting go. Held well down: this is a
+    # cue to look up, not a sting.
+    t.add(max(total * 0.92 - 1.8, 0), swell(1.8), 0.30)
     return t.out(total)
 
 
