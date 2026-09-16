@@ -111,7 +111,14 @@ export const WALKTHROUGH = {
       vo: "Which is what makes this screen worth anything. Budget against actual, on every head, for every task — built from the logs and the receipts rather than typed in afterwards. A gap shows up the day it opens.",
       hold: 0.8,
       nav: "Cost Management",
-      scroll: 360,
+      // Measured, not guessed: scripts/scan-scroll-depth.mjs screenshots this
+      // screen at six depths and reports how much content the emptiest third of
+      // the frame still carries. Cost Management goes 28% at the top, 17% at
+      // 240, then 10, 8 and 4 as the short left column runs out and only the
+      // Latest Transactions panel is left. Every other screen in the film stays
+      // populated to its bottom and needs no cap.
+      scroll: 240,
+      scrollMax: 300,
     },
     {
       id: "insights",

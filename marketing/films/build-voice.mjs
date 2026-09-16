@@ -93,6 +93,7 @@ export async function buildVoice(id) {
       ...(beat?.shot ? { shot: beat.shot } : {}),
       ...(beat?.nav !== undefined ? { nav: beat.nav } : {}),
       ...(beat?.scroll ? { scroll: beat.scroll } : {}),
+      ...(beat?.scrollMax ? { scrollMax: beat.scrollMax } : {}),
       ...(beat?.cutTo ? { cutTo: beat.cutTo } : {}),
       // How the cut-away is placed: cutAfter delays it into the beat, cutHold
       // runs it to the end of the film instead of the end of the beat. The

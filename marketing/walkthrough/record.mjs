@@ -320,7 +320,7 @@ const tour = (page, budget) =>
     }]),
   );
 
-const visit = (label, scrollTo) => async (page, budget = 6000) => {
+const visit = (label, scrollTo, scrollMax) => async (page, budget = 6000) => {
   const t0 = Date.now();
   if (label) await click(page, nav(page, label), { settle: 2000 });
   const spent = Date.now() - t0;
@@ -338,7 +338,21 @@ const visit = (label, scrollTo) => async (page, budget = 6000) => {
 
   const tail = 900;
   const steps = [];
-  let depth = Math.min(scrollTo ?? 340, range);
+  /*
+    `range` is how far the scroller CAN go, which is set by its tallest column
+    and is not always how far it is worth going. Cost Management is a short left
+    column of cards and a chart beside a long Latest Transactions panel: scroll
+    it to the bottom and two thirds of the frame is bare ground with one narrow
+    panel down the right. Measured on the finished cut, five seconds of it, in
+    the beat whose line is "which is what makes this screen worth anything".
+
+    `scrollMax` is that limit, per beat, measured rather than guessed --
+    scripts/scan-scroll-depth.mjs screenshots every screen at six depths and
+    reports the deepest one whose emptiest third still carries content. Only
+    this one screen needs it; every other stays populated to the bottom.
+  */
+  const reach = scrollMax ? Math.min(range, scrollMax) : range;
+  let depth = Math.min(scrollTo ?? 340, reach);
   let dir = 1;
   for (let i = 0; i < 6; i++) {
     const to = depth;
@@ -347,7 +361,7 @@ const visit = (label, scrollTo) => async (page, budget = 6000) => {
       await sleep(DWELL_MS);
     }]);
     depth += dir * 360;
-    if (depth > range) { dir = -1; depth = range; }
+    if (depth > reach) { dir = -1; depth = reach; }
     if (depth < 0) { dir = 1; depth = 0; }
   }
   await fill(Math.max(left - tail, 0), steps);
@@ -363,7 +377,7 @@ const BEATS = VOICE.beats.map((b) => ({
   /** Seconds the narration needs; the runner pads the beat to cover it. */
   voice: b.seconds,
   hold: b.hold,
-  run: ACTIONS[b.id] ?? visit(b.nav, b.scroll),
+  run: ACTIONS[b.id] ?? visit(b.nav, b.scroll, b.scrollMax),
 }));
 
 /* ------------------------------------------------------------------- run -- */

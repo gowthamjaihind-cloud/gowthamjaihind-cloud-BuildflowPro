@@ -111,10 +111,26 @@ describe("the manifest carries everything the recorder reads from it", () => {
   const strip = (s: string) =>
     s.replace(/\/\*[\s\S]*?\*\//g, "").split("\n").filter((l) => !l.trim().startsWith("//")).join("\n");
 
-  const used = [...new Set([...strip(script).matchAll(/\b(cut[A-Z]\w*)\s*:/g)].map((m) => m[1]))];
+  /*
+    Every per-beat key the script sets, not just the `cut*` ones. The first
+    version of this check matched `cut[A-Z]` only, and `scrollMax` -- added for
+    exactly the same reason, and carried down exactly the same path -- slipped
+    straight past it. A check that only knows about the fields that have already
+    caused trouble is a check that catches the last bug rather than the next.
 
-  it("uses at least one cut field, or this check is vacuous", () => {
-    expect(used.length).toBeGreaterThan(0);
+    `id`, `vo` and `hold` are the narration's own; build-voice reads them
+    directly rather than copying them through, so they are not in scope.
+  */
+  const CORE = new Set(["id", "vo", "hold"]);
+  const used = [
+    ...new Set(
+      [...strip(script).matchAll(/^\s{4,}([a-z][A-Za-z]*)\s*:/gm)].map((m) => m[1]),
+    ),
+  ].filter((k) => !CORE.has(k));
+
+  it("finds the script's per-beat fields, or this check is vacuous", () => {
+    expect(used).toContain("cutTo");
+    expect(used).toContain("scrollMax");
   });
 
   for (const key of used) {
