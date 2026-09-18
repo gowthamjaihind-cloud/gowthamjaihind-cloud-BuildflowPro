@@ -11,6 +11,7 @@ import { useIsDesktop } from '../../hooks/useBreakpoint';
 import { DependencyType } from '../../types';
 import { EmptyState } from "../EmptyState";
 
+import { useTranslation } from "../../i18n";
 export const ScheduleView: React.FC<{ 
   projectId: string;
   tasks: ScheduleTask[];
@@ -18,6 +19,7 @@ export const ScheduleView: React.FC<{
   onAddDependency?: (fromId: string, toId: string, type: DependencyType) => Promise<void>;
   onTaskUpdate?: (task: any) => Promise<void>;
 }> = ({ projectId, tasks, loading, onAddDependency, onTaskUpdate }) => {
+  const { t } = useTranslation();
   const isDesktop = useIsDesktop();
   const user = useAuthStore(state => state.user);
 
@@ -99,7 +101,7 @@ export const ScheduleView: React.FC<{
             }`}
             onClick={() => savePreference('timeline')}
           >
-            Timeline
+            {t("dashboard.timeline")}
           </button>
           <button
             role="tab"

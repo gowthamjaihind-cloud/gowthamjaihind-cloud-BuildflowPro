@@ -4,7 +4,7 @@
 //              have no log today, dropping into the button-driven log flow.
 // Everything is pick-from-lists (no free text beyond quantities), so data
 // integrity is preserved. Nothing is written until the user confirms.
-import { setSession } from "../session";
+import { setSession, type ChatId } from "../session";
 import { db } from "../../db";
 import { tt, normalizeLang, type BotLang } from "../i18n";
 
@@ -72,7 +72,7 @@ export async function buildWorklist(session: any): Promise<GapTask[]> {
 // structured, pick-from-lists log flow.
 export async function sendAgentNudge(
   tg: any,
-  chatId: number,
+  chatId: ChatId,
   session: any,
 ): Promise<boolean> {
   const lang = normalizeLang(session?.lang);
@@ -142,7 +142,7 @@ function planKeyboard(lang: BotLang, cands: PlanCandidate[], selected: string[])
 // Returns true if a plan prompt was sent.
 export async function sendPlanPrompt(
   tg: any,
-  chatId: number,
+  chatId: ChatId,
   session: any,
 ): Promise<boolean> {
   const lang = normalizeLang(session?.lang);
@@ -158,7 +158,7 @@ export async function sendPlanPrompt(
 
 export async function togglePlanTask(
   tg: any,
-  chatId: number,
+  chatId: ChatId,
   messageId: any,
   session: any,
   taskId: string,
@@ -175,7 +175,7 @@ export async function togglePlanTask(
 
 export async function savePlan(
   tg: any,
-  chatId: number,
+  chatId: ChatId,
   messageId: any,
   session: any,
 ) {

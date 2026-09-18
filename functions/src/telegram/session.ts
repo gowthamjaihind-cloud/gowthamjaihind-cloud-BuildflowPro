@@ -1,8 +1,22 @@
 import * as admin from "firebase-admin";
 import { db } from "../db";
+// The pure half lives in bot/channel.ts so it can be tested without an
+// initialised admin app; re-exported here because callers expect it.
+export { WA_PREFIX, channelOf, linkFields, type ChatId, type Channel } from "../bot/channel";
+import type { ChatId } from "../bot/channel";
+
+/**
+ * Who a session belongs to.
+ *
+ * Telegram gives a numeric chat id; WhatsApp gives a phone number, namespaced
+ * as `wa:<number>` (see whatsapp/inbound.ts). Both only ever get stringified on
+ * the way to Firestore and passed back to their own API, so one widened type
+ * lets a single set of handlers drive both channels rather than the log flow
+ * being written twice and drifting apart.
+ */
 
 export interface BotSession {
-  chatId: number;
+  chatId: ChatId;
   userId?: string;
   email?: string;
   orgId?: string;
@@ -17,17 +31,17 @@ export interface BotSession {
   lastSeenAt?: number;
 }
 
-export const getSession = async (chatId: number): Promise<BotSession | null> => {
+export const getSession = async (chatId: ChatId): Promise<BotSession | null> => {
   const snap = await db.collection("bot_sessions").doc(String(chatId)).get();
   return snap.exists ? (snap.data() as BotSession) : null;
 };
 
-export const setSession = async (chatId: number, data: Partial<BotSession>) => {
+export const setSession = async (chatId: ChatId, data: Partial<BotSession>) => {
   await db.collection("bot_sessions").doc(String(chatId))
     .set({ ...data, chatId, lastSeenAt: Date.now() }, { merge: true });
 };
 
-export const clearStep = async (chatId: number) => {
+export const clearStep = async (chatId: ChatId) => {
   await db.collection("bot_sessions").doc(String(chatId)).set(
     {
       step: admin.firestore.FieldValue.delete(),
@@ -38,6 +52,6 @@ export const clearStep = async (chatId: number) => {
   );
 };
 
-export const clearSession = async (chatId: number) => {
+export const clearSession = async (chatId: ChatId) => {
   await db.collection("bot_sessions").doc(String(chatId)).delete();
 };

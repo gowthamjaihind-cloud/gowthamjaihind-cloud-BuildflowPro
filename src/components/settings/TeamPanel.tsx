@@ -154,7 +154,7 @@ export const TeamPanel: React.FC = () => {
             <button
               onClick={sendInvite}
               disabled={busy}
-              className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : L("Create invite","அழைப்பை உருவாக்கு")}
             </button>

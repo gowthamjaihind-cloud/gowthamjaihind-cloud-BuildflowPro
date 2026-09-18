@@ -156,7 +156,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
              <Tooltip label={L("Export PDF","PDF எக்ஸ்போர்ட்")}>
                <button
                  onClick={handleExportPDF}
-                 className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-deep text-white rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
+                 className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-deep text-on-primary rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
                 
                >
                  <Download className="w-3.5 h-3.5" /> PDF
@@ -188,7 +188,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                   <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">{L("Status","நிலை")}</p>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                      po.status === 'Draft' ? 'bg-page text-ink-muted' :
-                     po.status === 'Approved' ? 'bg-[#E2E8ED] text-ink-muted' :
+                     po.status === 'Approved' ? 'bg-divider text-ink-muted' :
                      po.status === 'Partially Received' ? 'bg-primary/10 text-primary' :
                      'bg-success/12 text-success'
                   }`}>
@@ -249,7 +249,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
 
          <div className="p-6 border-t border-divider bg-panel flex flex-wrap justify-end gap-4 shrink-0">
             {(po.status === "Approved" || po.status === "Partially Received") && (
-               <button onClick={() => setShowGRNForm(true)} className="px-6 py-3 bg-success hover:bg-success text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(5,150,105,0.2)]">
+               <button onClick={() => setShowGRNForm(true)} className="px-6 py-3 bg-success hover:bg-success text-on-success text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(5,150,105,0.2)]">
                  <PackagePlus className="w-4 h-4" /> {L("Record Goods Receipt","பொருள் ரசீதைப் பதிவு செய்")}
                </button>
             )}
@@ -261,7 +261,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                </Tooltip>
             )}
             {po.status === "Draft" && isAdminOrOwner && (
-               <button onClick={handleApprove} disabled={isApproving} className="px-6 py-3 bg-primary hover:bg-primary-deep text-white text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)]">
+               <button onClick={handleApprove} disabled={isApproving} className="px-6 py-3 bg-primary hover:bg-primary-deep text-on-primary text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)]">
                  {isApproving ? <Loader2 className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4" />} {L("Approve Order","ஆணையை அங்கீகரி")}
                </button>
             )}

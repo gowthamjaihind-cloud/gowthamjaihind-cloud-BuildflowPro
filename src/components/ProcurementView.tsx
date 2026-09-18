@@ -961,7 +961,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                   <th className="p-4">PO</th>
                   <th className="p-4 text-right">Grand total</th>
                   <th className="p-4">Match</th>
-                  <th className="p-4">Status</th>
+                  <th className="p-4">{t("common.status")}</th>
                   <th className="p-4 text-right">Action</th>
                 </tr>
               </thead>
@@ -988,7 +988,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       {b.status === "pending_review" ? (
                         <button
                           onClick={() => setReviewBill(b)}
-                          className="px-3 py-1.5 bg-[#6E8CA0] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-[#5C7889]"
+                          className="px-3 py-1.5 bg-surface-dark text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-surface-dark/85"
                         >
                           Review &amp; Post
                         </button>
@@ -1034,7 +1034,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               setOpeningBalanceInput(0);
               setIsAddingVendor(true);
             }}
-            className="w-full sm:w-auto bg-surface-dark text-white px-5 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-[#3A4F5F] apple-transition shadow-lg shadow-surface-dark/10 text-[10px]"
+            className="w-full sm:w-auto bg-surface-dark text-white px-5 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-2xl font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-surface-dark/85 apple-transition shadow-lg shadow-surface-dark/10 text-[10px]"
           >
             <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />{" "}
             <span>Add Party</span>
@@ -1239,7 +1239,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         });
                         setIsAddingPayment(true);
                       }}
-                      className="flex-[1.5] bg-surface-dark text-white py-2.5 md:py-3.5 rounded-lg md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#3A4F5F] apple-transition shadow-md shadow-surface-dark/5"
+                      className="flex-[1.5] bg-surface-dark text-white py-2.5 md:py-3.5 rounded-lg md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-surface-dark/85 apple-transition shadow-md shadow-surface-dark/5"
                     >
                       Payment
                     </button>
@@ -1303,7 +1303,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               <thead>
                 <tr className="bg-surface-dark text-white/75 border-b border-white/10">
                   <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
-                    Timeline
+                    {t("dashboard.timeline")}
                   </th>
                   <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
                     Vendor
@@ -1312,10 +1312,10 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     Reference
                   </th>
                   <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
-                    Items
+                    {t("an.items")}
                   </th>
                   <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80 text-right">
-                    Total
+                    {t("common.total")}
                   </th>
                   {isAdminOrOwner && (
                     <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 text-right">
@@ -1483,7 +1483,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
 
                 <div className="mb-4">
                   <div className="text-[8px] font-bold text-ink-muted uppercase tracking-widest mb-2 tracking-[0.1em]">
-                    Items
+                    {t("an.items")}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {receipt.items.map((item, idx) => (
@@ -1508,13 +1508,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       }}
                       className="flex-1 py-2 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                     >
-                      <Edit2 className="w-4 h-4 mr-1.5" /> Edit
+                      <Edit2 className="w-4 h-4 mr-1.5" /> {t("common.edit")}
                     </button>
                     <button
                       onClick={() => setIsDeletingReceipt(receipt.id)}
                       className="flex-1 py-2 bg-danger/8 border border-danger/20 shadow-sm rounded-full text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                     >
-                      <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                      <Trash2 className="w-4 h-4 mr-1.5" /> {t("common.delete")}
                     </button>
                   </div>
                 )}
@@ -1584,7 +1584,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 <thead>
                   <tr className="bg-surface-dark text-white/75 border-b border-white/10">
                     <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 italic">
-                      Timeline
+                      {t("dashboard.timeline")}
                     </th>
                     <th className="px-6 md:px-10 py-4 md:py-6 text-[10px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
                       Entity Partner
@@ -1890,13 +1890,13 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                             }}
                             className="flex-1 py-2 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
-                            <Edit2 className="w-4 h-4 mr-1.5" /> Edit
+                            <Edit2 className="w-4 h-4 mr-1.5" /> {t("common.edit")}
                           </button>
                           <button
                             onClick={() => handleDeleteLedgerEntry(entry.id)}
                             className="flex-1 py-2 bg-danger/8 border border-danger/20 shadow-sm rounded-full text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
-                            <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                            <Trash2 className="w-4 h-4 mr-1.5" /> {t("common.delete")}
                           </button>
                         </>
                       ) : entry.referenceType === "GRN" ? (
@@ -1915,7 +1915,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                             }}
                             className="flex-1 py-2 bg-warning/12 border border-divider shadow-sm rounded-xl text-primary hover:bg-primary/12 hover:text-primary active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
-                            <Edit2 className="w-4 h-4 mr-1.5" /> Edit
+                            <Edit2 className="w-4 h-4 mr-1.5" /> {t("common.edit")}
                           </button>
                           <button
                             onClick={() =>
@@ -1923,7 +1923,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                             }
                             className="flex-1 py-2 bg-danger/8 border border-danger/20 shadow-sm rounded-full text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                           >
-                            <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                            <Trash2 className="w-4 h-4 mr-1.5" /> {t("common.delete")}
                           </button>
                         </>
                       ) : (
@@ -1931,7 +1931,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                           onClick={() => handleDeleteLedgerEntry(entry.id)}
                           className="w-full py-2 bg-danger/8 border border-danger/20 shadow-sm rounded-full text-danger hover:bg-danger/15 hover:text-danger active:scale-90 apple-transition flex items-center justify-center font-bold text-xs uppercase tracking-widest"
                         >
-                          <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                          <Trash2 className="w-4 h-4 mr-1.5" /> {t("common.delete")}
                         </button>
                       )}
                     </div>
@@ -2001,7 +2001,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         <div className="flex items-center gap-2 w-full md:w-auto md:shrink-0">
           <button
             onClick={() => setShowScanInvoice(true)}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#6E8CA0] text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#5C7889] apple-transition shadow-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-surface-dark text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-surface-dark/85 apple-transition shadow-sm"
           >
             <Sparkle weight="fill" className="w-3.5 h-3.5" /> Scan Invoice
           </button>
@@ -2013,7 +2013,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           </button>
           <button
             onClick={handleExportPDF}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-primary text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-primary-deep apple-transition shadow-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-primary text-on-primary px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-primary-deep apple-transition shadow-sm"
           >
             <Download className="w-3.5 h-3.5" /> {t("common.exportPdf")}
           </button>
@@ -2194,7 +2194,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         })
                       }
                     >
-                      <option value="Material">Material</option>
+                      <option value="Material">{t("an.catMaterial")}</option>
                       <option value="Labor">Labor</option>
                       <option value="Both">Both</option>
                     </select>
@@ -2204,7 +2204,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       Contact Person
                     </label>
                     <input
-                      placeholder="Name"
+                      placeholder={t("common.name")}
                       className="w-full bg-panel p-4 rounded-xl font-bold border-2 border-transparent focus:border-primary outline-none"
                       value={newVendor.contactPerson}
                       onChange={(e) =>
@@ -2278,7 +2278,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/15 hover:bg-primary-deep apple-transition mt-4"
+                  className="w-full bg-primary text-on-primary py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/15 hover:bg-primary-deep apple-transition mt-4"
                 >
                   {isEditingVendor ? "Update Profile" : "Register Party"}
                 </button>
@@ -2311,12 +2311,12 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     onClick={() => setIsDeletingVendor(null)}
                     className="flex-1 py-3 bg-panel hover:bg-divider rounded-xl font-bold transition-colors"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={() => handleDeleteVendor(isDeletingVendor)}
                     disabled={isDeleting}
-                    className="flex-1 py-3 bg-danger hover:bg-danger text-white rounded-xl font-bold transition-colors disabled:opacity-50"
+                    className="flex-1 py-3 bg-danger hover:bg-danger text-on-danger rounded-xl font-bold transition-colors disabled:opacity-50"
                   >
                     {isDeleting ? "Deleting..." : "Delete"}
                   </button>
@@ -2353,12 +2353,12 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     disabled={isDeleting}
                     className="flex-1 py-3 bg-panel hover:bg-divider rounded-xl font-bold transition-colors"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={() => handleDeleteReceipt(isDeletingReceipt)}
                     disabled={isDeleting}
-                    className="flex-1 py-3 bg-danger hover:bg-danger text-white rounded-xl font-bold transition-colors disabled:opacity-50"
+                    className="flex-1 py-3 bg-danger hover:bg-danger text-on-danger rounded-xl font-bold transition-colors disabled:opacity-50"
                   >
                     {isDeleting ? "Deleting..." : "Delete"}
                   </button>
@@ -2376,7 +2376,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               className="bg-surface rounded-2xl w-full max-w-md overflow-hidden"
             >
               <DialogBehaviour />
-              <div className="bg-success p-5 md:p-6 text-white flex justify-between items-center">
+              <div className="bg-success p-5 md:p-6 text-on-success flex justify-between items-center">
                 <h3 className="text-xl font-black">
                   {editingPaymentId ? "Edit Payment" : "Record Payment"}
                 </h3>
@@ -2438,7 +2438,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
-                    Date
+                    {t("common.date")}
                   </label>
                   <input
                     type="date"
@@ -2530,7 +2530,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-success text-white py-4 rounded-xl font-black uppercase tracking-widest"
+                  className="w-full bg-success text-on-success py-4 rounded-xl font-black uppercase tracking-widest"
                 >
                   {editingPaymentId ? "Update Payment" : "Post Payment"}
                 </button>

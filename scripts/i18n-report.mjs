@@ -11,6 +11,13 @@
 // English already exists under a translated key, names that key so the string
 // can be reused rather than translated again.
 //
+// That reuse half is DONE and is now enforced: it started at 880 occurrences /
+// 619 distinct, of which 161 occurrences were the same English as a key that
+// already carried good Tamil. Those are swapped, and src/i18n/reuse.test.ts
+// fails if one comes back. What this report is for now is the remainder --
+// ~570 distinct strings that genuinely need a translator, plus the 267 WBS
+// template names -- which no test can decide for you.
+//
 //   npm run i18n:report          summary
 //   npm run i18n:report -- --all every occurrence, with file:line
 //

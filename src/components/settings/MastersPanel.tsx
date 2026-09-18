@@ -240,7 +240,7 @@ export const MastersPanel: React.FC = () => {
             key={x.id}
             onClick={() => setTab(x.id)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold apple-transition ${
-              tab === x.id ? "bg-primary text-white shadow-sm" : "bg-panel border border-divider text-ink-muted hover:text-ink"
+              tab === x.id ? "bg-primary text-on-primary shadow-sm" : "bg-panel border border-divider text-ink-muted hover:text-ink"
             }`}
           >
             <x.icon className="w-4 h-4" /> {x.label} {x.n > 0 && `(${x.n})`}
@@ -293,7 +293,7 @@ export const MastersPanel: React.FC = () => {
                   {L("Cancel", "ரத்து")}
                 </button>
                 <button type="submit" disabled={busy}
-                  className="px-6 py-2.5 rounded-xl bg-primary text-white text-xs font-bold uppercase tracking-widest disabled:opacity-50">
+                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold uppercase tracking-widest disabled:opacity-50">
                   {busy ? L("Saving…", "சேமிக்கிறது…") : editingId ? L("Update", "புதுப்பி") : L("Save", "சேமி")}
                 </button>
               </div>
@@ -357,7 +357,7 @@ export const MastersPanel: React.FC = () => {
               <button
                 onClick={tidyNow}
                 disabled={busy}
-                className="shrink-0 px-4 py-2 rounded-xl bg-primary text-white text-[11px] font-bold uppercase tracking-widest disabled:opacity-50"
+                className="shrink-0 px-4 py-2 rounded-xl bg-primary text-on-primary text-[11px] font-bold uppercase tracking-widest disabled:opacity-50"
               >
                 {busy ? L("Working…", "நடக்குது…") : L("Tidy", "சரிசெய்")}
               </button>
@@ -410,7 +410,7 @@ export const MastersPanel: React.FC = () => {
                   {L("Cancel", "ரத்து")}
                 </button>
                 <button type="submit" disabled={busy}
-                  className="px-6 py-2.5 rounded-xl bg-primary text-white text-xs font-bold uppercase tracking-widest disabled:opacity-50">
+                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold uppercase tracking-widest disabled:opacity-50">
                   {busy ? L("Saving…", "சேமிக்கிறது…") : mEditingId ? L("Update", "புதுப்பி") : L("Save", "சேமி")}
                 </button>
               </div>

@@ -12,6 +12,7 @@ import {
 } from "firebase/storage";
 import { updateDoc } from "firebase/firestore";
 import { round2 } from "../utils/num";
+import { compressImage } from "../utils/imageCompressor";
 import { UserProfile, VendorBill } from "../types";
 
 const tenantPathFor = (user: any, projectId: string) =>
@@ -220,10 +221,21 @@ export async function postInvoiceReceipt({ user, projectId, bill, sourceFile, dr
   // ---- store the scanned invoice for audit (best-effort, after commit) ----
   if (sourceFile) {
     try {
-      const ext = sourceFile.type === "application/pdf" ? "pdf" : "jpg";
+      const isPdf = sourceFile.type === "application/pdf";
+      const ext = isPdf ? "pdf" : "jpg";
       const path = `${tenantPath}/vendor_bills/${billId}/invoice.${ext}`;
       const sRef = storageRef(getStorage(), path);
-      await uploadBytes(sRef, sourceFile);
+      // Every other image the app stores goes through `compressImage`; this one
+      // did not, and a phone photo of a bill is 3-5 MB. Measured over a
+      // 12-month project in scripts/cost-model.mjs, this single path was 60% of
+      // everything the project put in Cloud Storage.
+      //
+      // Deliberately gentler than the 1600px/q0.7 used for site photos: this is
+      // a tax document that has to stay legible for audit, so it keeps 2200px
+      // at q0.82 -- still roughly a quarter of the raw bytes, with line items
+      // and GSTINs readable. PDFs are never re-encoded.
+      const payload = isPdf ? sourceFile : await compressImage(sourceFile, 2200, 0.82);
+      await uploadBytes(sRef, payload);
       const url = await getDownloadURL(sRef);
       await updateDoc(doc(db, `${tenantPath}/vendor_bills`, billId), { sourceFileUrl: url });
     } catch (e) {

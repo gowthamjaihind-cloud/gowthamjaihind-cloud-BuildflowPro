@@ -14,6 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { confirmDialog, toast } from "../../lib/feedback";
 import { DialogBehaviour } from "../../lib/useDialog";
 
+import { useTranslation } from "../../i18n";
 interface GoodsReceiptDetailsProps {
   grn: GoodsReceiptNote;
   projectId: string;
@@ -21,6 +22,7 @@ interface GoodsReceiptDetailsProps {
 }
 
 export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, projectId, onClose }) => {
+  const { t } = useTranslation();
   const user = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -167,7 +169,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
              <h2 className="text-xl font-black text-ink tracking-tight mb-1">{grn.grnNumber}</h2>
              <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">{grn.poNumber} • {grn.vendorName}</p>
            </div>
-           <button aria-label="Close" type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
+           <button aria-label={t("common.close")} type="button" onClick={onClose} className="p-3 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer">
              <X className="w-5 h-5" />
            </button>
          </div>
@@ -175,7 +177,7 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
          <div className="flex-1 overflow-y-auto p-6 space-y-8">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 bg-panel p-6 rounded-2xl border border-divider">
                <div>
-                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">Date</p>
+                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">{t("common.date")}</p>
                   <p className="text-sm font-semibold text-ink font-mono">{grn.receiptDate}</p>
                </div>
                <div>

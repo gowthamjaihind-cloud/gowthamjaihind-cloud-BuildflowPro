@@ -16,6 +16,9 @@ export * from "./ai";
 export * from "./dailyLogs";
 export * from "./goodsReceipt";
 export * from "./telegram";
+// The WhatsApp lane. Same handlers as Telegram -- see whatsapp/index.ts for the
+// three places the two channels genuinely differ.
+export * from "./whatsapp";
 export * from "./setupOrg";
 export * from "./createOrg";
 export * from "./invites";

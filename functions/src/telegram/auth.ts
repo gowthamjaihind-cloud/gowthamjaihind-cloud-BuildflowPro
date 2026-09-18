@@ -1,10 +1,10 @@
-import { BotSession } from "./session";
+import { BotSession, channelOf, linkFields, type ChatId } from "./session";
 import { db } from "../db";
 
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 60 * 60 * 1000;
 
-export const checkRateLimit = async (chatId: number): Promise<boolean> => {
+export const checkRateLimit = async (chatId: ChatId): Promise<boolean> => {
   const ref = db.collection("bot_rate_limits").doc(String(chatId));
   const now = Date.now();
   return db.runTransaction(async (tx) => {
@@ -22,7 +22,7 @@ export const checkRateLimit = async (chatId: number): Promise<boolean> => {
 
 export interface RedeemResult { ok: boolean; email?: string; userId?: string; orgId?: string; }
 
-export const redeemLinkCode = async (code: string, chatId: number): Promise<RedeemResult> => {
+export const redeemLinkCode = async (code: string, chatId: ChatId): Promise<RedeemResult> => {
   const ref = db.collection("bot_link_codes").doc(code);
   return db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
@@ -31,20 +31,24 @@ export const redeemLinkCode = async (code: string, chatId: number): Promise<Rede
     if (data.used) return { ok: false };
     if (Date.now() > (data.expiresAt || 0)) return { ok: false };
     tx.update(ref, { used: true, usedAt: Date.now(), usedByChatId: chatId });
+    // Which field depends on the channel. One link code can be redeemed from
+    // either, and writing a WhatsApp id into telegramChatId silently unlinks
+    // that person's Telegram: their session stops validating and the 5 PM
+    // Telegram reminder then tries to message "wa:9190...". Nothing throws.
     tx.update(db.collection("users").doc(data.userId), {
-      telegramChatId: chatId,
-      telegramLinkedAt: Date.now(),
+      [linkFields(channelOf(chatId)).id]: chatId,
+      [linkFields(channelOf(chatId)).at]: Date.now(),
     });
     return { ok: true, email: data.email, userId: data.userId, orgId: data.orgId };
   });
 };
 
-export const validateSession = async (chatId: number, session: BotSession | null): Promise<boolean> => {
+export const validateSession = async (chatId: ChatId, session: BotSession | null): Promise<boolean> => {
   if (!session?.userId) return false;
   const snap = await db.collection("users").doc(session.userId).get();
   if (!snap.exists) return false;
   const u = snap.data()!;
   if (u.disabled === true || u.disabled === "true") return false;
-  if (u.telegramChatId !== chatId) return false;
+  if (u[linkFields(channelOf(chatId)).id] !== chatId) return false;
   return true;
 };

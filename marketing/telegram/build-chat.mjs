@@ -1,6 +1,7 @@
 import { writeFileSync, mkdirSync } from "fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { BRAND } from "../brand.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CHROME = process.env.CHROME_PATH ||
   "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
@@ -12,7 +13,7 @@ const CSS = `
 body{background:#0E1621;font-family:Manrope,'Noto Sans Tamil',system-ui,sans-serif;display:flex;justify-content:center}
 .phone{width:460px;background:#0E1621;display:flex;flex-direction:column}
 .bar{background:#17212B;padding:15px 16px;display:flex;align-items:center;gap:12px}
-.av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#D97D54,#B85F3B);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
+.av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,${BRAND.primary},#14307F);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
 .who{color:#fff;font-weight:700;font-size:15px}.sub{color:#7D8E9E;font-size:12px}
 .chat{flex:1;padding:16px 12px 28px;display:flex;flex-direction:column;gap:10px}
 .row{display:flex}.row.me{justify-content:flex-end}

@@ -1,9 +1,9 @@
 import * as admin from "firebase-admin";
-import { setSession } from "../session";
+import { setSession, type ChatId } from "../session";
 import { db } from "../../db";
 import { tt, normalizeLang } from "../i18n";
 
-export async function showProjects(tg: any, chatId: number, session: any) {
+export async function showProjects(tg: any, chatId: ChatId, session: any) {
   const lang = normalizeLang(session?.lang);
   const path = session.orgId
     ? `organizations/${session.orgId}/projects`
@@ -31,7 +31,7 @@ export async function showProjects(tg: any, chatId: number, session: any) {
 
 export async function pickProject(
   tg: any,
-  chatId: number,
+  chatId: ChatId,
   messageId: any,
   session: any,
   projectId: string
