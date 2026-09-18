@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
-import { getSession, setSession, clearStep } from "../session";
+import { getSession, setSession, clearStep, type ChatId } from "../session";
 import { db } from "../../db";
 import { tt, normalizeLang } from "../i18n";
 const projPath = (orgId, projectId) => orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -12,7 +12,7 @@ const fmtDate = (iso) => {
     const d = new Date(iso + "T00:00:00Z");
     return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 };
-export async function showTaskPicker(tg: any, chatId: number, messageId: any, session: any) {
+export async function showTaskPicker(tg: any, chatId: ChatId, messageId: any, session: any) {
     const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
     const recent = session.recentTaskIds || [];
@@ -34,7 +34,7 @@ export async function showTaskPicker(tg: any, chatId: number, messageId: any, se
     }
 }
 
-export async function startLog(tg: any, chatId: number, session: any) {
+export async function startLog(tg: any, chatId: ChatId, session: any) {
     const lang = normalizeLang(session?.lang);
     if (!session.activeProjectId) {
         await tg.sendMessage(chatId, tt(lang, "noActiveProject"));
@@ -73,7 +73,7 @@ export async function startLog(tg: any, chatId: number, session: any) {
 
     await showTaskPicker(tg, chatId, null, session);
 }
-export async function browseTasks(tg: any, chatId: number, messageId, session, page) {
+export async function browseTasks(tg: any, chatId: ChatId, messageId, session, page) {
     const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.collection(`${base}/tasks`).orderBy("name").get();
@@ -93,7 +93,7 @@ export async function browseTasks(tg: any, chatId: number, messageId, session, p
     buttons.push([{ text: tt(lang, "btnCancel"), callback_data: "xx" }]);
     await tg.editMessage(chatId, messageId, tt(lang, "pickTask"), buttons);
 }
-export async function pickTask(tg: any, chatId: number, messageId, session, taskId) {
+export async function pickTask(tg: any, chatId: ChatId, messageId, session, taskId) {
     const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.doc(`${base}/tasks/${taskId}`).get();
@@ -135,7 +135,7 @@ export async function pickTask(tg: any, chatId: number, messageId, session, task
         current,
     }), rows);
 }
-export async function showMenu(tg: any, chatId: number, messageId, session) {
+export async function showMenu(tg: any, chatId: ChatId, messageId, session) {
     const lang = normalizeLang(session?.lang);
     const d = session.draft || {};
     const mats = (d.materials || []).length;
@@ -166,7 +166,7 @@ export async function showMenu(tg: any, chatId: number, messageId, session) {
     else
         await tg.sendMessage(chatId, text, rows);
 }
-export async function pickMaterial(tg: any, chatId: number, messageId, session) {
+export async function pickMaterial(tg: any, chatId: ChatId, messageId, session) {
     const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.collection(`${base}/inventory`).orderBy("name").limit(20).get();
@@ -181,7 +181,7 @@ export async function pickMaterial(tg: any, chatId: number, messageId, session) 
     await setSession(chatId, { step: "log:material_pick" });
     await tg.editMessage(chatId, messageId, tt(lang, "whichMaterial"), rows);
 }
-export async function askMaterialQty(tg: any, chatId: number, messageId, session, invId) {
+export async function askMaterialQty(tg: any, chatId: ChatId, messageId, session, invId) {
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.doc(`${base}/inventory/${invId}`).get();
     if (!snap.exists)
@@ -200,7 +200,7 @@ export async function askMaterialQty(tg: any, chatId: number, messageId, session
         unit: item.unit || "qty",
     }));
 }
-export async function pickLabourRole(tg: any, chatId: number, messageId, session) {
+export async function pickLabourRole(tg: any, chatId: ChatId, messageId, session) {
     const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.collection(`${base}/labor_rate_cards`).limit(20).get();
@@ -216,7 +216,7 @@ export async function pickLabourRole(tg: any, chatId: number, messageId, session
     await setSession(chatId, { step: "log:labour_pick" });
     await tg.editMessage(chatId, messageId, tt(lang, "whichRole"), rows);
 }
-export async function askHeadcount(tg: any, chatId: number, messageId, session, roleId) {
+export async function askHeadcount(tg: any, chatId: ChatId, messageId, session, roleId) {
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.doc(`${base}/labor_rate_cards/${roleId}`).get();
     if (!snap.exists)
@@ -230,7 +230,7 @@ export async function askHeadcount(tg: any, chatId: number, messageId, session, 
     });
     await tg.editMessage(chatId, messageId, tt(lang, "headcountPrompt", { role: roleName }));
 }
-export async function pickEquipment(tg: any, chatId: number, messageId, session) {
+export async function pickEquipment(tg: any, chatId: ChatId, messageId, session) {
     const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.collection(`${base}/equipment`).limit(20).get();
@@ -247,7 +247,7 @@ export async function pickEquipment(tg: any, chatId: number, messageId, session)
     await setSession(chatId, { step: "log:equipment_pick" });
     await tg.editMessage(chatId, messageId, tt(lang, "whichEquipment"), rows);
 }
-export async function askEquipmentUnit(tg: any, chatId: number, messageId, session, equipmentId) {
+export async function askEquipmentUnit(tg: any, chatId: ChatId, messageId, session, equipmentId) {
     const base = projPath(session.orgId, session.activeProjectId);
     const snap = await db.doc(`${base}/equipment/${equipmentId}`).get();
     if (!snap.exists)
@@ -263,7 +263,7 @@ export async function askEquipmentUnit(tg: any, chatId: number, messageId, sessi
         [{ text: tt(lang, "btnBack"), callback_data: "bk" }],
     ]);
 }
-export async function askEquipmentQty(tg: any, chatId: number, messageId, session, unit) {
+export async function askEquipmentQty(tg: any, chatId: ChatId, messageId, session, unit) {
     const lang = normalizeLang(session?.lang);
     const d = session.draft || {};
     const pe = d.pendingEquipment || {};
@@ -277,27 +277,23 @@ export async function askEquipmentQty(tg: any, chatId: number, messageId, sessio
         unit: unitWord.toLowerCase(),
     }));
 }
-export async function handlePhoto(tg: any, chatId: number, session, photoSizes) {
+// `photoRef` is whatever the channel uses to identify an image -- Telegram
+// passes its array of renditions, WhatsApp a single media id. The handler
+// never inspects it; `api.fetchPhotoBytes` does.
+export async function handlePhoto(api: any, chatId: ChatId, session, photoRef: any) {
     const lang = normalizeLang(session?.lang);
     const d = session.draft || {};
     if (!d.logId) {
-        await tg.sendMessage(chatId, tt(lang, "startLogBeforePhoto"));
+        await api.sendMessage(chatId, tt(lang, "startLogBeforePhoto"));
         return;
     }
-    // Telegram sends several resolutions — the last one is the largest.
-    const largest = photoSizes[photoSizes.length - 1];
-    const filePath = await tg.getFile(largest.file_id);
-    if (!filePath) {
-        await tg.sendMessage(chatId, tt(lang, "cantFetchPhoto"));
+    // Channel-neutral: TelegramApi resolves a file_id, WhatsAppApi a media id.
+    const got = await api.fetchPhotoBytes(photoRef);
+    if (!got.ok) {
+        await api.sendMessage(chatId, tt(lang, got.reason === "fetch" ? "cantFetchPhoto" : "cantDownloadPhoto"));
         return;
     }
-    // Download the image bytes from Telegram.
-    const res = await fetch(`https://api.telegram.org/file/bot${tg.botToken}/${filePath}`);
-    if (!res.ok) {
-        await tg.sendMessage(chatId, tt(lang, "cantDownloadPhoto"));
-        return;
-    }
-    const buffer = Buffer.from(await res.arrayBuffer());
+    const buffer = got.buffer;
     // Upload to Firebase Storage, using the SAME path convention as the web app:
     //   {projectPath}/dailyLogs/{logId}/photo_{ts}.jpg
     const base = projPath(session.orgId, session.activeProjectId);
@@ -321,9 +317,9 @@ export async function handlePhoto(tg: any, chatId: number, session, photoSizes) 
     const photoUrls = [...(d.photoUrls || []), url];
     await setSession(chatId, { draft: { ...d, photoUrls } });
     const s = await getSession(chatId);
-    await showMenu(tg, chatId, null, s);
+    await showMenu(api, chatId, null, s);
 }
-export async function saveLog(tg: any, chatId: number, messageId, session) {
+export async function saveLog(tg: any, chatId: ChatId, messageId, session) {
     const lang = normalizeLang(session?.lang);
     const d = session.draft || {};
     const base = projPath(session.orgId, session.activeProjectId);
@@ -359,7 +355,7 @@ export async function saveLog(tg: any, chatId: number, messageId, session) {
     await tg.editMessage(chatId, messageId, summary);
 }
 
-export async function showToday(tg: any, chatId: number, session: any) {
+export async function showToday(tg: any, chatId: ChatId, session: any) {
     const lang = normalizeLang(session?.lang);
     if (!session.activeProjectId) {
         await tg.sendMessage(chatId, tt(lang, "noActiveProject"));
@@ -400,4 +396,89 @@ export async function showToday(tg: any, chatId: number, session: any) {
         if (l.createdByName) text += `\n  <i>${tt(lang, "todayBy", { name: l.createdByName })}</i>`;
     }
     await tg.sendMessage(chatId, text);
+}
+
+/**
+ * Free text that belongs to whatever step the log flow is waiting on.
+ *
+ * Extracted from the Telegram router so the WhatsApp lane runs the SAME
+ * validation rather than a second copy that drifts -- "enter 0 to 100",
+ * "quantity must be greater than zero" and the headcount rule are product
+ * behaviour, not transport behaviour.
+ *
+ * Returns true when the text was consumed by a step, false when the caller
+ * should fall through to its own "did not understand" reply.
+ */
+export async function handleStepText(api: any, chatId: ChatId, session: any, text: string): Promise<boolean> {
+    const lang = normalizeLang(session?.lang);
+    const step = session.step;
+    if (step === "log:progress") {
+        const pct = parseInt(text, 10);
+        if (isNaN(pct) || pct < 0 || pct > 100) {
+            await api.sendMessage(chatId, tt(lang, "enter0to100"));
+            return true;
+        }
+        await setSession(chatId, {
+            draft: { ...(session.draft || {}), progressPercent: pct },
+        });
+        const s = await getSession(chatId);
+        await showMenu(api, chatId, null, s);
+        return true;
+    }
+    if (step === "log:material_qty") {
+        const qty = parseFloat(text);
+        if (isNaN(qty) || qty <= 0) {
+            await api.sendMessage(chatId, tt(lang, "enterQtyGt0"));
+            return true;
+        }
+        const d = session.draft || {};
+        const materials = [...(d.materials || []), { ...d.pendingMaterial, quantity: qty }];
+        const rest = { ...d };
+        delete rest.pendingMaterial;
+        await setSession(chatId, { draft: { ...rest, materials } });
+        const s = await getSession(chatId);
+        await showMenu(api, chatId, null, s);
+        return true;
+    }
+    if (step === "log:equipment_qty") {
+        const qty = parseFloat(text);
+        if (isNaN(qty) || qty <= 0) {
+            await api.sendMessage(chatId, tt(lang, "enterQtyGt0"));
+            return true;
+        }
+        const d = session.draft || {};
+        const pe = d.pendingEquipment || {};
+        const equipment = [
+            ...(d.equipment || []),
+            { equipmentId: pe.equipmentId, name: pe.name, unit: pe.unit || "hours", quantity: qty },
+        ];
+        const rest = { ...d };
+        delete rest.pendingEquipment;
+        await setSession(chatId, { draft: { ...rest, equipment } });
+        const s = await getSession(chatId);
+        await showMenu(api, chatId, null, s);
+        return true;
+    }
+    if (step === "log:labour_count") {
+        const n = parseInt(text, 10);
+        if (isNaN(n) || n <= 0) {
+            await api.sendMessage(chatId, tt(lang, "enterHeadcountGt0"));
+            return true;
+        }
+        const d = session.draft || {};
+        const labour = [...(d.labour || []), { ...d.pendingLabour, headcount: n }];
+        const rest = { ...d };
+        delete rest.pendingLabour;
+        await setSession(chatId, { draft: { ...rest, labour } });
+        const s = await getSession(chatId);
+        await showMenu(api, chatId, null, s);
+        return true;
+    }
+    if (step === "log:note") {
+        await setSession(chatId, { draft: { ...(session.draft || {}), note: text } });
+        const s = await getSession(chatId);
+        await showMenu(api, chatId, null, s);
+        return true;
+    }
+    return false;
 }

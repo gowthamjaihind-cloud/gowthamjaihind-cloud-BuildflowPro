@@ -1,3 +1,4 @@
+import type { ChatId } from "../session";
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 import { db } from "../../db";
@@ -15,9 +16,9 @@ const inr = (n: number) => `₹${(Number(n) || 0).toLocaleString("en-IN")}`;
 // the money transaction stays in one place (the web app).
 export async function handleInvoicePhoto(
   tg: any,
-  chatId: number,
+  chatId: ChatId,
   session: any,
-  photoSizes: any[],
+  photoRef: any,
   key: string,
 ) {
   const lang = normalizeLang(session?.lang);
@@ -30,24 +31,19 @@ export async function handleInvoicePhoto(
 
   const base = projPath(session.orgId, session.activeProjectId);
 
-  // Download the largest rendition from Telegram.
-  const largest = photoSizes[photoSizes.length - 1];
-  const filePath = await tg.getFile(largest.file_id);
-  if (!filePath) {
-    await tg.sendMessage(chatId, tt(lang, "cantFetchPhoto"));
+  // Channel-neutral: TelegramApi resolves a file_id, WhatsAppApi a media id.
+  const got = await tg.fetchPhotoBytes(photoRef);
+  if (!got.ok) {
+    await tg.sendMessage(chatId, tt(lang, got.reason === "fetch" ? "cantFetchPhoto" : "cantDownloadPhoto"));
     return;
   }
-  const dl = await fetch(`https://api.telegram.org/file/bot${tg.botToken}/${filePath}`);
-  if (!dl.ok) {
-    await tg.sendMessage(chatId, tt(lang, "cantDownloadPhoto"));
-    return;
-  }
-  const buffer = Buffer.from(await dl.arrayBuffer());
-  const base64 = buffer.toString("base64");
+  const base64 = got.buffer.toString("base64");
 
   let result: any;
   try {
-    result = await readAndMatchInvoice(base64, "image/jpeg", session.orgId, session.activeProjectId, key);
+    // Trust the fetched type: Telegram photos are jpeg, but a WhatsApp
+    // document is routinely a PDF, and Gemini needs the real mime type.
+    result = await readAndMatchInvoice(base64, got.mimeType, session.orgId, session.activeProjectId, key);
   } catch (e: any) {
     console.error("Invoice read failed:", e);
     // Surface the friendly quota message; otherwise a generic read failure.
@@ -65,9 +61,13 @@ export async function handleInvoicePhoto(
   try {
     const bucket = admin.storage().bucket();
     const token = crypto.randomUUID();
-    const storagePath = `${base}/vendor_bills/${billId}/invoice.jpg`;
-    await bucket.file(storagePath).save(buffer, {
-      metadata: { contentType: "image/jpeg", metadata: { firebaseStorageDownloadTokens: token } },
+    // The extension follows the real type. A WhatsApp document is often a
+    // PDF, and storing one as .jpg leaves it unopenable for whoever later
+    // has to check the bill against the goods receipt.
+    const ext = got.mimeType === "application/pdf" ? "pdf" : "jpg";
+    const storagePath = `${base}/vendor_bills/${billId}/invoice.${ext}`;
+    await bucket.file(storagePath).save(got.buffer, {
+      metadata: { contentType: got.mimeType, metadata: { firebaseStorageDownloadTokens: token } },
     });
     sourceFileUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media&token=${token}`;
   } catch (e) {

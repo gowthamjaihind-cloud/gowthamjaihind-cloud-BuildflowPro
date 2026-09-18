@@ -1,10 +1,10 @@
-import { BotSession } from "./session";
+import { BotSession, type ChatId } from "./session";
 import { db } from "../db";
 
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 60 * 60 * 1000;
 
-export const checkRateLimit = async (chatId: number): Promise<boolean> => {
+export const checkRateLimit = async (chatId: ChatId): Promise<boolean> => {
   const ref = db.collection("bot_rate_limits").doc(String(chatId));
   const now = Date.now();
   return db.runTransaction(async (tx) => {
@@ -22,7 +22,7 @@ export const checkRateLimit = async (chatId: number): Promise<boolean> => {
 
 export interface RedeemResult { ok: boolean; email?: string; userId?: string; orgId?: string; }
 
-export const redeemLinkCode = async (code: string, chatId: number): Promise<RedeemResult> => {
+export const redeemLinkCode = async (code: string, chatId: ChatId): Promise<RedeemResult> => {
   const ref = db.collection("bot_link_codes").doc(code);
   return db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
@@ -39,7 +39,7 @@ export const redeemLinkCode = async (code: string, chatId: number): Promise<Rede
   });
 };
 
-export const validateSession = async (chatId: number, session: BotSession | null): Promise<boolean> => {
+export const validateSession = async (chatId: ChatId, session: BotSession | null): Promise<boolean> => {
   if (!session?.userId) return false;
   const snap = await db.collection("users").doc(session.userId).get();
   if (!snap.exists) return false;

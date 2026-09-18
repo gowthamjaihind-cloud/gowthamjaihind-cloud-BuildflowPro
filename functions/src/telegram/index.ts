@@ -327,75 +327,10 @@ async function handleUpdate(tg, update, geminiKey) {
         await projects.showProjects(tg, chatId, session);
         return;
     }
-    const step = session.step;
-    if (step === "log:progress") {
-        const pct = parseInt(text, 10);
-        if (isNaN(pct) || pct < 0 || pct > 100) {
-            await tg.sendMessage(chatId, tt(lang, "enter0to100"));
-            return;
-        }
-        await setSession(chatId, {
-            draft: { ...(session.draft || {}), progressPercent: pct },
-        });
-        const s = await getSession(chatId);
-        await log.showMenu(tg, chatId, null, s);
-        return;
-    }
-    if (step === "log:material_qty") {
-        const qty = parseFloat(text);
-        if (isNaN(qty) || qty <= 0) {
-            await tg.sendMessage(chatId, tt(lang, "enterQtyGt0"));
-            return;
-        }
-        const d = session.draft || {};
-        const materials = [...(d.materials || []), { ...d.pendingMaterial, quantity: qty }];
-        const rest = { ...d };
-        delete rest.pendingMaterial;
-        await setSession(chatId, { draft: { ...rest, materials } });
-        const s = await getSession(chatId);
-        await log.showMenu(tg, chatId, null, s);
-        return;
-    }
-    if (step === "log:equipment_qty") {
-        const qty = parseFloat(text);
-        if (isNaN(qty) || qty <= 0) {
-            await tg.sendMessage(chatId, tt(lang, "enterQtyGt0"));
-            return;
-        }
-        const d = session.draft || {};
-        const pe = d.pendingEquipment || {};
-        const equipment = [
-            ...(d.equipment || []),
-            { equipmentId: pe.equipmentId, name: pe.name, unit: pe.unit || "hours", quantity: qty },
-        ];
-        const rest = { ...d };
-        delete rest.pendingEquipment;
-        await setSession(chatId, { draft: { ...rest, equipment } });
-        const s = await getSession(chatId);
-        await log.showMenu(tg, chatId, null, s);
-        return;
-    }
-    if (step === "log:labour_count") {
-        const n = parseInt(text, 10);
-        if (isNaN(n) || n <= 0) {
-            await tg.sendMessage(chatId, tt(lang, "enterHeadcountGt0"));
-            return;
-        }
-        const d = session.draft || {};
-        const labour = [...(d.labour || []), { ...d.pendingLabour, headcount: n }];
-        const rest = { ...d };
-        delete rest.pendingLabour;
-        await setSession(chatId, { draft: { ...rest, labour } });
-        const s = await getSession(chatId);
-        await log.showMenu(tg, chatId, null, s);
-        return;
-    }
-    if (step === "log:note") {
-        await setSession(chatId, { draft: { ...(session.draft || {}), note: text } });
-        const s = await getSession(chatId);
-        await log.showMenu(tg, chatId, null, s);
-        return;
-    }
+    // One implementation, two channels: the WhatsApp lane routes free text
+    // through the same function. It returns false when the text belongs to
+    // no step, so the fallback below still fires.
+    if (await log.handleStepText(tg, chatId, session, text)) return;
     await tg.sendMessage(chatId, tt(lang, "didntUnderstand"));
 }
 export const onUserUnlinked = onDocumentUpdated({
