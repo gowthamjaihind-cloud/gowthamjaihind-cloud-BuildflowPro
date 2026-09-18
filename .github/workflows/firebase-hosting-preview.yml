@@ -44,6 +44,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The deploy workflow typechecks and tests before it ships; this one did
+      # neither, so "CI green" on a pull request only ever meant the preview
+      # bundle built. A test that could only fail on main is exactly what that
+      # gap produces, and it produced one: a spec shelling out to python3 for
+      # numpy, which this runner does not have, passed every PR run and broke
+      # the first deploy after merge. The two workflows verify the same things
+      # now.
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Tests
+        run: npm test
+
       - name: Build frontend
         run: npx vite build
         env:
