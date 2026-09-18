@@ -1,5 +1,9 @@
 import * as admin from "firebase-admin";
 import { db } from "../db";
+// The pure half lives in bot/channel.ts so it can be tested without an
+// initialised admin app; re-exported here because callers expect it.
+export { WA_PREFIX, channelOf, linkFields, type ChatId, type Channel } from "../bot/channel";
+import type { ChatId } from "../bot/channel";
 
 /**
  * Who a session belongs to.
@@ -10,7 +14,6 @@ import { db } from "../db";
  * lets a single set of handlers drive both channels rather than the log flow
  * being written twice and drifting apart.
  */
-export type ChatId = string | number;
 
 export interface BotSession {
   chatId: ChatId;

@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { WA_PREFIX } from "../bot/channel";
 
 /**
  * Everything that has to be right about an inbound WhatsApp webhook, kept pure
@@ -144,4 +145,4 @@ export function parseInbound(payload: any): InboundMessage[] {
  * channels in one collection is deliberate: a person linked on both should get
  * the same active project and language.
  */
-export const waSessionKey = (waId: string) => `wa:${waId}`;
+export const waSessionKey = (waId: string) => `${WA_PREFIX}${waId}`;

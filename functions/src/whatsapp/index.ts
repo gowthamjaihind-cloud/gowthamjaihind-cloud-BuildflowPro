@@ -272,3 +272,7 @@ async function handleText(wa: WhatsAppApi, chatId: ChatId, text: string) {
   }
   await wa.sendMessage(chatId, tt(lang, "help"));
 }
+
+// The 17:00 and 10:00 nudges, which on WhatsApp have to reckon with the
+// 24-hour service window. See reminders.ts.
+export { whatsappLogReminder, whatsappPlanReminder } from "./reminders";

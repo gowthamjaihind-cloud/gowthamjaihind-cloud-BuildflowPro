@@ -1,4 +1,4 @@
-import { BotSession, type ChatId } from "./session";
+import { BotSession, channelOf, linkFields, type ChatId } from "./session";
 import { db } from "../db";
 
 const MAX_ATTEMPTS = 5;
@@ -31,9 +31,13 @@ export const redeemLinkCode = async (code: string, chatId: ChatId): Promise<Rede
     if (data.used) return { ok: false };
     if (Date.now() > (data.expiresAt || 0)) return { ok: false };
     tx.update(ref, { used: true, usedAt: Date.now(), usedByChatId: chatId });
+    // Which field depends on the channel. One link code can be redeemed from
+    // either, and writing a WhatsApp id into telegramChatId silently unlinks
+    // that person's Telegram: their session stops validating and the 5 PM
+    // Telegram reminder then tries to message "wa:9190...". Nothing throws.
     tx.update(db.collection("users").doc(data.userId), {
-      telegramChatId: chatId,
-      telegramLinkedAt: Date.now(),
+      [linkFields(channelOf(chatId)).id]: chatId,
+      [linkFields(channelOf(chatId)).at]: Date.now(),
     });
     return { ok: true, email: data.email, userId: data.userId, orgId: data.orgId };
   });
@@ -45,6 +49,6 @@ export const validateSession = async (chatId: ChatId, session: BotSession | null
   if (!snap.exists) return false;
   const u = snap.data()!;
   if (u.disabled === true || u.disabled === "true") return false;
-  if (u.telegramChatId !== chatId) return false;
+  if (u[linkFields(channelOf(chatId)).id] !== chatId) return false;
   return true;
 };

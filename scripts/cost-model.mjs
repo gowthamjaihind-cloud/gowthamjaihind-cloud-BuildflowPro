@@ -152,10 +152,15 @@ console.log(`  revenue ₹99/mo against a worst-month cost of ` +
   `₹${inr(activeOps + totalGB * P.gcsStoreGBMonth).toFixed(2)} -> margin ₹${marginActive.toFixed(0)}/mo (${((marginActive / 99) * 100).toFixed(0)}%)`);
 console.log(`  and retention is covered for as long as the customer keeps paying.\n`);
 
-console.log(`NOTE: ${((A.scansPerMonth * A.scanRawMB) / 1e3 / gbAddedMonth * 100).toFixed(0)}% of the storage added each month is ` +
-  `SCANNED INVOICES UPLOADED UNCOMPRESSED`);
-console.log(`  (services/invoiceReceiptService.ts uploads sourceFile raw, while daily-log`);
-console.log(`   photos and vault images go through compressImage at 1600px/q0.7).`);
-console.log(`  Routing that one call through the same compressor cuts stored bytes per`);
-console.log(`  project from ${totalGB.toFixed(2)} GB to about ` +
-  `${(totalGB - (A.scansPerMonth * A.months * (A.scanRawMB - 0.25)) / 1e3).toFixed(2)} GB.\n`);
+console.log(`WHERE THE STORED BYTES GO`);
+const scanShare = ((A.scansPerMonth * A.scanRawMB) / 1e3 / gbAddedMonth) * 100;
+console.log(`  site photos      ${(((photosMonth * A.photoKB) / 1e6 / gbAddedMonth) * 100).toFixed(0)}%`);
+console.log(`  drawings, PDFs   ${(((A.docsPerMonth * A.docMB) / 1e3 / gbAddedMonth) * 100).toFixed(0)}%`);
+console.log(`  invoice scans    ${scanShare.toFixed(0)}%`);
+console.log(`\n  Invoice scans used to be 60% of this on their own, because`);
+console.log(`  services/invoiceReceiptService.ts stored the source file with a bare`);
+console.log(`  uploadBytes while every other image went through compressImage. It`);
+console.log(`  now compresses at 2200px/q0.82 -- gentler than the 1600px/q0.7 used`);
+console.log(`  for site photos, because a GST invoice has to stay legible for an`);
+console.log(`  audit -- and PDFs are passed through untouched. That took stored`);
+console.log(`  bytes per project from 1.79 GB to ${totalGB.toFixed(2)} GB.\n`);
