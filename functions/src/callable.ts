@@ -19,7 +19,8 @@
  *      then leave the Functions/Firestore/Storage providers in MONITORING
  *      mode and watch the "verified requests" share climb as clients update.
  *   2. Only once that share is effectively 100%, redeploy functions with
- *      APPCHECK_ENFORCE=true. One variable covers all 27.
+ *      APPCHECK_ENFORCE=true. One variable covers all of them (28 today, and
+ *      functions/src/appcheck.test.ts fails if a new one forgets to opt in).
  *   3. If anything regresses, redeploy without it. No code change either way.
  *
  * Monitoring first is the whole point: it tells you what enforcement WOULD
