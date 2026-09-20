@@ -34,7 +34,20 @@ function canRenderCues(): boolean {
 
 const CAN_RENDER = canRenderCues();
 
+/**
+ * Memoised, because each call is a separate `python3` spawn and this file made
+ * eleven of them per run. The curves are pure arithmetic — the same arguments
+ * cannot give a different answer — so a cache costs nothing and removes most of
+ * the spawns. It matters because this suite now gates the production deploy: a
+ * single transient spawn failure would turn into a red deploy on main for a
+ * reason that has nothing to do with the change being deployed.
+ */
+const sampleCache = new Map<string, number[]>();
+
 function sample(fn: string, n = 400, extra = ""): number[] {
+  const key = `${fn}|${n}|${extra}`;
+  const hit = sampleCache.get(key);
+  if (hit) return hit;
   const out = execFileSync(
     "python3",
     [
@@ -45,7 +58,9 @@ function sample(fn: string, n = 400, extra = ""): number[] {
     ],
     { encoding: "utf8" },
   );
-  return out.trim().split(/\s+/).map(Number);
+  const vals = out.trim().split(/\s+/).map(Number);
+  sampleCache.set(key, vals);
+  return vals;
 }
 
 describe.each(["arc", "walk_arc"])("%s", (fn) => {
