@@ -1,0 +1,571 @@
+key,english,tamil,translate,note,screen,occurrences,first_seen
+laborTrackingView.vendor,Vendor,,YES,,Labor Tracking View; Material Consumption View; Procurement View,11,components/LaborTrackingView.tsx:871
+brandLogo.sitetru,Sitetru,,NO,Brand name — never translate or transliterate,Brand Logo; Cost Management; Layout,7,components/BrandLogo.tsx:18
+clientPaymentsView.amount,Amount (₹),,YES,,Client Payments View; Cost Management; Procurement View,5,components/ClientPaymentsView.tsx:490
+costManagement.labor,Labor,,YES,,Cost Management; Procurement View; WBSView,5,components/CostManagement.tsx:1899
+procurementView.notes,Notes,,YES,,Procurement View; Goods Receipt Details; Goods Receipt Form,5,components/ProcurementView.tsx:2516
+costManagement.quantity,Quantity,,YES,,Cost Management; Estimate Tracker View; Material Consumption View,4,components/CostManagement.tsx:1059
+costManagement.planned,Planned,,YES,,Cost Management,4,components/CostManagement.tsx:1339
+estimateTrackerView.addItem,Add Item,,YES,,Estimate Tracker View; Inventory View; Material Receipt Form,4,components/EstimateTrackerView.tsx:589
+laborTrackingView.selectVendor,Select Vendor,,YES,,Labor Tracking View; Procurement View; Material Receipt Form,4,components/LaborTrackingView.tsx:1123
+goodsReceiptDetails.item,Item,,YES,,Goods Receipt Details; Goods Receipt Form; Purchase Order Form,4,components/purchase/GoodsReceiptDetails.tsx:199
+costManagement.materialName,Material Name,,YES,,Cost Management; Material Consumption View,3,components/CostManagement.tsx:1058
+costManagement.type,Type,,YES,,Cost Management; Document Vault,3,components/CostManagement.tsx:1771
+dailyLogEntryScreen.preview,Preview,,YES,,Daily Log Entry Screen; Create Project Modal; Edit Project Modal,3,components/DailyLogEntryScreen.tsx:892
+dashboardView.promise,Promise,,YES,,Dashboard View; Schedule View,3,components/DashboardView.tsx:28
+ganttChart.taskName,Task Name,,YES,,Gantt Chart; Mobile WBSView; Tablet WBSView,3,components/GanttChart.tsx:435
+inventoryView.value,Value,,YES,,Inventory View; Procurement View,3,components/InventoryView.tsx:1049
+inventoryView.backToList,Back to List,,YES,,Inventory View,3,components/InventoryView.tsx:1690
+procurementView.matched,Matched,,YES,,Procurement View; Material Receipt Form,3,components/ProcurementView.tsx:1352
+procurementView.deleteLedgerEntry,Delete ledger entry,,YES,,Procurement View,3,components/ProcurementView.tsx:1706
+wBSView.logWork,Log Work,,YES,,WBSView; Mobile WBSView; Tablet WBSView,3,components/WBSView.tsx:966
+wBSView.deleteTask,Delete Task,,YES,,WBSView; Mobile WBSView; Tablet WBSView,3,components/WBSView.tsx:1494
+wBSView.activityDesignation,Activity Designation,,YES,,WBSView; Mobile WBSView; Tablet WBSView,3,components/WBSView.tsx:1634
+wBSView.workPhase,Work Phase,,YES,,WBSView; Mobile WBSView; Tablet WBSView,3,components/WBSView.tsx:1695
+wBSView.location,Location,,YES,,WBSView; Mobile WBSView; Tablet WBSView,3,components/WBSView.tsx:1791
+wBSView.activityType,Activity Type,,YES,,WBSView; Mobile WBSView; Tablet WBSView,3,components/WBSView.tsx:1930
+wBSView.editTask,Edit task,,YES,,WBSView; Mobile WBSView; Tablet WBSView,3,components/WBSView.tsx:976
+materialReceiptForm.removeItem,Remove item,,YES,,Material Receipt Form; Purchase Order Form,3,components/purchase/MaterialReceiptForm.tsx:460
+costManagement.details,Details,,YES,,Cost Management,2,components/CostManagement.tsx:797
+costManagement.role,Role,,YES,,Cost Management; Material Consumption View,2,components/CostManagement.tsx:959
+costManagement.plannedTotal,Planned Total,,YES,,Cost Management,2,components/CostManagement.tsx:1646
+costManagement.projectPhase,Project Phase,,YES,,Cost Management,2,components/CostManagement.tsx:1696
+costManagement.categoryHead,Category (Head),,YES,,Cost Management,2,components/CostManagement.tsx:1770
+costManagement.other,Other,,YES,,Cost Management; Inventory View,2,components/CostManagement.tsx:2310
+costManagement.noTasksFound,No tasks found,,YES,,Cost Management; Estimate Tracker View,2,components/CostManagement.tsx:1735
+dailyLogEntryScreen.removePhoto,Remove photo,,YES,,Daily Log Entry Screen; Goods Receipt Form,2,components/DailyLogEntryScreen.tsx:896
+documentVault.accessLevel,Access Level,,YES,,Document Vault,2,components/DocumentVault.tsx:402
+documentVault.documentName,Document Name,,YES,,Document Vault,2,components/DocumentVault.tsx:568
+documentVault.category,Category,,YES,,Document Vault; Inventory View,2,components/DocumentVault.tsx:736
+estimateTrackerView.lineItems,Line Items,,YES,,Estimate Tracker View; Purchase Order Form,2,components/EstimateTrackerView.tsx:577
+estimateTrackerView.unit,Unit,,YES,,Estimate Tracker View; Inventory View,2,components/EstimateTrackerView.tsx:673
+estimateTrackerView.rate,Rate (₹),,YES,,Estimate Tracker View; Purchase Order Form,2,components/EstimateTrackerView.tsx:686
+estimateTrackerView.costToDate,Cost to Date,,YES,,Estimate Tracker View,2,components/EstimateTrackerView.tsx:790
+estimateTrackerView.clientNotes,Client Notes,,YES,,Estimate Tracker View,2,components/EstimateTrackerView.tsx:1048
+estimateTrackerView.termsConditionsOrScope,"Terms, conditions, or scope summary...",,YES,,Estimate Tracker View,2,components/EstimateTrackerView.tsx:1057
+ganttChart.groupTasksBy,Group tasks by,,YES,,Gantt Chart; Mini Gantt,2,components/GanttChart.tsx:390
+inventoryView.units,Units,,YES,,Inventory View,2,components/InventoryView.tsx:702
+inventoryView.saveToMaster,Save to master,,YES,,Inventory View; Procurement View,2,components/InventoryView.tsx:805
+inventoryView.itemName,Item Name,,YES,,Inventory View,2,components/InventoryView.tsx:1070
+inventoryView.systemQty,System Qty,,YES,,Inventory View,2,components/InventoryView.tsx:1073
+inventoryView.physicalCount,Physical Count,,YES,,Inventory View,2,components/InventoryView.tsx:1076
+inventoryView.action,Action,,YES,,Inventory View; Procurement View,2,components/InventoryView.tsx:1082
+inventoryView.sync,Sync,,YES,,Inventory View,2,components/InventoryView.tsx:1161
+inventoryView.addFromMaster,Add from master,,YES,,Inventory View; Procurement View,2,components/InventoryView.tsx:1546
+inventoryView.editItem,Edit item,,YES,,Inventory View,2,components/InventoryView.tsx:971
+inventoryView.deleteItem,Delete item,,YES,,Inventory View,2,components/InventoryView.tsx:979
+laborTrackingView.grossAmount,Gross Amount,,YES,,Labor Tracking View,2,components/LaborTrackingView.tsx:679
+laborTrackingView.outstanding,Outstanding,,YES,,Labor Tracking View; Procurement View,2,components/LaborTrackingView.tsx:701
+laborTrackingView.netAmount,Net Amount,,YES,,Labor Tracking View,2,components/LaborTrackingView.tsx:801
+laborTrackingView.aggregatedFiscalOutput,Aggregated Fiscal Output,,YES,,Labor Tracking View,2,components/LaborTrackingView.tsx:825
+laborTrackingView.deleteRaBill,Delete RA bill,,YES,"Translate, but keep RA as-is",Labor Tracking View,2,components/LaborTrackingView.tsx:777
+laborTrackingView.noCertificationLogsArchived,No certification logs archived,,YES,,Labor Tracking View,2,components/LaborTrackingView.tsx:818
+materialConsumptionView.noLabourLoggedYet,No labour logged yet,,YES,,Material Consumption View,2,components/MaterialConsumptionView.tsx:652
+procurementView.pendingReview,Pending review,,YES,,Procurement View,2,components/ProcurementView.tsx:922
+procurementView.discrepancy,Discrepancy,,YES,,Procurement View,2,components/ProcurementView.tsx:1357
+procurementView.unlinked,Unlinked,,YES,,Procurement View,2,components/ProcurementView.tsx:1362
+procurementView.outstandingStatementBalance,Outstanding Statement Balance,,YES,,Procurement View,2,components/ProcurementView.tsx:1767
+procurementView.editLedgerEntry,Edit ledger entry,,YES,,Procurement View,2,components/ProcurementView.tsx:1687
+wBSView.scheduling,Scheduling,,YES,,WBSView,2,components/WBSView.tsx:2070
+wBSView.resourcesBudget,Resources & Budget,,YES,,WBSView,2,components/WBSView.tsx:2506
+wBSView.documents,Documents,,YES,,WBSView,2,components/WBSView.tsx:2859
+goodsReceiptDetails.recordedBy,Recorded By,,YES,,Goods Receipt Details; Goods Receipt Tab,2,components/purchase/GoodsReceiptDetails.tsx:188
+goodsReceiptDetails.materialReceived,Material Received,,YES,,Goods Receipt Details; Goods Receipt Form,2,components/purchase/GoodsReceiptDetails.tsx:194
+goodsReceiptDetails.ordered,Ordered,,YES,,Goods Receipt Details; Goods Receipt Form,2,components/purchase/GoodsReceiptDetails.tsx:200
+goodsReceiptDetails.received,Received,,YES,,Goods Receipt Details; Goods Receipt Form,2,components/purchase/GoodsReceiptDetails.tsx:201
+goodsReceiptDetails.accepted,Accepted,,YES,,Goods Receipt Details; Goods Receipt Form,2,components/purchase/GoodsReceiptDetails.tsx:202
+goodsReceiptDetails.rejected,Rejected,,YES,,Goods Receipt Details; Goods Receipt Form,2,components/purchase/GoodsReceiptDetails.tsx:203
+goodsReceiptTab.poNumber,PO Number,,YES,"Translate, but keep PO as-is",Goods Receipt Tab; Purchase Order Tab,2,components/purchase/GoodsReceiptTab.tsx:54
+materialReceiptForm.totalAmount,Total Amount,,YES,,Material Receipt Form; Purchase Order Form,2,components/purchase/MaterialReceiptForm.tsx:526
+scanInvoice.done,Done,,YES,,Scan Invoice; Vertical Timeline,2,components/purchase/ScanInvoice.tsx:301
+mobileWBSView.dailyLogDerivedFields,Daily Log Derived Fields,,YES,,Mobile WBSView; Tablet WBSView,2,components/schedule/MobileWBSView.tsx:464
+mobileWBSView.setAtOffice,Set at office,,YES,,Mobile WBSView; Tablet WBSView,2,components/schedule/MobileWBSView.tsx:497
+mobileWBSView.planDates,Plan Dates,,YES,,Mobile WBSView; Tablet WBSView,2,components/schedule/MobileWBSView.tsx:523
+mobileWBSView.resourceValue,Resource Value,,YES,,Mobile WBSView; Tablet WBSView,2,components/schedule/MobileWBSView.tsx:531
+mobileWBSView.openFullForm,Open full form,,YES,,Mobile WBSView; Tablet WBSView,2,components/schedule/MobileWBSView.tsx:563
+mobileWBSView.noWbsTasksYet,No WBS tasks yet,,YES,"Translate, but keep WBS as-is",Mobile WBSView; Tablet WBSView,2,components/schedule/MobileWBSView.tsx:251
+landingPage.connecting,Connecting…,,YES,,Landing Page,2,pages/LandingPage.tsx:261
+landingPage.signIn,Sign in,,YES,,Landing Page,2,pages/LandingPage.tsx:297
+landingPage.continueToSitetru,Continue to Sitetru,,YES,,Landing Page,2,pages/LandingPage.tsx:714
+app.somethingWentWrong,Something went wrong,,YES,,App,1,App.tsx:118
+app.reloadApplication,Reload Application,,YES,,App,1,App.tsx:128
+app.loadingSitetru,Loading Sitetru…,,YES,,App,1,App.tsx:203
+addCapacityModal.decreaseQuantity,Decrease quantity,,YES,,Add Capacity Modal,1,components/AddCapacityModal.tsx:112
+addCapacityModal.increaseQuantity,Increase quantity,,YES,,Add Capacity Modal,1,components/AddCapacityModal.tsx:123
+clientPaymentsView.referenceChequeNo,Reference / Cheque No.,,YES,,Client Payments View,1,components/ClientPaymentsView.tsx:530
+clientPaymentsView.method,Method,,YES,,Client Payments View,1,components/ClientPaymentsView.tsx:547
+clientPaymentsView.bankTransfer,Bank Transfer,,YES,,Client Payments View,1,components/ClientPaymentsView.tsx:560
+clientPaymentsView.cheque,Cheque,,YES,,Client Payments View,1,components/ClientPaymentsView.tsx:561
+clientPaymentsView.cash,Cash,,YES,,Client Payments View,1,components/ClientPaymentsView.tsx:562
+clientPaymentsView.savePayment,Save Payment,,YES,,Client Payments View,1,components/ClientPaymentsView.tsx:579
+clientPaymentsView.noTransactionsRecordedYet,No transactions recorded yet,,YES,,Client Payments View,1,components/ClientPaymentsView.tsx:361
+costManagement.over,Over,,YES,,Cost Management,1,components/CostManagement.tsx:897
+costManagement.track,Track,,YES,,Cost Management,1,components/CostManagement.tsx:901
+costManagement.laborDeploymentBreakdown,Labor Deployment Breakdown,,YES,,Cost Management,1,components/CostManagement.tsx:945
+costManagement.contractor,Contractor,,YES,,Cost Management,1,components/CostManagement.tsx:958
+costManagement.headcount,Headcount,,YES,,Cost Management,1,components/CostManagement.tsx:960
+costManagement.rate,Rate,,YES,,Cost Management,1,components/CostManagement.tsx:962
+costManagement.totalCost,Total Cost,,YES,,Cost Management,1,components/CostManagement.tsx:963
+costManagement.directEntry,Direct Entry,,YES,,Cost Management,1,components/CostManagement.tsx:973
+costManagement.dailyLog,Daily Log,,YES,,Cost Management,1,components/CostManagement.tsx:1021
+costManagement.materialConsumptionBreakdown,Material Consumption Breakdown,,YES,,Cost Management,1,components/CostManagement.tsx:1046
+costManagement.unitRate,Unit Rate,,YES,,Cost Management,1,components/CostManagement.tsx:1060
+costManagement.subtotal,Subtotal,,YES,,Cost Management,1,components/CostManagement.tsx:1061
+costManagement.addTransaction,Add Transaction,,YES,,Cost Management,1,components/CostManagement.tsx:1246
+costManagement.actuals,Actuals,,YES,,Cost Management,1,components/CostManagement.tsx:1299
+costManagement.fromLoggedEquipmentUsage,From logged equipment usage,,YES,,Cost Management,1,components/CostManagement.tsx:1327
+costManagement.costByCategory,Cost by Category,,YES,,Cost Management,1,components/CostManagement.tsx:1408
+costManagement.plannedVsActualSpending,Planned vs Actual spending,,YES,,Cost Management,1,components/CostManagement.tsx:1411
+costManagement.latestTransactions,Latest Transactions,,YES,,Cost Management,1,components/CostManagement.tsx:1507
+costManagement.recentFlow,Recent Flow,,YES,,Cost Management,1,components/CostManagement.tsx:1550
+costManagement.viewAll,View All,,YES,,Cost Management,1,components/CostManagement.tsx:1561
+costManagement.allActivityCodes,All Activity Codes,,YES,,Cost Management,1,components/CostManagement.tsx:1590
+costManagement.plannedBudget,Planned (Budget),,YES,,Cost Management,1,components/CostManagement.tsx:1604
+costManagement.actualSpent,Actual (Spent),,YES,,Cost Management,1,components/CostManagement.tsx:1610
+costManagement.wbsTaskHierarchy,WBS Task Hierarchy,,YES,"Translate, but keep WBS as-is",Cost Management,1,components/CostManagement.tsx:1625
+costManagement.materialCosts,Material Costs,,YES,,Cost Management,1,components/CostManagement.tsx:1631
+costManagement.laborCosts,Labor Costs,,YES,,Cost Management,1,components/CostManagement.tsx:1637
+costManagement.directCosts,Direct Costs,,YES,,Cost Management,1,components/CostManagement.tsx:1643
+costManagement.actualSpent2,Actual Spent,,YES,,Cost Management,1,components/CostManagement.tsx:1649
+costManagement.summaries,Summaries,,YES,,Cost Management,1,components/CostManagement.tsx:1678
+costManagement.directCostEntries,Direct Cost Entries,,YES,,Cost Management,1,components/CostManagement.tsx:1746
+costManagement.addDirectCost,Add Direct Cost,,YES,,Cost Management,1,components/CostManagement.tsx:1761
+costManagement.enterpriseConstructionManagement,Enterprise Construction Management,,YES,,Cost Management,1,components/CostManagement.tsx:1866
+costManagement.actualsOnly,Actuals only,,YES,,Cost Management,1,components/CostManagement.tsx:1938
+costManagement.taskDescription,Task Description,,YES,,Cost Management,1,components/CostManagement.tsx:1973
+costManagement.materialPA,Material (P/A),,YES,,Cost Management,1,components/CostManagement.tsx:1976
+costManagement.laborPA,Labor (P/A),,YES,,Cost Management,1,components/CostManagement.tsx:1979
+costManagement.equipmentActual,Equipment (Actual),,YES,,Cost Management,1,components/CostManagement.tsx:1982
+costManagement.directCostPA,Direct Cost (P/A),,YES,,Cost Management,1,components/CostManagement.tsx:1985
+costManagement.actualTotal,Actual Total,,YES,,Cost Management,1,components/CostManagement.tsx:1991
+costManagement.projectTotals,Project Totals,,YES,,Cost Management,1,components/CostManagement.tsx:2051
+costManagement.executiveSummary,Executive Summary,,YES,,Cost Management,1,components/CostManagement.tsx:2133
+costManagement.directCostLedger,Direct Cost Ledger,,YES,,Cost Management,1,components/CostManagement.tsx:2186
+costManagement.actualSpend,Actual Spend,,YES,,Cost Management,1,components/CostManagement.tsx:2280
+costManagement.plannedBudget2,Planned Budget,,YES,,Cost Management,1,components/CostManagement.tsx:2281
+costManagement.subcontractor,Subcontractor,,YES,,Cost Management,1,components/CostManagement.tsx:2308
+costManagement.transport,Transport,,YES,,Cost Management,1,components/CostManagement.tsx:2309
+costManagement.materialLegacy,Material (Legacy),,YES,,Cost Management,1,components/CostManagement.tsx:2312
+costManagement.saveTransaction,Save Transaction,,YES,,Cost Management,1,components/CostManagement.tsx:2336
+costManagement.deleteEntry,Delete Entry?,,YES,,Cost Management,1,components/CostManagement.tsx:2360
+costManagement.saveTaskCosts,Save task costs,,YES,,Cost Management,1,components/CostManagement.tsx:911
+costManagement.cancelEditing,Cancel editing,,YES,,Cost Management,1,components/CostManagement.tsx:918
+costManagement.searchWbsTasks,Search WBS tasks...,,YES,"Translate, but keep WBS as-is",Cost Management,1,components/CostManagement.tsx:1577
+costManagement.noDirectCostsRecorded,No direct costs recorded yet,,YES,,Cost Management,1,components/CostManagement.tsx:1781
+dailyLogEntryScreen.removeMaterialRow,Remove material row,,YES,,Daily Log Entry Screen,1,components/DailyLogEntryScreen.tsx:601
+dailyLogEntryScreen.removeLabourRow,Remove labour row,,YES,,Daily Log Entry Screen,1,components/DailyLogEntryScreen.tsx:655
+dailyLogEntryScreen.removeEquipmentRow,Remove equipment row,,YES,,Daily Log Entry Screen,1,components/DailyLogEntryScreen.tsx:719
+documentVault.selectedAssets,Selected Assets,,YES,,Document Vault,1,components/DocumentVault.tsx:374
+documentVault.bulkActionsAvailable,Bulk actions available,,YES,,Document Vault,1,components/DocumentVault.tsx:377
+documentVault.downloadSet,Download Set,,YES,,Document Vault,1,components/DocumentVault.tsx:390
+documentVault.deselectAll,Deselect All,,YES,,Document Vault,1,components/DocumentVault.tsx:423
+documentVault.allCategories,All Categories,,YES,,Document Vault,1,components/DocumentVault.tsx:462
+documentVault.uploadNewDocument,Upload New Document,,YES,,Document Vault,1,components/DocumentVault.tsx:491
+documentVault.selectAFileFrom,Select a file from your device or provide an external link.,,YES,,Document Vault,1,components/DocumentVault.tsx:494
+documentVault.chooseAFileFrom,Choose a file from device,,YES,,Document Vault,1,components/DocumentVault.tsx:533
+documentVault.dragAndDropOr,Drag and drop or click to browse,,YES,,Document Vault,1,components/DocumentVault.tsx:536
+documentVault.categoryOrganisation,Category & Organisation,,YES,,Document Vault,1,components/DocumentVault.tsx:545
+documentVault.relatedWbsTask,Related WBS Task,,YES,"Translate, but keep WBS as-is",Document Vault,1,components/DocumentVault.tsx:581
+documentVault.noLink,No Link,,YES,,Document Vault,1,components/DocumentVault.tsx:591
+documentVault.documentType,Document Type,,YES,,Document Vault,1,components/DocumentVault.tsx:601
+documentVault.image,Image,,YES,,Document Vault,1,components/DocumentVault.tsx:613
+documentVault.public,Public,,YES,,Document Vault,1,components/DocumentVault.tsx:627
+documentVault.internal,Internal,,YES,,Document Vault,1,components/DocumentVault.tsx:628
+documentVault.confidential,Confidential,,YES,,Document Vault,1,components/DocumentVault.tsx:629
+documentVault.externalUrlFallback,External URL (Fallback),,YES,,Document Vault,1,components/DocumentVault.tsx:634
+documentVault.searchTagsCommaSeparated,Search Tags (Comma separated),,YES,,Document Vault,1,components/DocumentVault.tsx:651
+documentVault.uploading,Uploading...,,YES,,Document Vault,1,components/DocumentVault.tsx:690
+documentVault.startUpload,Start Upload,,YES,,Document Vault,1,components/DocumentVault.tsx:695
+documentVault.linkedWbsTask,Linked WBS Task,,YES,"Translate, but keep WBS as-is",Document Vault,1,components/DocumentVault.tsx:727
+documentVault.access,Access,,YES,,Document Vault,1,components/DocumentVault.tsx:733
+documentVault.noTaskLinked,No Task Linked,,YES,,Document Vault,1,components/DocumentVault.tsx:797
+documentVault.viewFile,View File,,YES,,Document Vault,1,components/DocumentVault.tsx:838
+documentVault.financialAudit2024,Financial Audit 2024,,YES,,Document Vault,1,components/DocumentVault.tsx:575
+documentVault.teamLunchSafetyVip,"Team, Lunch, Safety, VIP Visit",,YES,,Document Vault,1,components/DocumentVault.tsx:657
+documentVault.selectAllDocuments,Select all documents,,YES,,Document Vault,1,components/DocumentVault.tsx:711
+documentVault.selectDocument,Select document,,YES,,Document Vault,1,components/DocumentVault.tsx:755
+documentVault.selectPhoto,Select photo,,YES,,Document Vault,1,components/DocumentVault.tsx:889
+documentVault.noSitePhotosYet,No site photos yet,,YES,,Document Vault,1,components/DocumentVault.tsx:940
+estimateTrackerView.deleteEstimate,Delete estimate?,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:480
+estimateTrackerView.syncWbs,Sync WBS,,YES,"Translate, but keep WBS as-is",Estimate Tracker View,1,components/EstimateTrackerView.tsx:583
+estimateTrackerView.noLineItems,No line items,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:597
+estimateTrackerView.addItemsManuallyOr,Add items manually or sync from your WBS/Tasks list.,,YES,"Translate, but keep WBS as-is",Estimate Tracker View,1,components/EstimateTrackerView.tsx:600
+estimateTrackerView.taskItemName,Task / Item Name,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:620
+estimateTrackerView.total,Total (₹),,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:703
+estimateTrackerView.classification,Classification:,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:712
+estimateTrackerView.noBaseContractItems,No base contract items in this estimate.,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:745
+estimateTrackerView.noChangeOrderItems,No change order items in this estimate.,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:764
+estimateTrackerView.contractPosition,Contract Position,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:779
+estimateTrackerView.contractValueExGst,Contract Value (ex-GST),,YES,"Translate, but keep GST as-is",Estimate Tracker View,1,components/EstimateTrackerView.tsx:784
+estimateTrackerView.basedOnCostIncurred,"Based on cost incurred so far, not final cost.",,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:801
+estimateTrackerView.forecastAtCompletion,Forecast at Completion,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:856
+estimateTrackerView.costPerformance,Cost Performance,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:867
+estimateTrackerView.forecastFinalCost,Forecast Final Cost,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:877
+estimateTrackerView.noCostRecordedOn,No cost recorded on these tasks yet.,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:921
+estimateTrackerView.openCommitments,Open Commitments,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:934
+estimateTrackerView.quoteSummary,Quote Summary,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:953
+estimateTrackerView.baseContractSubtotal,Base Contract Subtotal,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:956
+estimateTrackerView.changeOrderSubtotal,Change Order Subtotal,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:962
+estimateTrackerView.combinedSubtotal,Combined Subtotal,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:969
+estimateTrackerView.tax,Tax (%),,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:975
+estimateTrackerView.totalQuote,Total Quote,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:998
+estimateTrackerView.markAsSent,Mark as Sent,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1011
+estimateTrackerView.approve,Approve,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1024
+estimateTrackerView.reject,Reject,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1034
+estimateTrackerView.clientApproved,Client Approved,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1041
+estimateTrackerView.newEstimate,New Estimate,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1163
+estimateTrackerView.number,Number,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1183
+estimateTrackerView.contractExGst,Contract (ex-GST),,YES,"Translate, but keep GST as-is",Estimate Tracker View,1,components/EstimateTrackerView.tsx:1192
+estimateTrackerView.marginToDate,Margin to Date,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1198
+estimateTrackerView.totalIncGst,Total (inc GST),,YES,"Translate, but keep GST as-is",Estimate Tracker View,1,components/EstimateTrackerView.tsx:1201
+estimateTrackerView.newClientEstimate,New Client Estimate,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1302
+estimateTrackerView.dateValidUntil,Date Valid Until,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1315
+estimateTrackerView.taxRate,Tax Rate (%),,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1331
+estimateTrackerView.createEstimate,Create Estimate,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1381
+estimateTrackerView.backToEstimates,Back to estimates,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:515
+estimateTrackerView.removeLineItem,Remove line item,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:611
+estimateTrackerView.searchEstimatesByNumber,Search estimates by number or status...,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1172
+estimateTrackerView.openEstimate,Open estimate,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1276
+estimateTrackerView.noEstimatesYet,No estimates yet,,YES,,Estimate Tracker View,1,components/EstimateTrackerView.tsx:1289
+ganttChart.zoomNavigation,Zoom Navigation,,YES,,Gantt Chart,1,components/GanttChart.tsx:417
+ganttChart.start,Start,,YES,,Gantt Chart,1,components/GanttChart.tsx:985
+ganttChart.editTask,Edit Task,,YES,,Gantt Chart,1,components/GanttChart.tsx:1028
+inventoryView.inventoryManagement,Inventory Management,,YES,,Inventory View,1,components/InventoryView.tsx:620
+inventoryView.inventoryValue,Inventory Value,,YES,,Inventory View,1,components/InventoryView.tsx:641
+inventoryView.totalValuation,Total Valuation,,YES,,Inventory View,1,components/InventoryView.tsx:645
+inventoryView.fiscalScope,Fiscal Scope,,YES,,Inventory View,1,components/InventoryView.tsx:670
+inventoryView.allocated,Allocated,,YES,,Inventory View,1,components/InventoryView.tsx:674
+inventoryView.supplyRisk,Supply Risk,,YES,,Inventory View,1,components/InventoryView.tsx:693
+inventoryView.stockLedger,Stock Ledger,,YES,,Inventory View,1,components/InventoryView.tsx:717
+inventoryView.reconciliation,Reconciliation,,YES,,Inventory View,1,components/InventoryView.tsx:723
+inventoryView.configuration,Configuration,,YES,,Inventory View,1,components/InventoryView.tsx:729
+inventoryView.stock,Stock,,YES,,Inventory View,1,components/InventoryView.tsx:1041
+inventoryView.unitCost,Unit Cost,,YES,,Inventory View,1,components/InventoryView.tsx:1045
+inventoryView.note,Note:,,YES,,Inventory View,1,components/InventoryView.tsx:1061
+inventoryView.listManagement,List Management,,YES,,Inventory View,1,components/InventoryView.tsx:1224
+inventoryView.itemCodes,Item Codes,,YES,,Inventory View,1,components/InventoryView.tsx:1232
+inventoryView.groupCodes,Group Codes,,YES,,Inventory View,1,components/InventoryView.tsx:1333
+inventoryView.deleteItem2,Delete Item?,,YES,,Inventory View,1,components/InventoryView.tsx:1617
+inventoryView.remove,Remove,,YES,,Inventory View,1,components/InventoryView.tsx:1620
+inventoryView.deleteItem3,Delete Item,,YES,,Inventory View,1,components/InventoryView.tsx:1628
+inventoryView.itemCode,Item Code,,YES,,Inventory View,1,components/InventoryView.tsx:1677
+inventoryView.selectCode,Select Code,,YES,,Inventory View,1,components/InventoryView.tsx:1729
+inventoryView.groupCode,Group Code,,YES,,Inventory View,1,components/InventoryView.tsx:1761
+inventoryView.selectGroup,Select Group,,YES,,Inventory View,1,components/InventoryView.tsx:1813
+inventoryView.selectUnit,Select Unit,,YES,,Inventory View,1,components/InventoryView.tsx:1893
+inventoryView.unitCost2,Unit Cost (₹),,YES,,Inventory View,1,components/InventoryView.tsx:1942
+inventoryView.lowStockThreshold,Low Stock Threshold,,YES,,Inventory View,1,components/InventoryView.tsx:1966
+inventoryView.searchItems,Search items...,,YES,,Inventory View,1,components/InventoryView.tsx:736
+inventoryView.noInventoryYet,No inventory yet,,YES,,Inventory View,1,components/InventoryView.tsx:845
+inventoryView.noItemsMatch,No items match,,YES,,Inventory View,1,components/InventoryView.tsx:854
+inventoryView.editMaterialCode,Edit material code,,YES,,Inventory View,1,components/InventoryView.tsx:1266
+inventoryView.deleteMaterialCode,Delete material code,,YES,,Inventory View,1,components/InventoryView.tsx:1280
+inventoryView.addCode,Add Code...,,YES,,Inventory View,1,components/InventoryView.tsx:1296
+inventoryView.addMaterialCode,Add material code,,YES,,Inventory View,1,components/InventoryView.tsx:1313
+inventoryView.editGroupCode,Edit group code,,YES,,Inventory View,1,components/InventoryView.tsx:1367
+inventoryView.deleteGroupCode,Delete group code,,YES,,Inventory View,1,components/InventoryView.tsx:1381
+inventoryView.addGroup,Add Group...,,YES,,Inventory View,1,components/InventoryView.tsx:1397
+inventoryView.addGroupCode,Add group code,,YES,,Inventory View,1,components/InventoryView.tsx:1414
+inventoryView.editUnit,Edit unit,,YES,,Inventory View,1,components/InventoryView.tsx:1468
+inventoryView.deleteUnit,Delete unit,,YES,,Inventory View,1,components/InventoryView.tsx:1482
+inventoryView.addUnit,Add Unit...,,YES,,Inventory View,1,components/InventoryView.tsx:1498
+inventoryView.addUnit2,Add unit,,YES,,Inventory View,1,components/InventoryView.tsx:1515
+inventoryView.noMaterialsSavedYet,No materials saved yet,,YES,,Inventory View,1,components/InventoryView.tsx:1563
+inventoryView.enterCustomCode,Enter custom code,,YES,,Inventory View,1,components/InventoryView.tsx:1697
+inventoryView.itemName2,Item name,,YES,,Inventory View,1,components/InventoryView.tsx:1745
+inventoryView.enterCustomGroup,Enter custom group,,YES,,Inventory View,1,components/InventoryView.tsx:1781
+inventoryView.enterCustomUnit,Enter custom unit,,YES,,Inventory View,1,components/InventoryView.tsx:1868
+laborTrackingView.globalRateEntry,Global Rate Entry,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:394
+laborTrackingView.addRate,Add Rate,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:445
+laborTrackingView.noActiveRateCards,No active rate cards for this entity,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:461
+laborTrackingView.initializeRateSheet,Initialize Rate Sheet,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:475
+laborTrackingView.dailyYield,Daily Yield,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:534
+laborTrackingView.runningAccountFiscalReconciliation,Running account fiscal reconciliation.,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:641
+laborTrackingView.amountPaid,Amount Paid,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:690
+laborTrackingView.allFiscalCertifications,All fiscal certifications.,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:744
+laborTrackingView.gross,Gross,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:790
+laborTrackingView.totalGross,Total Gross,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:830
+laborTrackingView.totalNet,Total Net,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:843
+laborTrackingView.refNo,Ref No.,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:865
+laborTrackingView.rateCard,Rate Card,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:1089
+laborTrackingView.roleType,Role Type,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:1133
+laborTrackingView.rateUnit,Rate (₹) / Unit,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:1147
+laborTrackingView.saveIndexEntry,Save Index Entry,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:1167
+laborTrackingView.deleteRateCard,Delete Rate Card?,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:1186
+laborTrackingView.editLabourRate,Edit labour rate,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:501
+laborTrackingView.deleteLabourRate,Delete labour rate,,YES,,Labor Tracking View,1,components/LaborTrackingView.tsx:519
+materialConsumptionView.laborConsumption,Labor Consumption,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:557
+materialConsumptionView.roleTrade,Role / Trade,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:577
+materialConsumptionView.allRoles,All Roles,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:579
+materialConsumptionView.allVendors,All Vendors,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:586
+materialConsumptionView.from,From,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:591
+materialConsumptionView.resetLaborFilters,Reset Labor Filters,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:602
+materialConsumptionView.totalManpower,Total Manpower,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:610
+materialConsumptionView.totalLaborCost,Total Labor Cost,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:617
+materialConsumptionView.deploymentEntries,Deployment Entries,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:624
+materialConsumptionView.laborConsumptionPerTask,Labor Consumption per Task,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:635
+materialConsumptionView.entries,Entries,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:642
+materialConsumptionView.totalConsumed,Total Consumed,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:730
+materialConsumptionView.loggingEvents,Logging Events,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:747
+materialConsumptionView.avgConsumptionPerLog,Avg. Consumption per Log,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:758
+materialConsumptionView.multiParameterSearchFilters,Multi-Parameter Search Filters,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:778
+materialConsumptionView.materialGroupCode,Material Group Code,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:784
+materialConsumptionView.allGroupCodes,All Group Codes,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:791
+materialConsumptionView.allMaterials,All Materials,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:807
+materialConsumptionView.taskCategory,Task Category,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:818
+materialConsumptionView.sourceChannel,Source Channel,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:834
+materialConsumptionView.allSources,All Sources,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:841
+materialConsumptionView.materialIssueDocuments,Material Issue Documents,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:842
+materialConsumptionView.dailyProgressLogs,Daily Progress Logs,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:843
+materialConsumptionView.fromDate,From Date,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:849
+materialConsumptionView.toDate,To Date,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:861
+materialConsumptionView.minQuantity,Min Quantity,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:873
+materialConsumptionView.maxQuantity,Max Quantity,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:886
+materialConsumptionView.resetSearch,Reset Search,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:904
+materialConsumptionView.found,Found,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:913
+materialConsumptionView.sort,Sort:,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:920
+materialConsumptionView.consumedInTask,Consumed In Task,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:962
+materialConsumptionView.channel,Channel,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:963
+materialConsumptionView.noConsumptionLoggedYet,No consumption logged yet,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:524
+materialConsumptionView.noLabourMatches,No labour matches,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:695
+materialConsumptionView.noRecordsMatch,No records match,,YES,,Material Consumption View,1,components/MaterialConsumptionView.tsx:973
+procurementView.posted,Posted,,YES,,Procurement View,1,components/ProcurementView.tsx:923
+procurementView.inputGstItc,Input GST (ITC),,YES,"Translate, but keep GST as-is",Procurement View,1,components/ProcurementView.tsx:938
+procurementView.claimableCreditAcrossPosted,Claimable credit across posted bills,,YES,,Procurement View,1,components/ProcurementView.tsx:940
+procurementView.billedInclGst,Billed (incl-GST),,YES,"Translate, but keep GST as-is",Procurement View,1,components/ProcurementView.tsx:943
+procurementView.scannedAwaitingConfirm,"Scanned, awaiting confirm",,YES,,Procurement View,1,components/ProcurementView.tsx:950
+procurementView.invoice,Invoice,,YES,,Procurement View,1,components/ProcurementView.tsx:959
+procurementView.grandTotal,Grand total,,YES,,Procurement View,1,components/ProcurementView.tsx:962
+procurementView.match,Match,,YES,,Procurement View,1,components/ProcurementView.tsx:963
+procurementView.reviewAmpPost,Review &amp; Post,,YES,,Procurement View,1,components/ProcurementView.tsx:992
+procurementView.vendorEcosystemAndTracking,Vendor ecosystem and tracking.,,YES,,Procurement View,1,components/ProcurementView.tsx:1025
+procurementView.addParty,Add Party,,YES,,Procurement View,1,components/ProcurementView.tsx:1040
+procurementView.totalPaymentsMade,Total Payments Made,,YES,,Procurement View,1,components/ProcurementView.tsx:1068
+procurementView.totalOutstandingBalance,Total Outstanding Balance,,YES,,Procurement View,1,components/ProcurementView.tsx:1087
+procurementView.paymentsMade,Payments Made,,YES,,Procurement View,1,components/ProcurementView.tsx:1187
+procurementView.payment,Payment,,YES,,Procurement View,1,components/ProcurementView.tsx:1243
+procurementView.ledger,Ledger,,YES,,Procurement View,1,components/ProcurementView.tsx:1253
+procurementView.inwardOrchestrationRecord,Inward orchestration record.,,YES,,Procurement View,1,components/ProcurementView.tsx:1272
+procurementView.addReceipt,Add Receipt,,YES,,Procurement View,1,components/ProcurementView.tsx:1294
+procurementView.reference,Reference,,YES,,Procurement View,1,components/ProcurementView.tsx:1311
+procurementView.dateRef,Date & Ref,,YES,,Procurement View,1,components/ProcurementView.tsx:1459
+procurementView.entityPartner,Entity Partner,,YES,,Procurement View,1,components/ProcurementView.tsx:1589
+procurementView.designation,Designation,,YES,,Procurement View,1,components/ProcurementView.tsx:1592
+procurementView.scanInvoice,Scan Invoice,,YES,,Procurement View,1,components/ProcurementView.tsx:2006
+procurementView.vendorMasterProfile,Vendor Master Profile,,YES,,Procurement View,1,components/ProcurementView.tsx:2139
+procurementView.entityName,Entity Name,,YES,,Procurement View,1,components/ProcurementView.tsx:2170
+procurementView.vendorCategory,Vendor Category,,YES,,Procurement View,1,components/ProcurementView.tsx:2184
+procurementView.both,Both,,YES,,Procurement View,1,components/ProcurementView.tsx:2199
+procurementView.contactPerson,Contact Person,,YES,,Procurement View,1,components/ProcurementView.tsx:2203
+procurementView.emailId,Email ID,,YES,,Procurement View,1,components/ProcurementView.tsx:2219
+procurementView.phoneNumber,Phone Number,,YES,,Procurement View,1,components/ProcurementView.tsx:2233
+procurementView.businessAddress,Business Address,,YES,,Procurement View,1,components/ProcurementView.tsx:2246
+procurementView.openingBalance,Opening Balance (₹),,YES,,Procurement View,1,components/ProcurementView.tsx:2260
+procurementView.deleteParty,Delete Party?,,YES,,Procurement View,1,components/ProcurementView.tsx:2303
+procurementView.deleteReceipt,Delete Receipt?,,YES,,Procurement View,1,components/ProcurementView.tsx:2342
+procurementView.invoiceOptional,Invoice (Optional),,YES,,Procurement View,1,components/ProcurementView.tsx:2455
+procurementView.noInvoiceAdvanceGeneral,No Invoice (Advance/General),,YES,,Procurement View,1,components/ProcurementView.tsx:2471
+procurementView.discrepancyOverrideReason,Discrepancy Override Reason,,YES,,Procurement View,1,components/ProcurementView.tsx:2494
+procurementView.noVendorBillsYet,No vendor bills yet,,YES,,Procurement View,1,components/ProcurementView.tsx:973
+procurementView.editVendor,Edit vendor,,YES,,Procurement View,1,components/ProcurementView.tsx:1123
+procurementView.deleteVendor,Delete vendor,,YES,,Procurement View,1,components/ProcurementView.tsx:1166
+procurementView.editReceipt,Edit receipt,,YES,,Procurement View,1,components/ProcurementView.tsx:1395
+procurementView.deleteReceipt2,Delete receipt,,YES,,Procurement View,1,components/ProcurementView.tsx:1408
+procurementView.noPartiesSavedYet,No parties saved yet,,YES,,Procurement View,1,components/ProcurementView.tsx:2086
+procurementView.eGUnitedSteel,E.g. United Steel Corp,,YES,,Procurement View,1,components/ProcurementView.tsx:2175
+procurementView.fullAddress,Full address,,YES,,Procurement View,1,components/ProcurementView.tsx:2251
+procurementView.whyAreWePaying,Why are we paying this despite the discrepancy?,,YES,,Procurement View,1,components/ProcurementView.tsx:2499
+procurementView.shortNote,Short Note,,YES,,Procurement View,1,components/ProcurementView.tsx:2520
+progressReportsView.remarksNotes,Remarks / Notes,,YES,,Progress Reports View,1,components/ProgressReportsView.tsx:644
+progressReportsView.noRemarksProvided,No remarks provided.,,YES,,Progress Reports View,1,components/ProgressReportsView.tsx:661
+progressReportsView.photosAttached,Photos attached,,YES,,Progress Reports View,1,components/ProgressReportsView.tsx:672
+progressReportsView.dailyLogsHistory,Daily Logs History,,YES,,Progress Reports View,1,components/ProgressReportsView.tsx:709
+progressReportsView.mat,Mat:,,YES,,Progress Reports View,1,components/ProgressReportsView.tsx:732
+progressReportsView.lab,Lab:,,YES,,Progress Reports View,1,components/ProgressReportsView.tsx:735
+progressReportsView.editLog,Edit Log,,YES,,Progress Reports View,1,components/ProgressReportsView.tsx:745
+progressReportsView.generatedViaSitetru,Generated via Sitetru,,YES,,Progress Reports View,1,components/ProgressReportsView.tsx:767
+progressReportsView.siteShot,Site shot,,YES,,Progress Reports View,1,components/ProgressReportsView.tsx:684
+progressReportsView.noDailyLogsFound,No daily logs found,,YES,,Progress Reports View,1,components/ProgressReportsView.tsx:716
+projectInsights.built,Built,,YES,,Project Insights,1,components/ProjectInsights.tsx:53
+projectInsights.budgetUsed,Budget used,,YES,,Project Insights,1,components/ProjectInsights.tsx:60
+settingsView.executiveMode,Executive Mode,,YES,,Settings View,1,components/SettingsView.tsx:384
+settingsView.spaciousLayoutForAnalytics,Spacious layout for analytics and oversight.,,YES,,Settings View,1,components/SettingsView.tsx:387
+settingsView.siteMode,Site Mode,,YES,,Settings View,1,components/SettingsView.tsx:400
+settingsView.compactHighDensityUi,"Compact, high-density UI for field operations.",,YES,,Settings View,1,components/SettingsView.tsx:403
+settingsView.lightMode,Light Mode,,YES,,Settings View,1,components/SettingsView.tsx:422
+settingsView.darkMode,Dark Mode,,YES,,Settings View,1,components/SettingsView.tsx:435
+syncStatus.offline,Offline,,YES,,Sync Status,1,components/SyncStatus.tsx:39
+syncStatus.syncing,Syncing,,YES,,Sync Status,1,components/SyncStatus.tsx:54
+syncStatus.online,Online,,YES,,Sync Status,1,components/SyncStatus.tsx:71
+telegramBotStatus.botChecking,Bot Checking...,,YES,,Telegram Bot Status,1,components/TelegramBotStatus.tsx:52
+telegramBotStatus.botOffline,Bot Offline,,YES,,Telegram Bot Status,1,components/TelegramBotStatus.tsx:69
+telegramBotStatus.botOnline,Bot Online,,YES,,Telegram Bot Status,1,components/TelegramBotStatus.tsx:86
+telegramIntegration.connectTelegram,Connect Telegram,,YES,,Telegram Integration,1,components/TelegramIntegration.tsx:271
+telegramIntegration.scanToConnectTelegram,Scan to connect Telegram,,YES,,Telegram Integration,1,components/TelegramIntegration.tsx:279
+virtualTable.noRecordsFound,No records found,,YES,,Virtual Table,1,components/VirtualTable.tsx:158
+wBSView.budg,Budg,,YES,,WBSView,1,components/WBSView.tsx:930
+wBSView.clearSelection,Clear Selection,,YES,,WBSView,1,components/WBSView.tsx:1096
+wBSView.setStatus,Set Status...,,YES,,WBSView,1,components/WBSView.tsx:1111
+wBSView.fullInventory,Full Inventory,,YES,,WBSView,1,components/WBSView.tsx:1152
+wBSView.autoShift,Auto-Shift,,YES,,WBSView,1,components/WBSView.tsx:1171
+wBSView.spareDays,Spare days,,YES,,WBSView,1,components/WBSView.tsx:1241
+wBSView.phase,Phase,,YES,,WBSView,1,components/WBSView.tsx:1292
+wBSView.dropHereToUn,Drop here to Un-nest task,,YES,,WBSView,1,components/WBSView.tsx:1407
+wBSView.movesThisTaskTo,Moves this task to the top level,,YES,,WBSView,1,components/WBSView.tsx:1410
+wBSView.deleteEntirePhase,Delete Entire Phase?,,YES,,WBSView,1,components/WBSView.tsx:1435
+wBSView.deletePhase,Delete Phase,,YES,,WBSView,1,components/WBSView.tsx:1454
+wBSView.confirmTaskDeletion,Confirm Task Deletion,,YES,,WBSView,1,components/WBSView.tsx:1476
+wBSView.identityClassification,Identity & Classification,,YES,,WBSView,1,components/WBSView.tsx:1584
+wBSView.changeOrderItem,Change Order Item,,YES,,WBSView,1,components/WBSView.tsx:1686
+wBSView.selectPhase,Select Phase,,YES,,WBSView,1,components/WBSView.tsx:1778
+wBSView.parentTask,Parent Task,,YES,,WBSView,1,components/WBSView.tsx:1889
+wBSView.activityCodes,Activity Codes,,YES,,WBSView,1,components/WBSView.tsx:1966
+wBSView.timelineDependencies,Timeline & Dependencies,,YES,,WBSView,1,components/WBSView.tsx:2124
+wBSView.planStart,Plan Start,,YES,,WBSView,1,components/WBSView.tsx:2135
+wBSView.planFinish,Plan Finish,,YES,,WBSView,1,components/WBSView.tsx:2162
+wBSView.actualStart,Actual Start,,YES,,WBSView,1,components/WBSView.tsx:2193
+wBSView.actualFinish,Actual Finish,,YES,,WBSView,1,components/WBSView.tsx:2219
+wBSView.progressStatus,Progress & Status,,YES,,WBSView,1,components/WBSView.tsx:2246
+wBSView.precedenceLinks,Precedence Links,,YES,,WBSView,1,components/WBSView.tsx:2319
+wBSView.allocationStrategy,Allocation Strategy,,YES,,WBSView,1,components/WBSView.tsx:2560
+wBSView.laborAssignments,Labor Assignments,,YES,,WBSView,1,components/WBSView.tsx:2570
+wBSView.vaultAttachments,Vault Attachments,,YES,,WBSView,1,components/WBSView.tsx:2913
+wBSView.noVaultDocuments,No vault documents,,YES,,WBSView,1,components/WBSView.tsx:2948
+wBSView.financialSummary,Financial Summary,,YES,,WBSView,1,components/WBSView.tsx:2984
+wBSView.plannedResourceValue,Planned Resource Value,,YES,,WBSView,1,components/WBSView.tsx:3033
+wBSView.otherExpenditureLumpsum,Other Expenditure / Lumpsum,,YES,,WBSView,1,components/WBSView.tsx:3122
+wBSView.addSubtask,Add subtask,,YES,,WBSView,1,components/WBSView.tsx:984
+wBSView.selectAll,Select All,,YES,,WBSView,1,components/WBSView.tsx:1235
+wBSView.activityIdentification,Activity Identification,,YES,,WBSView,1,components/WBSView.tsx:1641
+wBSView.enterCustomPhase,Enter custom phase...,,YES,,WBSView,1,components/WBSView.tsx:1703
+wBSView.enterCustomLocation,Enter custom location...,,YES,,WBSView,1,components/WBSView.tsx:1799
+wBSView.removeActivityCode,Remove activity code,,YES,,WBSView,1,components/WBSView.tsx:1981
+wBSView.removeDependency,Remove dependency,,YES,,WBSView,1,components/WBSView.tsx:2445
+wBSView.removeResource,Remove resource,,YES,,WBSView,1,components/WBSView.tsx:2676
+wBSView.removeMaterialAllocation,Remove material allocation,,YES,,WBSView,1,components/WBSView.tsx:2801
+wBSView.additionalBudget,Additional Budget...,,YES,,WBSView,1,components/WBSView.tsx:3129
+goodsReceiptDetails.challanDc,Challan / DC,,YES,,Goods Receipt Details,1,components/purchase/GoodsReceiptDetails.tsx:184
+goodsReceiptDetails.attachments,Attachments,,YES,,Goods Receipt Details,1,components/purchase/GoodsReceiptDetails.tsx:229
+goodsReceiptForm.recordGoodsReceipt,Record Goods Receipt,,YES,,Goods Receipt Form,1,components/purchase/GoodsReceiptForm.tsx:355
+goodsReceiptForm.receiptDate,Receipt Date *,,YES,,Goods Receipt Form,1,components/purchase/GoodsReceiptForm.tsx:372
+goodsReceiptForm.challanDcNumber,Challan / DC Number,,YES,,Goods Receipt Form,1,components/purchase/GoodsReceiptForm.tsx:382
+goodsReceiptForm.deliveryChallanPhotos,Delivery Challan Photos,,YES,,Goods Receipt Form,1,components/purchase/GoodsReceiptForm.tsx:496
+goodsReceiptForm.addPhoto,Add Photo,,YES,,Goods Receipt Form,1,components/purchase/GoodsReceiptForm.tsx:520
+goodsReceiptForm.anyCommentsAboutThe,Any comments about the delivery condition...,,YES,,Goods Receipt Form,1,components/purchase/GoodsReceiptForm.tsx:491
+goodsReceiptForm.challanPhoto,Challan photo,,YES,,Goods Receipt Form,1,components/purchase/GoodsReceiptForm.tsx:503
+goodsReceiptTab.loadingGoodsReceiptNotes,Loading goods receipt notes...,,YES,,Goods Receipt Tab,1,components/purchase/GoodsReceiptTab.tsx:23
+goodsReceiptTab.grnNumber,GRN Number,,YES,"Translate, but keep GRN as-is",Goods Receipt Tab,1,components/purchase/GoodsReceiptTab.tsx:52
+goodsReceiptTab.searchGrns,Search GRNs...,,YES,,Goods Receipt Tab,1,components/purchase/GoodsReceiptTab.tsx:39
+goodsReceiptTab.noGoodsReceiptsYet,No goods receipts yet,,YES,,Goods Receipt Tab,1,components/purchase/GoodsReceiptTab.tsx:64
+goodsReceiptTab.noGrnsMatch,No GRNs match,,YES,,Goods Receipt Tab,1,components/purchase/GoodsReceiptTab.tsx:72
+materialReceiptForm.purchaseOrderOptional,Purchase Order (Optional),,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:326
+materialReceiptForm.noneUnlinked,None / Unlinked,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:336
+materialReceiptForm.goodsReceiptsGrn,Goods Receipts (GRN),,YES,"Translate, but keep GRN as-is",Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:344
+materialReceiptForm.noGrnsAvailable,No GRNs available,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:353
+materialReceiptForm.ctrlCmdClickTo,Ctrl/Cmd+click to select multiple,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:358
+materialReceiptForm.invoiceRefNo,Invoice / Ref No.,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:365
+materialReceiptForm.invoiceItems,Invoice Items,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:388
+materialReceiptForm.poRate,PO Rate,,YES,"Translate, but keep PO as-is",Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:405
+materialReceiptForm.ordQty,Ord Qty,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:406
+materialReceiptForm.recQtyGrn,Rec Qty (GRN),,YES,"Translate, but keep GRN as-is",Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:407
+materialReceiptForm.invQty,Inv Qty,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:408
+materialReceiptForm.invRate,Inv Rate,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:409
+materialReceiptForm.select,Select,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:424
+materialReceiptForm.rateMismatch,Rate mismatch,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:451
+materialReceiptForm.qtyMismatch,Qty mismatch,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:454
+materialReceiptForm.unmatched,Unmatched,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:456
+materialReceiptForm.selectMaterial,Select Material,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:493
+materialReceiptForm.unitRate,Unit Rate (₹),,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:512
+materialReceiptForm.totalInvoiceValue,Total Invoice Value,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:557
+materialReceiptForm.saveInvoice,Save Invoice,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:567
+materialReceiptForm.noItemsAdded,No items added,,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:545
+materialReceiptForm.termsComments,"Terms, comments...",,YES,,Material Receipt Form,1,components/purchase/MaterialReceiptForm.tsx:554
+purchaseOrderForm.draftOrder,Draft Order,,YES,,Purchase Order Form,1,components/purchase/PurchaseOrderForm.tsx:243
+purchaseOrderForm.orderDate,Order Date,,YES,,Purchase Order Form,1,components/purchase/PurchaseOrderForm.tsx:272
+purchaseOrderForm.selectItem,Select Item,,YES,,Purchase Order Form,1,components/purchase/PurchaseOrderForm.tsx:318
+purchaseOrderForm.expectedDeliveryOptional,Expected Delivery (Optional),,YES,,Purchase Order Form,1,components/purchase/PurchaseOrderForm.tsx:381
+purchaseOrderForm.loadingTransportOther,Loading + Transport + Other,,YES,,Purchase Order Form,1,components/purchase/PurchaseOrderForm.tsx:429
+purchaseOrderTab.loadingPurchaseOrders,Loading purchase orders...,,YES,,Purchase Order Tab,1,components/purchase/PurchaseOrderTab.tsx:32
+purchaseOrderTab.allStatuses,All Statuses,,YES,,Purchase Order Tab,1,components/purchase/PurchaseOrderTab.tsx:61
+purchaseOrderTab.draft,Draft,,YES,,Purchase Order Tab,1,components/purchase/PurchaseOrderTab.tsx:62
+purchaseOrderTab.approved,Approved,,YES,,Purchase Order Tab,1,components/purchase/PurchaseOrderTab.tsx:63
+purchaseOrderTab.partiallyReceived,Partially Received,,YES,,Purchase Order Tab,1,components/purchase/PurchaseOrderTab.tsx:64
+purchaseOrderTab.closed,Closed,,YES,,Purchase Order Tab,1,components/purchase/PurchaseOrderTab.tsx:65
+purchaseOrderTab.newPo,New PO,,YES,"Translate, but keep PO as-is",Purchase Order Tab,1,components/purchase/PurchaseOrderTab.tsx:73
+purchaseOrderTab.amount,Amount,,YES,,Purchase Order Tab,1,components/purchase/PurchaseOrderTab.tsx:85
+purchaseOrderTab.searchPos,Search POs...,,YES,,Purchase Order Tab,1,components/purchase/PurchaseOrderTab.tsx:50
+purchaseOrderTab.noPurchaseOrdersYet,No purchase orders yet,,YES,,Purchase Order Tab,1,components/purchase/PurchaseOrderTab.tsx:94
+purchaseOrderTab.noOrdersMatch,No orders match,,YES,,Purchase Order Tab,1,components/purchase/PurchaseOrderTab.tsx:102
+scanInvoice.uploadTheGstInvoice,Upload the GST invoice,,YES,"Translate, but keep GST as-is",Scan Invoice,1,components/purchase/ScanInvoice.tsx:160
+scanInvoice.photoOrPdfReads,Photo or PDF · reads it and matches your PO,,YES,"Translate, but keep PO as-is",Scan Invoice,1,components/purchase/ScanInvoice.tsx:161
+scanInvoice.readingTheInvoice,Reading the invoice…,,YES,,Scan Invoice,1,components/purchase/ScanInvoice.tsx:173
+scanInvoice.pleaseCheck,Please check:,,YES,,Scan Invoice,1,components/purchase/ScanInvoice.tsx:182
+scanInvoice.matchToPo,Match to PO,,YES,"Translate, but keep PO as-is",Scan Invoice,1,components/purchase/ScanInvoice.tsx:194
+scanInvoice.rateExGst,Rate (ex-GST),,YES,"Translate, but keep GST as-is",Scan Invoice,1,components/purchase/ScanInvoice.tsx:214
+scanInvoice.lineTotal,Line total,,YES,,Scan Invoice,1,components/purchase/ScanInvoice.tsx:216
+scanInvoice.grandTotalPayable,Grand total (payable),,YES,,Scan Invoice,1,components/purchase/ScanInvoice.tsx:266
+scanInvoice.invoicePosted,Invoice posted,,YES,,Scan Invoice,1,components/purchase/ScanInvoice.tsx:279
+scanInvoice.grnVendorBillRecorded,GRN + vendor bill recorded and matched to the PO.,,YES,"Translate, but keep GRN, PO as-is",Scan Invoice,1,components/purchase/ScanInvoice.tsx:280
+scanInvoice.posting,Posting…,,YES,,Scan Invoice,1,components/purchase/ScanInvoice.tsx:295
+miniGantt.group,Group,,YES,,Mini Gantt,1,components/schedule/MiniGantt.tsx:186
+miniGantt.previousWeek,Previous week,,YES,,Mini Gantt,1,components/schedule/MiniGantt.tsx:171
+miniGantt.nextWeek,Next week,,YES,,Mini Gantt,1,components/schedule/MiniGantt.tsx:179
+projectDailyLogsTab.dailyProgress,Daily Progress,,YES,,Project Daily Logs Tab,1,components/schedule/ProjectDailyLogsTab.tsx:75
+projectDailyLogsTab.siteWideActivityLogs,Site-wide Activity Logs,,YES,,Project Daily Logs Tab,1,components/schedule/ProjectDailyLogsTab.tsx:78
+projectDailyLogsTab.loadingLogs,Loading logs...,,YES,,Project Daily Logs Tab,1,components/schedule/ProjectDailyLogsTab.tsx:97
+projectDailyLogsTab.tasksLoggedToday,Tasks Logged Today,,YES,,Project Daily Logs Tab,1,components/schedule/ProjectDailyLogsTab.tsx:113
+projectDailyLogsTab.logAnother,Log Another,,YES,,Project Daily Logs Tab,1,components/schedule/ProjectDailyLogsTab.tsx:119
+projectDailyLogsTab.siteWideRollup,Site-wide Rollup,,YES,,Project Daily Logs Tab,1,components/schedule/ProjectDailyLogsTab.tsx:244
+projectDailyLogsTab.totalWorkforce,Total Workforce,,YES,,Project Daily Logs Tab,1,components/schedule/ProjectDailyLogsTab.tsx:253
+projectDailyLogsTab.deployed,Deployed,,YES,,Project Daily Logs Tab,1,components/schedule/ProjectDailyLogsTab.tsx:260
+projectDailyLogsTab.noMaterialsLoggedToday,No materials logged today,,YES,,Project Daily Logs Tab,1,components/schedule/ProjectDailyLogsTab.tsx:275
+scheduleView.gantt,Gantt,,YES,,Schedule View,1,components/schedule/ScheduleView.tsx:115
+scheduleView.noTasksForThis,No tasks for this project,,YES,,Schedule View,1,components/schedule/ScheduleView.tsx:74
+verticalTimeline.blocked,Blocked,,YES,,Vertical Timeline,1,components/schedule/VerticalTimeline.tsx:70
+verticalTimeline.scheduled,Scheduled,,YES,,Vertical Timeline,1,components/schedule/VerticalTimeline.tsx:72
+verticalTimeline.noTasksScheduledIn,No tasks scheduled in this time window.,,YES,,Vertical Timeline,1,components/schedule/VerticalTimeline.tsx:79
+operatorPanel.provisionNewOrganization,Provision new organization,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:173
+operatorPanel.orgCreated,Org created,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:196
+operatorPanel.copied,Copied,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:210
+operatorPanel.copy,Copy,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:210
+operatorPanel.sendThisOwnerInvite,Send this Owner-invite link to the customer.,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:214
+operatorPanel.manageSubscription,Manage subscription,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:223
+operatorPanel.activatePaid,Activate (paid),,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:242
+operatorPanel.extendTrial7d,Extend trial 7d,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:243
+operatorPanel.expire,Expire,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:244
+operatorPanel.internalNeverGated,Internal (never gated),,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:245
+operatorPanel.setProjectPlan,Set project plan,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:262
+operatorPanel.placesTheOrgThe,Places the org (the,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:264
+operatorPanel.usageAmpSafetyCap,Usage &amp; safety-cap,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:298
+operatorPanel.liveUsageForThe,Live usage for the,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:300
+operatorPanel.plan,Plan,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:316
+operatorPanel.overage,Overage,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:326
+operatorPanel.aiThisMonth,AI this month,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:330
+operatorPanel.paymentsRazorpay,Payments (Razorpay),,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:343
+operatorPanel.currentlyOffCheckoutIs,Currently OFF — checkout is disabled.,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:349
+operatorPanel.inviteEmailsResend,Invite emails (Resend),,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:383
+operatorPanel.currentlyOffLinksAre,Currently OFF — links are copy-only.,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:390
+operatorPanel.companyName,Company name,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:184
+operatorPanel.ownerEmailOptional,Owner email (optional),,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:186
+operatorPanel.copyActivationLink,Copy activation link,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:208
+operatorPanel.months,Months,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:249
+operatorPanel.keyIdRzpTest,Key ID (rzp_test_… or rzp_live_…),,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:361
+operatorPanel.keySecret,Key Secret,,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:363
+operatorPanel.webhookSecretOptionalBut,Webhook secret (optional but recommended),,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:365
+operatorPanel.resendApiKeyRe,Resend API key (re_…),,YES,,Operator Panel,1,components/settings/OperatorPanel.tsx:402
+createProjectModal.removeCoverImage,Remove cover image,,YES,,Create Project Modal,1,features/projects/components/CreateProjectModal.tsx:338
+landingPage.yourProject,Your Project,,YES,,Landing Page,1,pages/LandingPage.tsx:377
+landingPage.substructure,Substructure,,YES,,Landing Page,1,pages/LandingPage.tsx:385
+landingPage.onTrack,On track,,YES,,Landing Page,1,pages/LandingPage.tsx:392
+landingPage.costActual,Cost (Actual),,YES,,Landing Page,1,pages/LandingPage.tsx:398
+landingPage.excavation80,Excavation — 80% ✅,,YES,,Landing Page,1,pages/LandingPage.tsx:412
+landingPage.loggedViaTelegram2,Logged via Telegram · 2 min ago,,YES,,Landing Page,1,pages/LandingPage.tsx:413
+landingPage.termsOfService,Terms of Service,,YES,,Landing Page,1,pages/LandingPage.tsx:728
+landingPage.privacyPolicy,Privacy Policy,,YES,,Landing Page,1,pages/LandingPage.tsx:730
+landingPage.createAnAccount,Create an account,,YES,,Landing Page,1,pages/LandingPage.tsx:809
+landingPage.forgotPassword,Forgot password?,,YES,,Landing Page,1,pages/LandingPage.tsx:812
+landingPage.alreadyHaveAnAccount,Already have an account?,,YES,,Landing Page,1,pages/LandingPage.tsx:818
+landingPage.menu,Menu,,YES,,Landing Page,1,pages/LandingPage.tsx:303
+landingPage.yourName,Your name,,YES,,Landing Page,1,pages/LandingPage.tsx:764
+landingPage.emailAddress,Email address,,YES,,Landing Page,1,pages/LandingPage.tsx:774
+landingPage.password,Password,,YES,,Landing Page,1,pages/LandingPage.tsx:784

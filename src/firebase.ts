@@ -37,9 +37,15 @@ const app = initializeApp(firebaseConfig);
 // App Check — abuse protection. The reCAPTCHA v3 site key is PUBLIC (safe in the
 // client). When set, every Firestore / Functions / Storage request carries an
 // attestation token, so only the genuine app (not scripts/bots hammering the
-// public backend) can reach it. Left empty until the key is registered; an empty
-// key skips init so nothing breaks before enforcement is turned on in the
-// Firebase console. Can also be supplied at build time via VITE_APPCHECK_SITE_KEY.
+// public backend) can reach it. Can also be supplied at build time via
+// VITE_APPCHECK_SITE_KEY, though no workflow passes it, so the literal below is
+// what ships.
+//
+// A key IS set, so App Check initialises in production today and clients are
+// already sending attestation tokens. That matters: those tokens are what fill
+// the console's "verified requests" share, and that share is the only safe
+// signal for when enforcement can be switched on. An EMPTY key skips init
+// entirely -- the fallback for before a key exists, not the current state.
 const APPCHECK_SITE_KEY =
   (import.meta as any).env?.VITE_APPCHECK_SITE_KEY ||
   "6LcbyY8tAAAAALNiKcUMNdJmSBRGuBff2y6KjS2C"; // reCAPTCHA v3 site key (public)

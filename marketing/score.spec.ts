@@ -34,7 +34,33 @@ function canRenderCues(): boolean {
 
 const CAN_RENDER = canRenderCues();
 
+/**
+ * These three tests import numpy and scipy and then synthesise twenty seconds
+ * of audio. They take about two seconds each on an idle machine, against
+ * vitest's 5000 ms default — roughly 2.5x headroom, which is not enough.
+ *
+ * Measured rather than guessed: with the box saturated, two of three suite runs
+ * failed here with "Test timed out in 5000ms". That is what produced two
+ * single-test failures earlier in this session that would not reproduce on an
+ * idle machine, and one of them went out in a push. They are slow because the
+ * work is slow, so the limit is the thing that was wrong.
+ */
+const RENDER_TIMEOUT_MS = 30_000;
+
+/**
+ * Memoised, because each call is a separate `python3` spawn and this file made
+ * eleven of them per run. The curves are pure arithmetic — the same arguments
+ * cannot give a different answer — so a cache costs nothing and removes most of
+ * the spawns. It matters because this suite now gates the production deploy: a
+ * single transient spawn failure would turn into a red deploy on main for a
+ * reason that has nothing to do with the change being deployed.
+ */
+const sampleCache = new Map<string, number[]>();
+
 function sample(fn: string, n = 400, extra = ""): number[] {
+  const key = `${fn}|${n}|${extra}`;
+  const hit = sampleCache.get(key);
+  if (hit) return hit;
   const out = execFileSync(
     "python3",
     [
@@ -45,7 +71,9 @@ function sample(fn: string, n = 400, extra = ""): number[] {
     ],
     { encoding: "utf8" },
   );
-  return out.trim().split(/\s+/).map(Number);
+  const vals = out.trim().split(/\s+/).map(Number);
+  sampleCache.set(key, vals);
+  return vals;
 }
 
 describe.each(["arc", "walk_arc"])("%s", (fn) => {
@@ -125,7 +153,7 @@ describe.skipIf(!CAN_RENDER)("both cues render (needs numpy + scipy)", () => {
     ).trim().split(/\s+/).map(Number);
     expect(out[0]).toBeGreaterThan(0);
     expect(out[1]).toBeGreaterThan(0); // and it is not silence
-  });
+  }, RENDER_TIMEOUT_MS);
 
   it("walkthrough accepts the bloom point the mix passes it", () => {
     const out = execFileSync(
@@ -142,5 +170,5 @@ describe.skipIf(!CAN_RENDER)("both cues render (needs numpy + scipy)", () => {
     // The bed must still be sounding on the last frame -- an end card under
     // silence is the fault this whole arrangement exists to remove.
     expect(Number(out)).toBeGreaterThan(0.01);
-  });
+  }, RENDER_TIMEOUT_MS);
 });
