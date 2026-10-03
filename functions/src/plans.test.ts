@@ -6,6 +6,10 @@ import {
   slotPurchasePatch,
   activeSlots,
   effectiveProjectCap,
+  prorateUpgrade,
+  planPatch,
+  planCapacityPatch,
+  MIN_ORDER_PAISE,
   MONTH_MS,
   OVERAGE_RATE,
   PLANS,
@@ -169,5 +173,148 @@ describe("planAmountPaise", () => {
       const p = PLANS[id];
       expect(p.annual).toBe(p.monthly! * 10);
     }
+  });
+});
+
+describe("prorateUpgrade", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  // Day 20 of a 30-day Starter period: ten days left of ₹999.
+  const midStarter = {
+    subscriptionStatus: "active",
+    plan: "starter",
+    currentPeriodStart: NOW - 20 * DAY,
+    currentPeriodEnd: NOW + 10 * DAY,
+    currentPeriodPaise: 99900,
+  };
+
+  it("credits the unused days when upgrading mid-cycle", () => {
+    const q = prorateUpgrade(midStarter, "business", "monthly", NOW);
+    expect(q.fullPaise).toBe(299900);
+    // 10/30 of ₹999 = ₹333
+    expect(q.creditPaise).toBe(33300);
+    expect(q.amountPaise).toBe(299900 - 33300);
+  });
+
+  it("charges list price when there is nothing left to credit", () => {
+    const atEnd = { ...midStarter, currentPeriodEnd: NOW };
+    expect(prorateUpgrade(atEnd, "business", "monthly", NOW).amountPaise).toBe(299900);
+  });
+
+  it("charges list price for an org with no recorded period", () => {
+    // Anything predating this, or activated by hand via setSubscription, has no
+    // currentPeriodStart. Under-crediting is recoverable; over-crediting is not.
+    for (const org of [
+      { subscriptionStatus: "active" },
+      { subscriptionStatus: "active", currentPeriodEnd: NOW + 10 * DAY },
+      { ...midStarter, currentPeriodPaise: 0 },
+      { ...midStarter, currentPeriodStart: 0 },
+    ]) {
+      expect(prorateUpgrade(org, "business", "monthly", NOW).creditPaise).toBe(0);
+    }
+  });
+
+  it("gives no credit to a trial, a free org or a lapsed one", () => {
+    for (const subscriptionStatus of ["trialing", "free", "past_due", "expired", "internal"]) {
+      expect(prorateUpgrade({ ...midStarter, subscriptionStatus }, "business", "monthly", NOW).creditPaise).toBe(0);
+    }
+  });
+
+  it("credits a monthly period against an annual upgrade", () => {
+    const q = prorateUpgrade(midStarter, "business", "annual", NOW);
+    expect(q.fullPaise).toBe(2999000);
+    expect(q.creditPaise).toBe(33300);
+  });
+
+  it("never charges less than ₹1, which Razorpay would reject", () => {
+    // A credit larger than the target price — e.g. annual plan, cheap upgrade.
+    const richCredit = {
+      subscriptionStatus: "active",
+      plan: "business",
+      currentPeriodStart: NOW - DAY,
+      currentPeriodEnd: NOW + 364 * DAY,
+      currentPeriodPaise: 2999000,
+    };
+    const q = prorateUpgrade(richCredit, "starter", "monthly", NOW);
+    expect(q.amountPaise).toBeGreaterThanOrEqual(MIN_ORDER_PAISE);
+    expect(q.creditPaise).toBeLessThanOrEqual(q.fullPaise - MIN_ORDER_PAISE);
+  });
+
+  it("never credits more than was paid", () => {
+    const q = prorateUpgrade(midStarter, "business", "monthly", NOW);
+    expect(q.creditPaise).toBeLessThanOrEqual(midStarter.currentPeriodPaise);
+  });
+
+  it("refuses to credit against a period that has not started", () => {
+    const future = { ...midStarter, currentPeriodStart: NOW + DAY, currentPeriodEnd: NOW + 31 * DAY };
+    expect(prorateUpgrade(future, "business", "monthly", NOW).creditPaise).toBe(0);
+  });
+
+  it("survives junk without crediting on it", () => {
+    for (const bad of [null, undefined, {}, { currentPeriodPaise: "lots" }]) {
+      const q = prorateUpgrade(bad, "business", "monthly", NOW);
+      expect(q.creditPaise).toBe(0);
+      expect(q.amountPaise).toBe(299900);
+    }
+  });
+});
+
+describe("planPatch records what the period cost", () => {
+  it("writes both bounds and the amount, so an upgrade can be prorated", () => {
+    const p: any = planPatch("starter", 1);
+    expect(p.currentPeriodStart).toBeGreaterThan(0);
+    expect(p.currentPeriodEnd).toBeGreaterThan(p.currentPeriodStart);
+    expect(p.currentPeriodPaise).toBe(99900);
+  });
+
+  it("records the annual amount for a yearly period", () => {
+    expect((planPatch("business", 12) as any).currentPeriodPaise).toBe(2999000);
+  });
+
+  it("leaves the free plan with no period at all", () => {
+    const p: any = planPatch("free", 0);
+    expect(p.subscriptionStatus).toBe("free");
+    expect(p.currentPeriodEnd).toBeUndefined();
+    expect(p.currentPeriodPaise).toBeUndefined();
+  });
+});
+
+describe("planCapacityPatch", () => {
+  it("grants capacity without touching the subscription", () => {
+    // This is what a downgrade applies. If it set a status or a period it would
+    // be handing out a paid month nobody paid for.
+    const p: any = planCapacityPatch("starter");
+    expect(p).toMatchObject({ plan: "starter", includedProjects: 5, userLimit: 10, purchasedSlots: 0 });
+    expect(p.subscriptionStatus).toBeUndefined();
+    expect(p.currentPeriodEnd).toBeUndefined();
+  });
+});
+
+describe("the no-free-month and no-clobber fixes hold", () => {
+  // Comments are stripped before matching: these assertions are about what the
+  // code DOES, and a comment explaining the old bug would otherwise fail them.
+  const codeOf = (file: string) =>
+    readFileSync(join(HERE, file), "utf8")
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("//") && !l.trim().startsWith("*"))
+      .join("\n");
+  const change = codeOf("./planChange.ts");
+  const bill = codeOf("./billing.ts");
+
+  it("a downgrade applies capacity only, never a fresh paid period", () => {
+    expect(change).toMatch(/planCapacityPatch\(target/);
+    expect(change).not.toMatch(/planPatch\(target[^)]*,\s*1\s*\)/);
+  });
+
+  it("setSubscription no longer writes a plan that isPlanId rejects", () => {
+    // `plan: "paid"` locked every hand-activated org out of self-serve changes.
+    expect(bill).not.toMatch(/plan:\s*"paid"/);
+    expect(bill).not.toMatch(/plan:\s*"internal"/);
+  });
+
+  it("checkout prices the upgrade through prorateUpgrade", () => {
+    const rzp = codeOf("./razorpay.ts");
+    const block = rzp.slice(rzp.indexOf("export const createRazorpayOrder"), rzp.indexOf("createSlotOrder"));
+    expect(block).toMatch(/prorateUpgrade\(/);
+    expect(block).toMatch(/amount\s*=\s*quote\.amountPaise/);
   });
 });

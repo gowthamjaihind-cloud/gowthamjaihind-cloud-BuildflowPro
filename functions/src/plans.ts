@@ -90,9 +90,17 @@ export function effectiveProjectCap(org: any, now = Date.now()): number | null |
 
 // The org-doc patch that puts an org on a plan. Shared by setOrgPlan (manual)
 // and the Razorpay webhook (automatic) so both activate identically.
-export function planPatch(plan: PlanId, months: number) {
+/**
+ * Just the capacity a plan grants — no subscription lifecycle.
+ *
+ * Separated out because a DOWNGRADE must change what the org can do without
+ * granting it a paid period. applyScheduledPlanChanges used to call
+ * planPatch(target, 1), which set `active` and pushed currentPeriodEnd a month
+ * out, so every downgrade handed the customer a free month nobody had paid for.
+ */
+export function planCapacityPatch(plan: PlanId) {
   const def = PLANS[plan];
-  const patch: any = {
+  return {
     plan,
     includedProjects: def.includedProjects,
     userLimit: def.userLimit,
@@ -102,13 +110,85 @@ export function planPatch(plan: PlanId, months: number) {
     // project slots bought under the previous plan no longer apply.
     purchasedSlots: 0,
   };
+}
+
+export function planPatch(plan: PlanId, months: number) {
+  const patch: any = planCapacityPatch(plan);
   if (plan === "free") {
     patch.subscriptionStatus = "free";
   } else {
+    const now = Date.now();
     patch.subscriptionStatus = "active";
-    patch.currentPeriodEnd = Date.now() + months * MONTH_MS;
+    patch.currentPeriodEnd = now + months * MONTH_MS;
+    // Both bounds and the amount paid are recorded so an upgrade part-way
+    // through can be prorated against what this period actually cost. Inferring
+    // it later is not possible: currentPeriodEnd alone cannot tell a monthly
+    // period from an annual one, and guessing monthly on an annual plan would
+    // over-credit twelvefold.
+    patch.currentPeriodStart = now;
+    patch.currentPeriodPaise = planAmountPaise(plan, months >= 12 ? "annual" : "monthly") ?? 0;
   }
   return patch;
+}
+
+export interface Proration {
+  /** The target plan's list price, in paise. */
+  fullPaise: number;
+  /** Credit for the unused part of the period already paid for. */
+  creditPaise: number;
+  /** What to actually charge. Never below ₹1, which Razorpay will not accept. */
+  amountPaise: number;
+  /** Whole days of credit, for showing the customer why the price differs. */
+  creditDays: number;
+}
+
+/** Razorpay rejects an order below ₹1, so a fully-credited upgrade still charges this. */
+export const MIN_ORDER_PAISE = 100;
+
+/**
+ * Price an upgrade against what the customer has already paid for.
+ *
+ * Without this, upgrading on day 20 of 30 charged the full new price and
+ * silently discarded the ten days of the old plan already bought — and the UI
+ * said only "Upgrades are charged now and apply immediately". At these prices an
+ * Indian SMB customer does that arithmetic, and being charged twice for the same
+ * ten days is the kind of thing that ends a subscription.
+ *
+ * Credit is only given when the period's own record says what it cost and when
+ * it runs. An org with no `currentPeriodStart` — anything that predates this, or
+ * was activated by hand through setSubscription — is charged list price, exactly
+ * as before. Under-crediting is recoverable; over-crediting is money gone.
+ */
+export function prorateUpgrade(
+  org: any,
+  targetPlan: PlanId,
+  period: "monthly" | "annual",
+  now = Date.now(),
+): Proration {
+  const fullPaise = planAmountPaise(targetPlan, period) ?? 0;
+  const none = { fullPaise, creditPaise: 0, amountPaise: fullPaise, creditDays: 0 };
+  if (fullPaise <= 0) return none;
+
+  // Only a live, paid-for period earns credit.
+  if (org?.subscriptionStatus !== "active") return none;
+  const start = Number(org?.currentPeriodStart) || 0;
+  const end = Number(org?.currentPeriodEnd) || 0;
+  const paid = Number(org?.currentPeriodPaise) || 0;
+  if (start <= 0 || end <= start || paid <= 0) return none;
+  if (now < start || now >= end) return none;
+
+  const remaining = end - now;
+  const total = end - start;
+  const creditPaise = Math.min(
+    Math.floor((remaining / total) * paid),
+    Math.max(0, fullPaise - MIN_ORDER_PAISE), // always leave something to charge
+  );
+  return {
+    fullPaise,
+    creditPaise,
+    amountPaise: Math.max(MIN_ORDER_PAISE, fullPaise - creditPaise),
+    creditDays: Math.floor(remaining / MONTH_MS * 30),
+  };
 }
 
 // Amount in paise for a payable plan + billing period (null for free/custom).

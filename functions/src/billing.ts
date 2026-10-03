@@ -118,9 +118,13 @@ export const setSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, 
   let patch: any;
   switch (action) {
     case "activate":
+      // `plan` is deliberately NOT written here. It used to be set to "paid",
+      // which is not a PlanId, so isPlanId() rejected it and scheduleDowngrade
+      // refused the org with "This organization's plan can't be changed here" --
+      // every hand-activated customer lost self-serve plan changes. Use
+      // setOrgPlan to place an org on a plan; this only moves the subscription.
       patch = {
         subscriptionStatus: "active",
-        plan: "paid",
         currentPeriodEnd: now + months * 30 * 24 * 60 * 60 * 1000,
       };
       break;
@@ -131,7 +135,8 @@ export const setSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, 
       patch = { subscriptionStatus: "expired" };
       break;
     case "internal":
-      patch = { subscriptionStatus: "internal", plan: "internal" };
+      // Same reason: "internal" is not a PlanId either.
+      patch = { subscriptionStatus: "internal" };
       break;
     default:
       throw new HttpsError("invalid-argument", "Unknown action.");

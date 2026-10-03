@@ -2,7 +2,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
-import { isPlanId, PlanId, planPatch } from "./plans";
+import { isPlanId, PlanId, planCapacityPatch } from "./plans";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
 
@@ -105,10 +105,16 @@ export const applyScheduledPlanChanges = onSchedule(
         continue;
       }
       try {
-        // Applying planPatch resets capacity to the target plan; no project is
-        // ever deleted — an org over the new cap simply pays per-project overage.
+        // Capacity resets to the target plan; no project is ever deleted — an
+        // org over the new cap simply pays per-project overage.
+        // Capacity only. planPatch(target, 1) would set `active` and push
+        // currentPeriodEnd a month out, handing over a free month nobody paid
+        // for. The period the customer bought has already ended -- that is why
+        // this downgrade is firing now -- so the subscription lifecycle takes
+        // it from here: past_due, a grace week with notices, then expired
+        // unless they renew at the new, lower price.
         await orgDoc.ref.set(
-          { ...planPatch(target as PlanId, 1), pendingPlanChange: FieldValue.delete() },
+          { ...planCapacityPatch(target as PlanId), pendingPlanChange: FieldValue.delete() },
           { merge: true },
         );
         applied++;
