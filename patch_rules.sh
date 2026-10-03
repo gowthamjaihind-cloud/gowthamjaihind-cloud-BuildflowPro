@@ -1,1 +1,0 @@
-sed -i 's/match \/{path=\*\*\}\/documents\/{docId} {/match \/{path=**}\/audit_logs\/{auditId} {\n      allow read: if request.auth != null \&\& isAdminOrManager();\n      allow create: if request.auth != null;\n      allow update, delete: if false;\n    }\n    match \/{path=**}\/documents\/{docId} {/' firestore.rules

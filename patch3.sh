@@ -1,1 +1,0 @@
-sed -i 's/                          <\/button>\n                        <\/div>/                          <\/button>\n                        <\/div>\n                        )}/' src/components/ProgressReportsView.tsx
