@@ -5,6 +5,7 @@ import { db } from "./db";
 import { sendInviteEmail, APP_URL } from "./email";
 import { syncOrgClaimsQuietly } from "./claims";
 import { CALLABLE_OPTS } from "./callable";
+import { isMember, pendingInvites, seatLimitMessage, seatState } from "./seats";
 
 // Roles a teammate can be invited as. "Owner" is intentionally excluded — an
 // org has exactly one owner (the creator), and you don't invite people as Owner.
@@ -31,6 +32,22 @@ export const createInvite = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, asy
   const members = orgData?.members || {};
   if (!["Owner", "Admin"].includes(members[uid])) {
     throw new HttpsError("permission-denied", "Only an Owner or Admin can invite teammates.");
+  }
+
+  // Seat check. Codes already out there are reserved against the cap: they stay
+  // redeemable for 14 days, so an org one seat short could otherwise mint as
+  // many as it liked and every one of them would work. Expiry is filtered in
+  // memory rather than in the query to keep this to two equality filters, which
+  // Firestore serves from single-field indexes with no composite index needed.
+  const inviteSnap = await db
+    .collection("org_invites")
+    .where("orgId", "==", orgId)
+    .where("used", "==", false)
+    .get();
+  const reserved = pendingInvites(inviteSnap.docs.map((d) => d.data()));
+  const seats = seatState(orgData, { adding: 1, reserved });
+  if (!seats.ok) {
+    throw new HttpsError("resource-exhausted", seatLimitMessage(seats, "invite"));
   }
 
   const code = genCode();
@@ -86,8 +103,27 @@ export const acceptInvite = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, asy
   const orgId: string = invite.orgId;
   const role: string = invite.role || "Viewer";
 
-  // Add the caller to the org's members map (the membership the rules check).
-  await db.doc(`organizations/${orgId}`).set({ members: { [uid]: role } }, { merge: true });
+  // Add the caller to the org's members map (the membership the rules check),
+  // but only if there is a seat for them. This is the authoritative gate --
+  // createInvite refuses to mint a code it has no room for, yet a code minted
+  // while there was room can still be redeemed after the room has gone.
+  //
+  // Read and write in one transaction: two people holding codes and clicking at
+  // the same moment would both pass a plain read-then-write and the cap would
+  // be advisory. The invite code is deliberately NOT burned on refusal, so it
+  // still works once the Owner frees a seat.
+  const orgRef = db.doc(`organizations/${orgId}`);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(orgRef);
+    const orgData = snap.data() as any;
+    // An existing member re-redeeming a code takes no new seat, and must not be
+    // turned away from an org they are already in.
+    if (!isMember(orgData, uid)) {
+      const seats = seatState(orgData, { adding: 1 });
+      if (!seats.ok) throw new HttpsError("resource-exhausted", seatLimitMessage(seats, "join"));
+    }
+    tx.set(orgRef, { members: { [uid]: role } }, { merge: true });
+  });
   // Link their account: switch to this org, set the invited role, and record
   // membership in orgIds so the org-switcher can list every org they belong to.
   await db.doc(`users/${uid}`).set(
