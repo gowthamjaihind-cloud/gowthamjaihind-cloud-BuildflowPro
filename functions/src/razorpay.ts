@@ -2,7 +2,7 @@ import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import * as crypto from "crypto";
 import { db } from "./db";
-import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE } from "./plans";
+import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE, slotPurchasePatch } from "./plans";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
 
@@ -183,17 +183,23 @@ async function activateOrgFromOrder(orderId: string): Promise<boolean> {
   if (o.status === "paid") return true;
 
   if (o.kind === "slots") {
-    // Extra project slots: raise the included cap for the current cycle and
-    // track how many were bought. No plan change, no re-linking.
+    // Extra project slots for ONE 30-day window. This used to do
+    // `includedProjects: increment(qty)`, which nothing ever reversed -- so a
+    // single ₹99 payment raised the cap permanently and the slot was sold
+    // monthly but granted forever. slotPurchasePatch keeps the slots in their
+    // own fields with an expiry, and leaves includedProjects to mean the plan's
+    // own cap.
+    //
+    // Read and write in a transaction: topping up a live window has to see the
+    // current count, and two slot payments landing together would otherwise
+    // lose one of them.
     const qty = Math.max(0, Math.floor(Number(o.quantity) || 0));
     if (qty > 0) {
-      await db.doc(`organizations/${o.orgId}`).set(
-        {
-          includedProjects: FieldValue.increment(qty),
-          purchasedSlots: FieldValue.increment(qty),
-        },
-        { merge: true },
-      );
+      const orgRef = db.doc(`organizations/${o.orgId}`);
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(orgRef);
+        tx.set(orgRef, slotPurchasePatch(snap.data(), qty), { merge: true });
+      });
     }
     await orderRef.set({ status: "paid", paidAt: new Date().toISOString() }, { merge: true });
     return true;

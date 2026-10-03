@@ -26,15 +26,38 @@ export const PLANS: Record<PlanId, PlanDef> = {
 
 export const PLAN_ORDER: PlanId[] = ["free", "starter", "growth", "business", "enterprise"];
 
-// Effective included-project cap for an org doc. Absent field = no cap
+export const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * Extra project slots last 30 days (see functions/src/plans.ts — server copy).
+ *
+ * A slot bought before this scheme existed has no `slotsExpireAt` and is
+ * already inside `includedProjects`, so it reads as zero here and stays
+ * permanent rather than vanishing from under a paying customer.
+ */
+export function activeSlots(org: any, now = Date.now()): number {
+  const qty = Math.floor(Number(org?.purchasedSlots) || 0);
+  if (qty <= 0) return 0;
+  const until = Number(org?.slotsExpireAt) || 0;
+  return until > now ? qty : 0;
+}
+
+// Effective included-project cap for an org doc: the plan's own cap plus any
+// slots still inside their 30-day window. Absent field = no cap
 // (grandfathered / trialing / internal). null = unlimited (Enterprise).
-export function includedProjectsOf(org: any): number | null | undefined {
-  return org?.includedProjects;
+export function includedProjectsOf(org: any, now = Date.now()): number | null | undefined {
+  const base = org?.includedProjects;
+  if (base === null) return null;
+  if (typeof base !== "number") return undefined;
+  return base + activeSlots(org, now);
 }
 
 // Given a current active-project count and an org's plan, describe cap state.
-export function projectCapState(org: any, currentCount: number) {
-  const included = org?.includedProjects;
+// `included` is the EFFECTIVE cap, so slots inside their window count and
+// lapsed ones do not -- reading org.includedProjects raw here is what made a
+// one-off ₹99 buy a project for good.
+export function projectCapState(org: any, currentCount: number, now = Date.now()) {
+  const included = includedProjectsOf(org, now);
   const rate = Number(org?.overageRate) || OVERAGE_RATE;
   const isFree = org?.plan === "free" || org?.subscriptionStatus === "free";
   if (included === null || included === undefined) {

@@ -28,6 +28,7 @@ const P = {
   fsDelete: 0.01 / 100_000, // per document delete
   fsStoreGiBMonth: 0.108, // per GiB-month
   gcsStoreGBMonth: 0.023, // Cloud Storage standard, per GB-month
+  gcsColdlineGBMonth: 0.004, // Coldline: right class for a handed-over archive
   gcsEgressGB: 0.12, // internet egress, first 10 TB
   fnInvocation: 0.4 / 1_000_000, // Cloud Run / Functions v2 per invocation
   geminiInPerTok: 0.3 / 1_000_000, // Gemini 2.5 Flash input
@@ -151,6 +152,53 @@ const marginActive = 99 - inr(activeOps + totalGB * P.gcsStoreGBMonth);
 console.log(`  revenue ₹99/mo against a worst-month cost of ` +
   `₹${inr(activeOps + totalGB * P.gcsStoreGBMonth).toFixed(2)} -> margin ₹${marginActive.toFixed(0)}/mo (${((marginActive / 99) * 100).toFixed(0)}%)`);
 console.log(`  and retention is covered for as long as the customer keeps paying.\n`);
+
+// ------------------------------------------- the slot-expiry fix, in money ----
+// Before: paying ₹99 for a project slot did `includedProjects: increment(qty)`
+// and nothing ever reversed it, so one payment held the project for its whole
+// life. After: the slot lives 30 days, so a project in month 7 has been paid
+// for seven times. Same ₹99 sticker, completely different business.
+const LIFETIME_MONTHS = A.months + 60; // build, then five years of retention
+const idlePerMonth = totalGB * P.gcsStoreGBMonth;
+const coldPerMonth = totalGB * P.gcsColdlineGBMonth;
+
+function lifetime({ monthlySlot, coldArchive }) {
+  let revenue = 0;
+  let cost = 0;
+  for (let m = 1; m <= LIFETIME_MONTHS; m++) {
+    const active = m <= A.months;
+    if (active) {
+      revenue += monthlySlot ? OVERAGE : m === 1 ? OVERAGE : 0;
+      cost += activeOps + (gbAddedMonth * m) * P.gcsStoreGBMonth;
+    } else {
+      revenue += 0; // handed over: nobody is buying slots any more either way
+      cost += coldArchive ? coldPerMonth : idlePerMonth;
+    }
+  }
+  return { revenue, cost, profit: revenue - cost };
+}
+
+const OVERAGE = 99 / USD_INR; // the ₹99 slot, in USD so it lines up with costs
+const before = lifetime({ monthlySlot: false, coldArchive: false });
+const after = lifetime({ monthlySlot: true, coldArchive: false });
+const afterCold = lifetime({ monthlySlot: true, coldArchive: true });
+
+console.log(`PROFIT PER ₹99 OVERAGE PROJECT, OVER ${LIFETIME_MONTHS} MONTHS ` +
+  `(${A.months} active + ${LIFETIME_MONTHS - A.months} retained)`);
+console.log(`  The unit here is one project bought with a slot, beyond what the plan includes —`);
+console.log(`  not every project, and not the plan fee itself.`);
+const show = (label, r) =>
+  console.log(
+    `  ${label.padEnd(34)} revenue ${money(r.revenue).padStart(10)}   cost ${money(r.cost).padStart(9)}   ` +
+      `profit ${money(r.profit).padStart(10)}`,
+  );
+show("slot permanent (the old bug)", before);
+show("slot expires monthly (fixed)", after);
+show("  + Coldline archive", afterCold);
+console.log(`\n  The fix turns ₹${inr(before.profit).toFixed(0)} per project into ` +
+  `₹${inr(after.profit).toFixed(0)} — the slot is sold monthly and now behaves monthly.`);
+console.log(`  Moving handed-over projects to Coldline adds ₹${inr(afterCold.profit - after.profit).toFixed(0)} more,`);
+console.log(`  which is what makes "archived free, read-only, forever" affordable.\n`);
 
 console.log(`WHERE THE STORED BYTES GO`);
 const scanShare = ((A.scansPerMonth * A.scanRawMB) / 1e3 / gbAddedMonth) * 100;
