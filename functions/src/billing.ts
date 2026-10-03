@@ -1,8 +1,11 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { randomBytes } from "crypto";
 import { db } from "./db";
-import { sendInviteEmail, APP_URL } from "./email";
-import { isPlanId, OVERAGE_RATE, PlanId, planPatch, PLANS } from "./plans";
+import { sendInviteEmail, sendRenewalEmail, APP_URL } from "./email";
+import { isPlanId, OVERAGE_RATE, PlanId, planPatch, PLANS, effectiveProjectCap } from "./plans";
+import { nextLifecycleState, renewalNoticeDue, noticeSentPatch, DAY_MS } from "./subscription";
+import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
 
 // App operators who may provision orgs and manage subscriptions. Keep in sync
@@ -193,7 +196,9 @@ export const getOrgUsage = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, asyn
   const aiUsed = usageSnap.exists ? Number((usageSnap.data() as any).aiCalls) || 0 : 0;
 
   const projectCount = (await orgRef.collection("projects").count().get()).data().count;
-  const included = d.includedProjects ?? null;
+  // Effective cap, so live project slots count and lapsed ones do not --
+  // reporting d.includedProjects raw here would disagree with projectCapState.
+  const included = effectiveProjectCap(d) ?? null;
   const overageProjects = included === null ? 0 : Math.max(0, projectCount - included);
   const overageRate = Number(d.overageRate) || OVERAGE_RATE;
 
@@ -209,3 +214,91 @@ export const getOrgUsage = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, asyn
     aiQuota: d.aiQuota ?? null,
   };
 });
+
+// ---- The job that makes a paid period actually end --------------------------
+//
+// Before this, nothing compared currentPeriodEnd to the clock. `active` meant
+// access forever, and the only thing that ever gated anyone was trial expiry.
+// See functions/src/subscription.ts for the state machine and why it is
+// forgiving; the rules there are pure and tested, this just applies them.
+
+/** The Owner's email, for billing mail. Falls back to any Admin. */
+async function billingContact(orgData: any): Promise<string | null> {
+  const members: Record<string, string> = orgData?.members || {};
+  const pick = (role: string) => Object.keys(members).find((uid) => members[uid] === role);
+  const uid = pick("Owner") || pick("Admin");
+  if (!uid) return null;
+  const snap = await db.doc(`users/${uid}`).get();
+  const email = snap.exists ? (snap.data() as any)?.email : null;
+  return typeof email === "string" && email.includes("@") ? email : null;
+}
+
+export const runSubscriptionLifecycle = onSchedule(
+  {
+    schedule: "45 4 * * *", // after the 03:30 cleanup and 04:15 plan changes
+    timeZone: "Asia/Kolkata",
+    region: "asia-southeast1",
+  },
+  async () => {
+    const now = Date.now();
+    // Only these two statuses can move. Everything else -- grandfathered,
+    // internal, free, trialing, canceled, expired -- is left alone, so this
+    // query is also the safety boundary.
+    const snap = await db
+      .collection("organizations")
+      .where("subscriptionStatus", "in", ["active", "past_due"])
+      .get();
+
+    let moved = 0;
+    let notified = 0;
+    for (const orgDoc of snap.docs) {
+      const data: any = orgDoc.data();
+      try {
+        const move = nextLifecycleState(data, now);
+        if (move) {
+          const patch: any = { subscriptionStatus: move.to };
+          if (move.to === "past_due") patch.graceEndsAt = move.graceEndsAt;
+          await orgDoc.ref.set(patch, { merge: true });
+          moved++;
+
+          // The transition itself is the trigger, which is what keeps this to
+          // one email: on the next run the status is past_due and
+          // nextLifecycleState returns null until grace actually ends.
+          if (move.to === "past_due") {
+            const to = await billingContact(data);
+            await sendRenewalEmail({
+              to,
+              companyName: data.companyName || "Your workspace",
+              link: APP_URL,
+              daysLeft: 0,
+              graceDaysLeft: Math.max(0, Math.ceil((move.graceEndsAt - now) / DAY_MS)),
+            });
+          }
+          continue;
+        }
+
+        // Still inside the paid period: warn before it ends.
+        const due = renewalNoticeDue(data, now);
+        if (due !== null) {
+          const to = await billingContact(data);
+          const sent = await sendRenewalEmail({
+            to,
+            companyName: data.companyName || "Your workspace",
+            link: APP_URL,
+            daysLeft: due,
+          });
+          // Only record a notice that actually went out, so a Resend outage
+          // retries tomorrow instead of silently swallowing the warning.
+          if (sent.sent) {
+            await orgDoc.ref.set(noticeSentPatch(data, due), { merge: true });
+            notified++;
+          }
+        }
+      } catch (e) {
+        // One bad org must not stop the rest of the run.
+        captureError(e, { where: "runSubscriptionLifecycle", orgId: orgDoc.id });
+      }
+    }
+    console.log(`runSubscriptionLifecycle: ${moved} moved, ${notified} notified, of ${snap.size} examined`);
+  },
+);

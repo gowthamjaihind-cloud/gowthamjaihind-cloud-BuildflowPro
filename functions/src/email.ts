@@ -77,6 +77,91 @@ export async function sendWelcomeEmail(opts: {
   }
 }
 
+/**
+ * Renewal notice, sent before a paid period ends and again once it has lapsed.
+ *
+ * Best-effort like the others: no recipient or no Resend key means sent:false
+ * and the caller carries on. A notice that fails to send must never stop the
+ * lifecycle job, but it also must not be mistaken for one that went out -- the
+ * caller only records the notice when this returns sent:true.
+ */
+export async function sendRenewalEmail(opts: {
+  to?: string | null;
+  companyName: string;
+  link: string;
+  /** Days until the period ends; 0 or less once it has already lapsed. */
+  daysLeft: number;
+  /** Days of access left in grace, when the period has already lapsed. */
+  graceDaysLeft?: number;
+  amount?: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  if (!opts.to) return { sent: false, error: "no recipient email" };
+  const cfg = await getEmailConfig();
+  if (!cfg) return { sent: false, error: "email not configured" };
+
+  const lapsed = opts.daysLeft <= 0;
+  const subject = lapsed
+    ? `Action needed — ${opts.companyName}'s Sitetru plan has lapsed`
+    : opts.daysLeft === 1
+      ? `${opts.companyName}'s Sitetru plan renews tomorrow`
+      : `${opts.companyName}'s Sitetru plan renews in ${opts.daysLeft} days`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${cfg.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: `${cfg.fromName} <${cfg.fromEmail}>`,
+        to: [opts.to],
+        subject,
+        html: renewalHtml({ ...opts, lapsed }),
+      }),
+    });
+    if (!res.ok) {
+      const b = await res.text().catch(() => "");
+      return { sent: false, error: `resend ${res.status}: ${b.slice(0, 180)}` };
+    }
+    return { sent: true };
+  } catch (e: any) {
+    return { sent: false, error: String(e) };
+  }
+}
+
+function renewalHtml(o: {
+  companyName: string;
+  link: string;
+  daysLeft: number;
+  graceDaysLeft?: number;
+  amount?: string;
+  lapsed: boolean;
+}): string {
+  const grace = o.graceDaysLeft ?? 0;
+  const headline = o.lapsed
+    ? "Your plan has lapsed"
+    : o.daysLeft === 1
+      ? "Your plan renews tomorrow"
+      : `Your plan renews in ${o.daysLeft} days`;
+  const body = o.lapsed
+    ? `<b>${escapeHtml(o.companyName)}</b>'s paid period has ended. Everything still works for the next
+       ${grace} day${grace === 1 ? "" : "s"} — your projects, logs and photos are untouched. Renew before then
+       and nothing changes.`
+    : `<b>${escapeHtml(o.companyName)}</b>'s plan${o.amount ? ` (${escapeHtml(o.amount)})` : ""} is due for renewal.
+       Renew from Settings and your team carries on without a break.`;
+  return `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+  <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
+    <div style="background:#ffffff;border:1px solid #e6e8eb;border-radius:20px;padding:32px;">
+      <div style="font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#8a94a6;">Sitetru</div>
+      <h1 style="font-size:22px;color:#1f2937;margin:12px 0 8px;">${headline}</h1>
+      <p style="font-size:15px;color:#4b5563;line-height:1.6;margin:0 0 20px;">${body}</p>
+      <a href="${o.link}" style="display:inline-block;background:#D97D54;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 24px;border-radius:12px;">Renew now</a>
+      <p style="font-size:12px;color:#8a94a6;margin:24px 0 0;line-height:1.6;">
+        Nothing is ever deleted when a plan lapses. Reply to this email if you'd rather sort it out with us directly.
+      </p>
+    </div>
+    <p style="text-align:center;font-size:11px;color:#9ca3af;margin-top:16px;">Truth, reported from site.</p>
+  </div></body></html>`;
+}
+
 function welcomeHtml(o: { name?: string; companyName: string; link: string }): string {
   const hi = o.name ? `Hi ${escapeHtml(o.name)},` : "Hi,";
   return `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
