@@ -1,7 +1,5 @@
 import { create } from "zustand";
 
-export type Language = "en" | "ta";
-
 interface UIState {
   activeTab: string;
   isCreatingProject: boolean;
@@ -9,19 +7,13 @@ interface UIState {
   darkMode: boolean;
   companyName: string;
   uiMode: "executive" | "site";
-  language: Language;
   setActiveTab: (tab: string) => void;
   setIsCreatingProject: (isCreating: boolean) => void;
   setViewingSettings: (viewing: boolean) => void;
   setDarkMode: (dark: boolean) => void;
   setCompanyName: (name: string) => void;
   setUIMode: (mode: "executive" | "site") => void;
-  setLanguage: (lang: Language) => void;
-  toggleLanguage: () => void;
 }
-
-const initialLanguage: Language =
-  (localStorage.getItem("language") as Language) === "ta" ? "ta" : "en";
 
 export const useUIStore = create<UIState>((set) => ({
   activeTab: "dashboard",
@@ -30,7 +22,6 @@ export const useUIStore = create<UIState>((set) => ({
   companyName: localStorage.getItem("companyName") || "Sitetru",
   darkMode: localStorage.getItem("darkMode") === "true",
   uiMode: (localStorage.getItem("uiMode") as "executive" | "site") || "executive",
-  language: initialLanguage,
   setActiveTab: (tab) => set({ activeTab: tab }),
   setIsCreatingProject: (isCreatingProject) => set({ isCreatingProject }),
   setViewingSettings: (viewingSettings) => set({ viewingSettings }),
@@ -56,16 +47,4 @@ export const useUIStore = create<UIState>((set) => ({
     }
     set({ uiMode });
   },
-  setLanguage: (language) => {
-    localStorage.setItem("language", language);
-    document.documentElement.setAttribute("lang", language);
-    set({ language });
-  },
-  toggleLanguage: () =>
-    set((state) => {
-      const language: Language = state.language === "en" ? "ta" : "en";
-      localStorage.setItem("language", language);
-      document.documentElement.setAttribute("lang", language);
-      return { language };
-    }),
 }));

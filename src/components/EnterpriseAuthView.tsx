@@ -31,7 +31,6 @@ import {
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import { handleFirestoreError, OperationType } from "../firebase";
-import { useL } from "../i18n";
 import { toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { DialogBehaviour } from "../lib/useDialog";
@@ -45,7 +44,6 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
   onBack,
   currentUser,
 }) => {
-  const L = useL();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
@@ -66,7 +64,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       });
     } catch (err: any) {
       console.error("Error unlinking:", err);
-      toast.error(L("Failed to unlink bot","போட்டை இணைப்பு நீக்க முடியவில்லை"));
+      toast.error("Failed to unlink bot");
     }
   };
 
@@ -229,7 +227,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
     return (
       <div className="h-screen flex items-center justify-center" role="status" aria-busy="true">
         <Loader2 className="w-12 h-12 animate-spin text-primary" aria-hidden="true" />
-        <span className="sr-only">{L("Loading…", "ஏற்றுகிறது…")}</span>
+        <span className="sr-only">{"Loading…"}</span>
       </div>
     );
   }
@@ -241,10 +239,10 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
           <ShieldAlert className="w-8 h-8 text-danger mt-1" />
           <div>
             <h3 className="text-lg font-bold text-danger">
-              {L("Restricted Access","கட்டுப்படுத்தப்பட்ட அணுகல்")}
+              {"Restricted Access"}
             </h3>
             <p className="text-danger font-medium">
-              {L("You must be an Enterprise Admin or Owner to modify roles. You are currently viewing in read-only mode.","பங்குகளை மாற்ற நீங்கள் Enterprise நிர்வாகி அல்லது உரிமையாளராக இருக்க வேண்டும். நீங்கள் தற்போது படிக்க-மட்டும் பயன்முறையில் பார்க்கிறீர்கள்.")}
+              {"You must be an Enterprise Admin or Owner to modify roles. You are currently viewing in read-only mode."}
             </p>
           </div>
         </div>
@@ -252,7 +250,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       <div className="bg-surface rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-divider overflow-hidden">
         <div className="p-8 border-b border-divider flex items-center justify-between bg-panel/50">
           <h2 className="text-xl font-bold flex items-center gap-3">
-            <Users className="w-6 h-6 text-primary" /> {L("Identity & Authorization","அடையாளம் & அங்கீகாரம்")}
+            <Users className="w-6 h-6 text-primary" /> {"Identity & Authorization"}
           </h2>
         </div>
 
@@ -260,10 +258,10 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-divider text-ink-muted text-[10px] uppercase tracking-widest font-black">
-                <th className="px-8 py-6">{L("User Email / Identity","பயனர் மின்னஞ்சல் / அடையாளம்")}</th>
-                <th className="px-8 py-6">{L("Platform Role","இயங்குதள பங்கு")}</th>
-                <th className="px-8 py-6">{L("Projects Access","செயல்திட்ட அணுகல்")}</th>
-                <th className="px-8 py-6 text-right">{L("Actions","செயல்கள்")}</th>
+                <th className="px-8 py-6">{"User Email / Identity"}</th>
+                <th className="px-8 py-6">{"Platform Role"}</th>
+                <th className="px-8 py-6">{"Projects Access"}</th>
+                <th className="px-8 py-6 text-right">{"Actions"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-divider/60">
@@ -275,32 +273,32 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                       {u.telegramChatId ? (
                         <div className="flex items-center gap-1.5">
                           <span className="text-success bg-success/10 px-2.5 py-1 rounded-md border border-success/20 flex items-center gap-1 font-bold text-xs">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> {L("Telegram Linked","டெலிகிராம் இணைக்கப்பட்டது")}
+                            <CheckCircle2 className="w-3.5 h-3.5" /> {"Telegram Linked"}
                           </span>
-                          <Tooltip label={L("Unlink Telegram Bot","டெலிகிராம் போட்டை இணைப்பு நீக்கு")}>
+                          <Tooltip label={"Unlink Telegram Bot"}>
                             <button
                               onClick={() => unlinkBot(u.uid)}
                               disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
                               className="text-xs font-semibold text-danger hover:text-danger bg-danger/8 hover:bg-danger/15 px-2 py-1 rounded-md transition-colors disabled:opacity-50"
                              
                             >
-                              {L("Unlink","இணைப்பு நீக்கு")}
+                              {"Unlink"}
                             </button>
                           </Tooltip>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <span className="text-ink-muted bg-panel px-2.5 py-1 rounded-md border border-divider text-xs font-bold">
-                            {L("Telegram Not Linked","டெலிகிராம் இணைக்கப்படவில்லை")}
+                            {"Telegram Not Linked"}
                           </span>
-                          <Tooltip label={L("Generate Telegram Link Code","டெலிகிராம் இணைப்புக் குறியீட்டை உருவாக்கு")}>
+                          <Tooltip label={"Generate Telegram Link Code"}>
                             <button
                               onClick={() => generateLinkCode(u.uid, u.email)}
                               disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
                               className="text-xs font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
                              
                             >
-                              <Send className="w-3.5 h-3.5" /> {L("Link Bot","போட்டை இணை")}
+                              <Send className="w-3.5 h-3.5" /> {"Link Bot"}
                             </button>
                           </Tooltip>
                         </div>
@@ -322,23 +320,23 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                       <div className="flex items-center gap-2 text-sm font-bold">
                         {u.role === "Owner" ? (
                           <span className="text-surface-dark bg-surface-dark/10 px-3 py-1.5 rounded-lg border border-surface-dark/20 flex items-center gap-1.5 w-fit">
-                            <ShieldCheck className="w-4 h-4" /> {L("Owner","உரிமையாளர்")}
+                            <ShieldCheck className="w-4 h-4" /> {"Owner"}
                           </span>
                         ) : u.role === "Admin" ? (
                           <span className="text-primary bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 flex items-center gap-1.5 w-fit">
-                            <ShieldCheck className="w-4 h-4" /> {L("Admin","நிர்வாகி")}
+                            <ShieldCheck className="w-4 h-4" /> {"Admin"}
                           </span>
                         ) : u.role === "Project Manager" ? (
                           <span className="text-ink-muted bg-ink-muted/10 px-3 py-1.5 rounded-lg border border-success/25 flex items-center gap-1.5 w-fit">
-                            <Users className="w-4 h-4" /> {L("Manager","மேலாளர்")}
+                            <Users className="w-4 h-4" /> {"Manager"}
                           </span>
                         ) : u.role === "Site Engineer" ? (
                           <span className="text-success bg-success/10 px-3 py-1.5 rounded-lg border border-success/20 flex items-center gap-1.5 w-fit">
-                            <Construction className="w-4 h-4" /> {L("Engineer","பொறியாளர்")}
+                            <Construction className="w-4 h-4" /> {"Engineer"}
                           </span>
                         ) : (
                           <span className="text-ink-muted bg-panel px-3 py-1.5 rounded-lg border border-divider w-fit">
-                            {u.role || L("Viewer","பார்வையாளர்")}
+                            {u.role || "Viewer"}
                           </span>
                         )}
                       </div>
@@ -369,16 +367,16 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                                   })
                                 }
                               >
-                                <option value="none">{L("None","எதுவுமில்லை")}</option>
-                                <option value="read">{L("Read Only","படிக்க மட்டும்")}</option>
-                                <option value="write">{L("Read / Write","படிக்க / எழுத")}</option>
+                                <option value="none">{"None"}</option>
+                                <option value="read">{"Read Only"}</option>
+                                <option value="write">{"Read / Write"}</option>
                               </select>
                             </div>
                           ))}
                         </div>
                       ) : u.role === "Admin" || u.role === "Owner" ? (
                         <span className="text-success font-bold">
-                          {L("Universal Access","உலகளாவிய அணுகல்")}
+                          {"Universal Access"}
                         </span>
                       ) : (
                         <div className="space-y-1">
@@ -405,13 +403,13 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                                     className={`font-bold ${u.projectAccess![p.id] === "write" ? "text-primary" : "text-ink-muted"}`}
                                   >
                                     {u.projectAccess![p.id] === "write"
-                                      ? L("R/W","ப/எ")
-                                      : L("Read","படி")}
+                                      ? "R/W"
+                                      : "Read"}
                                   </span>
                                 </div>
                               ))
                           ) : (
-                            <span>{L("Global Role Applied","பொது பங்கு பயன்படுத்தப்பட்டது")}</span>
+                            <span>{"Global Role Applied"}</span>
                           )}
                         </div>
                       )}
@@ -420,7 +418,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                   <td className="px-8 py-6 text-right">
                     {editingUserId === u.uid ? (
                       <div className="flex justify-end gap-2">
-                        <Tooltip label={L("Save Role","பங்கைச் சேமி")}>
+                        <Tooltip label={"Save Role"}>
                           <button
                             onClick={() => handleUpdateRole(u.uid)}
                             className="p-2 bg-success text-on-success rounded-xl hover:bg-success transition-colors"
@@ -429,7 +427,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                             <Save className="w-4 h-4" />
                           </button>
                         </Tooltip>
-                        <Tooltip label={L("Cancel","ரத்து")}>
+                        <Tooltip label={"Cancel"}>
                           <button
                             onClick={() => setEditingUserId(null)}
                             className="p-2 bg-divider text-ink rounded-xl hover:bg-ink-muted/25 transition-colors"
@@ -440,7 +438,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                         </Tooltip>
                       </div>
                     ) : (
-                      <Tooltip label={L("Edit Role","பங்கைத் திருத்து")}>
+                      <Tooltip label={"Edit Role"}>
                         <button
                           onClick={() => {
                             setEditingUserId(u.uid);
@@ -475,24 +473,24 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
         <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-surface w-full max-w-md rounded-3xl p-8 border border-divider shadow-2xl relative">
             <DialogBehaviour />
-            <button aria-label={L("Close","மூடு")}
+            <button aria-label={"Close"}
               onClick={() => setShowLinkCode(null)}
               className="absolute right-6 top-6 p-2 bg-panel rounded-full hover:bg-divider transition-colors"
             >
               <X className="w-5 h-5 text-ink-muted" />
             </button>
-            <h2 className="text-2xl font-black text-ink mb-2">{L("Telegram Link Code","டெலிகிராம் இணைப்புக் குறியீடு")}</h2>
+            <h2 className="text-2xl font-black text-ink mb-2">{"Telegram Link Code"}</h2>
             <p className="text-ink-muted font-medium mb-6">
-              {L("Link code for","இணைப்புக் குறியீடு")} <b>{showLinkCode.email}</b>
+              {"Link code for"} <b>{showLinkCode.email}</b>
             </p>
             <div className="bg-panel rounded-2xl p-6 mb-6 text-center border border-divider">
-              <p className="text-sm font-bold text-ink-muted mb-3 uppercase tracking-wider">{L("Ask them to send:","அவர்களை அனுப்பச் சொல்லுங்கள்:")}</p>
+              <p className="text-sm font-bold text-ink-muted mb-3 uppercase tracking-wider">{"Ask them to send:"}</p>
               <code className="text-3xl font-black text-primary bg-primary/10 px-4 py-2 rounded-xl">
                 /link {showLinkCode.displayCode}
               </code>
             </div>
             <p className="text-center text-sm font-medium text-primary bg-primary/10 py-3 rounded-xl">
-              {L("Expires in 15 minutes.","15 நிமிடங்களில் காலாவதியாகும்.")}
+              {"Expires in 15 minutes."}
             </p>
           </div>
         </div>

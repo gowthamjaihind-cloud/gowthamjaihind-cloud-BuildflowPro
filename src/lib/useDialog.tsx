@@ -239,8 +239,8 @@ export const DialogBehaviour: React.FC<{
             node.querySelectorAll("button,[role='button']") as NodeListOf<HTMLElement>,
           );
           const close =
-            byLabel.find((b) => /close|மூடு/i.test(b.getAttribute("aria-label") ?? "")) ??
-            byLabel.find((b) => /^(cancel|ரத்து)$/i.test((b.textContent ?? "").trim())) ??
+            byLabel.find((b) => /close/i.test(b.getAttribute("aria-label") ?? "")) ??
+            byLabel.find((b) => /^cancel$/i.test((b.textContent ?? "").trim())) ??
             byLabel.find(
               (b) => !(b.textContent ?? "").trim() && b.querySelector("svg") !== null,
             );

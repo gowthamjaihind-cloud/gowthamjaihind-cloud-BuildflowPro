@@ -11,7 +11,6 @@ import {
 import { UserProfile } from "../types";
 import { db, collection, query, where, getDocs, setDoc, doc } from "../firebase";
 import { updateDoc, deleteField } from "firebase/firestore";
-import { useL } from "../i18n";
 import { Tooltip } from "./Tooltip";
 
 interface TelegramIntegrationProps {
@@ -19,7 +18,6 @@ interface TelegramIntegrationProps {
 }
 
 export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ currentUser }) => {
-  const L = useL();
   const [loading, setLoading] = useState(false);
   const [activeCode, setActiveCode] = useState<string | null>(null);
   const [displayCode, setDisplayCode] = useState<string | null>(null);
@@ -97,7 +95,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
       setExpiresAt(foundExpiry);
     } catch (err: any) {
       console.error("Error fetching code:", err);
-      setError(L("Failed to fetch link code","இணைப்புக் குறியீட்டைப் பெற முடியவில்லை"));
+      setError("Failed to fetch link code");
     } finally {
       setLoading(false);
     }
@@ -144,7 +142,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
       setExpiresAt(expiry);
     } catch (err: any) {
       console.error("Error generating code:", err);
-      setError(L("Failed to generate code","குறியீட்டை உருவாக்க முடியவில்லை"));
+      setError("Failed to generate code");
     } finally {
       setLoading(false);
     }
@@ -167,7 +165,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
       // Option: could also remove the bot session, but leaving it is probably fine or we can delete it too
     } catch (err: any) {
       console.error("Error unlinking:", err);
-      setError(L("Failed to unlink bot","போட்டை இணைப்பு நீக்க முடியவில்லை"));
+      setError("Failed to unlink bot");
     } finally {
       setLoading(false);
     }
@@ -178,7 +176,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
       <div className="bg-surface p-6 rounded-2xl border border-divider">
         <p className="text-ink-muted text-sm flex items-center gap-2">
           <AlertCircle className="w-5 h-5 text-primary" />
-          {L("You do not have permission to link a Telegram bot. Contact an Administrator.","டெலிகிராம் போட்டை இணைக்க உங்களுக்கு அனுமதி இல்லை. நிர்வாகியைத் தொடர்புகொள்ளவும்.")}
+          {"You do not have permission to link a Telegram bot. Contact an Administrator."}
         </p>
       </div>
     );
@@ -191,19 +189,19 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
       <div className="bg-surface p-6 rounded-[20px] flex flex-col md:flex-row md:items-center justify-between shadow-sm border border-divider gap-4">
         <div>
           <div className="font-bold text-ink flex items-center gap-2">
-            {L("Telegram Bot Status","டெலிகிராம் போட் நிலை")}
+            {"Telegram Bot Status"}
             {isLinked ? (
               <span className="px-2 py-0.5 bg-success/20 text-success text-xs rounded-full flex items-center gap-1 font-medium">
-                <CheckCircle2 className="w-3 h-3" /> {L("Linked","இணைக்கப்பட்டது")} ✅
+                <CheckCircle2 className="w-3 h-3" /> {"Linked"} ✅
               </span>
             ) : (
               <span className="px-2 py-0.5 bg-page text-ink-muted text-xs rounded-full font-medium">
-                {L("Not linked","இணைக்கப்படவில்லை")}
+                {"Not linked"}
               </span>
             )}
           </div>
           <div className="text-sm text-ink-muted mt-1 max-w-md">
-            {L("Connect your Telegram account to receive real-time notifications and interact with the project bot.","நிகழ்நேர அறிவிப்புகளைப் பெறவும், செயல்திட்ட போட்டுடன் தொடர்பு கொள்ளவும் உங்கள் டெலிகிராம் கணக்கை இணைக்கவும்.")}
+            {"Connect your Telegram account to receive real-time notifications and interact with the project bot."}
           </div>
         </div>
         
@@ -215,7 +213,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
                 disabled={loading}
                 className="px-4 py-2 bg-danger/8 text-danger font-semibold rounded-xl hover:bg-danger/15 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : L("Unlink Bot","போட்டை இணைப்பு நீக்கு")}
+                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Unlink Bot"}
               </button>
             )}
             <button
@@ -224,7 +222,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
               className="px-4 py-2 bg-primary text-on-primary font-semibold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              {isLinked ? L("Generate New Link Code","புதிய இணைப்புக் குறியீட்டை உருவாக்கு") : L("Link Telegram Bot","டெலிகிராம் போட்டை இணை")}
+              {isLinked ? "Generate New Link Code" : "Link Telegram Bot"}
             </button>
           </div>
         )}
@@ -232,21 +230,21 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
 
       {!isLinked && (
         <div className="bg-surface p-6 rounded-[20px] border border-divider shadow-sm">
-          <div className="font-bold text-ink mb-1">{L("Connect in 3 easy steps","3 எளிய படிகளில் இணைக்கவும்")}</div>
-          <p className="text-sm text-ink-muted mb-5">{L("Takes about 20 seconds — no typing needed.","சுமார் 20 வினாடிகள் ஆகும் — தட்டச்சு தேவையில்லை.")}</p>
+          <div className="font-bold text-ink mb-1">{"Connect in 3 easy steps"}</div>
+          <p className="text-sm text-ink-muted mb-5">{"Takes about 20 seconds — no typing needed."}</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { n: "1", emoji: "👆", title: "Tap “Connect”", taTitle: "“இணை” என்பதைத் தட்டவும்", body: "Tap the blue Connect Telegram button. On a computer, scan the QR code with your phone instead.", taBody: "நீல Connect Telegram பொத்தானைத் தட்டவும். கணினியில், அதற்குப் பதிலாக உங்கள் ஃபோனில் QR குறியீட்டை ஸ்கேன் செய்யவும்." },
-              { n: "2", emoji: "▶️", title: "Tap “Start”", taTitle: "“Start” என்பதைத் தட்டவும்", body: "Telegram opens the bot. Tap the Start button at the bottom of the chat.", taBody: "டெலிகிராம் போட்டைத் திறக்கும். அரட்டையின் கீழே உள்ள Start பொத்தானைத் தட்டவும்." },
-              { n: "3", emoji: "✅", title: "You’re linked", taTitle: "நீங்கள் இணைக்கப்பட்டீர்கள்", body: "That’s it. Send /log in the chat to file a daily site update from your phone.", taBody: "அவ்வளவுதான். உங்கள் ஃபோனிலிருந்து தினசரி தள புதுப்பிப்பைப் பதிவு செய்ய அரட்டையில் /log அனுப்பவும்." },
+              { n: "1", emoji: "👆", title: "Tap “Connect”", body: "Tap the blue Connect Telegram button. On a computer, scan the QR code with your phone instead.", },
+              { n: "2", emoji: "▶️", title: "Tap “Start”", body: "Telegram opens the bot. Tap the Start button at the bottom of the chat.", },
+              { n: "3", emoji: "✅", title: "You’re linked", body: "That’s it. Send /log in the chat to file a daily site update from your phone.", },
             ].map((s) => (
               <div key={s.n} className="relative bg-panel rounded-2xl p-4 border border-divider">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-7 h-7 rounded-full bg-primary text-on-primary text-sm font-black flex items-center justify-center shrink-0">{s.n}</span>
                   <span className="text-2xl leading-none">{s.emoji}</span>
                 </div>
-                <div className="font-bold text-ink text-sm">{L(s.title, s.taTitle)}</div>
-                <div className="text-xs text-ink-muted mt-1 leading-relaxed">{L(s.body, s.taBody)}</div>
+                <div className="font-bold text-ink text-sm">{s.title}</div>
+                <div className="text-xs text-ink-muted mt-1 leading-relaxed">{s.body}</div>
               </div>
             ))}
           </div>
@@ -257,7 +255,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
               className="mt-5 w-full sm:w-auto px-5 py-3 bg-telegram hover:bg-telegram-deep text-white font-bold rounded-xl transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
             >
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <TelegramLogo weight="fill" className="w-5 h-5" />}
-              {L("Start — get my connect link","தொடங்கு — என் இணைப்பு லிங்கைப் பெறு")}
+              {"Start — get my connect link"}
             </button>
           )}
         </div>
@@ -266,9 +264,9 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
       {activeCode && (
         <div className="bg-blue-50/50 p-6 rounded-[20px] border border-info/20 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-info"></div>
-          <h4 className="font-bold text-ink mb-2">{L("Connect your Telegram","உங்கள் டெலிகிராமை இணைக்கவும்")}</h4>
+          <h4 className="font-bold text-ink mb-2">{"Connect your Telegram"}</h4>
           <p className="text-sm text-info mb-4">
-            {L("On this phone, tap", "இந்த ஃபோனில்,")} <b>Connect Telegram</b> {L("(on a computer, scan the QR with your phone's camera). This link expires in 15 minutes.", "என்பதைத் தட்டவும் (கணினியில், உங்கள் ஃபோன் கேமராவால் QR ஐ ஸ்கேன் செய்யவும்). இந்த லிங்க் 15 நிமிடங்களில் காலாவதியாகும்.")}
+            {"On this phone, tap"} <b>Connect Telegram</b> {"(on a computer, scan the QR with your phone's camera). This link expires in 15 minutes."}
           </p>
 
           {deepLink && (
@@ -287,23 +285,23 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
                   rel="noopener noreferrer"
                   className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-telegram hover:bg-telegram-deep text-white font-bold rounded-xl transition-colors"
                 >
-                  <TelegramLogo weight="fill" className="w-5 h-5" /> {L("Connect Telegram","டெலிகிராமை இணை")}
+                  <TelegramLogo weight="fill" className="w-5 h-5" /> {"Connect Telegram"}
                 </a>
                 <p className="text-[10px] text-info mt-2 text-center sm:text-left">
-                  {L("Opens the bot and links your account automatically — no typing.","போட்டைத் திறந்து உங்கள் கணக்கைத் தானாக இணைக்கிறது — தட்டச்சு இல்லை.")}
+                  {"Opens the bot and links your account automatically — no typing."}
                 </p>
               </div>
             </div>
           )}
 
           <p className="text-[10px] font-black text-ink-muted uppercase tracking-widest mb-2">
-            {L("Or send this command to the bot","அல்லது இந்தக் கட்டளையை போட்டுக்கு அனுப்பவும்")}
+            {"Or send this command to the bot"}
           </p>
           <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-info/30">
             <code className="flex-1 font-mono text-lg font-bold text-ink text-center">
               /link {displayCode}
             </code>
-            <Tooltip label={L("Copy to clipboard","கிளிப்போர்டுக்கு நகலெடு")}>
+            <Tooltip label={"Copy to clipboard"}>
               <button
                 onClick={copyToClipboard}
                 className="p-2 hover:bg-info/10 text-ink-muted rounded-lg transition-colors"
@@ -321,7 +319,7 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
                 className="text-sm font-medium text-ink-muted hover:text-info flex items-center gap-1"
              >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                {L("Generate new code","புதிய குறியீட்டை உருவாக்கு")}
+                {"Generate new code"}
              </button>
           </div>
         </div>

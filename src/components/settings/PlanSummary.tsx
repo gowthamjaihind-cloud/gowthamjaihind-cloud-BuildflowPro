@@ -6,7 +6,6 @@ import { useAuthStore } from "../../store";
 import { projectCapState, PLANS, PlanId } from "../../lib/plans";
 import { AddCapacityModal } from "../AddCapacityModal";
 import { ManagePlanModal } from "../ManagePlanModal";
-import { useL } from "../../i18n";
 import { Tooltip } from "../Tooltip";
 
 // Plans an Owner/Admin can self-serve manage (upgrade/downgrade).
@@ -17,7 +16,6 @@ const SELF_SERVE_PLANS = ["starter", "business"];
 // projects used vs included, any per-project overage, and the (copyable) org ID
 // operators need for the Operator panel actions.
 export const PlanSummary: React.FC = () => {
-  const L = useL();
   const plan = usePlan();
   const { data: projects = [] } = useProjectsQuery();
   const orgId = useAuthStore((s) => s.user?.currentOrgId);
@@ -60,18 +58,18 @@ export const PlanSummary: React.FC = () => {
             <Stack weight="duotone" className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{L("Your plan","உங்கள் திட்டம்")}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{"Your plan"}</p>
             <p className="font-bold text-ink">{planName}</p>
           </div>
         </div>
         <div className="text-sm text-ink-muted">
-          {L("Projects","செயல்திட்டங்கள்")}:{" "}
+          {"Projects"}:{" "}
           <b className="text-ink">
             {projects.length}
             {cap.capped && cap.included !== null ? ` / ${cap.included}` : ""}
           </b>
           {cap.overage > 0 && (
-            <span className="text-warning font-semibold"> · {L(`${cap.overage} extra · ₹${cap.overageCost}/mo`, `${cap.overage} கூடுதல் · ₹${cap.overageCost}/மாதம்`)}</span>
+            <span className="text-warning font-semibold"> · {`${cap.overage} extra · ₹${cap.overageCost}/mo`}</span>
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -80,7 +78,7 @@ export const PlanSummary: React.FC = () => {
               onClick={() => setShowCapacity(true)}
               className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/15 apple-transition"
             >
-              <Plus weight="bold" className="w-3.5 h-3.5" /> {L("Add projects","செயல்திட்டங்கள் சேர்")}
+              <Plus weight="bold" className="w-3.5 h-3.5" /> {"Add projects"}
             </button>
           )}
           {canManagePlan && (
@@ -88,7 +86,7 @@ export const PlanSummary: React.FC = () => {
               onClick={() => setShowManage(true)}
               className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-surface-dark text-white hover:opacity-90 apple-transition"
             >
-              <SlidersHorizontal weight="bold" className="w-3.5 h-3.5" /> {L("Manage plan","திட்டத்தை நிர்வகி")}
+              <SlidersHorizontal weight="bold" className="w-3.5 h-3.5" /> {"Manage plan"}
             </button>
           )}
         </div>
@@ -98,7 +96,7 @@ export const PlanSummary: React.FC = () => {
         <div className="mt-3 p-3 rounded-xl border border-primary/25 bg-primary/5 flex items-center gap-2 text-xs text-ink">
           <CalendarCheck weight="duotone" className="w-4 h-4 text-primary shrink-0" />
           <span>
-            {L("Scheduled: switches to","திட்டமிடப்பட்டது: மாறும்")} <b>{pendingName}</b> {L("on","அன்று")} <b>{fmtDate(pending.effectiveAt)}</b>
+            {"Scheduled: switches to"} <b>{pendingName}</b> {"on"} <b>{fmtDate(pending.effectiveAt)}</b>
           </span>
         </div>
       )}
@@ -108,15 +106,15 @@ export const PlanSummary: React.FC = () => {
       {orgId && (
         <div className="mt-3 pt-3 border-t border-divider/60 flex items-center justify-between gap-3">
           <span className="text-[11px] text-ink-muted">
-            {L("Org ID","நிறுவன ஐடி")}: <span className="font-mono text-ink">{orgId}</span>
+            {"Org ID"}: <span className="font-mono text-ink">{orgId}</span>
           </span>
-          <Tooltip label={L("Copy organization ID","நிறுவன ஐடியை நகலெடு")}>
+          <Tooltip label={"Copy organization ID"}>
             <button
               onClick={copyId}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-muted hover:text-primary apple-transition"
              
             >
-              {copied ? <><Check className="w-3.5 h-3.5 text-success" /> {L("Copied","நகலெடுக்கப்பட்டது")}</> : <><Copy className="w-3.5 h-3.5" /> {L("Copy","நகலெடு")}</>}
+              {copied ? <><Check className="w-3.5 h-3.5 text-success" /> {"Copied"}</> : <><Copy className="w-3.5 h-3.5" /> {"Copy"}</>}
             </button>
           </Tooltip>
         </div>

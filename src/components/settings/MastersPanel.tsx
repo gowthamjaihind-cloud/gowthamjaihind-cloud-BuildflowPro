@@ -21,7 +21,6 @@ import {
   deleteTemplate,
   SavedWbsTemplate,
 } from "../../services/wbsTemplateService";
-import { useL } from "../../i18n";
 import { round2, money } from "../../utils/num";
 import { confirmDialog, toast } from "../../lib/feedback";
 import { Tooltip } from "../Tooltip";
@@ -57,7 +56,6 @@ const emptyVendor = {
 };
 
 export const MastersPanel: React.FC = () => {
-  const L = useL();
   const [tab, setTab] = useState<Tab>("vendors");
 
   const [vendors, setVendors] = useState<MasterVendor[]>([]);
@@ -99,15 +97,14 @@ export const MastersPanel: React.FC = () => {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      setError(L("Enter a name.", "பெயரைக் கொடுங்க."));
+      setError("Enter a name.");
       return;
     }
     // Only warn about duplicates when adding — editing an existing record will
     // naturally match itself.
     if (!editingId) {
       const dupes = findDuplicates(form, vendors);
-      if (dupes.length && !(await confirmDialog({ title: L(`"${dupes[0].name}" already looks like the same party. Add "${form.name}" anyway?`,
-          `"${dupes[0].name}" ஏற்கனவே இதே பார்ட்டி மாதிரி இருக்கு. இருந்தாலும் "${form.name}" சேர்க்கவா?`), }))) return;
+      if (dupes.length && !(await confirmDialog({ title: `"${dupes[0].name}" already looks like the same party. Add "${form.name}" anyway?`, }))) return;
     }
     setBusy(true); setError(null);
     try {
@@ -117,8 +114,8 @@ export const MastersPanel: React.FC = () => {
     } catch (err: any) {
       setError(
         err?.code === "permission-denied"
-          ? L("Only an Owner, Admin or Manager can change master data.", "உரிமையாளர், நிர்வாகி அல்லது மேலாளர் மட்டுமே மாற்ற முடியும்.")
-          : L("Couldn't save. Please try again.", "சேமிக்க முடியல. மீண்டும் முயற்சிக்கவும்."),
+          ? "Only an Owner, Admin or Manager can change master data."
+          : "Couldn't save. Please try again.",
       );
     } finally { setBusy(false); }
   };
@@ -135,11 +132,10 @@ export const MastersPanel: React.FC = () => {
 
   const submitM = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mForm.name.trim()) { setError(L("Enter a name.", "பெயரைக் கொடுங்க.")); return; }
+    if (!mForm.name.trim()) { setError("Enter a name."); return; }
     if (!mEditingId) {
       const dupes = findDuplicateMaterials(mForm, materials);
-      if (dupes.length && !(await confirmDialog({ title: L(`"${dupes[0].name}" already looks like the same item. Add "${mForm.name}" anyway?`,
-          `"${dupes[0].name}" ஏற்கனவே இதே பொருள் மாதிரி இருக்கு. இருந்தாலும் சேர்க்கவா?`), }))) return;
+      if (dupes.length && !(await confirmDialog({ title: `"${dupes[0].name}" already looks like the same item. Add "${mForm.name}" anyway?`, }))) return;
     }
     setBusy(true); setError(null);
     try {
@@ -152,8 +148,8 @@ export const MastersPanel: React.FC = () => {
     } catch (err: any) {
       setError(
         err?.code === "permission-denied"
-          ? L("Only an Owner, Admin or Manager can change master data.", "உரிமையாளர், நிர்வாகி அல்லது மேலாளர் மட்டுமே மாற்ற முடியும்.")
-          : L("Couldn't save. Please try again.", "சேமிக்க முடியல. மீண்டும் முயற்சிக்கவும்."),
+          ? "Only an Owner, Admin or Manager can change master data."
+          : "Couldn't save. Please try again.",
       );
     } finally { setBusy(false); }
   };
@@ -163,54 +159,42 @@ export const MastersPanel: React.FC = () => {
   // no permanent button for a one-off job.
   const untidy = findUntidyMaterials(materials);
   const tidyNow = async () => {
-    if (!(await confirmDialog({ title: L(
-      `Round ${untidy.length} stored value${untidy.length === 1 ? "" : "s"} to 2 decimals? Only the numbers change.`,
-      `${untidy.length} சேமித்த மதிப்பை 2 புள்ளிக்கு மாற்றவா? எண்கள் மட்டும் மாறும்.`,
-    ) }))) return;
+    if (!(await confirmDialog({ title: `Round ${untidy.length} stored value${untidy.length === 1 ? "" : "s"} to 2 decimals? Only the numbers change.` }))) return;
     setBusy(true); setError(null);
     try {
       const { updated } = await tidyMasterMaterials(materials);
       await reload();
-      toast.success(L(`Tidied ${updated} record${updated === 1 ? "" : "s"}.`, `${updated} பதிவு சரிசெய்யப்பட்டது.`));
+      toast.success(`Tidied ${updated} record${updated === 1 ? "" : "s"}.`);
     } catch (err: any) {
       setError(
         err?.code === "permission-denied"
-          ? L("Only an Owner, Admin or Manager can change master data.", "உரிமையாளர், நிர்வாகி அல்லது மேலாளர் மட்டுமே மாற்ற முடியும்.")
-          : L("Couldn't tidy those values.", "அந்த மதிப்புகளைச் சரிசெய்ய முடியல."),
+          ? "Only an Owner, Admin or Manager can change master data."
+          : "Couldn't tidy those values.",
       );
     } finally { setBusy(false); }
   };
 
   const removeMaterial = async (m: MasterMaterial) => {
-    if (!(await confirmDialog({ title: L(
-      `Delete "${m.name}" from your master list? Projects already stocking it keep their own record and are not affected.`,
-      `"${m.name}" ஐ மாஸ்டர் பட்டியலிலிருந்து நீக்கவா? ஏற்கனவே ஸ்டாக் வெச்சிருக்கிற செயல்திட்டங்கள் பாதிக்கப்படாது.`,
-    ) }))) return;
+    if (!(await confirmDialog({ title: `Delete "${m.name}" from your master list? Projects already stocking it keep their own record and are not affected.` }))) return;
     setBusy(true);
     try { await deleteMasterMaterial(m.id); await reload(); }
-    catch { setError(L("Couldn't delete.", "நீக்க முடியல.")); }
+    catch { setError("Couldn't delete."); }
     finally { setBusy(false); }
   };
 
   const removeVendor = async (v: MasterVendor) => {
-    if (!(await confirmDialog({ title: L(
-      `Delete "${v.name}" from your master list? Projects already using it keep their own copy and are not affected.`,
-      `"${v.name}" ஐ மாஸ்டர் பட்டியலிலிருந்து நீக்கவா? ஏற்கனவே பயன்படுத்தும் செயல்திட்டங்கள் பாதிக்கப்படாது.`,
-    ) }))) return;
+    if (!(await confirmDialog({ title: `Delete "${v.name}" from your master list? Projects already using it keep their own copy and are not affected.` }))) return;
     setBusy(true);
     try { await deleteMasterVendor(v.id); await reload(); }
-    catch { setError(L("Couldn't delete.", "நீக்க முடியல.")); }
+    catch { setError("Couldn't delete."); }
     finally { setBusy(false); }
   };
 
   const removeTemplate = async (t: SavedWbsTemplate) => {
-    if (!(await confirmDialog({ title: L(
-      `Delete the template "${t.name}"? Projects already created from it are not affected.`,
-      `"${t.name}" டெம்ப்ளேட்டை நீக்கவா? அதிலிருந்து உருவாக்கின செயல்திட்டங்கள் பாதிக்கப்படாது.`,
-    ) }))) return;
+    if (!(await confirmDialog({ title: `Delete the template "${t.name}"? Projects already created from it are not affected.` }))) return;
     setBusy(true);
     try { await deleteTemplate(t.id); await reload(); }
-    catch { setError(L("Couldn't delete.", "நீக்க முடியல.")); }
+    catch { setError("Couldn't delete."); }
     finally { setBusy(false); }
   };
 
@@ -220,21 +204,18 @@ export const MastersPanel: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h3 className="text-xl font-black text-ink tracking-tight">
-          {L("Master data", "மாஸ்டர் தரவு")}
+          {"Master data"}
         </h3>
         <p className="text-sm text-ink-muted mt-1">
-          {L(
-            "Created once here and reused on every project — so you don't retype the same parties and structures for each new site.",
-            "இங்க ஒரு தடவை உருவாக்கினா, எல்லா செயல்திட்டத்திலும் பயன்படுத்தலாம் — ஒவ்வொரு சைட்டுக்கும் மறுபடி டைப் பண்ண வேணாம்.",
-          )}
+          {"Created once here and reused on every project — so you don't retype the same parties and structures for each new site."}
         </p>
       </div>
 
       <div className="flex gap-2">
         {([
-          { id: "vendors" as Tab, label: L("Parties", "பார்ட்டிகள்"), icon: Truck, n: vendors.length },
-          { id: "materials" as Tab, label: L("Materials", "பொருட்கள்"), icon: Package, n: materials.length },
-          { id: "templates" as Tab, label: L("WBS templates", "WBS டெம்ப்ளேட்கள்"), icon: TreeStructure, n: templates.length },
+          { id: "vendors" as Tab, label: "Parties", icon: Truck, n: vendors.length },
+          { id: "materials" as Tab, label: "Materials", icon: Package, n: materials.length },
+          { id: "templates" as Tab, label: "WBS templates", icon: TreeStructure, n: templates.length },
         ]).map((x) => (
           <button
             key={x.id}
@@ -253,7 +234,7 @@ export const MastersPanel: React.FC = () => {
       )}
 
       {loading ? (
-        <SkeletonRows rows={4} label={L("Loading…", "ஏற்றுகிறது…")} />
+        <SkeletonRows rows={4} label={"Loading…"} />
       ) : tab === "vendors" ? (
         <div className="space-y-3">
           {!showForm && (
@@ -261,40 +242,40 @@ export const MastersPanel: React.FC = () => {
               onClick={startAdd}
               className="inline-flex items-center gap-2 bg-surface-dark text-white px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:opacity-90 apple-transition"
             >
-              <Plus className="w-4 h-4" /> {L("Add party", "பார்ட்டி சேர்")}
+              <Plus className="w-4 h-4" /> {"Add party"}
             </button>
           )}
 
           {showForm && (
             <form onSubmit={submit} className="bg-panel border border-divider rounded-2xl p-5 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input className={field} placeholder={L("Name *", "பெயர் *")} value={form.name}
+                <input className={field} placeholder={"Name *"} value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })} />
                 <select className={field} value={form.type}
                   onChange={(e) => setForm({ ...form, type: e.target.value as MasterVendor["type"] })}>
-                  <option value="Material">{L("Material supplier", "பொருள் சப்ளையர்")}</option>
-                  <option value="Labor">{L("Labour contractor", "தொழிலாளர் ஒப்பந்தக்காரர்")}</option>
-                  <option value="Both">{L("Both", "இரண்டும்")}</option>
+                  <option value="Material">{"Material supplier"}</option>
+                  <option value="Labor">{"Labour contractor"}</option>
+                  <option value="Both">{"Both"}</option>
                 </select>
                 <input className={field} placeholder="GSTIN" value={form.gstin}
                   onChange={(e) => setForm({ ...form, gstin: e.target.value })} />
-                <input className={field} placeholder={L("Contact person", "தொடர்பு நபர்")} value={form.contactPerson}
+                <input className={field} placeholder={"Contact person"} value={form.contactPerson}
                   onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
-                <input className={field} placeholder={L("Phone", "ஃபோன்")} value={form.phone}
+                <input className={field} placeholder={"Phone"} value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-                <input className={field} placeholder={L("Email", "மின்னஞ்சல்")} value={form.email}
+                <input className={field} placeholder={"Email"} value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })} />
               </div>
-              <input className={field} placeholder={L("Address", "முகவரி")} value={form.address}
+              <input className={field} placeholder={"Address"} value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })} />
               <div className="flex gap-2 justify-end pt-1">
                 <button type="button" onClick={() => setShowForm(false)}
                   className="px-5 py-2.5 text-xs font-bold text-ink-muted hover:text-ink apple-transition">
-                  {L("Cancel", "ரத்து")}
+                  {"Cancel"}
                 </button>
                 <button type="submit" disabled={busy}
                   className="px-6 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold uppercase tracking-widest disabled:opacity-50">
-                  {busy ? L("Saving…", "சேமிக்கிறது…") : editingId ? L("Update", "புதுப்பி") : L("Save", "சேமி")}
+                  {busy ? "Saving…" : editingId ? "Update" : "Save"}
                 </button>
               </div>
             </form>
@@ -303,8 +284,8 @@ export const MastersPanel: React.FC = () => {
           {vendors.length === 0 && !showForm ? (
             <EmptyState
               icon={Truck}
-              title={L("No parties yet", "இன்னும் பார்ட்டி இல்ல")}
-              body={L("Add one here, or use the bookmark icon on a project's Parties screen to lift an existing one up.", "இங்க சேருங்க, அல்லது செயல்திட்டத்தின் பார்ட்டி திரையில் புக்மார்க் ஐகானைப் பயன்படுத்துங்க.")}
+              title={"No parties yet"}
+              body={"Add one here, or use the bookmark icon on a project's Parties screen to lift an existing one up."}
             />
           ) : (
             <div className="flex flex-col gap-2">
@@ -317,18 +298,18 @@ export const MastersPanel: React.FC = () => {
                     </div>
                     <p className="text-[12px] text-ink-muted mt-0.5 break-words">
                       {[v.phone, v.gstin, v.contactPerson, v.address].filter(Boolean).join(" · ") ||
-                        L("No contact details", "தொடர்பு விவரம் இல்ல")}
+                        "No contact details"}
                     </p>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Tooltip label={L("Edit", "திருத்து")}>
+                    <Tooltip label={"Edit"}>
                       <button onClick={() => startEdit(v)} disabled={busy}
                         className="p-2 text-ink-muted hover:text-primary apple-transition disabled:opacity-40"
                        >
                         <PencilSimple className="w-4 h-4" />
                       </button>
                     </Tooltip>
-                    <Tooltip label={L("Delete", "நீக்கு")}>
+                    <Tooltip label={"Delete"}>
                       <button onClick={() => removeVendor(v)} disabled={busy}
                         className="p-2 text-ink-muted hover:text-danger apple-transition disabled:opacity-40"
                        >
@@ -346,12 +327,9 @@ export const MastersPanel: React.FC = () => {
           {untidy.length > 0 && (
             <div className="flex items-start justify-between gap-3 p-4 rounded-2xl bg-primary/8 border border-primary/25">
               <p className="text-[13px] text-ink">
-                {L(
-                  `${untidy.length} material${untidy.length === 1 ? "" : "s"} still store a rate with more than 2 decimals, from before rounding was applied.`,
-                  `${untidy.length} பொருள் இன்னும் 2 புள்ளிக்கு மேல விலை வெச்சிருக்கு.`,
-                )}
+                {`${untidy.length} material${untidy.length === 1 ? "" : "s"} still store a rate with more than 2 decimals, from before rounding was applied.`}
                 <span className="block text-ink-muted mt-0.5">
-                  {L("Displayed values are already rounded; this cleans what's stored.", "காட்டப்படுவது ஏற்கனவே சரி; இது சேமித்ததைச் சரிசெய்யும்.")}
+                  {"Displayed values are already rounded; this cleans what's stored."}
                 </span>
               </p>
               <button
@@ -359,7 +337,7 @@ export const MastersPanel: React.FC = () => {
                 disabled={busy}
                 className="shrink-0 px-4 py-2 rounded-xl bg-primary text-on-primary text-[11px] font-bold uppercase tracking-widest disabled:opacity-50"
               >
-                {busy ? L("Working…", "நடக்குது…") : L("Tidy", "சரிசெய்")}
+                {busy ? "Working…" : "Tidy"}
               </button>
             </div>
           )}
@@ -368,50 +346,47 @@ export const MastersPanel: React.FC = () => {
               onClick={startAddM}
               className="inline-flex items-center gap-2 bg-surface-dark text-white px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:opacity-90 apple-transition"
             >
-              <Plus className="w-4 h-4" /> {L("Add material", "பொருள் சேர்")}
+              <Plus className="w-4 h-4" /> {"Add material"}
             </button>
           )}
 
           {showMForm && (
             <form onSubmit={submitM} className="bg-panel border border-divider rounded-2xl p-5 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input className={field} placeholder={L("Name *", "பெயர் *")} value={mForm.name}
+                <input className={field} placeholder={"Name *"} value={mForm.name}
                   onChange={(e) => setMForm({ ...mForm, name: e.target.value })} />
-                <input className={field} placeholder={L("Item code", "பொருள் குறியீடு")} value={mForm.code}
+                <input className={field} placeholder={"Item code"} value={mForm.code}
                   onChange={(e) => setMForm({ ...mForm, code: e.target.value })} />
-                <input className={field} placeholder={L("Unit (Bag, MT, Nos, Cum)", "அலகு (Bag, MT, Nos)")} value={mForm.unit}
+                <input className={field} placeholder={"Unit (Bag, MT, Nos, Cum)"} value={mForm.unit}
                   onChange={(e) => setMForm({ ...mForm, unit: e.target.value })} />
-                <input className={field} placeholder={L("Category", "வகை")} value={mForm.category}
+                <input className={field} placeholder={"Category"} value={mForm.category}
                   onChange={(e) => setMForm({ ...mForm, category: e.target.value })} />
                 <input className={field} placeholder="HSN / SAC" value={mForm.hsn}
                   onChange={(e) => setMForm({ ...mForm, hsn: e.target.value })} />
                 <select className={field} value={mForm.gstRate}
                   onChange={(e) => setMForm({ ...mForm, gstRate: Number(e.target.value) })}>
                   {[0, 5, 12, 18, 28].map((r) => (
-                    <option key={r} value={r}>{L(`GST ${r}%`, `GST ${r}%`)}</option>
+                    <option key={r} value={r}>{`GST ${r}%`}</option>
                   ))}
                 </select>
-                <input className={field} type="number" step="0.01" placeholder={L("Indicative rate (₹)", "குறிப்பு விலை (₹)")}
+                <input className={field} type="number" step="0.01" placeholder={"Indicative rate (₹)"}
                   value={mForm.indicativeRate || ""}
                   onChange={(e) => setMForm({ ...mForm, indicativeRate: parseFloat(e.target.value) || 0 })} />
-                <input className={field} type="number" placeholder={L("Low-stock alert at", "குறைந்த ஸ்டாக் எச்சரிக்கை")}
+                <input className={field} type="number" placeholder={"Low-stock alert at"}
                   value={mForm.minThreshold || ""}
                   onChange={(e) => setMForm({ ...mForm, minThreshold: parseFloat(e.target.value) || 0 })} />
               </div>
               <p className="text-[11px] text-ink-muted">
-                {L(
-                  "The indicative rate is a reference only — actual cost always comes from your goods receipts.",
-                  "குறிப்பு விலை ஒரு reference மட்டும் — உண்மையான செலவு எப்பவும் goods receipt-ல இருந்துதான் வரும்.",
-                )}
+                {"The indicative rate is a reference only — actual cost always comes from your goods receipts."}
               </p>
               <div className="flex gap-2 justify-end pt-1">
                 <button type="button" onClick={() => setShowMForm(false)}
                   className="px-5 py-2.5 text-xs font-bold text-ink-muted hover:text-ink apple-transition">
-                  {L("Cancel", "ரத்து")}
+                  {"Cancel"}
                 </button>
                 <button type="submit" disabled={busy}
                   className="px-6 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold uppercase tracking-widest disabled:opacity-50">
-                  {busy ? L("Saving…", "சேமிக்கிறது…") : mEditingId ? L("Update", "புதுப்பி") : L("Save", "சேமி")}
+                  {busy ? "Saving…" : mEditingId ? "Update" : "Save"}
                 </button>
               </div>
             </form>
@@ -420,8 +395,8 @@ export const MastersPanel: React.FC = () => {
           {materials.length === 0 && !showMForm ? (
             <EmptyState
               icon={Package}
-              title={L("No materials yet", "இன்னும் பொருட்கள் இல்ல")}
-              body={L("Add the items you buy on most sites — cement, steel, sand — and they'll be one click away on every project.", "எல்லா சைட்டிலும் வாங்குறதை — சிமெண்ட், ஸ்டீல், மணல் — சேர்த்து வெச்சா, எல்லா செயல்திட்டத்திலும் ஒரு கிளிக்ல கிடைக்கும்.")}
+              title={"No materials yet"}
+              body={"Add the items you buy on most sites — cement, steel, sand — and they'll be one click away on every project."}
             />
           ) : (
             <div className="flex flex-col gap-2">
@@ -439,18 +414,18 @@ export const MastersPanel: React.FC = () => {
                         m.hsn ? `HSN ${m.hsn}` : "",
                         m.gstRate != null ? `GST ${m.gstRate}%` : "",
                         m.indicativeRate ? `~₹${money(m.indicativeRate)}` : "",
-                      ].filter(Boolean).join(" · ") || L("No details", "விவரம் இல்ல")}
+                      ].filter(Boolean).join(" · ") || "No details"}
                     </p>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Tooltip label={L("Edit", "திருத்து")}>
+                    <Tooltip label={"Edit"}>
                       <button onClick={() => startEditM(m)} disabled={busy}
                         className="p-2 text-ink-muted hover:text-primary apple-transition disabled:opacity-40"
                        >
                         <PencilSimple className="w-4 h-4" />
                       </button>
                     </Tooltip>
-                    <Tooltip label={L("Delete", "நீக்கு")}>
+                    <Tooltip label={"Delete"}>
                       <button onClick={() => removeMaterial(m)} disabled={busy}
                         className="p-2 text-ink-muted hover:text-danger apple-transition disabled:opacity-40"
                        >
@@ -468,8 +443,8 @@ export const MastersPanel: React.FC = () => {
           {templates.length === 0 ? (
             <EmptyState
               icon={TreeStructure}
-              title={L("No saved templates yet", "இன்னும் சேமித்த டெம்ப்ளேட் இல்ல")}
-              body={L("Open a project's WBS and use the bookmark icon to save its breakdown for reuse.", "ஒரு செயல்திட்டத்தின் WBS ல புக்மார்க் ஐகானைப் பயன்படுத்திச் சேமிக்கவும்.")}
+              title={"No saved templates yet"}
+              body={"Open a project's WBS and use the bookmark icon to save its breakdown for reuse."}
             />
           ) : (
             <div className="flex flex-col gap-2">
@@ -478,11 +453,11 @@ export const MastersPanel: React.FC = () => {
                   <div className="min-w-0">
                     <p className="font-bold text-ink text-sm">{t.name}</p>
                     <p className="text-[12px] text-ink-muted mt-0.5">
-                      {t.taskCount} {L("tasks", "பணிகள்")}
-                      {t.savedFromProjectName ? ` · ${L("from", "இதிலிருந்து")} ${t.savedFromProjectName}` : ""}
+                      {t.taskCount} {"tasks"}
+                      {t.savedFromProjectName ? ` · ${"from"} ${t.savedFromProjectName}` : ""}
                     </p>
                   </div>
-                  <Tooltip label={L("Delete", "நீக்கு")}>
+                  <Tooltip label={"Delete"}>
                     <button onClick={() => removeTemplate(t)} disabled={busy}
                       className="p-2 text-ink-muted hover:text-danger apple-transition shrink-0 disabled:opacity-40"
                      >

@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useBreakpoint } from "../hooks/useBreakpoint";
-import { useL } from "../i18n";
 import {
   format,
   differenceInDays,
@@ -57,7 +56,6 @@ export const GanttChart: React.FC<GanttChartProps> = ({
   onAddDependency,
   onTaskUpdate,
 }) => {
-  const L = useL();
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>("day");
   const [showCriticalPath, setShowCriticalPath] = useState(false);
   const [filterTag, setFilterTag] = useState<string>("");
@@ -296,9 +294,9 @@ export const GanttChart: React.FC<GanttChartProps> = ({
         case "phase":
           return t.phase || "Unassigned Phase";
         case "location":
-          return t.location || L("No Location","இடம் இல்லை");
+          return t.location || "No Location";
         case "status":
-          return t.status || L("No Status","நிலை இல்லை");
+          return t.status || "No Status";
         case "tag":
           return t.activityCodes?.[0] || "Untagged";
         default:
@@ -379,7 +377,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
               }`}
             >
               <Activity className="w-3.5 h-3.5" />
-              <span className="truncate">{L("Critical Path","முக்கியப் பாதை")}</span>
+              <span className="truncate">{"Critical Path"}</span>
             </button>
             <div className="flex-1 sm:flex-none flex items-center gap-2 bg-panel px-3 py-2 rounded-lg border">
               <Rows className="w-3.5 h-3.5 text-ink-muted shrink-0" />
@@ -403,7 +401,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 value={filterTag}
                 onChange={(e) => setFilterTag(e.target.value)}
               >
-                <option value="">{L("Tag Filter","குறிச்சொல் வடிகட்டி")}</option>
+                <option value="">{"Tag Filter"}</option>
                 {allTags.map((tag) => (
                   <option key={tag} value={tag}>
                     {tag}
@@ -803,7 +801,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       }}
                     >
                       {/* Linking Start Handle (Left Circle) */}
-                      <Tooltip label={L("Link to this task","இந்த பணிக்கு இணை")}>
+                      <Tooltip label={"Link to this task"}>
                         <div
                           className="absolute -left-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
                          
@@ -850,7 +848,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                       )}
 
                       {/* Linking End Handle (Right Circle) */}
-                      <Tooltip label={L("Drag to link to another task","மற்றொரு பணிக்கு இணைக்க இழுக்கவும்")}>
+                      <Tooltip label={"Drag to link to another task"}>
                         <div
                           className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full opacity-0 group-hover/bar:opacity-100 z-30 cursor-crosshair transition-opacity scale-75 hover:scale-100 shadow-sm"
                          
@@ -971,7 +969,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 </h4>
                 {hoveredTask.task.type === "Milestone" ? (
                   <span className="shrink-0 inline-flex items-center justify-center bg-warning/25 text-white/90 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
-                    {L("Milestone","மைல்கல்")}
+                    {"Milestone"}
                   </span>
                 ) : (
                   <span className="shrink-0 font-mono text-xs font-bold text-white/80">

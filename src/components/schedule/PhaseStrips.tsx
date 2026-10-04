@@ -1,7 +1,6 @@
 import React from 'react';
 import { Phase } from '../../hooks/useScheduleData';
 import { format } from 'date-fns';
-import { useL } from '../../i18n';
 import { EmptyState } from "../EmptyState";
 
 interface Props {
@@ -10,7 +9,6 @@ interface Props {
 }
 
 export const PhaseStrips: React.FC<Props> = ({ phases, onNavigate }) => {
-  const L = useL();
   if (phases.length === 0) {
     return (
       <div
@@ -18,11 +16,8 @@ export const PhaseStrips: React.FC<Props> = ({ phases, onNavigate }) => {
         onClick={onNavigate}
       >
         <EmptyState
-          title={L("Phase Timeline", "கட்ட காலவரிசை")}
-          body={L(
-            "No phases to display yet. Add tasks to see Phase scheduling.",
-            "காட்ட கட்டங்கள் இல்லை. கட்ட அட்டவணையைப் பார்க்க பணிகளைச் சேர்க்கவும்.",
-          )}
+          title={"Phase Timeline"}
+          body={"No phases to display yet. Add tasks to see Phase scheduling."}
         />
       </div>
     );
@@ -33,7 +28,7 @@ export const PhaseStrips: React.FC<Props> = ({ phases, onNavigate }) => {
       className="soft-card-interactive rounded-[24px] p-6 hover:bg-surface-dark/5 w-full"
       onClick={onNavigate}
     >
-      <h3 className="text-ink font-bold text-sm mb-6 uppercase tracking-widest">{L("Phase Timeline", "கட்ட காலவரிசை")}</h3>
+      <h3 className="text-ink font-bold text-sm mb-6 uppercase tracking-widest">{"Phase Timeline"}</h3>
       <div className="flex flex-col space-y-6">
         {phases.map(phase => {
           const isDone = phase.progress >= 100;
