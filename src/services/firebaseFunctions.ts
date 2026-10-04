@@ -179,6 +179,16 @@ export interface OrgUsage {
   seatsUsed: number;
   userLimit: number | null;
 
+  // Wrong-plan and soft-cap flags (functions/src/plans.ts planAdvice).
+  advice: {
+    cheaper: string | null;
+    currentCost: number;
+    cheaperCost: number;
+    savings: number;
+    overSoftCap: boolean;
+  };
+  businessSoftCap: number;
+
   // Project slots. planIncluded is the plan's own cap, so the difference from
   // includedProjects is the slot window.
   planIncluded: number | null;

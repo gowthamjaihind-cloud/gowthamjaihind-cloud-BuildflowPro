@@ -3,7 +3,17 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { randomBytes } from "crypto";
 import { db } from "./db";
 import { sendInviteEmail, sendRenewalEmail, sendSlotNoticeEmail, APP_URL } from "./email";
-import { isPlanId, OVERAGE_RATE, PlanId, planPatch, PLANS, effectiveProjectCap, activeSlots } from "./plans";
+import {
+  isPlanId,
+  OVERAGE_RATE,
+  PlanId,
+  planPatch,
+  PLANS,
+  effectiveProjectCap,
+  activeSlots,
+  planAdvice,
+  BUSINESS_SOFT_CAP,
+} from "./plans";
 import {
   lifecycleSummary,
   nextLifecycleState,
@@ -251,6 +261,13 @@ export const getOrgUsage = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, asyn
     // Project slots. planIncluded is the plan's OWN cap, so an operator can see
     // how much of the effective cap is a slot window about to close.
     planIncluded: typeof d.includedProjects === "number" ? d.includedProjects : d.includedProjects ?? null,
+
+    // Is this org on the wrong plan for what it runs? Starter is uncapped, so a
+    // customer past the crossover quietly pays more than Business would cost --
+    // and a Business org past the soft cap is an Enterprise conversation rather
+    // than a silent transaction.
+    advice: planAdvice(d.plan, projectCount),
+    businessSoftCap: BUSINESS_SOFT_CAP,
     activeSlots: liveSlots,
     purchasedSlots: Math.floor(Number(d.purchasedSlots) || 0),
     slotsExpireAt: Number(d.slotsExpireAt) || null,

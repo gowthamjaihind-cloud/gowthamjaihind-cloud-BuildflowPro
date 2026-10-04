@@ -8,10 +8,18 @@ text gets put back into the app.
 |---|---|---|
 | `ui-strings.csv` | 570 | Buttons, labels, table headings, placeholder text |
 | `wbs-template-names.csv` | 240 | Construction work-breakdown task names |
+| `pricing-nudge.csv` | 3 | A message telling a customer a cheaper plan exists |
 
-The two are different jobs. The first is interface language. The second is trade
-vocabulary — the names of activities on a building site — and is better done by
-someone who has been on one.
+The first two are different jobs. `ui-strings.csv` is interface language.
+`wbs-template-names.csv` is trade vocabulary — the names of activities on a
+building site — and is better done by someone who has been on one.
+
+`pricing-nudge.csv` is three rows and is urgent out of proportion to its size:
+the code that decides when to show the message is already written and tested, and
+the message is the only thing missing. One of the three carries placeholders in
+braces — `{n}`, `{current}` — which the app fills in with numbers. Keep the braces
+and the words inside them exactly as they are, or the customer sees `{savings}`
+on their screen.
 
 ---
 

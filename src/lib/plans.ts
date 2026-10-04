@@ -77,3 +77,67 @@ export function projectCapState(org: any, currentCount: number, now = Date.now()
     atOrOver: currentCount >= included,
   };
 }
+
+/**
+ * Is the customer on the wrong plan for the number of projects they run?
+ *
+ * Starter is deliberately uncapped -- ₹99 per project at any count -- so nothing
+ * forces an upgrade. That is the right behaviour, and it leaves one hole: past
+ * the crossover a Starter customer quietly pays MORE than Business would cost
+ * them, and nothing says so. At 16 projects Starter is ₹1,584 against Business's
+ * ₹1,499. Letting that run is charging someone for not reading a pricing table.
+ *
+ * The other direction is the soft cap. Business keeps working past 40 projects,
+ * because blocking a paying customer mid-growth is never the answer, but at that
+ * size the account is worth a conversation rather than a silent transaction --
+ * and without a trigger Enterprise has no reason to exist.
+ */
+
+/** Projects past which a Business org should be talked to about Enterprise. */
+export const BUSINESS_SOFT_CAP = 40;
+
+export interface PlanAdvice {
+  /** A self-serve plan that would cost less at this count, or null. */
+  cheaper: PlanId | null;
+  /** ₹/month on the current plan at this project count. */
+  currentCost: number;
+  /** ₹/month on the cheaper plan, or the current cost when there is none. */
+  cheaperCost: number;
+  /** ₹/month the customer is losing by staying put. Zero when nothing is cheaper. */
+  savings: number;
+  /** Past Business's soft cap — flag for the Enterprise conversation. */
+  overSoftCap: boolean;
+}
+
+/** ₹/month a plan charges for `projects`, including per-project overage. */
+export function monthlyCostOf(plan: PlanId, projects: number): number | null {
+  const def = PLANS[plan];
+  if (def.monthly === null || def.includedProjects === null) return null; // Enterprise
+  const n = Math.max(0, Math.floor(projects));
+  return def.monthly + Math.max(0, n - def.includedProjects) * OVERAGE_RATE;
+}
+
+export function planAdvice(plan: string | null | undefined, projects: number): PlanAdvice {
+  const n = Math.max(0, Math.floor(Number(projects) || 0));
+  const none: PlanAdvice = { cheaper: null, currentCost: 0, cheaperCost: 0, savings: 0, overSoftCap: false };
+  if (!plan || !(plan in PLANS)) return none;
+  const id = plan as PlanId;
+
+  const current = monthlyCostOf(id, n);
+  if (current === null) return none; // Enterprise: priced by hand, no advice to give
+
+  const overSoftCap = id === "business" && n > BUSINESS_SOFT_CAP;
+
+  let cheaper: PlanId | null = null;
+  let cheaperCost = current;
+  for (const other of Object.keys(PLANS) as PlanId[]) {
+    if (other === id) continue;
+    const cost = monthlyCostOf(other, n);
+    if (cost === null) continue;
+    if (cost < cheaperCost) {
+      cheaper = other;
+      cheaperCost = cost;
+    }
+  }
+  return { cheaper, currentCost: current, cheaperCost, savings: cheaper ? current - cheaperCost : 0, overSoftCap };
+}

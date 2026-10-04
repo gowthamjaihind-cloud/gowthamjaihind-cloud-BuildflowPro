@@ -328,6 +328,24 @@ export const OperatorPanel: React.FC = () => {
                   : ""}
             </p>
           </div>
+          {/* Wrong plan for the size, or past the point where the account wants a
+              conversation. Both are sales signals, not errors. */}
+          {(usage.advice.cheaper || usage.advice.overSoftCap) && (
+            <div className="mb-3 p-3 rounded-xl border bg-primary-deep/10 border-primary-deep/30 text-sm">
+              {usage.advice.cheaper && (
+                <p className="font-bold text-ink">
+                  Overpaying: {usage.projectCount} projects costs ₹{usage.advice.currentCost}/mo here,
+                  ₹{usage.advice.cheaperCost}/mo on {usage.advice.cheaper} — saving ₹{usage.advice.savings}/mo.
+                </p>
+              )}
+              {usage.advice.overSoftCap && (
+                <p className="font-bold text-ink">
+                  Past the {usage.businessSoftCap}-project soft cap at ₹{usage.advice.currentCost}/mo —
+                  worth an Enterprise conversation. Nothing is blocked.
+                </p>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
             <div className="bg-panel border border-divider rounded-xl p-3">
               <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Plan</p>

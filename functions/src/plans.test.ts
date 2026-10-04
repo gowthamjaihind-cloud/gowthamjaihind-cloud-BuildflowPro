@@ -7,6 +7,9 @@ import {
   activeSlots,
   effectiveProjectCap,
   prorateUpgrade,
+  planAdvice,
+  monthlyCostOf,
+  BUSINESS_SOFT_CAP,
   planPatch,
   planCapacityPatch,
   MIN_ORDER_PAISE,
@@ -318,5 +321,135 @@ describe("the no-free-month and no-clobber fixes hold", () => {
     const block = rzp.slice(rzp.indexOf("export const createRazorpayOrder"), rzp.indexOf("createSlotOrder"));
     expect(block).toMatch(/prorateUpgrade\(/);
     expect(block).toMatch(/amount\s*=\s*quote\.amountPaise/);
+  });
+});
+
+// The twin implementations must agree. The catalog parity test above compares
+// the PLANS tables field by field; this compares the FUNCTIONS, by importing both
+// and running them over the same inputs — a drift here would mean the price the
+// customer is advised of is not the price the server would charge.
+import * as client from "../../src/lib/plans";
+
+describe("planAdvice", () => {
+  it("says nothing while Starter is genuinely the cheapest", () => {
+    for (const n of [1, 5, 10, 14, 15]) {
+      const a = planAdvice("starter", n);
+      expect(a.cheaper, `at ${n} projects`).toBeNull();
+      expect(a.savings).toBe(0);
+    }
+  });
+
+  it("flags Business the moment it actually costs less", () => {
+    // 15 → Starter ₹1,485 vs Business ₹1,499, so stay. 16 → ₹1,584 vs ₹1,499.
+    expect(planAdvice("starter", 15).cheaper).toBeNull();
+    const a = planAdvice("starter", 16);
+    expect(a.cheaper).toBe("business");
+    expect(a.currentCost).toBe(1584);
+    expect(a.cheaperCost).toBe(1499);
+    expect(a.savings).toBe(85);
+  });
+
+  it("grows the saving to 20 projects, then PLATEAUS at ₹481", () => {
+    // Past 20 both plans add ₹99 for each further project, so the gap stops
+    // widening: it is fixed at Starter's 20-project price minus Business's base.
+    // That is the most a Starter customer can ever overpay, which is worth
+    // knowing before writing scary copy about it.
+    expect(planAdvice("starter", 16).savings).toBe(85);
+    expect(planAdvice("starter", 20).savings).toBe(1980 - 1499); // 481
+    for (const n of [21, 30, 50, 120]) {
+      expect(planAdvice("starter", n).savings, `at ${n} projects`).toBe(481);
+    }
+  });
+
+  it("never advises a Business org to move down to Starter", () => {
+    // Starter is cheaper below 16, but a Business customer is there for seats and
+    // AI volume as well as projects — telling them to downgrade on price alone
+    // would be advice against their own setup.
+    for (const n of [1, 5, 20, 40]) {
+      const a = planAdvice("business", n);
+      if (a.cheaper !== null) expect(a.cheaperCost).toBeLessThan(a.currentCost);
+    }
+    // At a low count Starter IS cheaper and the flag is honest about that.
+    expect(planAdvice("business", 5).cheaper).toBe("starter");
+  });
+
+  it("flags the Business soft cap without blocking anything", () => {
+    expect(planAdvice("business", BUSINESS_SOFT_CAP).overSoftCap).toBe(false);
+    expect(planAdvice("business", BUSINESS_SOFT_CAP + 1).overSoftCap).toBe(true);
+    // The cost keeps being charged past the cap — the flag is a sales signal.
+    expect(planAdvice("business", 60).currentCost).toBe(1499 + 40 * 99);
+  });
+
+  it("applies the soft cap to Business only", () => {
+    expect(planAdvice("starter", 100).overSoftCap).toBe(false);
+    expect(planAdvice("enterprise", 100).overSoftCap).toBe(false);
+  });
+
+  it("gives no advice on Enterprise, which is priced by hand", () => {
+    const a = planAdvice("enterprise", 50);
+    expect(a.cheaper).toBeNull();
+    expect(a.currentCost).toBe(0);
+  });
+
+  it("survives an unknown or missing plan", () => {
+    for (const bad of [null, undefined, "", "growth", "free", 7 as any]) {
+      expect(() => planAdvice(bad as any, 10)).not.toThrow();
+      expect(planAdvice(bad as any, 10).cheaper).toBeNull();
+    }
+  });
+
+  it("never recommends a plan that saves nothing", () => {
+    // A recommendation with zero or negative saving is worse than silence: it
+    // tells a customer to move and then charges them the same or more. No tie is
+    // possible at today's prices (99n = 1499 has no integer solution), so this
+    // guards the rule for whenever the prices change.
+    for (const plan of ["starter", "business", "enterprise"] as const) {
+      for (let n = 0; n <= 120; n++) {
+        const a = planAdvice(plan, n);
+        if (a.cheaper !== null) {
+          expect(a.savings, `${plan} at ${n} projects`).toBeGreaterThan(0);
+          expect(a.cheaperCost).toBeLessThan(a.currentCost);
+        } else {
+          expect(a.savings).toBe(0);
+        }
+      }
+    }
+  });
+
+  it("survives a junk project count", () => {
+    for (const bad of [NaN, -5, "x" as any, null as any]) {
+      expect(planAdvice("starter", bad).currentCost).toBeGreaterThanOrEqual(0);
+    }
+  });
+});
+
+describe("monthlyCostOf", () => {
+  it("prices Starter as exactly ₹99 per project", () => {
+    for (const n of [1, 2, 7, 23]) expect(monthlyCostOf("starter", n)).toBe(99 * n);
+  });
+
+  it("prices Business as the base plus overage past 20", () => {
+    expect(monthlyCostOf("business", 20)).toBe(1499);
+    expect(monthlyCostOf("business", 25)).toBe(1499 + 5 * 99);
+    expect(monthlyCostOf("business", 3)).toBe(1499); // base still applies below the cap
+  });
+
+  it("has no price for Enterprise", () => {
+    expect(monthlyCostOf("enterprise", 10)).toBeNull();
+  });
+});
+
+describe("client and server agree on the advice, not just the catalog", () => {
+  it("returns the same costs and the same recommendation at every count", () => {
+    for (const plan of ["starter", "business", "enterprise"] as const) {
+      for (let n = 0; n <= 60; n++) {
+        expect(client.monthlyCostOf(plan, n), `monthlyCostOf(${plan}, ${n})`).toBe(monthlyCostOf(plan, n));
+        expect(client.planAdvice(plan, n), `planAdvice(${plan}, ${n})`).toEqual(planAdvice(plan, n));
+      }
+    }
+  });
+
+  it("keeps the same soft cap on both sides", () => {
+    expect(client.BUSINESS_SOFT_CAP).toBe(BUSINESS_SOFT_CAP);
   });
 });

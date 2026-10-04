@@ -389,6 +389,13 @@ describe("the operator view reports what is now enforced", () => {
     expect(block).toContain("slotNoticeSent:");
   });
 
+  it("reports the wrong-plan and soft-cap flags", () => {
+    // Both are sales signals the operator cannot derive by eye from a project
+    // count, so if they stop being returned the panel silently goes quiet.
+    expect(block).toMatch(/advice:\s*planAdvice\(/);
+    expect(block).toContain("businessSoftCap:");
+  });
+
   it("composes the pure modules rather than re-deriving the rules", () => {
     expect(block).toMatch(/lifecycleSummary\(/);
     expect(block).toMatch(/seatState\(/);
