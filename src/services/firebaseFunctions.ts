@@ -154,12 +154,38 @@ export interface OrgUsage {
   plan: string | null;
   subscriptionStatus: string | null;
   companyName: string | null;
+  /** The EFFECTIVE project cap: the plan's own cap plus any live slot window. */
   includedProjects: number | null;
   projectCount: number;
   overageProjects: number;
   overageCost: number;
   aiUsed: number;
   aiQuota: number | null;
+
+  // Subscription lifecycle (functions/src/subscription.ts).
+  lifecycle: {
+    status: string | null;
+    label: string;
+    endsAt: number | null;
+    daysLeft: number | null;
+    attention: boolean;
+  };
+  currentPeriodEnd: number | null;
+  graceEndsAt: number | null;
+  trialEndsAt: number | null;
+  renewalNoticeSent: { days?: number; periodEnd?: number; at?: number } | null;
+
+  // Seats (functions/src/seats.ts).
+  seatsUsed: number;
+  userLimit: number | null;
+
+  // Project slots. planIncluded is the plan's own cap, so the difference from
+  // includedProjects is the slot window.
+  planIncluded: number | null;
+  activeSlots: number;
+  purchasedSlots: number;
+  slotsExpireAt: number | null;
+  slotNoticeSent: { kind?: string; expireAt?: number; at?: number } | null;
 }
 
 // Super-admin: read an org's live usage vs plan (the safety-cap view).

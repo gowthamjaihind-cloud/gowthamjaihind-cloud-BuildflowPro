@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  lifecycleSummary,
   nextLifecycleState,
   renewalNoticeDue,
   noticeSentPatch,
@@ -280,5 +281,123 @@ describe("the slot notice job", () => {
 
   it("keeps going when one org throws", () => {
     expect(job).toMatch(/captureError\(/);
+  });
+});
+
+describe("lifecycleSummary (the operator's one line)", () => {
+  const DAY = DAY_MS;
+
+  it("flags a grandfathered org, because nothing will ever expire it", () => {
+    const s = lifecycleSummary({}, NOW);
+    expect(s.status).toBeNull();
+    expect(s.label).toMatch(/grandfathered/i);
+    expect(s.attention).toBe(true);
+  });
+
+  it("is calm about internal and free orgs", () => {
+    expect(lifecycleSummary({ subscriptionStatus: "internal" }, NOW).attention).toBe(false);
+    expect(lifecycleSummary({ subscriptionStatus: "free" }, NOW).attention).toBe(false);
+  });
+
+  it("counts a trial down and gets anxious near the end", () => {
+    const far = lifecycleSummary({ subscriptionStatus: "trialing", trialEndsAt: NOW + 10 * DAY }, NOW);
+    expect(far.label).toMatch(/10 days left/);
+    expect(far.attention).toBe(false);
+    expect(lifecycleSummary({ subscriptionStatus: "trialing", trialEndsAt: NOW + 2 * DAY }, NOW).attention).toBe(true);
+  });
+
+  it("says a trial has expired", () => {
+    const s = lifecycleSummary({ subscriptionStatus: "trialing", trialEndsAt: NOW - DAY }, NOW);
+    expect(s.label).toMatch(/expired/i);
+    expect(s.attention).toBe(true);
+  });
+
+  it("reports a healthy active subscription without alarm", () => {
+    const s = lifecycleSummary({ subscriptionStatus: "active", currentPeriodEnd: NOW + 12 * DAY }, NOW);
+    expect(s.label).toMatch(/renews in 12 days/);
+    expect(s.attention).toBe(false);
+    expect(s.daysLeft).toBe(12);
+  });
+
+  it("flags the gap between a period ending and the job running", () => {
+    // An org sits here for up to a day. It is still allowed in, which is
+    // deliberate, but an operator looking at it should know why.
+    const s = lifecycleSummary({ subscriptionStatus: "active", currentPeriodEnd: NOW - 1 }, NOW);
+    expect(s.label).toMatch(/past due at the next run/i);
+    expect(s.attention).toBe(true);
+  });
+
+  it("flags an active org with no period, which can never expire", () => {
+    const s = lifecycleSummary({ subscriptionStatus: "active" }, NOW);
+    expect(s.label).toMatch(/nothing will ever expire it/i);
+    expect(s.attention).toBe(true);
+  });
+
+  it("shows the grace deadline on a past_due org, and that it still works", () => {
+    const s = lifecycleSummary({ subscriptionStatus: "past_due", graceEndsAt: NOW + 3 * DAY }, NOW);
+    expect(s.label).toMatch(/still working/i);
+    expect(s.label).toMatch(/grace ends in 3 days/);
+    expect(s.attention).toBe(true);
+  });
+
+  it("derives the grace deadline from the period end when the field is absent", () => {
+    const s = lifecycleSummary({ subscriptionStatus: "past_due", currentPeriodEnd: NOW - 2 * DAY }, NOW);
+    expect(s.endsAt).toBe(NOW - 2 * DAY + GRACE_MS);
+    expect(s.label).toMatch(/grace ends/);
+  });
+
+  it("says grace is over once it is", () => {
+    expect(lifecycleSummary({ subscriptionStatus: "past_due", graceEndsAt: NOW - 1 }, NOW).label)
+      .toMatch(/grace over/i);
+  });
+
+  it("blocks and flags expired and canceled", () => {
+    for (const [status, word] of [["expired", /Expired/], ["canceled", /Canceled/]] as const) {
+      const s = lifecycleSummary({ subscriptionStatus: status }, NOW);
+      expect(s.label).toMatch(word);
+      expect(s.attention).toBe(true);
+    }
+  });
+
+  it("uses the singular for one day", () => {
+    expect(lifecycleSummary({ subscriptionStatus: "active", currentPeriodEnd: NOW + 1 }, NOW).label)
+      .toMatch(/1 day\b/);
+  });
+
+  it("never throws on junk", () => {
+    for (const bad of [null, undefined, { subscriptionStatus: 7 }, { subscriptionStatus: "active", currentPeriodEnd: "x" }]) {
+      expect(() => lifecycleSummary(bad, NOW)).not.toThrow();
+    }
+  });
+});
+
+describe("the operator view reports what is now enforced", () => {
+  const usage = readFileSync(join(HERE, "./billing.ts"), "utf8");
+  const block = usage.slice(usage.indexOf("export const getOrgUsage"));
+  const panel = readFileSync(join(HERE, "../../src/components/settings/OperatorPanel.tsx"), "utf8");
+
+  it("returns the lifecycle, seats and slot window", () => {
+    // Each of these was enforced in code while being invisible to the operator,
+    // which is how a support call becomes unanswerable.
+    for (const field of ["lifecycle:", "seatsUsed:", "userLimit:", "activeSlots:", "slotsExpireAt:"]) {
+      expect(block).toContain(field);
+    }
+  });
+
+  it("reports whether the customer was actually warned", () => {
+    expect(block).toContain("renewalNoticeSent:");
+    expect(block).toContain("slotNoticeSent:");
+  });
+
+  it("composes the pure modules rather than re-deriving the rules", () => {
+    expect(block).toMatch(/lifecycleSummary\(/);
+    expect(block).toMatch(/seatState\(/);
+    expect(block).toMatch(/activeSlots\(/);
+  });
+
+  it("the panel shows the lifecycle label, not just plan-or-status", () => {
+    expect(panel).toMatch(/usage\.lifecycle\.label/);
+    expect(panel).toMatch(/usage\.seatsUsed/);
+    expect(panel).toMatch(/usage\.activeSlots/);
   });
 });

@@ -3,8 +3,9 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { randomBytes } from "crypto";
 import { db } from "./db";
 import { sendInviteEmail, sendRenewalEmail, sendSlotNoticeEmail, APP_URL } from "./email";
-import { isPlanId, OVERAGE_RATE, PlanId, planPatch, PLANS, effectiveProjectCap } from "./plans";
+import { isPlanId, OVERAGE_RATE, PlanId, planPatch, PLANS, effectiveProjectCap, activeSlots } from "./plans";
 import {
+  lifecycleSummary,
   nextLifecycleState,
   renewalNoticeDue,
   noticeSentPatch,
@@ -14,6 +15,7 @@ import {
   DAY_MS,
 } from "./subscription";
 import { captureError } from "./sentry";
+import { seatState } from "./seats";
 import { CALLABLE_OPTS } from "./callable";
 
 // App operators who may provision orgs and manage subscriptions. Keep in sync
@@ -204,6 +206,7 @@ export const getOrgUsage = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, asyn
   if (!snap.exists) throw new HttpsError("not-found", "Organization not found.");
   const d: any = snap.data() || {};
 
+  const now = Date.now();
   const month = new Date().toISOString().slice(0, 7);
   const usageSnap = await orgRef.collection("usage").doc(month).get();
   const aiUsed = usageSnap.exists ? Number((usageSnap.data() as any).aiCalls) || 0 : 0;
@@ -215,6 +218,13 @@ export const getOrgUsage = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, asyn
   const overageProjects = included === null ? 0 : Math.max(0, projectCount - included);
   const overageRate = Number(d.overageRate) || OVERAGE_RATE;
 
+  // Everything the lifecycle, seat and slot work added is surfaced here, or the
+  // operator cannot answer the support call it generates. Before this, the panel
+  // rendered `plan || subscriptionStatus`, so for any org WITH a plan the status
+  // was invisible -- and status is the whole question.
+  const seats = seatState(d, { adding: 0 });
+  const liveSlots = activeSlots(d, now);
+
   return {
     plan: d.plan || null,
     subscriptionStatus: d.subscriptionStatus || null,
@@ -225,6 +235,26 @@ export const getOrgUsage = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, asyn
     overageCost: overageProjects * overageRate,
     aiUsed,
     aiQuota: d.aiQuota ?? null,
+
+    // Subscription lifecycle.
+    lifecycle: lifecycleSummary(d, now),
+    currentPeriodEnd: Number(d.currentPeriodEnd) || null,
+    graceEndsAt: Number(d.graceEndsAt) || null,
+    trialEndsAt: Number(d.trialEndsAt) || null,
+    // Whether the customer was actually warned, which is the second question.
+    renewalNoticeSent: d.renewalNoticeSent || null,
+
+    // Seats — enforced since the invite change, and previously unreportable.
+    seatsUsed: seats.taken,
+    userLimit: seats.limit,
+
+    // Project slots. planIncluded is the plan's OWN cap, so an operator can see
+    // how much of the effective cap is a slot window about to close.
+    planIncluded: typeof d.includedProjects === "number" ? d.includedProjects : d.includedProjects ?? null,
+    activeSlots: liveSlots,
+    purchasedSlots: Math.floor(Number(d.purchasedSlots) || 0),
+    slotsExpireAt: Number(d.slotsExpireAt) || null,
+    slotNoticeSent: d.slotNoticeSent || null,
   };
 });
 

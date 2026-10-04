@@ -157,3 +157,74 @@ export function slotNoticeDue(org: any, now = Date.now()): SlotNotice | null {
 export function slotNoticeSentPatch(org: any, kind: SlotNotice) {
   return { slotNoticeSent: { kind, expireAt: Number(org?.slotsExpireAt) || 0, at: Date.now() } };
 }
+
+// ---- Operator view -----------------------------------------------------------
+
+export interface LifecycleSummary {
+  /** Raw status, or null when the org never had one (grandfathered). */
+  status: string | null;
+  /** One line an operator can read off the screen during a support call. */
+  label: string;
+  /** The date the label refers to, when there is one. */
+  endsAt: number | null;
+  /** Whole days until endsAt, negative once passed. */
+  daysLeft: number | null;
+  /** True when this org needs a human to look at it. */
+  attention: boolean;
+}
+
+/**
+ * Describe an org's billing state in one line.
+ *
+ * The operator panel used to render `usage.plan || usage.subscriptionStatus`,
+ * which meant that for any org WITH a plan the subscription status never
+ * appeared at all -- so the one question a support call actually asks ("why has
+ * my workspace stopped?") was the one thing the panel could not answer. Now
+ * past_due, the grace deadline and a stalled lifecycle are all visible.
+ *
+ * Lives here, pure and tested, rather than as formatting inside the panel,
+ * because "is this org in trouble" is a rule, not a presentation detail.
+ */
+export function lifecycleSummary(org: any, now = Date.now()): LifecycleSummary {
+  const status = typeof org?.subscriptionStatus === "string" ? org.subscriptionStatus : null;
+  const days = (at: number) => Math.ceil((at - now) / DAY_MS);
+  const periodEnd = Number(org?.currentPeriodEnd) || 0;
+
+  if (!status) {
+    // Never billed. Allowed everywhere by design, and nothing will ever expire
+    // it -- worth flagging so it is a choice rather than an oversight.
+    return { status: null, label: "No subscription — grandfathered, never gated", endsAt: null, daysLeft: null, attention: true };
+  }
+  if (status === "internal") {
+    return { status, label: "Internal — never gated", endsAt: null, daysLeft: null, attention: false };
+  }
+  if (status === "free") {
+    return { status, label: "Free tier — not gated, capacity-limited", endsAt: null, daysLeft: null, attention: false };
+  }
+  if (status === "trialing") {
+    const ends = Number(org?.trialEndsAt) || 0;
+    if (!ends) return { status, label: "Trial with no end date — cannot expire", endsAt: null, daysLeft: null, attention: true };
+    const d = days(ends);
+    return d > 0
+      ? { status, label: `Trial — ${d} day${d === 1 ? "" : "s"} left`, endsAt: ends, daysLeft: d, attention: d <= 3 }
+      : { status, label: "Trial expired — access blocked", endsAt: ends, daysLeft: d, attention: true };
+  }
+  if (status === "active") {
+    if (!periodEnd) {
+      return { status, label: "Active with no period — nothing will ever expire it", endsAt: null, daysLeft: null, attention: true };
+    }
+    const d = days(periodEnd);
+    if (d > 0) return { status, label: `Active — renews in ${d} day${d === 1 ? "" : "s"}`, endsAt: periodEnd, daysLeft: d, attention: false };
+    // Between the period ending and the daily job running, an org sits here.
+    return { status, label: "Period ended — will move to past due at the next run", endsAt: periodEnd, daysLeft: d, attention: true };
+  }
+  if (status === "past_due") {
+    const graceEnds = Number(org?.graceEndsAt) || (periodEnd ? periodEnd + GRACE_MS : 0);
+    if (!graceEnds) return { status, label: "Past due with no dates — access blocked", endsAt: null, daysLeft: null, attention: true };
+    const d = days(graceEnds);
+    return d > 0
+      ? { status, label: `Past due — still working, grace ends in ${d} day${d === 1 ? "" : "s"}`, endsAt: graceEnds, daysLeft: d, attention: true }
+      : { status, label: "Past due, grace over — will expire at the next run", endsAt: graceEnds, daysLeft: d, attention: true };
+  }
+  return { status, label: `${status === "expired" ? "Expired" : "Canceled"} — access blocked`, endsAt: null, daysLeft: null, attention: true };
+}
