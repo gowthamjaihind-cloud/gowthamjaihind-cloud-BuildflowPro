@@ -1,7 +1,7 @@
 // Project-based plan catalog (server copy — keep in sync with src/lib/plans.ts).
 // includedProjects / userLimit / aiQuota use null to mean "unlimited".
 // monthly / annual are INR prices (null = free or custom).
-export type PlanId = "free" | "starter" | "growth" | "business" | "enterprise";
+export type PlanId = "starter" | "business" | "enterprise";
 
 export interface PlanDef {
   includedProjects: number | null;
@@ -14,11 +14,12 @@ export interface PlanDef {
 // ₹ per extra active project / month beyond a paid plan's included cap.
 export const OVERAGE_RATE = 99;
 
+// Three plans — keep in sync with src/lib/plans.ts, which plans.test.ts checks
+// field by field. Starter is per-project pricing written as a base including one
+// project: ₹99 + (n-1) × ₹99 equals ₹99 × n at every count.
 export const PLANS: Record<PlanId, PlanDef> = {
-  free: { includedProjects: 1, userLimit: 2, aiQuota: 0, monthly: 0, annual: 0 },
-  starter: { includedProjects: 5, userLimit: 10, aiQuota: 150, monthly: 999, annual: 9990 },
-  growth: { includedProjects: 10, userLimit: 25, aiQuota: 400, monthly: 1799, annual: 17990 },
-  business: { includedProjects: 20, userLimit: 60, aiQuota: 1000, monthly: 2999, annual: 29990 },
+  starter: { includedProjects: 1, userLimit: 20, aiQuota: 150, monthly: 99, annual: 990 },
+  business: { includedProjects: 20, userLimit: 40, aiQuota: 2000, monthly: 1499, annual: 14990 },
   enterprise: { includedProjects: null, userLimit: null, aiQuota: null, monthly: null, annual: null },
 };
 
@@ -114,20 +115,16 @@ export function planCapacityPatch(plan: PlanId) {
 
 export function planPatch(plan: PlanId, months: number) {
   const patch: any = planCapacityPatch(plan);
-  if (plan === "free") {
-    patch.subscriptionStatus = "free";
-  } else {
-    const now = Date.now();
-    patch.subscriptionStatus = "active";
-    patch.currentPeriodEnd = now + months * MONTH_MS;
-    // Both bounds and the amount paid are recorded so an upgrade part-way
-    // through can be prorated against what this period actually cost. Inferring
-    // it later is not possible: currentPeriodEnd alone cannot tell a monthly
-    // period from an annual one, and guessing monthly on an annual plan would
-    // over-credit twelvefold.
-    patch.currentPeriodStart = now;
-    patch.currentPeriodPaise = planAmountPaise(plan, months >= 12 ? "annual" : "monthly") ?? 0;
-  }
+  const now = Date.now();
+  patch.subscriptionStatus = "active";
+  patch.currentPeriodEnd = now + months * MONTH_MS;
+  // Both bounds and the amount paid are recorded so an upgrade part-way through
+  // can be prorated against what this period actually cost. Inferring it later is
+  // not possible: currentPeriodEnd alone cannot tell a monthly period from an
+  // annual one, and guessing monthly on an annual plan would over-credit
+  // twelvefold.
+  patch.currentPeriodStart = now;
+  patch.currentPeriodPaise = planAmountPaise(plan, months >= 12 ? "annual" : "monthly") ?? 0;
   return patch;
 }
 

@@ -159,17 +159,18 @@ describe("client and server plan catalogs agree", () => {
 
 describe("planAmountPaise", () => {
   it("prices a payable plan in paise", () => {
-    expect(planAmountPaise("starter", "monthly")).toBe(99900);
-    expect(planAmountPaise("starter", "annual")).toBe(999000);
+    expect(planAmountPaise("starter", "monthly")).toBe(9900);
+    expect(planAmountPaise("starter", "annual")).toBe(99000);
+    expect(planAmountPaise("business", "monthly")).toBe(149900);
   });
 
-  it("has no amount for the free or custom plans", () => {
-    expect(planAmountPaise("free", "monthly")).toBeNull();
+  it("has no amount for the custom plan", () => {
     expect(planAmountPaise("enterprise", "monthly")).toBeNull();
+    expect(planAmountPaise("enterprise", "annual")).toBeNull();
   });
 
   it("gives annual at ten months, not twelve", () => {
-    for (const id of ["starter", "growth", "business"] as const) {
+    for (const id of ["starter", "business"] as const) {
       const p = PLANS[id];
       expect(p.annual).toBe(p.monthly! * 10);
     }
@@ -184,20 +185,20 @@ describe("prorateUpgrade", () => {
     plan: "starter",
     currentPeriodStart: NOW - 20 * DAY,
     currentPeriodEnd: NOW + 10 * DAY,
-    currentPeriodPaise: 99900,
+    currentPeriodPaise: 9900,
   };
 
   it("credits the unused days when upgrading mid-cycle", () => {
     const q = prorateUpgrade(midStarter, "business", "monthly", NOW);
-    expect(q.fullPaise).toBe(299900);
-    // 10/30 of ₹999 = ₹333
-    expect(q.creditPaise).toBe(33300);
-    expect(q.amountPaise).toBe(299900 - 33300);
+    expect(q.fullPaise).toBe(149900);
+    // 10/30 of ₹99 = ₹33
+    expect(q.creditPaise).toBe(3300);
+    expect(q.amountPaise).toBe(149900 - 3300);
   });
 
   it("charges list price when there is nothing left to credit", () => {
     const atEnd = { ...midStarter, currentPeriodEnd: NOW };
-    expect(prorateUpgrade(atEnd, "business", "monthly", NOW).amountPaise).toBe(299900);
+    expect(prorateUpgrade(atEnd, "business", "monthly", NOW).amountPaise).toBe(149900);
   });
 
   it("charges list price for an org with no recorded period", () => {
@@ -221,8 +222,8 @@ describe("prorateUpgrade", () => {
 
   it("credits a monthly period against an annual upgrade", () => {
     const q = prorateUpgrade(midStarter, "business", "annual", NOW);
-    expect(q.fullPaise).toBe(2999000);
-    expect(q.creditPaise).toBe(33300);
+    expect(q.fullPaise).toBe(1499000);
+    expect(q.creditPaise).toBe(3300);
   });
 
   it("never charges less than ₹1, which Razorpay would reject", () => {
@@ -232,7 +233,7 @@ describe("prorateUpgrade", () => {
       plan: "business",
       currentPeriodStart: NOW - DAY,
       currentPeriodEnd: NOW + 364 * DAY,
-      currentPeriodPaise: 2999000,
+      currentPeriodPaise: 1499000,
     };
     const q = prorateUpgrade(richCredit, "starter", "monthly", NOW);
     expect(q.amountPaise).toBeGreaterThanOrEqual(MIN_ORDER_PAISE);
@@ -253,7 +254,7 @@ describe("prorateUpgrade", () => {
     for (const bad of [null, undefined, {}, { currentPeriodPaise: "lots" }]) {
       const q = prorateUpgrade(bad, "business", "monthly", NOW);
       expect(q.creditPaise).toBe(0);
-      expect(q.amountPaise).toBe(299900);
+      expect(q.amountPaise).toBe(149900);
     }
   });
 });
@@ -263,18 +264,19 @@ describe("planPatch records what the period cost", () => {
     const p: any = planPatch("starter", 1);
     expect(p.currentPeriodStart).toBeGreaterThan(0);
     expect(p.currentPeriodEnd).toBeGreaterThan(p.currentPeriodStart);
-    expect(p.currentPeriodPaise).toBe(99900);
+    expect(p.currentPeriodPaise).toBe(9900);
   });
 
   it("records the annual amount for a yearly period", () => {
-    expect((planPatch("business", 12) as any).currentPeriodPaise).toBe(2999000);
+    expect((planPatch("business", 12) as any).currentPeriodPaise).toBe(1499000);
   });
 
-  it("leaves the free plan with no period at all", () => {
-    const p: any = planPatch("free", 0);
-    expect(p.subscriptionStatus).toBe("free");
-    expect(p.currentPeriodEnd).toBeUndefined();
-    expect(p.currentPeriodPaise).toBeUndefined();
+  it("records zero paid for Enterprise, which is not priced here", () => {
+    // Hand-sold, so there is no list price to prorate against. Zero means
+    // prorateUpgrade gives no credit rather than crediting an invented amount.
+    const p: any = planPatch("enterprise", 1);
+    expect(p.subscriptionStatus).toBe("active");
+    expect(p.currentPeriodPaise).toBe(0);
   });
 });
 
@@ -283,7 +285,7 @@ describe("planCapacityPatch", () => {
     // This is what a downgrade applies. If it set a status or a period it would
     // be handing out a paid month nobody paid for.
     const p: any = planCapacityPatch("starter");
-    expect(p).toMatchObject({ plan: "starter", includedProjects: 5, userLimit: 10, purchasedSlots: 0 });
+    expect(p).toMatchObject({ plan: "starter", includedProjects: 1, userLimit: 20, purchasedSlots: 0 });
     expect(p.subscriptionStatus).toBeUndefined();
     expect(p.currentPeriodEnd).toBeUndefined();
   });

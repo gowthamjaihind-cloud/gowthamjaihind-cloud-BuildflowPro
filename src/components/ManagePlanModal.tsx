@@ -16,7 +16,9 @@ interface Props {
 }
 
 // Plans a customer can self-serve switch between (Enterprise is sales-led).
-const TIERS: PlanId[] = ["free", "starter", "growth", "business"];
+// Business → Starter is the only self-serve downgrade now. Leaving altogether
+// means stopping payment: the lifecycle handles past_due, grace, then expired.
+const TIERS: PlanId[] = ["starter", "business"];
 
 // Full plan switcher for an Owner/Admin: upgrade (immediate, paid) or schedule a
 // downgrade for the end of the current cycle. Shows any scheduled change.
@@ -31,7 +33,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  const current = (plan.plan || "free") as PlanId;
+  const current = (plan.plan || "starter") as PlanId;
   const currentIdx = PLAN_ORDER.indexOf(current);
   const pending = plan.pendingPlanChange || null;
   const working = busy || payBusy;
@@ -164,7 +166,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
               const isCurrent = id === current;
               const isUpgrade = idx > currentIdx;
               const isPendingTarget = pending?.plan === id;
-              const monthly = id === "free" ? 0 : period === "annual" ? Math.round((p.annual || 0) / 12) : p.monthly || 0;
+              const monthly = period === "annual" ? Math.round((p.annual || 0) / 12) : p.monthly || 0;
               return (
                 <div
                   key={id}

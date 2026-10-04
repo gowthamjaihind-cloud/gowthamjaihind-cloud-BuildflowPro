@@ -78,8 +78,8 @@ export const createRazorpayOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30
   const uid = request.auth.uid;
   const plan = String(request.data?.plan || "");
   const period = request.data?.period === "annual" ? "annual" : "monthly";
-  if (!isPlanId(plan) || plan === "free" || plan === "enterprise") {
-    throw new HttpsError("invalid-argument", "Choose a paid plan (Starter, Growth or Business).");
+  if (!isPlanId(plan) || plan === "enterprise") {
+    throw new HttpsError("invalid-argument", "Choose a paid plan (Starter or Business).");
   }
   const listPaise = planAmountPaise(plan as PlanId, period);
   if (!listPaise) throw new HttpsError("invalid-argument", "That plan can't be purchased online.");
@@ -163,8 +163,10 @@ export const createSlotOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, 
   }
   // Slots are an overage add-on for paid plans only. Free/enterprise/unlimited
   // orgs have no per-project overage to buy.
-  if (org.plan === "free" || org.plan === "enterprise" || org.includedProjects == null) {
-    throw new HttpsError("failed-precondition", "Project slots apply to paid Starter/Growth/Business plans only.");
+  // A null cap means Enterprise or an org never placed on a plan: unlimited
+  // already, so there is no per-project overage to sell.
+  if (org.includedProjects == null) {
+    throw new HttpsError("failed-precondition", "Project slots apply to Starter and Business plans only.");
   }
 
   const rate = Number(org.overageRate) || OVERAGE_RATE;

@@ -1,6 +1,6 @@
 // Project-based plan catalog (client — keep in sync with functions/src/plans.ts).
 // Capacity fields use null to mean "unlimited". Prices in INR.
-export type PlanId = "free" | "starter" | "growth" | "business" | "enterprise";
+export type PlanId = "starter" | "business" | "enterprise";
 
 export interface PlanDef {
   id: PlanId;
@@ -16,15 +16,17 @@ export interface PlanDef {
 // ₹ per extra active project / month beyond a paid plan's included cap.
 export const OVERAGE_RATE = 99;
 
+// Three plans. Starter is PER-PROJECT pricing expressed as a base that includes
+// one project: ₹99 + (n-1) × ₹99 is exactly ₹99 × n at every count, so the
+// pricing is "₹99 per project per month" while the app keeps using the plan +
+// extra-slots vocabulary (and its existing bilingual copy) to say so.
 export const PLANS: Record<PlanId, PlanDef> = {
-  free: { id: "free", name: "Free", tag: "For solo & small contractors", includedProjects: 1, userLimit: 2, aiQuota: 0, monthly: 0, annual: 0 },
-  starter: { id: "starter", name: "Starter", tag: "For small contractors", includedProjects: 5, userLimit: 10, aiQuota: 150, monthly: 999, annual: 9990 },
-  growth: { id: "growth", name: "Growth", tag: "For growing firms", includedProjects: 10, userLimit: 25, aiQuota: 400, monthly: 1799, annual: 17990 },
-  business: { id: "business", name: "Business", tag: "For established firms", includedProjects: 20, userLimit: 60, aiQuota: 1000, monthly: 2999, annual: 29990 },
+  starter: { id: "starter", name: "Starter", tag: "For solo & small contractors", includedProjects: 1, userLimit: 20, aiQuota: 150, monthly: 99, annual: 990 },
+  business: { id: "business", name: "Business", tag: "For firms with an office", includedProjects: 20, userLimit: 40, aiQuota: 2000, monthly: 1499, annual: 14990 },
   enterprise: { id: "enterprise", name: "Enterprise", tag: "For multi-site firms", includedProjects: null, userLimit: null, aiQuota: null, monthly: null, annual: null },
 };
 
-export const PLAN_ORDER: PlanId[] = ["free", "starter", "growth", "business", "enterprise"];
+export const PLAN_ORDER: PlanId[] = ["starter", "business", "enterprise"];
 
 export const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -59,6 +61,8 @@ export function includedProjectsOf(org: any, now = Date.now()): number | null | 
 export function projectCapState(org: any, currentCount: number, now = Date.now()) {
   const included = includedProjectsOf(org, now);
   const rate = Number(org?.overageRate) || OVERAGE_RATE;
+  // "free" is no longer a plan, but legacy orgs still carry it as a plan or a
+  // subscription status, and they must keep behaving as the free tier did.
   const isFree = org?.plan === "free" || org?.subscriptionStatus === "free";
   if (included === null || included === undefined) {
     return { capped: false, included: null as number | null, overage: 0, overageCost: 0, isFree, atOrOver: false };

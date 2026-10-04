@@ -38,7 +38,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
   const currentIdx = plan.plan ? PLAN_ORDER.indexOf(plan.plan as PlanId) : -1;
   const upgrades = useMemo(
     () =>
-      (["starter", "growth", "business"] as PlanId[]).filter((id) => {
+      (["starter", "business"] as PlanId[]).filter((id) => {
         const idx = PLAN_ORDER.indexOf(id);
         const cap = PLANS[id].includedProjects ?? 0;
         return idx > currentIdx && cap > included;

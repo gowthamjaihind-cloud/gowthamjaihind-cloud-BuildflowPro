@@ -10,7 +10,8 @@ import { useL } from "../../i18n";
 import { Tooltip } from "../Tooltip";
 
 // Plans an Owner/Admin can self-serve manage (upgrade/downgrade).
-const SELF_SERVE_PLANS = ["free", "starter", "growth", "business"];
+// No free tier any more; Enterprise is not self-serve.
+const SELF_SERVE_PLANS = ["starter", "business"];
 
 // Compact "your plan + usage" summary for the org settings page: current plan,
 // projects used vs included, any per-project overage, and the (copyable) org ID

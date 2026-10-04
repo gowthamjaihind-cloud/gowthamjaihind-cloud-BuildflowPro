@@ -14,10 +14,12 @@ import { CALLABLE_OPTS } from "./callable";
 // they already paid for, with no refund. A downgrade is stored as
 // `pendingPlanChange` and applied by the daily applyScheduledPlanChanges job.
 
-// Tier order (low → high). Free is lowest; enterprise is not self-serve.
-const PLAN_ORDER: PlanId[] = ["free", "starter", "growth", "business", "enterprise"];
-// Plans a customer can switch between without talking to us.
-const SELF_SERVE: PlanId[] = ["free", "starter", "growth", "business"];
+// Tier order (low → high). Enterprise is not self-serve.
+const PLAN_ORDER: PlanId[] = ["starter", "business", "enterprise"];
+// Plans a customer can switch between without talking to us. With no free tier,
+// Business → Starter is the only self-serve downgrade; leaving altogether means
+// stopping payment and letting the subscription lifecycle run its course.
+const SELF_SERVE: PlanId[] = ["starter", "business"];
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
 async function resolveOrgId(request: any): Promise<string> {
@@ -47,7 +49,7 @@ export const scheduleDowngrade = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }
   if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
   const target = String(request.data?.targetPlan || "");
   if (!isPlanId(target) || !SELF_SERVE.includes(target as PlanId)) {
-    throw new HttpsError("invalid-argument", "Choose Free, Starter, Growth or Business.");
+    throw new HttpsError("invalid-argument", "Choose Starter or Business.");
   }
   const orgId = await resolveOrgId(request);
   const orgSnap = await assertOrgManager(request, orgId);
