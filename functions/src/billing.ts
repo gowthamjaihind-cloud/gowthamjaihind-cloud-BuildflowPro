@@ -2,9 +2,17 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { randomBytes } from "crypto";
 import { db } from "./db";
-import { sendInviteEmail, sendRenewalEmail, APP_URL } from "./email";
+import { sendInviteEmail, sendRenewalEmail, sendSlotNoticeEmail, APP_URL } from "./email";
 import { isPlanId, OVERAGE_RATE, PlanId, planPatch, PLANS, effectiveProjectCap } from "./plans";
-import { nextLifecycleState, renewalNoticeDue, noticeSentPatch, DAY_MS } from "./subscription";
+import {
+  nextLifecycleState,
+  renewalNoticeDue,
+  noticeSentPatch,
+  slotNoticeDue,
+  slotNoticeSentPatch,
+  SLOT_NOTICE_DAYS,
+  DAY_MS,
+} from "./subscription";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
 
@@ -305,5 +313,53 @@ export const runSubscriptionLifecycle = onSchedule(
       }
     }
     console.log(`runSubscriptionLifecycle: ${moved} moved, ${notified} notified, of ${snap.size} examined`);
+  },
+);
+
+// ---- Project-slot notices ---------------------------------------------------
+//
+// A separate job rather than a branch inside runSubscriptionLifecycle, because
+// that one queries only `active` and `past_due` on purpose, and a TRIALING org
+// can hold slots too: createSlotOrder admits any org with a numeric
+// includedProjects, which a trial has. Folding slots into that query would
+// either miss those orgs or widen a query whose narrowness is its safety.
+export const runSlotNotices = onSchedule(
+  {
+    schedule: "0 5 * * *", // after the 04:45 subscription lifecycle
+    timeZone: "Asia/Kolkata",
+    region: "asia-southeast1",
+  },
+  async () => {
+    const now = Date.now();
+    // Single-field range query, served by the automatic index.
+    const snap = await db.collection("organizations").where("purchasedSlots", ">", 0).get();
+
+    let notified = 0;
+    for (const orgDoc of snap.docs) {
+      const data: any = orgDoc.data();
+      try {
+        const kind = slotNoticeDue(data, now);
+        if (!kind) continue;
+        const to = await billingContact(data);
+        const expireAt = Number(data.slotsExpireAt) || 0;
+        const sent = await sendSlotNoticeEmail({
+          to,
+          companyName: data.companyName || "Your workspace",
+          link: APP_URL,
+          slots: Math.floor(Number(data.purchasedSlots) || 0),
+          kind,
+          daysLeft: kind === "expiring" ? Math.max(0, Math.ceil((expireAt - now) / DAY_MS)) : SLOT_NOTICE_DAYS,
+        });
+        // Record only a notice that actually went out, so a Resend outage
+        // retries tomorrow rather than swallowing the only warning.
+        if (sent.sent) {
+          await orgDoc.ref.set(slotNoticeSentPatch(data, kind), { merge: true });
+          notified++;
+        }
+      } catch (e) {
+        captureError(e, { where: "runSlotNotices", orgId: orgDoc.id });
+      }
+    }
+    console.log(`runSlotNotices: ${notified} notified, of ${snap.size} with slots`);
   },
 );

@@ -127,6 +127,89 @@ export async function sendRenewalEmail(opts: {
   }
 }
 
+/**
+ * Project-slot notice: the window is closing, or has closed.
+ *
+ * Sent because slots expiring silently is worse than slots not expiring. The
+ * copy leads with what has NOT happened -- nothing deleted, nothing hidden --
+ * because that is the first thing a contractor will want to know.
+ */
+export async function sendSlotNoticeEmail(opts: {
+  to?: string | null;
+  companyName: string;
+  link: string;
+  slots: number;
+  kind: "expiring" | "lapsed";
+  daysLeft?: number;
+}): Promise<{ sent: boolean; error?: string }> {
+  if (!opts.to) return { sent: false, error: "no recipient email" };
+  const cfg = await getEmailConfig();
+  if (!cfg) return { sent: false, error: "email not configured" };
+
+  const n = opts.slots;
+  const plural = n === 1 ? "project slot" : "project slots";
+  const subject =
+    opts.kind === "lapsed"
+      ? `${opts.companyName}: your ${n} extra ${plural} have ended`
+      : `${opts.companyName}: ${n} extra ${plural} renew in ${opts.daysLeft ?? SLOT_NOTICE_WARN_DAYS} days`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${cfg.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: `${cfg.fromName} <${cfg.fromEmail}>`,
+        to: [opts.to],
+        subject,
+        html: slotNoticeHtml(opts),
+      }),
+    });
+    if (!res.ok) {
+      const b = await res.text().catch(() => "");
+      return { sent: false, error: `resend ${res.status}: ${b.slice(0, 180)}` };
+    }
+    return { sent: true };
+  } catch (e: any) {
+    return { sent: false, error: String(e) };
+  }
+}
+
+/** Only used for the email's default wording; the real value lives in subscription.ts. */
+const SLOT_NOTICE_WARN_DAYS = 3;
+
+function slotNoticeHtml(o: {
+  companyName: string;
+  link: string;
+  slots: number;
+  kind: "expiring" | "lapsed";
+  daysLeft?: number;
+}): string {
+  const n = o.slots;
+  const plural = n === 1 ? "slot" : "slots";
+  const headline = o.kind === "lapsed" ? `Your extra project ${plural} have ended` : `Your extra project ${plural} renew soon`;
+  const body =
+    o.kind === "lapsed"
+      ? `The ${n} extra project ${plural} on <b>${escapeHtml(o.companyName)}</b> have reached the end of their month.
+         <b>Nothing has been deleted and nothing is hidden</b> — every project, log and photo is exactly where it was.
+         You just can't add a new project beyond your plan's limit until you top up again.`
+      : `The ${n} extra project ${plural} on <b>${escapeHtml(o.companyName)}</b> reach the end of their month in
+         ${o.daysLeft ?? SLOT_NOTICE_WARN_DAYS} days. Top up to keep the headroom — nothing is deleted either way,
+         you simply won't be able to add a new project past your plan's limit.`;
+  return `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+  <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
+    <div style="background:#ffffff;border:1px solid #e6e8eb;border-radius:20px;padding:32px;">
+      <div style="font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#8a94a6;">Sitetru</div>
+      <h1 style="font-size:22px;color:#1f2937;margin:12px 0 8px;">${headline}</h1>
+      <p style="font-size:15px;color:#4b5563;line-height:1.6;margin:0 0 20px;">${body}</p>
+      <a href="${o.link}" style="display:inline-block;background:#D97D54;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 24px;border-radius:12px;">Open Sitetru</a>
+      <p style="font-size:12px;color:#8a94a6;margin:24px 0 0;line-height:1.6;">
+        Extra projects are ₹99 each per month. Reply to this email if you'd rather we sorted it out with you directly.
+      </p>
+    </div>
+    <p style="text-align:center;font-size:11px;color:#9ca3af;margin-top:16px;">Truth, reported from site.</p>
+  </div></body></html>`;
+}
+
 function renewalHtml(o: {
   companyName: string;
   link: string;

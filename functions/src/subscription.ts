@@ -113,3 +113,47 @@ export function renewalNoticeDue(org: any, now = Date.now()): number | null {
 export function noticeSentPatch(org: any, days: number) {
   return { renewalNoticeSent: { days, periodEnd: Number(org?.currentPeriodEnd) || 0, at: Date.now() } };
 }
+
+// ---- Project slots -----------------------------------------------------------
+//
+// Making slots expire was the right fix, but it lapses SILENTLY: a customer buys
+// three extra projects, thirty days later the cap quietly drops, and the next
+// time they add a project they are asked to pay again having been told nothing.
+// Existing projects keep working -- that part matters and the mail says so --
+// but an unannounced cap drop reads as a bait-and-switch. So the window gets a
+// warning before it closes and a notice when it has.
+
+/** Days before a slot window closes to warn. */
+export const SLOT_NOTICE_DAYS = 3;
+
+export type SlotNotice = "expiring" | "lapsed";
+
+/**
+ * Which slot notice is due, or null.
+ *
+ * A slot bought before expiry existed has no `slotsExpireAt` and is permanent
+ * (it is already inside `includedProjects`), so it is never warned about --
+ * telling someone their permanent slots are about to lapse would be a lie.
+ *
+ * The marker is scoped to the window it belongs to, so a customer who buys
+ * again next month is warned again. "lapsed" still sends after "expiring",
+ * because the two say different things.
+ */
+export function slotNoticeDue(org: any, now = Date.now()): SlotNotice | null {
+  const qty = Math.floor(Number(org?.purchasedSlots) || 0);
+  if (qty <= 0) return null;
+  const expireAt = Number(org?.slotsExpireAt) || 0;
+  if (expireAt <= 0) return null; // legacy, permanent — nothing to warn about
+
+  const marker = org?.slotNoticeSent;
+  const sentKind = Number(marker?.expireAt) === expireAt ? String(marker?.kind || "") : "";
+
+  if (now >= expireAt) return sentKind === "lapsed" ? null : "lapsed";
+  if (expireAt - now <= SLOT_NOTICE_DAYS * DAY_MS) return sentKind === "" ? "expiring" : null;
+  return null;
+}
+
+/** The marker written after a slot notice goes out, scoped to that window. */
+export function slotNoticeSentPatch(org: any, kind: SlotNotice) {
+  return { slotNoticeSent: { kind, expireAt: Number(org?.slotsExpireAt) || 0, at: Date.now() } };
+}

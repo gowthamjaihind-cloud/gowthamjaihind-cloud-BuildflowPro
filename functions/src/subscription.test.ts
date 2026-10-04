@@ -6,6 +6,9 @@ import {
   nextLifecycleState,
   renewalNoticeDue,
   noticeSentPatch,
+  slotNoticeDue,
+  slotNoticeSentPatch,
+  SLOT_NOTICE_DAYS,
   GRACE_MS,
   NOTICE_DAYS,
   DAY_MS,
@@ -178,6 +181,100 @@ describe("the job applies these rules", () => {
 
   it("records a notice only when the send succeeded", () => {
     // Recording a failed send would swallow the only warning the customer gets.
+    expect(job).toMatch(/if\s*\(sent\.sent\)/);
+  });
+
+  it("keeps going when one org throws", () => {
+    expect(job).toMatch(/captureError\(/);
+  });
+});
+
+describe("slotNoticeDue", () => {
+  const DAY = DAY_MS;
+  const withSlots = (qty: number, expireAt: number, marker?: any) => ({
+    purchasedSlots: qty,
+    slotsExpireAt: expireAt,
+    ...(marker ? { slotNoticeSent: marker } : {}),
+  });
+
+  it("warns three days before the window closes", () => {
+    expect(slotNoticeDue(withSlots(3, NOW + 3 * DAY), NOW)).toBe("expiring");
+    expect(slotNoticeDue(withSlots(3, NOW + 2 * DAY), NOW)).toBe("expiring");
+  });
+
+  it("stays quiet while the window has plenty left", () => {
+    expect(slotNoticeDue(withSlots(3, NOW + 10 * DAY), NOW)).toBeNull();
+    expect(slotNoticeDue(withSlots(3, NOW + SLOT_NOTICE_DAYS * DAY + 1000), NOW)).toBeNull();
+  });
+
+  it("says lapsed once the window has closed", () => {
+    expect(slotNoticeDue(withSlots(3, NOW - 1), NOW)).toBe("lapsed");
+    expect(slotNoticeDue(withSlots(3, NOW), NOW)).toBe("lapsed");
+  });
+
+  it("sends lapsed even after expiring was already sent — they say different things", () => {
+    const expiringSent = { kind: "expiring", expireAt: NOW - 1 };
+    expect(slotNoticeDue(withSlots(3, NOW - 1, expiringSent), NOW)).toBe("lapsed");
+  });
+
+  it("does not repeat either notice for the same window", () => {
+    const at = NOW + 2 * DAY;
+    expect(slotNoticeDue(withSlots(3, at, { kind: "expiring", expireAt: at }), NOW)).toBeNull();
+    expect(slotNoticeDue(withSlots(3, NOW - 1, { kind: "lapsed", expireAt: NOW - 1 }), NOW)).toBeNull();
+  });
+
+  it("warns again for a NEW window, because the marker is scoped to one", () => {
+    // Buy again next month and the warning has to come again. Without the
+    // expireAt stamp the old marker silences every future window.
+    const newWindow = NOW + 2 * DAY;
+    const oldMarker = { kind: "lapsed", expireAt: NOW - 30 * DAY };
+    expect(slotNoticeDue(withSlots(3, newWindow, oldMarker), NOW)).toBe("expiring");
+  });
+
+  it("NEVER warns about legacy slots, which really are permanent", () => {
+    // Pre-expiry purchases are already inside includedProjects and have no
+    // slotsExpireAt. Telling someone those are about to lapse would be a lie.
+    expect(slotNoticeDue({ purchasedSlots: 3 }, NOW)).toBeNull();
+    expect(slotNoticeDue({ purchasedSlots: 3, slotsExpireAt: 0 }, NOW)).toBeNull();
+  });
+
+  it("says nothing when there are no slots", () => {
+    expect(slotNoticeDue({ purchasedSlots: 0, slotsExpireAt: NOW + DAY }, NOW)).toBeNull();
+    expect(slotNoticeDue({}, NOW)).toBeNull();
+    expect(slotNoticeDue(null, NOW)).toBeNull();
+  });
+
+  it("survives junk", () => {
+    for (const bad of [{ purchasedSlots: "x", slotsExpireAt: NOW + DAY }, { purchasedSlots: 3, slotsExpireAt: "soon" }]) {
+      expect(slotNoticeDue(bad, NOW)).toBeNull();
+    }
+  });
+});
+
+describe("slotNoticeSentPatch", () => {
+  it("stamps the window it warned about", () => {
+    const p = slotNoticeSentPatch({ slotsExpireAt: 1234 }, "expiring");
+    expect(p.slotNoticeSent).toMatchObject({ kind: "expiring", expireAt: 1234 });
+  });
+});
+
+describe("the slot notice job", () => {
+  const src = readFileSync(join(HERE, "./billing.ts"), "utf8");
+  const job = src.slice(src.indexOf("export const runSlotNotices"));
+
+  it("exists, on its own schedule", () => {
+    expect(job).toMatch(/onSchedule\(/);
+  });
+
+  it("queries by slot count, NOT by subscription status", () => {
+    // A trialing org can hold slots, and runSubscriptionLifecycle deliberately
+    // never fetches those. Reusing that query would miss them silently.
+    expect(job).toMatch(/"purchasedSlots",\s*">",\s*0/);
+    expect(job).not.toMatch(/subscriptionStatus/);
+  });
+
+  it("decides with slotNoticeDue and records only a successful send", () => {
+    expect(job).toMatch(/slotNoticeDue\(/);
     expect(job).toMatch(/if\s*\(sent\.sent\)/);
   });
 
