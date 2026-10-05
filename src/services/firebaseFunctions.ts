@@ -1,8 +1,16 @@
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
 
+/**
+ * Where the callables live. MUST match REGION in functions/src/callable.ts:
+ * getFunctions(app) with no region silently targets us-central1, so a mismatch
+ * does not fail the build or the deploy — every callable just starts returning
+ * "not found" at runtime. TelegramBotStatus.test.ts asserts the two agree.
+ */
+export const FUNCTIONS_REGION = "asia-southeast1";
+
 // Helper to reliably get the functions instance (assumes getApp() is ready)
-const getFunctionsInstance = () => getFunctions(getApp());
+const getFunctionsInstance = () => getFunctions(getApp(), FUNCTIONS_REGION);
 
 // Projects
 export const callDeleteProject = async (projectId: string) => {
