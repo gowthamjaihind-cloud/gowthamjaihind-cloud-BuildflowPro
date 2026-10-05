@@ -26,7 +26,9 @@
     "voice:check": "python3 marketing/voice/pronounce.py",
     "brand:check": "node marketing/brand.test.mjs",
     "endcard": "cd marketing/remotion && npx remotion still WalkEndCard public/walk-endcard.png --frame=60 --browser-executable=${CHROME_HEADLESS_SHELL:-/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell}",
-    "i18n:handoff": "node scripts/i18n-handoff.mjs"
+    "i18n:handoff": "node scripts/i18n-handoff.mjs",
+    "emulators": "bash scripts/emulators.sh",
+    "build:emulators": "VITE_USE_EMULATORS=1 vite build --outDir dist-emulators"
   },
   "dependencies": {
     "@fontsource/noto-sans-tamil": "^5.3.0",
