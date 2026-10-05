@@ -168,7 +168,9 @@ export interface OrgUsage {
   overageProjects: number;
   overageCost: number;
   aiUsed: number;
+  /** The cap actually enforced — per-project where the plan sets one. */
   aiQuota: number | null;
+  aiScansPerProject: number | null;
 
   // Subscription lifecycle (functions/src/subscription.ts).
   lifecycle: {
@@ -313,4 +315,39 @@ export const callSyncMyClaims = async () => {
     getFunctionsInstance(), 'syncMyClaims');
   const res = await fn({} as Record<string, never>);
   return res.data;
+};
+
+// Cancel at the end of the period already paid for (no refund, nothing deleted),
+// and the undo for it.
+export const callCancelSubscription = async () => {
+  const fn = httpsCallable<{}, { canceled: boolean; effectiveAt: number | null }>(
+    getFunctionsInstance(), 'cancelSubscription');
+  return (await fn({})).data;
+};
+
+export const callResumeSubscription = async () => {
+  const fn = httpsCallable<{}, { resumed: boolean }>(getFunctionsInstance(), 'resumeSubscription');
+  return (await fn({})).data;
+};
+
+export interface BillingHistoryRow {
+  orderId: string;
+  kind: "plan" | "slots";
+  plan: string | null;
+  period: string | null;
+  quantity: number | null;
+  /** Rupees actually charged. */
+  amount: number;
+  /** List price before any proration credit, in rupees. */
+  listAmount: number | null;
+  /** Proration credit applied, in rupees. */
+  credit: number | null;
+  paidAt: string | null;
+}
+
+// Owner/Admin: what this workspace has actually been charged.
+export const callGetBillingHistory = async () => {
+  const fn = httpsCallable<{}, { orgId: string; rows: BillingHistoryRow[] }>(
+    getFunctionsInstance(), 'getBillingHistory');
+  return (await fn({})).data;
 };

@@ -1,27 +1,8 @@
 import { HttpsError } from "firebase-functions/v2/https";
 import { db } from "../db";
+import { aiQuotaFor } from "./quota";
 
-// Monthly AI-action quota. null = unlimited.
-//  • An explicit per-plan `aiQuota` on the org wins (set by setOrgPlan):
-//    a number caps it; null means unlimited (Enterprise).
-//  • Otherwise fall back to the subscription lifecycle (back-compat for orgs
-//    not yet placed on a project plan):
-//     - no status / "internal" → grandfathered or operator org → unlimited
-//     - "active" (paid)        → generous cap
-//     - "trialing"             → enough to evaluate, bounded so a trial can't
-//                                run up the Gemini bill
-//     - "free"                 → 0 (Lite has no AI)
-//     - expired/past_due/…     → 0 (also blocked by the app paywall)
-export function aiQuotaFor(orgData: any): number | null {
-  const q = orgData?.aiQuota;
-  if (q === null) return null; // explicit unlimited (Enterprise)
-  if (typeof q === "number") return q; // explicit per-plan cap
-  const status = orgData?.subscriptionStatus;
-  if (!status || status === "internal") return null;
-  if (status === "active") return 2000;
-  if (status === "trialing") return 100;
-  return 0; // free | expired | past_due | canceled
-}
+export { aiQuotaFor };
 
 const monthKey = () => new Date().toISOString().slice(0, 7); // YYYY-MM
 
@@ -45,8 +26,17 @@ export async function chargeAiUsage(
   count = 1,
 ): Promise<void> {
   if (!orgId) return;
-  const orgSnap = await db.doc(`organizations/${orgId}`).get();
-  const quota = aiQuotaFor(orgSnap.exists ? orgSnap.data() : {});
+  const orgRef = db.doc(`organizations/${orgId}`);
+  const orgSnap = await orgRef.get();
+  const orgData = orgSnap.exists ? orgSnap.data() : {};
+  // The allowance scales with the projects being paid for, so the count has to
+  // be read. A count() aggregation is one read regardless of how many projects
+  // there are, and this sits in front of a Gemini call that takes seconds.
+  const projectCount =
+    orgData?.aiScansPerProject == null
+      ? 1 // legacy per-org cap: the count does not enter into it
+      : (await orgRef.collection("projects").count().get()).data().count;
+  const quota = aiQuotaFor(orgData, projectCount);
   if (quota === null) return; // unlimited
 
   const month = monthKey();

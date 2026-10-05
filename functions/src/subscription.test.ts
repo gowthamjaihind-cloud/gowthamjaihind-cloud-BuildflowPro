@@ -408,3 +408,86 @@ describe("the operator view reports what is now enforced", () => {
     expect(panel).toMatch(/usage\.activeSlots/);
   });
 });
+
+describe("cancelling takes effect at the end of what was paid for", () => {
+  const DAY = DAY_MS;
+
+  it("does nothing while the period is still running", () => {
+    const org = { subscriptionStatus: "active", currentPeriodEnd: NOW + 5 * DAY, cancelAtPeriodEnd: true };
+    expect(nextLifecycleState(org, NOW)).toBeNull();
+  });
+
+  it("goes to canceled, not past_due, once the period ends", () => {
+    // A customer who asked to leave must not then be chased through a grace
+    // week of dunning email for money they already said they would not spend.
+    const org = { subscriptionStatus: "active", currentPeriodEnd: NOW - 1, cancelAtPeriodEnd: true };
+    expect(nextLifecycleState(org, NOW)).toMatchObject({ to: "canceled" });
+  });
+
+  it("still goes to past_due when no cancellation was asked for", () => {
+    const org = { subscriptionStatus: "active", currentPeriodEnd: NOW - 1 };
+    expect(nextLifecycleState(org, NOW)).toMatchObject({ to: "past_due" });
+  });
+
+  it("only honours an explicit true", () => {
+    for (const flag of [false, "true", 1, null, undefined]) {
+      const org = { subscriptionStatus: "active", currentPeriodEnd: NOW - 1, cancelAtPeriodEnd: flag };
+      expect(nextLifecycleState(org, NOW), `flag ${String(flag)}`).toMatchObject({ to: "past_due" });
+    }
+  });
+
+  it("tells the operator a cancellation is coming, and flags it", () => {
+    const org = { subscriptionStatus: "active", currentPeriodEnd: NOW + 9 * DAY, cancelAtPeriodEnd: true };
+    const s = lifecycleSummary(org, NOW);
+    expect(s.label).toMatch(/Cancelling — ends in 9 days/);
+    expect(s.attention, "worth a human asking why, while there is still time").toBe(true);
+  });
+
+  it("leaves a normal renewal unflagged", () => {
+    const s = lifecycleSummary({ subscriptionStatus: "active", currentPeriodEnd: NOW + 9 * DAY }, NOW);
+    expect(s.label).toMatch(/renews in 9 days/);
+    expect(s.attention).toBe(false);
+  });
+});
+
+describe("the cancel path exists and is reversible", () => {
+  const src = readFileSync(join(HERE, "./planChange.ts"), "utf8");
+
+  it("offers both cancelling and undoing it", () => {
+    expect(src).toMatch(/export const cancelSubscription = onCall\(/);
+    expect(src).toMatch(/export const resumeSubscription = onCall\(/);
+  });
+
+  it("sets a flag rather than cutting access off immediately", () => {
+    const body = src.slice(src.indexOf("export const cancelSubscription"), src.indexOf("export const resumeSubscription"));
+    expect(body).toMatch(/cancelAtPeriodEnd: true/);
+    expect(body, "must not expire the org on the spot").not.toMatch(/subscriptionStatus:\s*"(canceled|expired)"/);
+  });
+
+  it("clears the flag once the job has acted on it", () => {
+    // Otherwise a customer who comes back is cancelled again at the end of
+    // their first new period.
+    const billing = readFileSync(join(HERE, "./billing.ts"), "utf8");
+    expect(billing).toMatch(/move\.to === "canceled"[\s\S]{0,120}cancelAtPeriodEnd/);
+  });
+});
+
+describe("billing history", () => {
+  const src = readFileSync(join(HERE, "./billing.ts"), "utf8");
+  const body = src.slice(src.indexOf("export const getBillingHistory"));
+
+  it("is scoped to the caller's org and to Owner/Admin", () => {
+    expect(body).toMatch(/"orgId",\s*"==",\s*orgId/);
+    expect(body).toMatch(/\["Owner", "Admin"\]/);
+  });
+
+  it("lists only payments that actually happened", () => {
+    // An abandoned checkout is not a charge; showing one as if it were is worse
+    // than showing nothing.
+    expect(body).toMatch(/"status",\s*"==",\s*"paid"/);
+  });
+
+  it("reports rupees, not paise", () => {
+    expect(body).toMatch(/\/ 100/);
+  });
+});

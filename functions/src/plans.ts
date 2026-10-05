@@ -6,7 +6,8 @@ export type PlanId = "starter" | "business" | "enterprise";
 export interface PlanDef {
   includedProjects: number | null;
   userLimit: number | null;
-  aiQuota: number | null;
+  aiQuota: number | null; // legacy per-ORG cap, kept for orgs placed before the per-project switch
+  aiScansPerProject: number | null; // null = unlimited (Enterprise)
   monthly: number | null;
   annual: number | null;
 }
@@ -18,9 +19,9 @@ export const OVERAGE_RATE = 99;
 // field by field. Starter is per-project pricing written as a base including one
 // project: ₹99 + (n-1) × ₹99 equals ₹99 × n at every count.
 export const PLANS: Record<PlanId, PlanDef> = {
-  starter: { includedProjects: 1, userLimit: 20, aiQuota: 150, monthly: 99, annual: 990 },
-  business: { includedProjects: 20, userLimit: 40, aiQuota: 2000, monthly: 1499, annual: 14990 },
-  enterprise: { includedProjects: null, userLimit: null, aiQuota: null, monthly: null, annual: null },
+  starter: { includedProjects: 1, userLimit: 20, aiQuota: 150, aiScansPerProject: 30, monthly: 99, annual: 990 },
+  business: { includedProjects: 20, userLimit: 40, aiQuota: 2000, aiScansPerProject: 100, monthly: 1499, annual: 14990 },
+  enterprise: { includedProjects: null, userLimit: null, aiQuota: null, aiScansPerProject: null, monthly: null, annual: null },
 };
 
 export const isPlanId = (x: any): x is PlanId =>
@@ -106,6 +107,11 @@ export function planCapacityPatch(plan: PlanId) {
     includedProjects: def.includedProjects,
     userLimit: def.userLimit,
     aiQuota: def.aiQuota,
+    // The cap that is actually enforced. aiQuota above stays written for orgs
+    // and tooling that predate this, but aiQuotaFor prefers the per-project
+    // rate: a Starter customer running ten projects needs ten projects' worth
+    // of scans, not the single flat number the old five-project plan had.
+    aiScansPerProject: def.aiScansPerProject,
     overageRate: OVERAGE_RATE,
     // A plan change resets included capacity to the plan base, so any extra
     // project slots bought under the previous plan no longer apply.

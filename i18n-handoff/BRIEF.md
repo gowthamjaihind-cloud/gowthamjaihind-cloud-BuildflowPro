@@ -6,20 +6,10 @@ text gets put back into the app.
 
 | file | rows | what it is |
 |---|---|---|
-| `ui-strings.csv` | 570 | Buttons, labels, table headings, placeholder text |
 | `wbs-template-names.csv` | 240 | Construction work-breakdown task names |
-| `pricing-nudge.csv` | 3 | A message telling a customer a cheaper plan exists |
 
-The first two are different jobs. `ui-strings.csv` is interface language.
-`wbs-template-names.csv` is trade vocabulary — the names of activities on a
+Only one file is left. `wbs-template-names.csv` is trade vocabulary — the names of activities on a
 building site — and is better done by someone who has been on one.
-
-`pricing-nudge.csv` is three rows and is urgent out of proportion to its size:
-the code that decides when to show the message is already written and tested, and
-the message is the only thing missing. One of the three carries placeholders in
-braces — `{n}`, `{current}` — which the app fills in with numbers. Keep the braces
-and the words inside them exactly as they are, or the customer sees `{savings}`
-on their screen.
 
 ---
 
@@ -120,3 +110,15 @@ CSV) and the column order. Tell us which rows you were unsure about.
 Tamil has been tried in this codebase three times and reverted each time: once a
 wrong word is sitting in the cell, a reviewer corrects it instead of translating
 it fresh, and the mistake survives. Blank cells produce better work.*
+
+
+## Why only one file now
+
+The web app's interface is English only — Tamil lives in the Telegram bot, which
+is complete and is where site engineers work. So the 570 interface strings and
+the pricing message that used to be here no longer need translating.
+
+These 240 do, and they are the ones that mattered most: applying a template
+WRITES these names into the project as its task list, and the BOT shows them to
+the engineer choosing what to log against. Seeded in English, the bot's Tamil
+breaks at the one place it is used.

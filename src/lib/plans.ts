@@ -8,7 +8,8 @@ export interface PlanDef {
   tag: string;
   includedProjects: number | null;
   userLimit: number | null;
-  aiQuota: number | null;
+  aiQuota: number | null; // legacy per-ORG cap, kept for orgs placed before the per-project switch
+  aiScansPerProject: number | null; // null = unlimited (Enterprise)
   monthly: number | null; // null = custom (Enterprise)
   annual: number | null; // total billed yearly
 }
@@ -21,9 +22,9 @@ export const OVERAGE_RATE = 99;
 // pricing is "₹99 per project per month" while the app keeps using the plan +
 // extra-slots vocabulary (and its existing bilingual copy) to say so.
 export const PLANS: Record<PlanId, PlanDef> = {
-  starter: { id: "starter", name: "Starter", tag: "For solo & small contractors", includedProjects: 1, userLimit: 20, aiQuota: 150, monthly: 99, annual: 990 },
-  business: { id: "business", name: "Business", tag: "For firms with an office", includedProjects: 20, userLimit: 40, aiQuota: 2000, monthly: 1499, annual: 14990 },
-  enterprise: { id: "enterprise", name: "Enterprise", tag: "For multi-site firms", includedProjects: null, userLimit: null, aiQuota: null, monthly: null, annual: null },
+  starter: { id: "starter", name: "Starter", tag: "For solo & small contractors", includedProjects: 1, userLimit: 20, aiQuota: 150, aiScansPerProject: 30, monthly: 99, annual: 990 },
+  business: { id: "business", name: "Business", tag: "For firms with an office", includedProjects: 20, userLimit: 40, aiQuota: 2000, aiScansPerProject: 100, monthly: 1499, annual: 14990 },
+  enterprise: { id: "enterprise", name: "Enterprise", tag: "For multi-site firms", includedProjects: null, userLimit: null, aiQuota: null, aiScansPerProject: null, monthly: null, annual: null },
 };
 
 export const PLAN_ORDER: PlanId[] = ["starter", "business", "enterprise"];

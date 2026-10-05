@@ -41,7 +41,8 @@ const MOVABLE = new Set(["active", "past_due"]);
 
 export type Transition =
   | { to: "past_due"; graceEndsAt: number; reason: string }
-  | { to: "expired"; reason: string };
+  | { to: "expired"; reason: string }
+  | { to: "canceled"; reason: string };
 
 /**
  * What should happen to this org right now, or null for "nothing".
@@ -66,6 +67,13 @@ export function nextLifecycleState(org: any, now = Date.now()): Transition | nul
     // `end <= 0` rather than `!end`: a negative timestamp is junk, and reading
     // it as "a date long past" would expire the org on corrupt data.
     if (end <= 0 || now < end) return null;
+    // A customer who asked to leave gets what they asked for at the end of the
+    // period they paid for -- no grace week, no dunning emails chasing money
+    // they already said they did not want to spend. Asking someone to cancel
+    // twice is the thing that makes people distrust a subscription.
+    if (org?.cancelAtPeriodEnd === true) {
+      return { to: "canceled", reason: "cancelled by the customer, effective at period end" };
+    }
     return { to: "past_due", graceEndsAt: end + GRACE_MS, reason: "paid period ended" };
   }
 
@@ -214,7 +222,14 @@ export function lifecycleSummary(org: any, now = Date.now()): LifecycleSummary {
       return { status, label: "Active with no period — nothing will ever expire it", endsAt: null, daysLeft: null, attention: true };
     }
     const d = days(periodEnd);
-    if (d > 0) return { status, label: `Active — renews in ${d} day${d === 1 ? "" : "s"}`, endsAt: periodEnd, daysLeft: d, attention: false };
+    if (d > 0) {
+      const label = org?.cancelAtPeriodEnd === true
+        ? `Cancelling — ends in ${d} day${d === 1 ? "" : "s"}`
+        : `Active — renews in ${d} day${d === 1 ? "" : "s"}`;
+      // A pending cancellation is worth a human looking, while there is still
+      // time to ask why.
+      return { status, label, endsAt: periodEnd, daysLeft: d, attention: org?.cancelAtPeriodEnd === true };
+    }
     // Between the period ending and the daily job running, an org sits here.
     return { status, label: "Period ended — will move to past due at the next run", endsAt: periodEnd, daysLeft: d, attention: true };
   }

@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { randomBytes } from "crypto";
+import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
 import { sendInviteEmail, sendRenewalEmail, sendSlotNoticeEmail, APP_URL } from "./email";
 import {
@@ -26,6 +27,7 @@ import {
 } from "./subscription";
 import { captureError } from "./sentry";
 import { seatState } from "./seats";
+import { aiQuotaFor } from "./ai/quota";
 import { CALLABLE_OPTS } from "./callable";
 
 // App operators who may provision orgs and manage subscriptions. Keep in sync
@@ -244,7 +246,11 @@ export const getOrgUsage = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, asyn
     overageProjects,
     overageCost: overageProjects * overageRate,
     aiUsed,
-    aiQuota: d.aiQuota ?? null,
+    // The cap actually enforced: per-project where the plan sets one, so this
+    // agrees with what chargeAiUsage will allow rather than with the legacy
+    // flat field still stored beside it.
+    aiQuota: aiQuotaFor(d, projectCount),
+    aiScansPerProject: d.aiScansPerProject ?? null,
 
     // Subscription lifecycle.
     lifecycle: lifecycleSummary(d, now),
@@ -318,6 +324,9 @@ export const runSubscriptionLifecycle = onSchedule(
         if (move) {
           const patch: any = { subscriptionStatus: move.to };
           if (move.to === "past_due") patch.graceEndsAt = move.graceEndsAt;
+          // The request has been honoured; clear it so a later re-subscribe is
+          // not cancelled again the moment its first period ends.
+          if (move.to === "canceled") patch.cancelAtPeriodEnd = FieldValue.delete();
           await orgDoc.ref.set(patch, { merge: true });
           moved++;
 
@@ -410,3 +419,54 @@ export const runSlotNotices = onSchedule(
     console.log(`runSlotNotices: ${notified} notified, of ${snap.size} with slots`);
   },
 );
+
+// ---- What the customer was charged ------------------------------------------
+//
+// Razorpay emails a receipt and the app showed nothing, so a contractor doing
+// GST filing had to go hunting in their inbox for a payment their own workspace
+// made no record of. This is Owner/Admin only and reads that org's orders only.
+export const getBillingHistory = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const orgId = String(request.data?.orgId || "").trim() ||
+    (userSnap.exists ? (userSnap.data() as any).currentOrgId : "");
+  if (!orgId) throw new HttpsError("failed-precondition", "You're not part of an organization.");
+
+  const orgSnap = await db.doc(`organizations/${orgId}`).get();
+  if (!orgSnap.exists) throw new HttpsError("not-found", "Organization not found.");
+  const members = (orgSnap.data() as any)?.members || {};
+  if (!["Owner", "Admin"].includes(members[uid])) {
+    throw new HttpsError("permission-denied", "Only an Owner or Admin can view billing history.");
+  }
+
+  // Paid orders only: an abandoned checkout is not a charge, and listing one as
+  // if it were is worse than listing nothing.
+  const snap = await db
+    .collection("razorpay_orders")
+    .where("orgId", "==", orgId)
+    .where("status", "==", "paid")
+    .get();
+
+  const rows = snap.docs
+    .map((d) => {
+      const o: any = d.data();
+      return {
+        orderId: o.orderId || d.id,
+        kind: o.kind === "slots" ? "slots" : "plan",
+        plan: o.plan || null,
+        period: o.period || null,
+        quantity: Number(o.quantity) || null,
+        // Paise on the order; rupees is what a human wants to read.
+        amount: Math.round((Number(o.amount) || 0) / 100),
+        listAmount: o.listAmount ? Math.round(Number(o.listAmount) / 100) : null,
+        credit: o.creditApplied ? Math.round(Number(o.creditApplied) / 100) : null,
+        paidAt: o.paidAt || null,
+      };
+    })
+    // Newest first. Sorted here rather than in the query so no composite index
+    // is needed for what is a short list per org.
+    .sort((a, b) => String(b.paidAt || "").localeCompare(String(a.paidAt || "")));
+
+  return { orgId, rows };
+});

@@ -127,3 +127,56 @@ export const applyScheduledPlanChanges = onSchedule(
     console.log(`applyScheduledPlanChanges: applied ${applied} of ${snap.size} due`);
   },
 );
+
+// ---- Cancelling ------------------------------------------------------------
+//
+// There was no way to leave. The only self-serve exit was downgrading to the
+// Free tier, and with the catalog collapsed to three paid plans even that is
+// gone -- so a customer who wanted out had to stop paying and let the
+// subscription lapse through past_due and a week of dunning emails chasing
+// money they had already decided not to spend. That reads as a dark pattern
+// even when nothing is hidden, and it is the kind of thing people tell other
+// contractors about.
+//
+// Cancelling takes effect at the END of the period already paid for, like a
+// downgrade: no refund, no early cut-off, and nothing is ever deleted.
+
+export const cancelSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  const orgId = await resolveOrgId(request);
+  const orgSnap = await assertOrgManager(request, orgId);
+  const org: any = orgSnap.data();
+
+  if (org.subscriptionStatus !== "active") {
+    throw new HttpsError(
+      "failed-precondition",
+      "There's no active subscription to cancel on this workspace.",
+    );
+  }
+
+  await db.doc(`organizations/${orgId}`).set(
+    {
+      cancelAtPeriodEnd: true,
+      cancelRequestedAt: Date.now(),
+      cancelRequestedBy: request.auth!.uid,
+      // A pending downgrade is moot once the whole thing is ending.
+      pendingPlanChange: FieldValue.delete(),
+    },
+    { merge: true },
+  );
+  return { canceled: true, effectiveAt: Number(org.currentPeriodEnd) || null };
+});
+
+/** Undo a pending cancellation. Nothing has happened yet, so this just clears it. */
+export const resumeSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  const orgId = await resolveOrgId(request);
+  await assertOrgManager(request, orgId);
+  await db.doc(`organizations/${orgId}`).set(
+    {
+      cancelAtPeriodEnd: FieldValue.delete(),
+      cancelRequestedAt: FieldValue.delete(),
+      cancelRequestedBy: FieldValue.delete(),
+    },
+    { merge: true },
+  );
+  return { resumed: true };
+});

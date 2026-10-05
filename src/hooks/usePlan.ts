@@ -19,6 +19,8 @@ export interface OrgPlan {
   subscriptionStatus?: string;
   currentPeriodEnd?: number;         // epoch ms; end of the paid cycle
   pendingPlanChange?: PendingPlanChange | null; // scheduled end-of-cycle downgrade
+  /** True once the customer has asked to cancel; takes effect at period end. */
+  cancelAtPeriodEnd?: boolean;
 }
 
 // Realtime plan/capacity for the signed-in user's current org. Absent
@@ -47,6 +49,7 @@ export function usePlan(): OrgPlan {
           subscriptionStatus: d.subscriptionStatus,
           currentPeriodEnd: typeof d.currentPeriodEnd === "number" ? d.currentPeriodEnd : undefined,
           pendingPlanChange: d.pendingPlanChange || null,
+          cancelAtPeriodEnd: d.cancelAtPeriodEnd === true,
         });
       },
       () => setState({ loading: false, overageRate: OVERAGE_RATE }),
