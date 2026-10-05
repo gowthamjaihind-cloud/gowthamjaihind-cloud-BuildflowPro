@@ -1,28 +1,29 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
-import { isPlanId, planPatch, PLANS, OVERAGE_RATE, PlanId } from "./plans";
+import { isPlanId, PLANS, OVERAGE_RATE, PlanId } from "./plans";
 import { sendWelcomeEmail, APP_URL } from "./email";
 import { syncOrgClaimsQuietly } from "./claims";
 import { CALLABLE_OPTS } from "./callable";
 
 const TRIAL_MS = 14 * 24 * 60 * 60 * 1000;
-// Only this plan is offered as a self-serve trial. Since there's a permanent
-// Free tier and upgrades are one click, a single entry-level trial is enough —
-// prospects sample the paid feature set on Starter and upgrade when they outgrow it.
+// The entry point. There is no permanent free tier any more -- the catalog is
+// Starter, Business, Enterprise -- so "start free" means this 14-day Starter
+// trial, no card. A customer who wants out afterwards simply stops paying: the
+// subscription lifecycle takes them through past_due, a grace week with
+// notices, then expired, and nothing is ever deleted.
 const TRIAL_PLAN = "starter";
 
 // Self-serve org creation: a signed-in user makes their own organization and is
 // dropped into it as Owner. Called from the onboarding screen.
-//  • plan "free"                 → permanent Free tier (instant).
-//  • paid plan + startTrial      → 30-day trial of that plan (no card).
-//  • paid plan without startTrial → created on Free; the client then runs
-//    Razorpay checkout to upgrade (the webhook activates the paid plan).
+//  • startTrial            → 14-day Starter trial, access immediately, no card.
+//  • otherwise (pay now)   → the org is created UNLINKED and the client runs
+//    Razorpay checkout; the webhook activates the plan and links the user.
 export const createOrganization = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const uid = request.auth.uid;
   const companyName = String(request.data?.companyName || "").trim();
-  const plan = String(request.data?.plan || "free");
+  const plan = String(request.data?.plan || TRIAL_PLAN);
   const startTrial = request.data?.startTrial === true;
   if (!companyName) throw new HttpsError("invalid-argument", "Enter a company / workspace name.");
   if (!isPlanId(plan)) throw new HttpsError("invalid-argument", "Unknown plan.");
@@ -50,10 +51,10 @@ export const createOrganization = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 
   // user is NOT linked to it yet, so no workspace access is granted until the
   // Razorpay payment succeeds (the payment activation links them). Free and
   // trial both grant access immediately.
-  const isPayNow = plan !== "free" && plan !== "enterprise" && !startTrial;
+  const isPayNow = plan !== "enterprise" && !startTrial;
 
   let state: any;
-  if (plan !== "free" && plan !== "enterprise" && startTrial) {
+  if (plan !== "enterprise" && startTrial) {
     // 14-day trial of the entry plan — full plan capacity, time-limited.
     const def = PLANS[plan as PlanId];
     state = {
@@ -66,9 +67,18 @@ export const createOrganization = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 
       trialEndsAt: Date.now() + TRIAL_MS,
     };
   } else {
-    // Free tier (also the placeholder state for a pay-now org until payment
-    // activation overwrites it with the paid plan).
-    state = planPatch("free", 0);
+    // Placeholder for a pay-now org until payment activation overwrites it with
+    // the real plan. It is deliberately capped at nothing and marked "free" as a
+    // STATUS (which is not a plan, and still exists for legacy orgs): the org is
+    // unlinked until payment lands, so nobody should reach it either way.
+    state = {
+      plan,
+      includedProjects: 0,
+      userLimit: PLANS[plan as PlanId].userLimit,
+      aiQuota: 0,
+      overageRate: OVERAGE_RATE,
+      subscriptionStatus: "free",
+    };
   }
 
   // A pay-now org is unlinked (no access) until payment lands. Mark it so the
@@ -106,7 +116,7 @@ export const createOrganization = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 
 
   return {
     orgId,
-    plan: state.plan || "free",
+    plan: state.plan || TRIAL_PLAN,
     subscriptionStatus: state.subscriptionStatus || "free",
     needsPayment: isPayNow,
   };

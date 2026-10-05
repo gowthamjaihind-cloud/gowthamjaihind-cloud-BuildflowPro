@@ -32,7 +32,7 @@ import { OperatorPanel } from "./settings/OperatorPanel";
 import { PrivacyPanel } from "./settings/PrivacyPanel";
 import { PlanSummary } from "./settings/PlanSummary";
 import { TelegramIntegration } from "./TelegramIntegration";
-import { useTranslation, useL } from "../i18n";
+import { useTranslation } from "../i18n";
 
 const SUPER_ADMIN_EMAILS = ["gowtham.jaihind@gmail.com"];
 
@@ -58,7 +58,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   currentUser,
 }) => {
   const { t } = useTranslation();
-  const L = useL();
   const [activeTab, setActiveTab] = useState<SettingsSection>("organization");
   const companyName = useUIStore((state) => state.companyName);
   const setCompanyName = useUIStore((state) => state.setCompanyName);
@@ -114,7 +113,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 icon: LayoutDashboard,
               },
               { id: "team", label: t("settings.tabTeam"), icon: Users },
-              { id: "masters", label: L("Master data", "மாஸ்டர் தரவு"), icon: Database },
+              { id: "masters", label: "Master data", icon: Database },
               { id: "telegram", label: t("settings.tabTelegram"), icon: TelegramLogo },
               ...(SUPER_ADMIN_EMAILS.includes((currentUser?.email || "").toLowerCase())
                 ? [{ id: "operator", label: t("settings.tabOperator"), icon: Shield }]
@@ -176,7 +175,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             {activeTab === "organization" && (
               <section className="soft-card p-8 squircle-24">
                 <h3 className="text-xl font-bold text-ink mb-6">
-                  {L("Default Organization","இயல்புநிலை நிறுவனம்")}
+                  {"Default Organization"}
                 </h3>
 
                 {!orgId && !setupDone && (
@@ -184,9 +183,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="flex items-start gap-3">
                       <Shield className="w-5 h-5 text-warning shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <div className="font-bold text-ink">{L("Set up your organization","உங்கள் நிறுவனத்தை அமைக்கவும்")}</div>
+                        <div className="font-bold text-ink">{"Set up your organization"}</div>
                         <p className="text-sm text-ink-muted mt-1">
-                          {L("Your data isn't linked to an organization yet, so it can't be secured per-tenant. This one-time step creates your organization, moves a copy of your existing data under it, and makes you the Owner. Your current data is left untouched as a backup.","உங்கள் தரவு இன்னும் ஒரு நிறுவனத்துடன் இணைக்கப்படவில்லை, எனவே அதை பாதுகாக்க முடியாது. இந்த ஒரு-முறை படி உங்கள் நிறுவனத்தை உருவாக்கி, உங்கள் தற்போதைய தரவின் நகலை அதன் கீழ் நகர்த்தி, உங்களை உரிமையாளராக்குகிறது. உங்கள் தற்போதைய தரவு காப்புப்பிரதியாக அப்படியே விடப்படும்.")}
+                          {"Your data isn't linked to an organization yet, so it can't be secured per-tenant. This one-time step creates your organization, moves a copy of your existing data under it, and makes you the Owner. Your current data is left untouched as a backup."}
                         </p>
                         {setupError && (
                           <p className="text-sm text-danger mt-2">{setupError}</p>
@@ -199,7 +198,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               const res = await callSetupOrganization(companyName || undefined);
                               setSetupDone({ projects: res.projects, docs: res.docs });
                             } catch (e: any) {
-                              setSetupError(e?.message || L("Couldn't set up the organization.","நிறுவனத்தை அமைக்க முடியவில்லை."));
+                              setSetupError(e?.message || "Couldn't set up the organization.");
                             } finally {
                               setSettingUp(false);
                             }
@@ -207,7 +206,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           disabled={settingUp}
                           className="mt-3 px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50"
                         >
-                          {settingUp ? L("Setting up… (may take a minute)","அமைக்கிறது… (ஒரு நிமிடம் ஆகலாம்)") : L("Set up organization & migrate data","நிறுவனத்தை அமைத்து தரவை நகர்த்து")}
+                          {settingUp ? "Setting up… (may take a minute)" : "Set up organization & migrate data"}
                         </button>
                       </div>
                     </div>
@@ -218,9 +217,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="flex items-start gap-3">
                       <Shield className="w-5 h-5 text-success shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <div className="font-bold text-ink">{L("Organization created","நிறுவனம் உருவாக்கப்பட்டது")}</div>
+                        <div className="font-bold text-ink">{"Organization created"}</div>
                         <p className="text-sm text-ink-muted mt-1">
-                          {L("Migrated", "நகர்த்தப்பட்டது")} {setupDone.projects} {L("project(s) (", "செயல்திட்டம் (")}{setupDone.docs} {L("records) and made you the Owner. Final step: run the", "பதிவுகள்) மற்றும் உங்களை உரிமையாளராக்கியது. இறுதிப் படி: குத்தகைதாரர் தனிமைப்படுத்தலை இயக்க GitHub இல்")} <b>“Deploy Firestore Rules”</b> {L("action on GitHub to switch on tenant isolation. You may need to reload the app.", "செயலை இயக்கவும். பயன்பாட்டை மீண்டும் ஏற்ற வேண்டியிருக்கலாம்.")}
+                          {"Migrated"} {setupDone.projects} {"project(s) ("}{setupDone.docs} {"records) and made you the Owner. Final step: run the"} <b>“Deploy Firestore Rules”</b> {"action on GitHub to switch on tenant isolation. You may need to reload the app."}
                         </p>
                       </div>
                     </div>
@@ -232,9 +231,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="flex items-start gap-3">
                       <Shield className="w-5 h-5 text-warning shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <div className="font-bold text-ink">{L("Secure this organization","இந்த நிறுவனத்தைப் பாதுகாக்கவும்")}</div>
+                        <div className="font-bold text-ink">{"Secure this organization"}</div>
                         <p className="text-sm text-ink-muted mt-1">
-                          {L("Claim ownership so only your team can access this organization's data. Do this once, then deploy the updated security rules.","உங்கள் அணி மட்டுமே இந்த நிறுவனத்தின் தரவை அணுகும்படி உரிமையைக் கோரவும். இதை ஒருமுறை செய்து, பின்னர் புதுப்பிக்கப்பட்ட பாதுகாப்பு விதிகளைப் பயன்படுத்தவும்.")}
+                          {"Claim ownership so only your team can access this organization's data. Do this once, then deploy the updated security rules."}
                         </p>
                         {claimError && (
                           <p className="text-sm text-danger mt-2">{claimError}</p>
@@ -246,7 +245,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             try {
                               await claim();
                             } catch (e: any) {
-                              setClaimError(e?.message || L("Couldn't claim the organization.","நிறுவனத்தைக் கோர முடியவில்லை."));
+                              setClaimError(e?.message || "Couldn't claim the organization.");
                             } finally {
                               setClaiming(false);
                             }
@@ -254,7 +253,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           disabled={claiming}
                           className="mt-3 px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50"
                         >
-                          {claiming ? L("Claiming…","கோருகிறது…") : L("Claim organization","நிறுவனத்தைக் கோரு")}
+                          {claiming ? "Claiming…" : "Claim organization"}
                         </button>
                       </div>
                     </div>
@@ -265,8 +264,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <Shield className="w-5 h-5 text-success shrink-0" />
                     <span className="text-sm font-semibold text-ink">
                       {isMember
-                        ? L("Organization secured — access is limited to its members.","நிறுவனம் பாதுகாக்கப்பட்டது — அணுகல் அதன் உறுப்பினர்களுக்கு மட்டுமே.")
-                        : L("This organization is owned by another account.","இந்த நிறுவனம் மற்றொரு கணக்கால் சொந்தமானது.")}
+                        ? "Organization secured — access is limited to its members."
+                        : "This organization is owned by another account."}
                     </span>
                   </div>
                 )}
@@ -274,7 +273,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-semibold text-ink mb-2">
-                      {L("Company Name","நிறுவனப் பெயர்")}
+                      {"Company Name"}
                     </label>
                     {isEditingCompany ? (
                       <div className="flex items-center gap-2">
@@ -292,13 +291,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           }}
                           className="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-deep transition-colors"
                         >
-                          {L("Save","சேமி")}
+                          {"Save"}
                         </button>
                       </div>
                     ) : (
                       <div className="flex items-center justify-between bg-surface border border-divider px-4 py-3 rounded-xl">
                         <span className="text-ink font-semibold">
-                          {companyName || L("No Company Name Set","நிறுவனப் பெயர் அமைக்கப்படவில்லை")}
+                          {companyName || "No Company Name Set"}
                         </span>
                         <button
                           onClick={() => {
@@ -307,14 +306,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           }}
                           className="text-ink-muted hover:text-primary transition-colors flex items-center gap-2 text-sm font-bold"
                         >
-                          <Edit2 className="w-4 h-4" /> {L("Edit","திருத்து")}
+                          <Edit2 className="w-4 h-4" /> {"Edit"}
                         </button>
                       </div>
                     )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-ink mb-2">
-                      {L("Company GSTIN","நிறுவன GSTIN")}
+                      {"Company GSTIN"}
                     </label>
                     <input
                       type="text"
@@ -325,13 +324,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="e.g. 29ABCDE1234F1Z5"
                     />
                     <p className="text-[10px] text-ink-muted mt-1.5">
-                      {L("Used to validate vendor invoices and split CGST/SGST vs IGST.","சப்ளையர் விலைப்பட்டியல்களைச் சரிபார்க்கவும், CGST/SGST vs IGST ஐப் பிரிக்கவும் பயன்படுகிறது.")}
-                      {draftGstin.length >= 2 && ` ${L("State code","மாநிலக் குறியீடு")}: ${draftGstin.slice(0, 2)}.`}
+                      {"Used to validate vendor invoices and split CGST/SGST vs IGST."}
+                      {draftGstin.length >= 2 && ` ${"State code"}: ${draftGstin.slice(0, 2)}.`}
                     </p>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-ink mb-2">
-                      {L("Base Currency","அடிப்படை நாணயம்")}
+                      {"Base Currency"}
                     </label>
                     <select className="w-full bg-surface border border-divider px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-ink appearance-none">
                       <option value="INR">INR (₹)</option>
@@ -346,9 +345,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         const originalText = target.innerHTML;
                         try {
                           await saveOrgSettings({ gstin: draftGstin });
-                          target.innerHTML = L("Saved!","சேமிக்கப்பட்டது!");
+                          target.innerHTML = "Saved!";
                         } catch {
-                          target.innerHTML = L("Save failed","சேமிப்பு தோல்வி");
+                          target.innerHTML = "Save failed";
                         }
                         setTimeout(() => {
                           target.innerHTML = originalText;
@@ -356,7 +355,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       }}
                       className="bg-primary text-on-primary px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-primary-deep transition-colors apple-transition active:scale-95"
                     >
-                      <Save className="w-5 h-5" /> {L("Save Configuration","அமைப்பைச் சேமி")}
+                      <Save className="w-5 h-5" /> {"Save Configuration"}
                     </button>
                   </div>
                 </div>

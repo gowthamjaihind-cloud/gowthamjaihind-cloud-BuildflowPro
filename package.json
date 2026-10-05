@@ -25,7 +25,8 @@
     "film:walkthrough": "npm run endcard && node marketing/films/build-voice.mjs walkthrough && npm run walkthrough",
     "voice:check": "python3 marketing/voice/pronounce.py",
     "brand:check": "node marketing/brand.test.mjs",
-    "endcard": "cd marketing/remotion && npx remotion still WalkEndCard public/walk-endcard.png --frame=60 --browser-executable=${CHROME_HEADLESS_SHELL:-/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell}"
+    "endcard": "cd marketing/remotion && npx remotion still WalkEndCard public/walk-endcard.png --frame=60 --browser-executable=${CHROME_HEADLESS_SHELL:-/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell}",
+    "i18n:handoff": "node scripts/i18n-handoff.mjs"
   },
   "dependencies": {
     "@fontsource/noto-sans-tamil": "^5.3.0",

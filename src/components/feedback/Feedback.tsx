@@ -96,7 +96,7 @@ const Confirm: React.FC = () => {
   // of them are -- the button should name the act it performs.
   const affirm =
     confirm.confirmLabel ??
-    (/\b(delete|remove|நீக்க)/i.test(confirm.title) ? t("feedback.delete") : t("feedback.confirm"));
+    (/\b(delete|remove)/i.test(confirm.title) ? t("feedback.delete") : t("feedback.confirm"));
 
   return (
     <div className="fixed inset-0 z-[310] flex items-center justify-center p-4">

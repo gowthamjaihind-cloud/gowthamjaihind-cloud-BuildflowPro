@@ -19,7 +19,6 @@ import { useProjectsQuery } from "../hooks/queries";
 import { CreateProjectModal } from "../features/projects/components/CreateProjectModal";
 import { EditProjectModal } from "../features/projects/components/EditProjectModal";
 import { SyncStatus } from "../components/SyncStatus";
-import { TelegramBotStatus } from "../components/TelegramBotStatus";
 import { OrgSwitcher } from "../components/OrgSwitcher";
 import { useTranslation } from "../i18n";
 import { Tooltip } from "../components/Tooltip";
@@ -195,7 +194,6 @@ export const PortfolioPage: React.FC = () => {
               <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                 <OrgSwitcher />
                 <SyncStatus />
-                <TelegramBotStatus />
                 <Tooltip label={t("portfolio.globalSettings")}>
                   <button
                     onClick={() => setViewingSettings(true)}

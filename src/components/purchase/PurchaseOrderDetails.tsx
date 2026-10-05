@@ -19,7 +19,6 @@ import { doc, updateDoc, deleteDoc, collection, query, where, getDocs } from "fi
 import { db } from "../../firebase";
 import { GoodsReceiptForm } from "./GoodsReceiptForm";
 import { GoodsReceiptDetails } from "./GoodsReceiptDetails";
-import { useL } from "../../i18n";
 import { confirmDialog, toast } from "../../lib/feedback";
 import { Tooltip } from "../Tooltip";
 import { DialogBehaviour } from "../../lib/useDialog";
@@ -32,12 +31,11 @@ interface PurchaseOrderDetailsProps {
 }
 
 export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, projectId, onClose, onEdit }) => {
-  const L = useL();
   const statusLabel = (st: string) => ({
-    Draft: L("Draft", "வரைவு"),
-    Approved: L("Approved", "அங்கீகரிக்கப்பட்டது"),
-    "Partially Received": L("Partially Received", "பகுதி பெறப்பட்டது"),
-    Closed: L("Closed", "மூடப்பட்டது"),
+    Draft: "Draft",
+    Approved: "Approved",
+    "Partially Received": "Partially Received",
+    Closed: "Closed",
   } as Record<string, string>)[st] || st;
   const user = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
@@ -65,7 +63,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
       onClose();
     } catch (e) {
       console.error(e);
-      toast.error(L("Failed to approve PO","கொள்முதல் ஆணையை அங்கீகரிக்க முடியவில்லை"));
+      toast.error("Failed to approve PO");
     } finally {
       setIsApproving(false);
     }
@@ -73,7 +71,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
 
   const handleDelete = async () => {
     if (!canEditOrDelete) return;
-    if (!(await confirmDialog({ title: L("Delete this Purchase Order?","இந்த கொள்முதல் ஆணையை நீக்கவா?") }))) return;
+    if (!(await confirmDialog({ title: "Delete this Purchase Order?" }))) return;
     setIsDeleting(true);
     try {
       await deleteDoc(poRef);
@@ -81,7 +79,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
       onClose();
     } catch (e) {
       console.error(e);
-      toast.error(L("Failed to delete PO","கொள்முதல் ஆணையை நீக்க முடியவில்லை"));
+      toast.error("Failed to delete PO");
     } finally {
       setIsDeleting(false);
     }
@@ -134,17 +132,17 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
            </div>
            <div className="flex items-center gap-2">
              {po.status === "Draft" && canEditOrDelete && onEdit && (
-               <Tooltip label={L("Edit draft PO","வரைவு கொள்முதல் ஆணையைத் திருத்து")}>
+               <Tooltip label={"Edit draft PO"}>
                  <button
                    onClick={() => onEdit(po)}
                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
                   
                  >
-                   <Edit3 className="w-3.5 h-3.5 text-ink/80" /> {L("Edit","திருத்து")}
+                   <Edit3 className="w-3.5 h-3.5 text-ink/80" /> {"Edit"}
                  </button>
                </Tooltip>
              )}
-             <Tooltip label={L("Export CSV","CSV எக்ஸ்போர்ட்")}>
+             <Tooltip label={"Export CSV"}>
                <button
                  onClick={handleExportCSV}
                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-divider rounded-lg transition text-ink text-[10px] font-bold uppercase tracking-wider border border-divider cursor-pointer"
@@ -153,7 +151,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                  <Download className="w-3.5 h-3.5 text-ink/80" /> CSV
                </button>
              </Tooltip>
-             <Tooltip label={L("Export PDF","PDF எக்ஸ்போர்ட்")}>
+             <Tooltip label={"Export PDF"}>
                <button
                  onClick={handleExportPDF}
                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-deep text-on-primary rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
@@ -162,7 +160,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                  <Download className="w-3.5 h-3.5" /> PDF
                </button>
              </Tooltip>
-             <button aria-label={L("Close","மூடு")} type="button" onClick={onClose} className="p-2 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer ml-1">
+             <button aria-label={"Close"} type="button" onClick={onClose} className="p-2 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer ml-1">
                <X className="w-5 h-5" />
              </button>
            </div>
@@ -171,21 +169,21 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
          <div className="flex-1 overflow-y-auto p-6 space-y-8">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 bg-panel p-6 rounded-2xl border border-divider">
                <div>
-                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">{L("Date","தேதி")}</p>
+                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">{"Date"}</p>
                   <p className="text-sm font-semibold text-ink font-mono">{po.orderDate}</p>
                </div>
                {po.expectedDeliveryDate && (
                   <div>
-                    <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">{L("Expected","எதிர்பார்க்கப்படுவது")}</p>
+                    <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">{"Expected"}</p>
                     <p className="text-sm font-semibold text-primary font-mono">{po.expectedDeliveryDate}</p>
                   </div>
                )}
                <div>
-                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">{L("Created By","உருவாக்கியவர்")}</p>
+                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">{"Created By"}</p>
                   <p className="text-sm font-semibold text-ink">{po.createdByName}</p>
                </div>
                <div>
-                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">{L("Status","நிலை")}</p>
+                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1.5">{"Status"}</p>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                      po.status === 'Draft' ? 'bg-page text-ink-muted' :
                      po.status === 'Approved' ? 'bg-divider text-ink-muted' :
@@ -198,16 +196,16 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
             </div>
 
             <div>
-               <h3 className="text-xs font-black text-ink uppercase tracking-widest mb-4 border-b border-divider pb-2">{L("Line Items","வரி உருப்படிகள்")}</h3>
+               <h3 className="text-xs font-black text-ink uppercase tracking-widest mb-4 border-b border-divider pb-2">{"Line Items"}</h3>
                <div className="bg-panel rounded-2xl border border-divider overflow-hidden">
                   <table className="w-full text-left">
                      <thead>
                         <tr className="bg-divider/30 text-[10px] font-bold text-ink-muted uppercase tracking-widest border-b border-divider">
-                           <th className="p-4">{L("Item","உருப்படி")}</th>
-                           <th className="p-4 text-right">{L("Qty","அளவு")}</th>
-                           <th className="p-4 text-right">{L("Received","பெற்றது")}</th>
-                           <th className="p-4 text-right">{L("Rate","விலை")}</th>
-                           <th className="p-4 text-right">{L("Amount","தொகை")}</th>
+                           <th className="p-4">{"Item"}</th>
+                           <th className="p-4 text-right">{"Qty"}</th>
+                           <th className="p-4 text-right">{"Received"}</th>
+                           <th className="p-4 text-right">{"Rate"}</th>
+                           <th className="p-4 text-right">{"Amount"}</th>
                         </tr>
                      </thead>
                      <tbody className="text-sm font-medium">
@@ -222,7 +220,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                         ))}
                      </tbody>
                      <tfoot className="bg-warning/12 border-t border-warning/25">
-                        {([["loading", L("Loading charges","ஏற்றுதல் கட்டணம்")], ["transport", L("Transport charges","போக்குவரத்து கட்டணம்")], ["other", L("Other charges","பிற கட்டணங்கள்")]] as const).map(([key, label]) =>
+                        {([["loading", "Loading charges"], ["transport", "Transport charges"], ["other", "Other charges"]] as const).map(([key, label]) =>
                            po.charges?.[key] ? (
                               <tr key={key}>
                                  <td colSpan={4} className="px-4 py-1.5 text-right text-[10px] font-bold text-warning/80 uppercase tracking-widest">{label}</td>
@@ -231,7 +229,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                            ) : null,
                         )}
                         <tr>
-                           <td colSpan={4} className="p-4 text-right text-[10px] font-black text-primary uppercase tracking-widest">{L("Total Amount","மொத்தத் தொகை")}</td>
+                           <td colSpan={4} className="p-4 text-right text-[10px] font-black text-primary uppercase tracking-widest">{"Total Amount"}</td>
                            <td className="p-4 text-right text-lg font-black font-mono text-primary tracking-tight">₹{po.totalAmount.toLocaleString("en-IN")}</td>
                         </tr>
                      </tfoot>
@@ -240,7 +238,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                
                {po.notes && (
                   <div className="mt-6 p-4 bg-yellow-50/50 border border-primary/20 rounded-xl">
-                     <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1.5">{L("Notes","குறிப்புகள்")}</p>
+                     <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1.5">{"Notes"}</p>
                      <p className="text-sm font-medium text-ink/80">{po.notes}</p>
                   </div>
                )}
@@ -250,19 +248,19 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
          <div className="p-6 border-t border-divider bg-panel flex flex-wrap justify-end gap-4 shrink-0">
             {(po.status === "Approved" || po.status === "Partially Received") && (
                <button onClick={() => setShowGRNForm(true)} className="px-6 py-3 bg-success hover:bg-success text-on-success text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(5,150,105,0.2)]">
-                 <PackagePlus className="w-4 h-4" /> {L("Record Goods Receipt","பொருள் ரசீதைப் பதிவு செய்")}
+                 <PackagePlus className="w-4 h-4" /> {"Record Goods Receipt"}
                </button>
             )}
             {canEditOrDelete && (
-               <Tooltip label={L("Delete","நீக்கு")}>
-                 <button aria-label={L("Delete","நீக்கு")} onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-danger/8 hover:bg-danger/15 text-danger text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
-                   {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} {po.status === "Draft" ? L("Delete Draft","வரைவை நீக்கு") : L("Delete PO","ஆணையை நீக்கு")}
+               <Tooltip label={"Delete"}>
+                 <button aria-label={"Delete"} onClick={handleDelete} disabled={isDeleting} className="px-6 py-3 bg-danger/8 hover:bg-danger/15 text-danger text-xs font-bold uppercase tracking-widest rounded-full transition flex items-center gap-2 cursor-pointer">
+                   {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} {po.status === "Draft" ? "Delete Draft" : "Delete PO"}
                  </button>
                </Tooltip>
             )}
             {po.status === "Draft" && isAdminOrOwner && (
                <button onClick={handleApprove} disabled={isApproving} className="px-6 py-3 bg-primary hover:bg-primary-deep text-on-primary text-xs font-bold uppercase tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer shadow-[0_4px_20px_rgba(79,70,229,0.2)]">
-                 {isApproving ? <Loader2 className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4" />} {L("Approve Order","ஆணையை அங்கீகரி")}
+                 {isApproving ? <Loader2 className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4" />} {"Approve Order"}
                </button>
             )}
          </div>

@@ -6,13 +6,11 @@ import {
   CircleNotch as Loader2,
 } from "@phosphor-icons/react";
 import { useMyOrgs } from "../hooks/useMyOrgs";
-import { useL } from "../i18n";
 import { SkeletonRows } from "./Skeleton";
 
 // Dropdown to switch the active organization. Renders nothing unless the user
 // belongs to more than one org, so single-org users never see clutter.
 export const OrgSwitcher: React.FC<{ className?: string }> = ({ className }) => {
-  const L = useL();
   const { orgs, currentOrgId, loading, switching, switchTo } = useMyOrgs();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -37,18 +35,18 @@ export const OrgSwitcher: React.FC<{ className?: string }> = ({ className }) => 
         className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-divider hover:bg-panel transition-colors text-sm font-semibold text-ink max-w-[220px]"
       >
         {switching ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <Buildings className="w-4 h-4 text-primary shrink-0" />}
-        <span className="truncate">{current?.name || L("Organization","நிறுவனம்")}</span>
+        <span className="truncate">{current?.name || "Organization"}</span>
         <CaretDown className="w-3.5 h-3.5 text-ink-muted shrink-0" />
       </button>
 
       {open && (
         <div className="absolute right-0 mt-2 w-64 bg-surface border border-divider rounded-2xl shadow-xl z-[120] overflow-hidden">
           <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-ink-muted border-b border-divider">
-            {L("Switch organization","நிறுவனத்தை மாற்று")}
+            {"Switch organization"}
           </div>
           {loading && (
             <div className="p-3">
-              <SkeletonRows rows={2} label={L("Loading…", "ஏற்றுகிறது…")} />
+              <SkeletonRows rows={2} label={"Loading…"} />
             </div>
           )}
           {orgs.map((o) => (

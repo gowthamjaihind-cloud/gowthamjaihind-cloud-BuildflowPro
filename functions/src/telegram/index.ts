@@ -22,10 +22,16 @@ export const telegramStatus = onRequest({
     region: "asia-southeast1",
     secrets: [BOT_TOKEN],
     cors: true,
-    // Keep one instance warm — the app polls this every 15s for the
-    // "Bot Online" badge, so cold starts here make the whole Telegram
-    // section of the app feel slow.
-    minInstances: 1,
+    // NO warm instance. This used to be minInstances: 1, which reserves a Cloud
+    // Run instance 24/7 and bills its CPU and memory whether or not a request
+    // ever arrives -- the one cost in this project with no free tier. It ran
+    // continuously on an unlaunched app, for a status badge, and was the largest
+    // line on the bill.
+    //
+    // The cold start it was hiding was only ever felt by that badge, which no
+    // longer polls: it is rendered once in the Telegram settings panel with a
+    // refresh button, rather than every 15 seconds from the app shell.
+    minInstances: 0,
 }, async (_req, res) => {
     try {
         const tg = new TelegramApi(BOT_TOKEN.value());

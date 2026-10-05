@@ -1,8 +1,33 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { randomBytes } from "crypto";
+import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
-import { sendInviteEmail, APP_URL } from "./email";
-import { isPlanId, OVERAGE_RATE, PlanId, planPatch, PLANS } from "./plans";
+import { sendInviteEmail, sendRenewalEmail, sendSlotNoticeEmail, APP_URL } from "./email";
+import {
+  isPlanId,
+  OVERAGE_RATE,
+  PlanId,
+  planPatch,
+  PLANS,
+  effectiveProjectCap,
+  activeSlots,
+  planAdvice,
+  BUSINESS_SOFT_CAP,
+} from "./plans";
+import {
+  lifecycleSummary,
+  nextLifecycleState,
+  renewalNoticeDue,
+  noticeSentPatch,
+  slotNoticeDue,
+  slotNoticeSentPatch,
+  SLOT_NOTICE_DAYS,
+  DAY_MS,
+} from "./subscription";
+import { captureError } from "./sentry";
+import { seatState } from "./seats";
+import { aiQuotaFor } from "./ai/quota";
 import { CALLABLE_OPTS } from "./callable";
 
 // App operators who may provision orgs and manage subscriptions. Keep in sync
@@ -115,9 +140,13 @@ export const setSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, 
   let patch: any;
   switch (action) {
     case "activate":
+      // `plan` is deliberately NOT written here. It used to be set to "paid",
+      // which is not a PlanId, so isPlanId() rejected it and scheduleDowngrade
+      // refused the org with "This organization's plan can't be changed here" --
+      // every hand-activated customer lost self-serve plan changes. Use
+      // setOrgPlan to place an org on a plan; this only moves the subscription.
       patch = {
         subscriptionStatus: "active",
-        plan: "paid",
         currentPeriodEnd: now + months * 30 * 24 * 60 * 60 * 1000,
       };
       break;
@@ -128,7 +157,8 @@ export const setSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, 
       patch = { subscriptionStatus: "expired" };
       break;
     case "internal":
-      patch = { subscriptionStatus: "internal", plan: "internal" };
+      // Same reason: "internal" is not a PlanId either.
+      patch = { subscriptionStatus: "internal" };
       break;
     default:
       throw new HttpsError("invalid-argument", "Unknown action.");
@@ -188,14 +218,24 @@ export const getOrgUsage = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, asyn
   if (!snap.exists) throw new HttpsError("not-found", "Organization not found.");
   const d: any = snap.data() || {};
 
+  const now = Date.now();
   const month = new Date().toISOString().slice(0, 7);
   const usageSnap = await orgRef.collection("usage").doc(month).get();
   const aiUsed = usageSnap.exists ? Number((usageSnap.data() as any).aiCalls) || 0 : 0;
 
   const projectCount = (await orgRef.collection("projects").count().get()).data().count;
-  const included = d.includedProjects ?? null;
+  // Effective cap, so live project slots count and lapsed ones do not --
+  // reporting d.includedProjects raw here would disagree with projectCapState.
+  const included = effectiveProjectCap(d) ?? null;
   const overageProjects = included === null ? 0 : Math.max(0, projectCount - included);
   const overageRate = Number(d.overageRate) || OVERAGE_RATE;
+
+  // Everything the lifecycle, seat and slot work added is surfaced here, or the
+  // operator cannot answer the support call it generates. Before this, the panel
+  // rendered `plan || subscriptionStatus`, so for any org WITH a plan the status
+  // was invisible -- and status is the whole question.
+  const seats = seatState(d, { adding: 0 });
+  const liveSlots = activeSlots(d, now);
 
   return {
     plan: d.plan || null,
@@ -206,6 +246,227 @@ export const getOrgUsage = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, asyn
     overageProjects,
     overageCost: overageProjects * overageRate,
     aiUsed,
-    aiQuota: d.aiQuota ?? null,
+    // The cap actually enforced: per-project where the plan sets one, so this
+    // agrees with what chargeAiUsage will allow rather than with the legacy
+    // flat field still stored beside it.
+    aiQuota: aiQuotaFor(d, projectCount),
+    aiScansPerProject: d.aiScansPerProject ?? null,
+
+    // Subscription lifecycle.
+    lifecycle: lifecycleSummary(d, now),
+    currentPeriodEnd: Number(d.currentPeriodEnd) || null,
+    graceEndsAt: Number(d.graceEndsAt) || null,
+    trialEndsAt: Number(d.trialEndsAt) || null,
+    // Whether the customer was actually warned, which is the second question.
+    renewalNoticeSent: d.renewalNoticeSent || null,
+
+    // Seats — enforced since the invite change, and previously unreportable.
+    seatsUsed: seats.taken,
+    userLimit: seats.limit,
+
+    // Project slots. planIncluded is the plan's OWN cap, so an operator can see
+    // how much of the effective cap is a slot window about to close.
+    planIncluded: typeof d.includedProjects === "number" ? d.includedProjects : d.includedProjects ?? null,
+
+    // Is this org on the wrong plan for what it runs? Starter is uncapped, so a
+    // customer past the crossover quietly pays more than Business would cost --
+    // and a Business org past the soft cap is an Enterprise conversation rather
+    // than a silent transaction.
+    advice: planAdvice(d.plan, projectCount),
+    businessSoftCap: BUSINESS_SOFT_CAP,
+    activeSlots: liveSlots,
+    purchasedSlots: Math.floor(Number(d.purchasedSlots) || 0),
+    slotsExpireAt: Number(d.slotsExpireAt) || null,
+    slotNoticeSent: d.slotNoticeSent || null,
   };
+});
+
+// ---- The job that makes a paid period actually end --------------------------
+//
+// Before this, nothing compared currentPeriodEnd to the clock. `active` meant
+// access forever, and the only thing that ever gated anyone was trial expiry.
+// See functions/src/subscription.ts for the state machine and why it is
+// forgiving; the rules there are pure and tested, this just applies them.
+
+/** The Owner's email, for billing mail. Falls back to any Admin. */
+async function billingContact(orgData: any): Promise<string | null> {
+  const members: Record<string, string> = orgData?.members || {};
+  const pick = (role: string) => Object.keys(members).find((uid) => members[uid] === role);
+  const uid = pick("Owner") || pick("Admin");
+  if (!uid) return null;
+  const snap = await db.doc(`users/${uid}`).get();
+  const email = snap.exists ? (snap.data() as any)?.email : null;
+  return typeof email === "string" && email.includes("@") ? email : null;
+}
+
+export const runSubscriptionLifecycle = onSchedule(
+  {
+    schedule: "45 4 * * *", // after the 03:30 cleanup and 04:15 plan changes
+    timeZone: "Asia/Kolkata",
+    region: "asia-southeast1",
+  },
+  async () => {
+    const now = Date.now();
+    // Only these two statuses can move. Everything else -- grandfathered,
+    // internal, free, trialing, canceled, expired -- is left alone, so this
+    // query is also the safety boundary.
+    const snap = await db
+      .collection("organizations")
+      .where("subscriptionStatus", "in", ["active", "past_due"])
+      .get();
+
+    let moved = 0;
+    let notified = 0;
+    for (const orgDoc of snap.docs) {
+      const data: any = orgDoc.data();
+      try {
+        const move = nextLifecycleState(data, now);
+        if (move) {
+          const patch: any = { subscriptionStatus: move.to };
+          if (move.to === "past_due") patch.graceEndsAt = move.graceEndsAt;
+          // The request has been honoured; clear it so a later re-subscribe is
+          // not cancelled again the moment its first period ends.
+          if (move.to === "canceled") patch.cancelAtPeriodEnd = FieldValue.delete();
+          await orgDoc.ref.set(patch, { merge: true });
+          moved++;
+
+          // The transition itself is the trigger, which is what keeps this to
+          // one email: on the next run the status is past_due and
+          // nextLifecycleState returns null until grace actually ends.
+          if (move.to === "past_due") {
+            const to = await billingContact(data);
+            await sendRenewalEmail({
+              to,
+              companyName: data.companyName || "Your workspace",
+              link: APP_URL,
+              daysLeft: 0,
+              graceDaysLeft: Math.max(0, Math.ceil((move.graceEndsAt - now) / DAY_MS)),
+            });
+          }
+          continue;
+        }
+
+        // Still inside the paid period: warn before it ends.
+        const due = renewalNoticeDue(data, now);
+        if (due !== null) {
+          const to = await billingContact(data);
+          const sent = await sendRenewalEmail({
+            to,
+            companyName: data.companyName || "Your workspace",
+            link: APP_URL,
+            daysLeft: due,
+          });
+          // Only record a notice that actually went out, so a Resend outage
+          // retries tomorrow instead of silently swallowing the warning.
+          if (sent.sent) {
+            await orgDoc.ref.set(noticeSentPatch(data, due), { merge: true });
+            notified++;
+          }
+        }
+      } catch (e) {
+        // One bad org must not stop the rest of the run.
+        captureError(e, { where: "runSubscriptionLifecycle", orgId: orgDoc.id });
+      }
+    }
+    console.log(`runSubscriptionLifecycle: ${moved} moved, ${notified} notified, of ${snap.size} examined`);
+  },
+);
+
+// ---- Project-slot notices ---------------------------------------------------
+//
+// A separate job rather than a branch inside runSubscriptionLifecycle, because
+// that one queries only `active` and `past_due` on purpose, and a TRIALING org
+// can hold slots too: createSlotOrder admits any org with a numeric
+// includedProjects, which a trial has. Folding slots into that query would
+// either miss those orgs or widen a query whose narrowness is its safety.
+export const runSlotNotices = onSchedule(
+  {
+    schedule: "0 5 * * *", // after the 04:45 subscription lifecycle
+    timeZone: "Asia/Kolkata",
+    region: "asia-southeast1",
+  },
+  async () => {
+    const now = Date.now();
+    // Single-field range query, served by the automatic index.
+    const snap = await db.collection("organizations").where("purchasedSlots", ">", 0).get();
+
+    let notified = 0;
+    for (const orgDoc of snap.docs) {
+      const data: any = orgDoc.data();
+      try {
+        const kind = slotNoticeDue(data, now);
+        if (!kind) continue;
+        const to = await billingContact(data);
+        const expireAt = Number(data.slotsExpireAt) || 0;
+        const sent = await sendSlotNoticeEmail({
+          to,
+          companyName: data.companyName || "Your workspace",
+          link: APP_URL,
+          slots: Math.floor(Number(data.purchasedSlots) || 0),
+          kind,
+          daysLeft: kind === "expiring" ? Math.max(0, Math.ceil((expireAt - now) / DAY_MS)) : SLOT_NOTICE_DAYS,
+        });
+        // Record only a notice that actually went out, so a Resend outage
+        // retries tomorrow rather than swallowing the only warning.
+        if (sent.sent) {
+          await orgDoc.ref.set(slotNoticeSentPatch(data, kind), { merge: true });
+          notified++;
+        }
+      } catch (e) {
+        captureError(e, { where: "runSlotNotices", orgId: orgDoc.id });
+      }
+    }
+    console.log(`runSlotNotices: ${notified} notified, of ${snap.size} with slots`);
+  },
+);
+
+// ---- What the customer was charged ------------------------------------------
+//
+// Razorpay emails a receipt and the app showed nothing, so a contractor doing
+// GST filing had to go hunting in their inbox for a payment their own workspace
+// made no record of. This is Owner/Admin only and reads that org's orders only.
+export const getBillingHistory = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const orgId = String(request.data?.orgId || "").trim() ||
+    (userSnap.exists ? (userSnap.data() as any).currentOrgId : "");
+  if (!orgId) throw new HttpsError("failed-precondition", "You're not part of an organization.");
+
+  const orgSnap = await db.doc(`organizations/${orgId}`).get();
+  if (!orgSnap.exists) throw new HttpsError("not-found", "Organization not found.");
+  const members = (orgSnap.data() as any)?.members || {};
+  if (!["Owner", "Admin"].includes(members[uid])) {
+    throw new HttpsError("permission-denied", "Only an Owner or Admin can view billing history.");
+  }
+
+  // Paid orders only: an abandoned checkout is not a charge, and listing one as
+  // if it were is worse than listing nothing.
+  const snap = await db
+    .collection("razorpay_orders")
+    .where("orgId", "==", orgId)
+    .where("status", "==", "paid")
+    .get();
+
+  const rows = snap.docs
+    .map((d) => {
+      const o: any = d.data();
+      return {
+        orderId: o.orderId || d.id,
+        kind: o.kind === "slots" ? "slots" : "plan",
+        plan: o.plan || null,
+        period: o.period || null,
+        quantity: Number(o.quantity) || null,
+        // Paise on the order; rupees is what a human wants to read.
+        amount: Math.round((Number(o.amount) || 0) / 100),
+        listAmount: o.listAmount ? Math.round(Number(o.listAmount) / 100) : null,
+        credit: o.creditApplied ? Math.round(Number(o.creditApplied) / 100) : null,
+        paidAt: o.paidAt || null,
+      };
+    })
+    // Newest first. Sorted here rather than in the query so no composite index
+    // is needed for what is a short list per org.
+    .sort((a, b) => String(b.paidAt || "").localeCompare(String(a.paidAt || "")));
+
+  return { orgId, rows };
 });

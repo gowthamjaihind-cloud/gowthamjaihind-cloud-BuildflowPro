@@ -223,8 +223,8 @@ export const OperatorPanel: React.FC = () => {
           <h3 className="text-xl font-bold text-ink">Manage subscription</h3>
         </div>
         <p className="text-ink-muted text-sm mb-5">
-          Manually activate (after payment), extend a trial, or expire an org. Automated Razorpay
-          checkout will drive this later.
+          Manually activate (after payment), extend a trial, or expire an org. Razorpay checkout and
+          the daily lifecycle job normally drive this — Expire here skips the grace week.
         </p>
         {sErr && (
           <div className="mb-3 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
@@ -298,8 +298,8 @@ export const OperatorPanel: React.FC = () => {
           <h3 className="text-xl font-bold text-ink">Usage &amp; safety-cap</h3>
         </div>
         <p className="text-ink-muted text-sm mb-5">
-          Live usage for the <span className="font-mono">orgId</span> above — spot an org running past
-          its included projects or AI quota (the only way margin gets thin).
+          Live usage for the <span className="font-mono">orgId</span> above — subscription state, seats,
+          project slots and AI quota. The banner is what a support call is asking about.
         </p>
         {uErr && (
           <div className="mb-3 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
@@ -311,6 +311,41 @@ export const OperatorPanel: React.FC = () => {
           {uBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Load usage"}
         </button>
         {usage && (
+          <>
+          {/* Subscription state first: it is what a support call is about, and the
+              panel used to hide it entirely behind `plan || subscriptionStatus`. */}
+          <div className={`mb-3 p-3 rounded-xl border text-sm ${usage.lifecycle.attention
+            ? "bg-danger/8 border-danger/20 text-danger"
+            : "bg-success/8 border-success/20 text-success"}`}>
+            <p className="font-bold">{usage.lifecycle.label}</p>
+            <p className="text-[11px] opacity-80 mt-0.5">
+              status <span className="font-mono">{usage.lifecycle.status ?? "none"}</span>
+              {usage.lifecycle.endsAt ? ` · ${new Date(usage.lifecycle.endsAt).toLocaleDateString()}` : ""}
+              {usage.renewalNoticeSent?.days
+                ? ` · renewal notice sent (${usage.renewalNoticeSent.days}d)`
+                : usage.lifecycle.status === "active" || usage.lifecycle.status === "past_due"
+                  ? " · no renewal notice sent yet"
+                  : ""}
+            </p>
+          </div>
+          {/* Wrong plan for the size, or past the point where the account wants a
+              conversation. Both are sales signals, not errors. */}
+          {(usage.advice.cheaper || usage.advice.overSoftCap) && (
+            <div className="mb-3 p-3 rounded-xl border bg-primary-deep/10 border-primary-deep/30 text-sm">
+              {usage.advice.cheaper && (
+                <p className="font-bold text-ink">
+                  Overpaying: {usage.projectCount} projects costs ₹{usage.advice.currentCost}/mo here,
+                  ₹{usage.advice.cheaperCost}/mo on {usage.advice.cheaper} — saving ₹{usage.advice.savings}/mo.
+                </p>
+              )}
+              {usage.advice.overSoftCap && (
+                <p className="font-bold text-ink">
+                  Past the {usage.businessSoftCap}-project soft cap at ₹{usage.advice.currentCost}/mo —
+                  worth an Enterprise conversation. Nothing is blocked.
+                </p>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
             <div className="bg-panel border border-divider rounded-xl p-3">
               <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Plan</p>
@@ -332,7 +367,40 @@ export const OperatorPanel: React.FC = () => {
                 {usage.aiUsed}{usage.aiQuota === null ? " (unlimited)" : ` / ${usage.aiQuota}`}
               </p>
             </div>
+            {/* Seats: enforced on both invite paths since the seat change, and
+                until now impossible to see — so "I can't invite anyone" had no
+                answer here. */}
+            <div className={`rounded-xl p-3 border ${usage.userLimit !== null && usage.seatsUsed >= usage.userLimit
+              ? "bg-primary-deep/10 border-primary-deep/30" : "bg-panel border-divider"}`}>
+              <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Users</p>
+              <p className="font-bold text-ink">
+                {usage.seatsUsed}{usage.userLimit === null ? " (no cap)" : ` / ${usage.userLimit}`}
+              </p>
+            </div>
+            {/* Project slots: why the effective cap differs from the plan's own,
+                and when that difference disappears. */}
+            <div className={`rounded-xl p-3 border ${usage.activeSlots > 0
+              ? "bg-primary-deep/10 border-primary-deep/30" : "bg-panel border-divider"}`}>
+              <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">Extra slots</p>
+              <p className="font-bold text-ink">
+                {usage.activeSlots > 0
+                  ? `${usage.activeSlots} live`
+                  : usage.purchasedSlots > 0 && usage.slotsExpireAt ? "0 (lapsed)"
+                  : usage.purchasedSlots > 0 ? `${usage.purchasedSlots} permanent` : "none"}
+              </p>
+              {usage.slotsExpireAt && (
+                <p className="text-[10px] text-ink-muted mt-0.5">
+                  {usage.activeSlots > 0 ? "until " : "ended "}
+                  {new Date(usage.slotsExpireAt).toLocaleDateString()}
+                  {usage.slotNoticeSent?.kind ? ` · ${usage.slotNoticeSent.kind} notice sent` : " · no notice sent"}
+                </p>
+              )}
+              {usage.planIncluded !== null && usage.activeSlots > 0 && (
+                <p className="text-[10px] text-ink-muted">plan cap {usage.planIncluded}</p>
+              )}
+            </div>
           </div>
+          </>
         )}
       </section>
 

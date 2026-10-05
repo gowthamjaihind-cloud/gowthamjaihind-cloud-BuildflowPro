@@ -1,8 +1,16 @@
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
 
+/**
+ * Where the callables live. MUST match REGION in functions/src/callable.ts:
+ * getFunctions(app) with no region silently targets us-central1, so a mismatch
+ * does not fail the build or the deploy — every callable just starts returning
+ * "not found" at runtime. TelegramBotStatus.test.ts asserts the two agree.
+ */
+export const FUNCTIONS_REGION = "asia-southeast1";
+
 // Helper to reliably get the functions instance (assumes getApp() is ready)
-const getFunctionsInstance = () => getFunctions(getApp());
+const getFunctionsInstance = () => getFunctions(getApp(), FUNCTIONS_REGION);
 
 // Projects
 export const callDeleteProject = async (projectId: string) => {
@@ -154,12 +162,50 @@ export interface OrgUsage {
   plan: string | null;
   subscriptionStatus: string | null;
   companyName: string | null;
+  /** The EFFECTIVE project cap: the plan's own cap plus any live slot window. */
   includedProjects: number | null;
   projectCount: number;
   overageProjects: number;
   overageCost: number;
   aiUsed: number;
+  /** The cap actually enforced — per-project where the plan sets one. */
   aiQuota: number | null;
+  aiScansPerProject: number | null;
+
+  // Subscription lifecycle (functions/src/subscription.ts).
+  lifecycle: {
+    status: string | null;
+    label: string;
+    endsAt: number | null;
+    daysLeft: number | null;
+    attention: boolean;
+  };
+  currentPeriodEnd: number | null;
+  graceEndsAt: number | null;
+  trialEndsAt: number | null;
+  renewalNoticeSent: { days?: number; periodEnd?: number; at?: number } | null;
+
+  // Seats (functions/src/seats.ts).
+  seatsUsed: number;
+  userLimit: number | null;
+
+  // Wrong-plan and soft-cap flags (functions/src/plans.ts planAdvice).
+  advice: {
+    cheaper: string | null;
+    currentCost: number;
+    cheaperCost: number;
+    savings: number;
+    overSoftCap: boolean;
+  };
+  businessSoftCap: number;
+
+  // Project slots. planIncluded is the plan's own cap, so the difference from
+  // includedProjects is the slot window.
+  planIncluded: number | null;
+  activeSlots: number;
+  purchasedSlots: number;
+  slotsExpireAt: number | null;
+  slotNoticeSent: { kind?: string; expireAt?: number; at?: number } | null;
 }
 
 // Super-admin: read an org's live usage vs plan (the safety-cap view).
@@ -269,4 +315,39 @@ export const callSyncMyClaims = async () => {
     getFunctionsInstance(), 'syncMyClaims');
   const res = await fn({} as Record<string, never>);
   return res.data;
+};
+
+// Cancel at the end of the period already paid for (no refund, nothing deleted),
+// and the undo for it.
+export const callCancelSubscription = async () => {
+  const fn = httpsCallable<{}, { canceled: boolean; effectiveAt: number | null }>(
+    getFunctionsInstance(), 'cancelSubscription');
+  return (await fn({})).data;
+};
+
+export const callResumeSubscription = async () => {
+  const fn = httpsCallable<{}, { resumed: boolean }>(getFunctionsInstance(), 'resumeSubscription');
+  return (await fn({})).data;
+};
+
+export interface BillingHistoryRow {
+  orderId: string;
+  kind: "plan" | "slots";
+  plan: string | null;
+  period: string | null;
+  quantity: number | null;
+  /** Rupees actually charged. */
+  amount: number;
+  /** List price before any proration credit, in rupees. */
+  listAmount: number | null;
+  /** Proration credit applied, in rupees. */
+  credit: number | null;
+  paidAt: string | null;
+}
+
+// Owner/Admin: what this workspace has actually been charged.
+export const callGetBillingHistory = async () => {
+  const fn = httpsCallable<{}, { orgId: string; rows: BillingHistoryRow[] }>(
+    getFunctionsInstance(), 'getBillingHistory');
+  return (await fn({})).data;
 };

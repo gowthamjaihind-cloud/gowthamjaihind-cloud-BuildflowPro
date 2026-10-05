@@ -2,7 +2,7 @@ import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import * as crypto from "crypto";
 import { db } from "./db";
-import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE } from "./plans";
+import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE, slotPurchasePatch, prorateUpgrade } from "./plans";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
 
@@ -78,11 +78,11 @@ export const createRazorpayOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30
   const uid = request.auth.uid;
   const plan = String(request.data?.plan || "");
   const period = request.data?.period === "annual" ? "annual" : "monthly";
-  if (!isPlanId(plan) || plan === "free" || plan === "enterprise") {
-    throw new HttpsError("invalid-argument", "Choose a paid plan (Starter, Growth or Business).");
+  if (!isPlanId(plan) || plan === "enterprise") {
+    throw new HttpsError("invalid-argument", "Choose a paid plan (Starter or Business).");
   }
-  const amount = planAmountPaise(plan as PlanId, period);
-  if (!amount) throw new HttpsError("invalid-argument", "That plan can't be purchased online.");
+  const listPaise = planAmountPaise(plan as PlanId, period);
+  if (!listPaise) throw new HttpsError("invalid-argument", "That plan can't be purchased online.");
 
   // An explicit orgId supports the signup pay-now flow, where the just-created
   // org isn't linked as the user's currentOrgId yet. Falls back to currentOrgId.
@@ -96,6 +96,12 @@ export const createRazorpayOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30
   if (!["Owner", "Admin"].includes(members[uid])) {
     throw new HttpsError("permission-denied", "Only an Owner or Admin can purchase a plan.");
   }
+
+  // Credit the unused part of a period already paid for, so upgrading
+  // part-way through a cycle does not charge twice for the same days. Priced
+  // here on the server: the client never supplies an amount.
+  const quote = prorateUpgrade(orgSnap.data(), plan as PlanId, period);
+  const amount = quote.amountPaise;
 
   const cfg = await getRazorpayConfig();
   if (!cfg) throw new HttpsError("failed-precondition", "Payments aren't configured yet.");
@@ -114,11 +120,24 @@ export const createRazorpayOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30
     period,
     uid,
     amount,
+    listAmount: quote.fullPaise,
+    creditApplied: quote.creditPaise,
     status: "created",
     createdAt: new Date().toISOString(),
   });
 
-  return { orderId: order.id, amount, currency: "INR", keyId: cfg.keyId };
+  // listAmount and credit go back so the client can show why the price differs
+  // from the sticker. Charging less than list never needs an apology, so the
+  // amount is correct whether or not that copy exists yet.
+  return {
+    orderId: order.id,
+    amount,
+    listAmount: quote.fullPaise,
+    credit: quote.creditPaise,
+    creditDays: quote.creditDays,
+    currency: "INR",
+    keyId: cfg.keyId,
+  };
 });
 
 // ---- Checkout: buy extra project slots (₹99/project overage) ----
@@ -144,8 +163,10 @@ export const createSlotOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, 
   }
   // Slots are an overage add-on for paid plans only. Free/enterprise/unlimited
   // orgs have no per-project overage to buy.
-  if (org.plan === "free" || org.plan === "enterprise" || org.includedProjects == null) {
-    throw new HttpsError("failed-precondition", "Project slots apply to paid Starter/Growth/Business plans only.");
+  // A null cap means Enterprise or an org never placed on a plan: unlimited
+  // already, so there is no per-project overage to sell.
+  if (org.includedProjects == null) {
+    throw new HttpsError("failed-precondition", "Project slots apply to Starter and Business plans only.");
   }
 
   const rate = Number(org.overageRate) || OVERAGE_RATE;
@@ -183,17 +204,23 @@ async function activateOrgFromOrder(orderId: string): Promise<boolean> {
   if (o.status === "paid") return true;
 
   if (o.kind === "slots") {
-    // Extra project slots: raise the included cap for the current cycle and
-    // track how many were bought. No plan change, no re-linking.
+    // Extra project slots for ONE 30-day window. This used to do
+    // `includedProjects: increment(qty)`, which nothing ever reversed -- so a
+    // single ₹99 payment raised the cap permanently and the slot was sold
+    // monthly but granted forever. slotPurchasePatch keeps the slots in their
+    // own fields with an expiry, and leaves includedProjects to mean the plan's
+    // own cap.
+    //
+    // Read and write in a transaction: topping up a live window has to see the
+    // current count, and two slot payments landing together would otherwise
+    // lose one of them.
     const qty = Math.max(0, Math.floor(Number(o.quantity) || 0));
     if (qty > 0) {
-      await db.doc(`organizations/${o.orgId}`).set(
-        {
-          includedProjects: FieldValue.increment(qty),
-          purchasedSlots: FieldValue.increment(qty),
-        },
-        { merge: true },
-      );
+      const orgRef = db.doc(`organizations/${o.orgId}`);
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(orgRef);
+        tx.set(orgRef, slotPurchasePatch(snap.data(), qty), { merge: true });
+      });
     }
     await orderRef.set({ status: "paid", paidAt: new Date().toISOString() }, { merge: true });
     return true;

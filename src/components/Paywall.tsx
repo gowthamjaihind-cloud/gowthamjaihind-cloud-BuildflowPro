@@ -15,7 +15,7 @@ import { PLANS, PlanId } from "../lib/plans";
 import { useTranslation } from "../i18n";
 
 const SALES_EMAIL = "gowtham.jaihind@gmail.com";
-const PAID: PlanId[] = ["starter", "growth", "business"];
+const PAID: PlanId[] = ["starter", "business"];
 
 // Shown when the org's trial has ended (or its subscription lapsed). Owners/
 // Admins get a plan picker with Razorpay checkout (payment auto-activates the
@@ -86,7 +86,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
             const p = PLANS[id];
             const monthly = period === "annual" ? Math.round((p.annual || 0) / 12) : p.monthly || 0;
             return (
-              <div key={id} className={`rounded-2xl p-5 flex flex-col border ${id === "growth" ? "border-primary/40 ring-1 ring-primary/30" : "border-divider"}`}>
+              <div key={id} className={`rounded-2xl p-5 flex flex-col border ${id === "business" ? "border-primary/40 ring-1 ring-primary/30" : "border-divider"}`}>
                 <p className="text-sm font-black uppercase tracking-widest text-ink-muted mb-1">{p.name}</p>
                 <div className="flex items-end gap-1 mb-0.5">
                   <span className="font-display font-bold text-3xl tracking-tight">₹{monthly.toLocaleString("en-IN")}</span>
@@ -105,7 +105,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
                 <button
                   onClick={() => pay(id, period, () => window.location.reload())}
                   disabled={busy}
-                  className={`mt-auto w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-on-primary hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                  className={`mt-auto w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "business" ? "bg-primary text-on-primary hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                 >
                   {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("paywall.pay", { amount: (period === "annual" ? p.annual : p.monthly)?.toLocaleString("en-IN") || "" })}
                 </button>

@@ -11,7 +11,7 @@ import { usePlan } from "../../../hooks/usePlan";
 import { projectCapState } from "../../../lib/plans";
 import { UserProfile } from "../../../types";
 import { AddCapacityModal } from "../../../components/AddCapacityModal";
-import { useTranslation, useL } from "../../../i18n";
+import { useTranslation } from "../../../i18n";
 import {
   WBS_TEMPLATES,
   planFromTemplate,
@@ -51,10 +51,17 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   onClose,
   user,
 }) => {
-  const { t, language } = useTranslation();
-  const L = useL();
+  const { t } = useTranslation();
   // Optional WBS starter structure. "" = start with an empty breakdown.
   const [templateId, setTemplateId] = useState<string>("");
+  // Which language the template's task names are SEEDED in. This used to follow
+  // the app's language toggle, which no longer exists -- the web app is English
+  // only now. It cannot simply default to English: applying a template writes
+  // these names into Firestore as the project's task list, and the Telegram bot
+  // (which IS bilingual) then shows them to the site engineer picking a task to
+  // log against. Seeded in English, the bot's Tamil breaks at the one place it
+  // matters, permanently, because by then they are data rather than UI.
+  const [taskLang, setTaskLang] = useState<"en" | "ta">("en");
   // The org's own saved structures sit alongside the built-in starters, and
   // come first — a customer's real breakdown beats a generic one.
   const [saved, setSaved] = useState<SavedWbsTemplate[]>([]);
@@ -76,13 +83,13 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
   // Saved templates need a way out, or the picker silently fills with junk.
   const removeSaved = async (savedId: string, name: string) => {
-    if (!(await confirmDialog({ title: L(`Delete the template "${name}"? Projects already created from it are not affected.`, `"${name}" டெம்ப்ளேட்டை நீக்கவா? அதிலிருந்து ஏற்கனவே உருவாக்கின செயல்திட்டங்கள் பாதிக்கப்படாது.`) }))) return;
+    if (!(await confirmDialog({ title: `Delete the template "${name}"? Projects already created from it are not affected.` }))) return;
     try {
       await deleteTemplate(savedId);
       setSaved((rows) => rows.filter((r) => r.id !== savedId));
       setTemplateId((cur) => (cur === `saved:${savedId}` ? "" : cur));
     } catch {
-      toast.error(L("Couldn't delete that template.", "அந்த டெம்ப்ளேட்டை நீக்க முடியல."));
+      toast.error("Couldn't delete that template.");
     }
   };
   const [newProject, setNewProject] = useState({
@@ -146,13 +153,14 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     const template = allTemplates.find((x) => x.id === templateId);
     if (!template) return;
     const start = newProject.startDate ? new Date(newProject.startDate) : new Date();
-    // The language is chosen here, once: these names are written into
-    // Firestore as task documents and stay editable, so they are data from
-    // this point on rather than text looked up at render time.
+    // The language is chosen here, once, from the control beside the template
+    // picker: these names are written into Firestore as task documents and stay
+    // editable, so they are data from this point on rather than text looked up
+    // at render time.
     const planned = planFromTemplate(
       template,
       isNaN(start.getTime()) ? new Date() : start,
-      language === "ta" ? "ta" : "en",
+      taskLang,
     );
     const path = getProjectSubCollectionPath(projectId, "tasks");
     const batch = writeBatch(db);
@@ -192,10 +200,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         // The project exists either way — surface the seeding failure without
         // losing it, so the user can add the breakdown manually.
         console.error("WBS template seeding failed", err);
-        toast.error(L(
-          "The project was created, but the task breakdown could not be added. You can add it from the WBS tab.",
-          "செயல்திட்டம் உருவாக்கப்பட்டது, ஆனா பணிப் பட்டியலைச் சேர்க்க முடியல. WBS தாவல்ல சேர்த்துக்கலாம்."
-        ));
+        toast.error("The project was created, but the task breakdown could not be added. You can add it from the WBS tab.");
       }
     }
 
@@ -265,7 +270,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   {t("cpm.initParams")}
                 </p>
               </div>
-              <button aria-label={L("Close","மூடு")}
+              <button aria-label={"Close"}
                 type="button"
                 onClick={onClose}
                 className="p-3 hover:bg-panel rounded-full transition-colors text-ink-muted hover:text-ink"
@@ -417,10 +422,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             <div className="mt-8 relative z-10 space-y-3">
               <div className="flex items-baseline justify-between gap-3 flex-wrap">
                 <label htmlFor="wbs-template" className="text-[13px] font-bold text-ink-muted ml-1">
-                  {L("Start from a template", "டெம்ப்ளேட்டில் இருந்து தொடங்கு")}
+                  {"Start from a template"}
                 </label>
                 <span className="text-[11px] text-ink-muted">
-                  {L("Optional · every task stays editable", "விருப்பம் · எல்லா பணியும் மாற்றக்கூடியது")}
+                  {"Optional · every task stays editable"}
                 </span>
               </div>
 
@@ -430,12 +435,12 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 onChange={(e) => setTemplateId(e.target.value)}
                 className="w-full bg-surface/50 border border-divider rounded-2xl p-4 md:p-5 focus:bg-surface outline-none apple-transition font-bold text-ink"
               >
-                <option value="">{L("Empty breakdown — build the WBS yourself", "காலி பட்டியல் — நீங்களே WBS உருவாக்குங்க")}</option>
+                <option value="">{"Empty breakdown — build the WBS yourself"}</option>
                 {saved.length > 0 && (
-                  <optgroup label={L("Your saved templates", "உங்கள் சேமித்த டெம்ப்ளேட்கள்")}>
+                  <optgroup label={"Your saved templates"}>
                     {saved.map((sv) => (
                       <option key={sv.id} value={`saved:${sv.id}`}>
-                        {sv.name} — {sv.taskCount} {L("tasks", "பணிகள்")}
+                        {sv.name} — {sv.taskCount} {"tasks"}
                       </option>
                     ))}
                   </optgroup>
@@ -447,7 +452,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     <optgroup key={cat} label={cat}>
                       {inCat.map((tpl) => (
                         <option key={tpl.id} value={tpl.id}>
-                          {tpl.name} — {templateTaskCount(tpl)} {L("tasks", "பணிகள்")}, ~{templateCalendarDays(tpl)} {L("days", "நாட்கள்")}
+                          {tpl.name} — {templateTaskCount(tpl)} {"tasks"}, ~{templateCalendarDays(tpl)} {"days"}
                         </option>
                       ))}
                     </optgroup>
@@ -457,11 +462,38 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
               {/* What the chosen template will do, and a way to remove a saved one. */}
               {chosenTemplate && (
+                <div className="flex items-center justify-between gap-3 px-4 py-3 mb-2 rounded-2xl bg-surface/50 border border-divider">
+                  <p className="text-[12px] text-ink-muted">
+                    Task names in
+                    <span className="block text-[11px] mt-0.5">
+                      Your crew sees these in the Telegram bot. Pick the language they read.
+                    </span>
+                  </p>
+                  <div className="flex gap-1 shrink-0" role="group" aria-label="Task name language">
+                    {([["en", "English"], ["ta", "தமிழ்"]] as const).map(([code, label]) => (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={() => setTaskLang(code)}
+                        aria-pressed={taskLang === code}
+                        className={`px-3 py-1.5 rounded-xl text-[12px] font-bold apple-transition ${
+                          taskLang === code
+                            ? "bg-primary text-on-primary"
+                            : "bg-panel border border-divider text-ink-muted hover:text-ink"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {chosenTemplate && (
                 <div className="flex items-start justify-between gap-3 px-4 py-3 rounded-2xl bg-primary/5 border border-primary/25">
                   <p className="text-[12px] text-ink-muted">
                     {chosenTemplate.description}
                     <span className="block font-mono text-[11px] text-primary mt-1">
-                      {L("Adds", "சேர்க்கும்")} {templateTaskCount(chosenTemplate)} {L("tasks", "பணிகள்")} · ~{templateCalendarDays(chosenTemplate)} {L("days", "நாட்கள்")}
+                      {"Adds"} {templateTaskCount(chosenTemplate)} {"tasks"} · ~{templateCalendarDays(chosenTemplate)} {"days"}
                     </span>
                   </p>
                   {templateId.startsWith("saved:") && (
@@ -470,7 +502,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       onClick={() => removeSaved(templateId.slice(6), chosenTemplate.name)}
                       className="text-[11px] font-bold text-ink-muted hover:text-danger apple-transition shrink-0"
                     >
-                      {L("Delete", "நீக்கு")}
+                      {"Delete"}
                     </button>
                   )}
                 </div>

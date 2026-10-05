@@ -10,11 +10,11 @@ import { initSentry } from "./sentry";
 // Start error tracking as early as possible (no-op until VITE_SENTRY_DSN is set).
 initSentry();
 
-// Apply the saved UI language to <html lang> as early as possible.
-document.documentElement.setAttribute(
-  "lang",
-  localStorage.getItem("language") === "ta" ? "ta" : "en",
-);
+// The web app is English only (see src/i18n/index.ts). Tamil lives in the
+// Telegram bot, which is where site engineers work. Clear the stale preference
+// so a returning user is not left with lang="ta" on an English document.
+document.documentElement.setAttribute("lang", "en");
+localStorage.removeItem("language");
 
 // Apply initial theme settings from local storage
 localStorage.removeItem("colorScheme");

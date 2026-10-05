@@ -17,7 +17,7 @@ import { useRazorpayCheckout } from "../hooks/useRazorpayCheckout";
 import { PLANS, PlanId } from "../lib/plans";
 import { useTranslation } from "../i18n";
 
-const PAID: PlanId[] = ["starter", "growth", "business"];
+const PAID: PlanId[] = ["starter", "business"];
 
 // Shown to a signed-in user who isn't in an org yet (or arrived via an
 // ?invite=CODE link). Two paths: create your own organization (self-serve —
@@ -74,11 +74,14 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
     return true;
   };
 
+  // "Start free" is the 14-day Starter trial. There is no permanent free tier
+  // any more -- the catalog is Starter, Business, Enterprise -- and the trial
+  // takes no card, so the existing label stays true in both languages.
   const startFree = async () => {
     if (!requireName()) return;
     setCreating("free"); setCreateError(null);
     try {
-      await callCreateOrganization({ companyName: companyName.trim(), plan: "free" });
+      await callCreateOrganization({ companyName: companyName.trim(), plan: "starter", startTrial: true });
       reload();
     } catch (e: any) {
       setCreateError(e?.message || t("onb.errCreate"));
@@ -225,7 +228,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
             const monthly = period === "annual" ? Math.round((p.annual || 0) / 12) : p.monthly || 0;
             const payLabel = period === "annual" ? p.annual : p.monthly;
             return (
-              <div key={id} className={`rounded-2xl p-5 flex flex-col border ${id === "growth" ? "border-primary/40 ring-1 ring-primary/30" : "border-divider"}`}>
+              <div key={id} className={`rounded-2xl p-5 flex flex-col border ${id === "business" ? "border-primary/40 ring-1 ring-primary/30" : "border-divider"}`}>
                 <p className="text-sm font-black uppercase tracking-widest text-ink-muted mb-1">{p.name}</p>
                 <div className="flex items-end gap-1 mb-0.5">
                   <span className="font-display font-bold text-3xl tracking-tight">₹{monthly.toLocaleString("en-IN")}</span>
@@ -258,7 +261,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                 ) : (
                   <button
                     onClick={() => payNow(id)} disabled={!!creating}
-                    className={`mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "growth" ? "bg-primary text-on-primary hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
+                    className={`mt-auto w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "business" ? "bg-primary text-on-primary hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                   >
                     {creating === `pay:${id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : t("paywall.pay", { amount: payLabel?.toLocaleString("en-IN") || "" })}
                   </button>

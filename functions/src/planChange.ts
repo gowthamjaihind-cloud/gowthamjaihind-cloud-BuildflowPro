@@ -2,7 +2,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
-import { isPlanId, PlanId, planPatch } from "./plans";
+import { isPlanId, PlanId, planCapacityPatch } from "./plans";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
 
@@ -14,10 +14,12 @@ import { CALLABLE_OPTS } from "./callable";
 // they already paid for, with no refund. A downgrade is stored as
 // `pendingPlanChange` and applied by the daily applyScheduledPlanChanges job.
 
-// Tier order (low → high). Free is lowest; enterprise is not self-serve.
-const PLAN_ORDER: PlanId[] = ["free", "starter", "growth", "business", "enterprise"];
-// Plans a customer can switch between without talking to us.
-const SELF_SERVE: PlanId[] = ["free", "starter", "growth", "business"];
+// Tier order (low → high). Enterprise is not self-serve.
+const PLAN_ORDER: PlanId[] = ["starter", "business", "enterprise"];
+// Plans a customer can switch between without talking to us. With no free tier,
+// Business → Starter is the only self-serve downgrade; leaving altogether means
+// stopping payment and letting the subscription lifecycle run its course.
+const SELF_SERVE: PlanId[] = ["starter", "business"];
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
 async function resolveOrgId(request: any): Promise<string> {
@@ -47,7 +49,7 @@ export const scheduleDowngrade = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }
   if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
   const target = String(request.data?.targetPlan || "");
   if (!isPlanId(target) || !SELF_SERVE.includes(target as PlanId)) {
-    throw new HttpsError("invalid-argument", "Choose Free, Starter, Growth or Business.");
+    throw new HttpsError("invalid-argument", "Choose Starter or Business.");
   }
   const orgId = await resolveOrgId(request);
   const orgSnap = await assertOrgManager(request, orgId);
@@ -105,10 +107,16 @@ export const applyScheduledPlanChanges = onSchedule(
         continue;
       }
       try {
-        // Applying planPatch resets capacity to the target plan; no project is
-        // ever deleted — an org over the new cap simply pays per-project overage.
+        // Capacity resets to the target plan; no project is ever deleted — an
+        // org over the new cap simply pays per-project overage.
+        // Capacity only. planPatch(target, 1) would set `active` and push
+        // currentPeriodEnd a month out, handing over a free month nobody paid
+        // for. The period the customer bought has already ended -- that is why
+        // this downgrade is firing now -- so the subscription lifecycle takes
+        // it from here: past_due, a grace week with notices, then expired
+        // unless they renew at the new, lower price.
         await orgDoc.ref.set(
-          { ...planPatch(target as PlanId, 1), pendingPlanChange: FieldValue.delete() },
+          { ...planCapacityPatch(target as PlanId), pendingPlanChange: FieldValue.delete() },
           { merge: true },
         );
         applied++;
@@ -119,3 +127,56 @@ export const applyScheduledPlanChanges = onSchedule(
     console.log(`applyScheduledPlanChanges: applied ${applied} of ${snap.size} due`);
   },
 );
+
+// ---- Cancelling ------------------------------------------------------------
+//
+// There was no way to leave. The only self-serve exit was downgrading to the
+// Free tier, and with the catalog collapsed to three paid plans even that is
+// gone -- so a customer who wanted out had to stop paying and let the
+// subscription lapse through past_due and a week of dunning emails chasing
+// money they had already decided not to spend. That reads as a dark pattern
+// even when nothing is hidden, and it is the kind of thing people tell other
+// contractors about.
+//
+// Cancelling takes effect at the END of the period already paid for, like a
+// downgrade: no refund, no early cut-off, and nothing is ever deleted.
+
+export const cancelSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  const orgId = await resolveOrgId(request);
+  const orgSnap = await assertOrgManager(request, orgId);
+  const org: any = orgSnap.data();
+
+  if (org.subscriptionStatus !== "active") {
+    throw new HttpsError(
+      "failed-precondition",
+      "There's no active subscription to cancel on this workspace.",
+    );
+  }
+
+  await db.doc(`organizations/${orgId}`).set(
+    {
+      cancelAtPeriodEnd: true,
+      cancelRequestedAt: Date.now(),
+      cancelRequestedBy: request.auth!.uid,
+      // A pending downgrade is moot once the whole thing is ending.
+      pendingPlanChange: FieldValue.delete(),
+    },
+    { merge: true },
+  );
+  return { canceled: true, effectiveAt: Number(org.currentPeriodEnd) || null };
+});
+
+/** Undo a pending cancellation. Nothing has happened yet, so this just clears it. */
+export const resumeSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  const orgId = await resolveOrgId(request);
+  await assertOrgManager(request, orgId);
+  await db.doc(`organizations/${orgId}`).set(
+    {
+      cancelAtPeriodEnd: FieldValue.delete(),
+      cancelRequestedAt: FieldValue.delete(),
+      cancelRequestedBy: FieldValue.delete(),
+    },
+    { merge: true },
+  );
+  return { resumed: true };
+});
