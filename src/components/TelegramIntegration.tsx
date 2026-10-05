@@ -12,6 +12,7 @@ import { UserProfile } from "../types";
 import { db, collection, query, where, getDocs, setDoc, doc } from "../firebase";
 import { updateDoc, deleteField } from "firebase/firestore";
 import { Tooltip } from "./Tooltip";
+import { TelegramBotStatus } from "./TelegramBotStatus";
 
 interface TelegramIntegrationProps {
   currentUser: UserProfile;
@@ -188,8 +189,13 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
     <div className="space-y-6">
       <div className="bg-surface p-6 rounded-[20px] flex flex-col md:flex-row md:items-center justify-between shadow-sm border border-divider gap-4">
         <div>
-          <div className="font-bold text-ink flex items-center gap-2">
+          <div className="font-bold text-ink flex items-center gap-2 flex-wrap">
             {"Telegram Bot Status"}
+            {/* Whether the BOT SERVICE is reachable — a different question from
+                whether this user is linked to it, which is the chip beside it.
+                This is the badge's only home now: it used to sit in the app
+                shell and poll every 15 seconds from every screen. */}
+            <TelegramBotStatus />
             {isLinked ? (
               <span className="px-2 py-0.5 bg-success/20 text-success text-xs rounded-full flex items-center gap-1 font-medium">
                 <CheckCircle2 className="w-3 h-3" /> {"Linked"} ✅
