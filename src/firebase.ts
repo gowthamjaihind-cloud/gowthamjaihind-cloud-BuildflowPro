@@ -8,6 +8,7 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   signOut,
+  connectAuthEmulator,
 } from "firebase/auth";
 import {
   initializeFirestore,
@@ -28,11 +29,30 @@ import {
   runTransaction,
   getDocs,
   writeBatch,
+  connectFirestoreEmulator,
 } from "firebase/firestore";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
+import { FUNCTIONS_REGION } from "./services/firebaseFunctions";
 import firebaseConfig from "../firebase-applet-config.json";
 
-const app = initializeApp(firebaseConfig);
+// Emulator runs use a FAKE project id. firebase-tools treats a project whose id
+// starts with "demo-" as offline: it skips every production call, which is what
+// lets the suite run unauthenticated. The id here must match the one passed to
+// `firebase emulators:start`, or the client talks to a project the emulator is
+// not serving.
+//
+// Build-time literal (same trick as VITE_DEMO), so `npm run build` folds this to
+// `false` and the real config is the only one that can ship.
+const USE_EMULATORS = __EMULATORS__;
+const EMULATOR_PROJECT_ID = "demo-sitetru";
+
+const app = initializeApp(
+  USE_EMULATORS
+    ? { ...firebaseConfig, projectId: EMULATOR_PROJECT_ID, storageBucket: `${EMULATOR_PROJECT_ID}.appspot.com` }
+    : firebaseConfig,
+);
 
 // App Check — abuse protection. The reCAPTCHA v3 site key is PUBLIC (safe in the
 // client). When set, every Firestore / Functions / Storage request carries an
@@ -49,7 +69,12 @@ const app = initializeApp(firebaseConfig);
 const APPCHECK_SITE_KEY =
   (import.meta as any).env?.VITE_APPCHECK_SITE_KEY ||
   "6LcbyY8tAAAAALNiKcUMNdJmSBRGuBff2y6KjS2C"; // reCAPTCHA v3 site key (public)
-if (APPCHECK_SITE_KEY) {
+// Emulator runs skip App Check entirely: the reCAPTCHA key attests the real
+// registered domain, so a token minted against it is meaningless to an
+// emulator and only produces noise. VITE_USE_EMULATORS is a build-time literal
+// (same trick as VITE_DEMO), so a production build folds this to `false` and
+// drops the emulator branch rather than shipping a bypass.
+if (APPCHECK_SITE_KEY && !USE_EMULATORS) {
   try {
     // Debug token, dev builds only.
     //
@@ -100,6 +125,31 @@ export const db = initializeFirestore(
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// ---------------------------------------------------------------- emulators --
+// Local Firebase Emulator Suite, for end-to-end testing against the REAL rules,
+// callables and triggers without touching production data or live Razorpay.
+//
+//   npm run emulators      (terminal 1)
+//   npm run dev:emulators  (terminal 2)
+//
+// Guarded on a build-time literal, so `npm run build` removes this entirely.
+if (USE_EMULATORS) {
+  const host = "127.0.0.1";
+  try {
+    connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
+    connectFirestoreEmulator(db, host, 8080);
+    connectStorageEmulator(getStorage(app), host, 9199);
+    // Must use the SAME region the app calls with, or this connects a second,
+    // unused Functions instance and every callable still goes to production.
+    connectFunctionsEmulator(getFunctions(app, FUNCTIONS_REGION), host, 5001);
+    // console.warn, not .info: vite.config marks console.info pure in
+    // production mode, and the emulator build IS a production build.
+    console.warn("[emulators] connected: auth:9099 firestore:8080 functions:5001 storage:9199");
+  } catch (e) {
+    console.error("[emulators] failed to connect", e);
+  }
+}
 
 export {
   collection,

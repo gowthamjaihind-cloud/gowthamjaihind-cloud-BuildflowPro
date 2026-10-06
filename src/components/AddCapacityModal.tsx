@@ -1,3 +1,4 @@
+import { useTaxRate, gstNote } from "../hooks/useTaxRate";
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Stack, Check, CircleNotch as Loader2, Plus, Minus } from "@phosphor-icons/react";
@@ -20,6 +21,9 @@ interface AddCapacityModalProps {
 // Offers BOTH paths: buy ₹99 project slots for the current cycle, or upgrade to
 // a bigger plan. Payment auto-activates on the server; usePlan updates live.
 export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  // Pricing copy follows the rate checkout will actually charge: 0 until a
+  // GSTIN is configured, so the GST line is simply absent until it is true.
+  const taxRatePct = useTaxRate();
   const plan = usePlan();
   const { data: projects = [] } = useProjectsQuery();
   const { pay, paySlots, busy, error } = useRazorpayCheckout();
@@ -195,7 +199,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
           )}
 
           <p className="text-center text-[11px] text-ink-muted mt-5">
-            {"Extra slots apply to your current billing cycle. Prices exclusive of GST."}
+            {`Extra slots apply to your current billing cycle.${gstNote(taxRatePct)}`}
           </p>
         </motion.div>
       </motion.div>

@@ -64,7 +64,25 @@ service cloud.firestore {
     match /organizations/{orgId} {
       // Members read their org. An UNCLAIMED org is readable by any signed-in
       // user so the claim UI can detect it and offer the claim.
-      allow read: if isMemberOfThisOrg() || (request.auth != null && thisOrgUnclaimed());
+      //
+      // `get` and `list` are SEPARATE on purpose -- `allow read` covers both,
+      // and that leaked every tenant. While a QUERY is evaluated there is no
+      // document in scope, so `resource.data` is unset and
+      // `thisOrgMembers()` returns its `{}` default; `thisOrgUnclaimed()` is
+      // then true for every candidate document and the whole collection opens
+      // to any signed-in user. Fetching one org by id is denied correctly --
+      // only the collection scan was wrong, which is why this never showed up
+      // in the app. A free signup could read every customer's companyName,
+      // plan, subscriptionStatus and members map (each member's uid and role).
+      //
+      // Nothing queries this collection: the client reads organizations only by
+      // document id (7 call sites), and the claim UI likewise looks up a known
+      // id, so it still works through `get`. Keep `list` closed -- if a feature
+      // ever needs to list orgs, it belongs in a callable that filters by
+      // membership server-side, not in a rule that cannot see the document.
+      // scripts/emulator-tenant-probe.mjs covers this.
+      allow get: if isMemberOfThisOrg() || (request.auth != null && thisOrgUnclaimed());
+      allow list: if false;
       // Brand-new org (future self-serve onboarding): the creator must seed
       // themselves as Owner.
       allow create: if request.auth != null

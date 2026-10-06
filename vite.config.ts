@@ -49,6 +49,11 @@ export default defineConfig(({mode}) => {
     // unset variable stays a runtime lookup that the bundler cannot fold.
     define: {
       __DEMO__: JSON.stringify(process.env.VITE_DEMO === "1"),
+      // Same reasoning as __DEMO__: a compile-time literal, so a build without
+      // VITE_USE_EMULATORS=1 folds the emulator wiring to `false && …` and drops
+      // it. Production can therefore never be pointed at a local emulator, and
+      // App Check can never be skipped, by anything in the shipped bundle.
+      __EMULATORS__: JSON.stringify(process.env.VITE_USE_EMULATORS === "1"),
     },
     esbuild: {
       pure: mode === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],

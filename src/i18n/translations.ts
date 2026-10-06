@@ -254,12 +254,16 @@ export const translations: { en: Record<string, string> } = {
     "paywall.savePct": "Save ~17%",
     "paywall.perMo": "/ mo",
     "paywall.billedYearly": "₹{amount} billed yearly",
+    // translate() substitutes params but has no plural rules, so Starter
+    // (includedProjects: 1) rendered "Up to 1 projects". Call sites pick the
+    // key on the count.
+    "paywall.upToProject": "Up to {n} project",
     "paywall.upToProjects": "Up to {n} projects",
     "paywall.users": "{n} users",
     "paywall.aiScans": "{n} AI scans / mo",
     "paywall.pay": "Pay ₹{amount}",
     "paywall.extraNote":
-      "Extra projects beyond your plan are ₹99/project/month. Prices exclusive of GST. Need more, or an Enterprise plan?",
+      "Extra projects beyond your plan are ₹99/project/month. Need more, or an Enterprise plan?",
     "paywall.contactUs": "Contact us",
     "paywall.wrongAccountTrial":
       "Wrong account, or already used your trial? Sign out to start fresh.",
@@ -307,15 +311,21 @@ export const translations: { en: Record<string, string> } = {
     "onb.createPost": ". Set up your workspace to get started.",
     "onb.companyName": "Company / workspace name",
     "onb.companyPlaceholder": "e.g. BV Realty",
-    "onb.free": "Free",
-    "onb.forever": "forever",
-    "onb.freeFeatures": "1 project · up to 2 users · Telegram logging",
-    "onb.startFree": "Start free",
+    // This card's button calls createOrganization({ plan: "starter",
+    // startTrial: true }) -- the SAME thing the Starter card's trial button
+    // does. It used to read "Free / forever / 1 project - up to 2 users", none
+    // of which was true: there is no free plan in the catalog, the trial runs
+    // 14 days (TRIAL_MS in functions/src/createOrg.ts), and Starter grants 20
+    // users, not 2. Keep this wording in step with what the callable provisions.
+    "onb.free": "Free trial",
+    "onb.forever": "for 14 days",
+    "onb.freeFeatures": "Starter · 1 project · 20 users · no card",
+    "onb.startFree": "Start free trial",
     "onb.startTrial": "Start 14-day free trial",
     "onb.starting": "Starting…",
     "onb.orPayNow": "or pay ₹{amount} now",
     "onb.footerNote":
-      "New to Sitetru? Try Starter free for 14 days — no card, upgrade anytime. Prices exclusive of GST. Extra projects ₹99/mo each. Need Enterprise?",
+      "New to Sitetru? Try Starter free for 14 days — no card, upgrade anytime. Extra projects ₹99/mo each. Need Enterprise?",
     "onb.haveInvite": "Have an invite code?",
 
     // ---- Settings ----

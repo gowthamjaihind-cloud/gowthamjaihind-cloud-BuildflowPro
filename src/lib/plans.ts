@@ -142,3 +142,45 @@ export function planAdvice(plan: string | null | undefined, projects: number): P
   }
   return { cheaper, currentCost: current, cheaperCost, savings: cheaper ? current - cheaperCost : 0, overSoftCap };
 }
+
+// ----------------------------------------------------------------- tax ----
+/**
+ * GST on a sale, in paise.
+ *
+ * Prices in this catalog are NET -- the landing page and the checkout both say
+ * "exclusive of GST" -- so the tax is added at checkout rather than carved out
+ * of the sticker. Sitetru's customers are registered contractors who reclaim it
+ * as input credit, so exclusive pricing costs them nothing net while inclusive
+ * pricing would cost roughly 17% of profit on every invoice.
+ *
+ * `ratePct` is a PERCENT (18), not a fraction, because it is operator-set
+ * config and a stray 0.18 read as 18% is the kind of error that bills a
+ * customer a hundredth of what it should.
+ *
+ * A rate of 0 is the correct default, not a bug: GST may not be charged before
+ * the seller is registered, so the rate stays 0 until a GSTIN is configured.
+ * See getTaxConfig in functions/src/razorpay.ts.
+ */
+export const GST_RATE_PCT = 18;
+
+export interface TaxedAmount {
+  /** What the plan or slot costs before tax. */
+  netPaise: number;
+  /** GST added. 0 when no rate is configured. */
+  taxPaise: number;
+  /** What the customer is actually charged. */
+  totalPaise: number;
+  /** The rate applied, as a percent. */
+  ratePct: number;
+}
+
+export function addGst(netPaise: number, ratePct: number): TaxedAmount {
+  const net = Math.max(0, Math.round(Number(netPaise) || 0));
+  // Anything not a usable positive rate means "do not charge tax" -- an
+  // unconfigured, absent or malformed rate must never invent a charge.
+  const rate = Number.isFinite(Number(ratePct)) && Number(ratePct) > 0 ? Number(ratePct) : 0;
+  // Round the TAX, then add. Rounding the total instead can leave
+  // net + tax !== total by a paisa, which does not reconcile on an invoice.
+  const taxPaise = Math.round((net * rate) / 100);
+  return { netPaise: net, taxPaise, totalPaise: net + taxPaise, ratePct: rate };
+}

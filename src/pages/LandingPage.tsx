@@ -1,3 +1,4 @@
+import { useTaxRate, gstNote } from "../hooks/useTaxRate";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "../i18n";
@@ -182,6 +183,9 @@ const RotatingPhrase: React.FC = () => {
 };
 
 export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, loginError }) => {
+  // Pricing copy follows the rate checkout will actually charge: 0 until a
+  // GSTIN is configured, so the GST line is simply absent until it is true.
+  const taxRatePct = useTaxRate();
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
@@ -635,7 +639,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
           <div className="inline-flex items-center gap-2 bg-primary/10 text-warning px-4 py-2 rounded-full text-sm font-bold">
             <Stack weight="duotone" className="w-4 h-4" /> {`Need more projects? Add extra ones any time for ₹${OVERAGE_RATE}/project / month.`}
           </div>
-          <p className="text-xs text-ink-muted mt-4">{"Try Starter free for 14 days — no card. Prices in INR, exclusive of GST. Annual plans are billed yearly. Enterprise billing is custom."}</p>
+          <p className="text-xs text-ink-muted mt-4">{`Try Starter free for 14 days — no card. Prices in INR. Annual plans are billed yearly. Enterprise billing is custom.${gstNote(taxRatePct)}`}</p>
         </div>
       </section>
 

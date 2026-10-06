@@ -320,7 +320,15 @@ describe("the no-free-month and no-clobber fixes hold", () => {
     const rzp = codeOf("./razorpay.ts");
     const block = rzp.slice(rzp.indexOf("export const createRazorpayOrder"), rzp.indexOf("createSlotOrder"));
     expect(block).toMatch(/prorateUpgrade\(/);
-    expect(block).toMatch(/amount\s*=\s*quote\.amountPaise/);
+    // The charge is now the PRORATED amount plus GST, so it is no longer a bare
+    // `amount = quote.amountPaise`. What still has to hold is that the money
+    // starts from the prorated figure: taxing quote.fullPaise would reinstate
+    // the double-charge this test exists to prevent, and charge GST on days the
+    // customer is being credited for.
+    expect(block).toMatch(/addGst\(\s*quote\.amountPaise/);
+    expect(block).not.toMatch(/addGst\(\s*quote\.fullPaise/);
+    // And the figure sent to the gateway is the taxed total, not the net.
+    expect(block).toMatch(/amount\s*=\s*charge\.totalPaise/);
   });
 });
 

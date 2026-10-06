@@ -19,6 +19,8 @@ import {
   callGetEmailConfigStatus,
   callSetRazorpayConfig,
   callGetRazorpayConfigStatus,
+  callSetTaxConfig,
+  callGetTaxConfigStatus,
   OrgUsage,
 } from "../../services/firebaseFunctions";
 import { PLAN_ORDER, PLANS } from "../../lib/plans";
@@ -135,6 +137,36 @@ export const OperatorPanel: React.FC = () => {
     } catch (e: any) {
       setUErr(e?.message || "Couldn't load usage.");
     } finally { setUBusy(false); }
+  };
+
+  // GST config. Separate from the Razorpay keys on purpose: payments can be
+  // live long before registration, and the rate must stay 0 until then.
+  const [gstin, setGstin] = useState("");
+  const [gstRate, setGstRate] = useState("18");
+  const [gstStatus, setGstStatus] = useState<{ configured: boolean; gstin: string; ratePct: number } | null>(null);
+  const [gstBusy, setGstBusy] = useState(false);
+  const [gstErr, setGstErr] = useState<string | null>(null);
+  const [gstMsg, setGstMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    callGetTaxConfigStatus()
+      .then((st) => { setGstStatus(st); setGstin(st.gstin || ""); if (st.ratePct) setGstRate(String(st.ratePct)); })
+      .catch(() => {});
+  }, []);
+
+  const saveGst = async () => {
+    setGstBusy(true); setGstErr(null); setGstMsg(null);
+    try {
+      const res = await callSetTaxConfig({ gstin: gstin.trim(), ratePct: Number(gstRate) });
+      setGstMsg(res.gstin
+        ? `Saved — ${res.ratePct}% GST will be added at checkout.`
+        : "Cleared — no GST will be charged.");
+      setGstStatus(await callGetTaxConfigStatus());
+    } catch (e: any) {
+      setGstErr(e?.message || "Couldn't save GST settings.");
+    } finally {
+      setGstBusy(false);
+    }
   };
 
   // Razorpay config
@@ -440,6 +472,46 @@ export const OperatorPanel: React.FC = () => {
             Use <b>test</b> keys (rzp_test_…) first — no KYC needed. In the Razorpay dashboard, add a webhook pointing to{" "}
             <span className="font-mono">{typeof window !== "undefined" ? window.location.origin : "https://sitetru.com"}/api/razorpay-webhook</span>{" "}
             for events <span className="font-mono">payment.captured</span> and <span className="font-mono">order.paid</span>, and paste its signing secret above. Switch to live keys after completing KYC.
+          </p>
+        </div>
+      </section>
+
+      {/* GST */}
+      <section className="soft-card p-8 squircle-24">
+        <div className="flex items-center gap-2 mb-1">
+          <CreditCard className="w-5 h-5 text-primary" />
+          <h3 className="text-xl font-bold text-ink">GST</h3>
+        </div>
+        <p className="text-ink-muted text-sm mb-5">
+          Catalog prices are net, so this is added on top at checkout. {gstStatus && (
+            gstStatus.configured
+              ? <span className="text-success font-semibold">Currently ON — {gstStatus.ratePct}% added, GSTIN {gstStatus.gstin}.</span>
+              : <span className="text-warning font-semibold">Currently OFF — customers are charged the net price with no GST.</span>
+          )}
+        </p>
+        {gstErr && (
+          <div className="mb-3 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm">
+            <AlertCircle className="w-5 h-5 shrink-0" /><p>{gstErr}</p>
+          </div>
+        )}
+        {gstMsg && (
+          <div className="mb-3 p-3 bg-success/10 text-ink rounded-xl border border-success/30 text-sm font-semibold">{gstMsg}</div>
+        )}
+        <div className="space-y-3">
+          <input value={gstin} onChange={(e) => setGstin(e.target.value.toUpperCase())} placeholder="GSTIN (15 characters, e.g. 33ABCDE1234F1Z5)"
+            className="w-full bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          <input value={gstRate} onChange={(e) => setGstRate(e.target.value)} inputMode="decimal" placeholder="Rate %"
+            className="w-full bg-panel border border-divider px-4 py-3 rounded-xl text-ink text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          <button onClick={saveGst} disabled={gstBusy}
+            className="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-deep transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            {gstBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+          </button>
+          <p className="text-[10px] text-ink-muted leading-relaxed">
+            Leave the GSTIN <b>empty until you are registered</b> — with no GSTIN the rate is forced to 0
+            and checkout charges the net price. Charging GST before registration is collecting tax you
+            cannot remit. Registration is mandatory past ₹20L of annual turnover (services, Tamil Nadu).
+            Your customers are registered contractors who reclaim this as input credit, so adding it on
+            top costs them nothing net. Saving an empty GSTIN turns GST back off.
           </p>
         </div>
       </section>

@@ -169,7 +169,20 @@ export const cancelSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 
 /** Undo a pending cancellation. Nothing has happened yet, so this just clears it. */
 export const resumeSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   const orgId = await resolveOrgId(request);
-  await assertOrgManager(request, orgId);
+  const orgSnap = await assertOrgManager(request, orgId);
+  const org: any = orgSnap.data();
+
+  // Mirror cancelSubscription's precondition. Without this, resuming a
+  // workspace that never cancelled deleted three fields that were not there
+  // and still answered { resumed: true }, so the UI could tell someone their
+  // subscription was restored when nothing had ever lapsed.
+  if (org.cancelAtPeriodEnd !== true) {
+    throw new HttpsError(
+      "failed-precondition",
+      "This workspace isn't scheduled to cancel, so there's nothing to resume.",
+    );
+  }
+
   await db.doc(`organizations/${orgId}`).set(
     {
       cancelAtPeriodEnd: FieldValue.delete(),
