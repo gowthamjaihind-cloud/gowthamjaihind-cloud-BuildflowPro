@@ -12,11 +12,12 @@ That last one is the reason the music is generated rather than chosen: a library
 track carries a licence, and a licence is exactly the sort of thing that
 surfaces later, when a video is doing well.
 
-## The two films
+## The films
 
 | File | What it is | Length |
 | --- | --- | --- |
-| `remotion/out/sitetru-launch.mp4` | The launch film. Argues. Cut from stills. | ~83s |
+| `remotion/out/sitetru-launch.mp4` | The launch film. Argues. Cut from stills. Voiceover + score. | ~79s |
+| `remotion/out/sitetru-hero.mp4` | The same stills, SILENT, captions only. The autoplay cut for the site. | ~83s |
 | `walkthrough/out/sitetru-walkthrough.mp4` | The walkthrough. Explains. The product actually running. | ~2:30 |
 
 Different jobs, on purpose. The launch film opens on the evening a contractor
@@ -219,7 +220,13 @@ orange over a cobalt product, and nothing caught any of it, because
 
 ## Requirements
 
-- `ffmpeg` on PATH (`apt-get install -y --no-install-recommends ffmpeg`)
+- `ffmpeg` AND `ffprobe` on PATH (`apt-get install -y --no-install-recommends ffmpeg`).
+  `mix.mjs` shells out to both, so an install that provides only `ffmpeg`
+  fails at the mix step, after a full render has already been paid for.
+  Where apt is unavailable, `npm i -g ffmpeg-static ffprobe-static` gives a
+  static build with the filters below; symlink both into `/usr/local/bin`,
+  and take `ffprobe` from the `linux/x64` directory -- the package also
+  ships darwin and ia32 binaries that will not run here.
 - `playwright-core` — a devDependency, so `npm install` covers it. It ships
   no browser; point `CHROME_PATH` at a Chromium binary if yours is not at the
   sandbox default `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
@@ -350,8 +357,23 @@ headless shell instead:
 
 ```
 npx remotion render Hero out/sitetru-hero.mp4 \
-  --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell
+  --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell \
+  --concurrency=2 --timeout=120000
 ```
+
+**Render the Launch composition at `--concurrency=2`, not 4.** `film/Fonts.tsx`
+holds the render open with `delayRender` until Manrope has actually been
+rasterised, and calls `cancelRender` if it has not -- deliberately, because a
+font that fails to load is silent otherwise and the whole film comes out in the
+fallback face. At `--concurrency=4` four headless tabs race that load past
+`delayRender`'s 30-second default and one of them gives up, so the render dies
+near the end with a React stack trace and no output file. Two tabs and a longer
+timeout are reliable. `npm run film:launch:render` still passes 4; lower it
+there if it bites again.
+
+Hero does not use `Fonts.tsx` and is unaffected -- which is why it can render at
+4 while Launch cannot, and why the failure looks like it is about the film
+rather than about the font.
 
 ### Why this exists alongside video/build.mjs
 
