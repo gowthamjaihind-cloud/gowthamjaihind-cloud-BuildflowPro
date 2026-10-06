@@ -235,7 +235,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
                   <span className="text-xs text-ink-muted mb-1.5">{t("paywall.perMo")}</span>
                 </div>
                 <div className="inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full my-2 bg-primary/12 text-primary-deep">
-                  <Stack weight="bold" className="w-3.5 h-3.5" /> {t("paywall.upToProjects", { n: p.includedProjects })}
+                  <Stack weight="bold" className="w-3.5 h-3.5" /> {t(p.includedProjects === 1 ? "paywall.upToProject" : "paywall.upToProjects", { n: p.includedProjects })}
                 </div>
                 <ul className="space-y-1.5 mb-4 text-sm">
                   <li className="flex items-start gap-2"><Check weight="bold" className="w-4 h-4 mt-0.5 text-success shrink-0" /> {t("paywall.users", { n: p.userLimit })}</li>

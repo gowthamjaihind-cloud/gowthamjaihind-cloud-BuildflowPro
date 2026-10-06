@@ -102,7 +102,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // survives the first-sign-in profile write in useAuth.
         try {
           await updateProfile(cred.user, { displayName });
-          await setDoc(doc(db, "users", cred.user.uid), { displayName }, { merge: true });
+          // Write the WHOLE profile, not just the name. This doc's existence is
+          // what makes useAuth take its "existing profile" path, and that path
+          // spreads the doc as-is -- so a doc holding only displayName produced
+          // a signed-in user with no email and no role. The first screen after
+          // sign-up then read "Signed in as ." with nothing after it.
+          await setDoc(
+            doc(db, "users", cred.user.uid),
+            {
+              uid: cred.user.uid,
+              email: cred.user.email || email.trim(),
+              displayName,
+              // Matches the default useAuth gives a first-time user with no
+              // admin claim. The founder-email upgrade still happens there.
+              role: "Viewer",
+            },
+            { merge: true },
+          );
         } catch {
           /* non-fatal — the name can be edited later in Settings */
         }

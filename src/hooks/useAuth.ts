@@ -91,7 +91,17 @@ export function useAuthInit() {
                   });
                   setUser({ uid: firebaseUser.uid, ...updatedProfile });
                 } else {
-                  setUser({ uid: firebaseUser.uid, ...data });
+                  // Backfill anything the stored doc is missing rather than
+                  // spreading it blind: a profile written by an older build (or
+                  // a partial write) otherwise yields a user with no email,
+                  // which the post-sign-up screen renders as "Signed in as .".
+                  setUser({
+                    uid: firebaseUser.uid,
+                    ...data,
+                    email: data.email || firebaseUser.email || "",
+                    displayName: data.displayName || firebaseUser.displayName || "User",
+                    role: data.role || "Viewer",
+                  });
                 }
                 setLoading(false);
               } else {
