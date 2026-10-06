@@ -231,6 +231,23 @@ export const callGetRazorpayConfigStatus = async () => {
   return res.data;
 };
 
+// ---- GST (seller-side tax) ----
+//
+// The rate stays 0 until a GSTIN is stored, because charging GST before you are
+// registered is collecting tax you have no right to. Setting the GSTIN here is
+// what switches 18% on at checkout -- no redeploy.
+export const callSetTaxConfig = async (args: { gstin: string; ratePct?: number }) => {
+  const fn = httpsCallable<typeof args, { ok: boolean; gstin: string; ratePct: number }>(
+    getFunctionsInstance(), 'setTaxConfig');
+  return (await fn(args)).data;
+};
+
+export const callGetTaxConfigStatus = async () => {
+  const fn = httpsCallable<Record<string, never>, { configured: boolean; gstin: string; ratePct: number }>(
+    getFunctionsInstance(), 'getTaxConfigStatus');
+  return (await fn({})).data;
+};
+
 // Owner/Admin: create a server-priced Razorpay order for a plan + period.
 // orgId is optional — used by the signup pay-now flow (org not yet linked).
 export const callCreateRazorpayOrder = async (args: { plan: string; period: 'monthly' | 'annual'; orgId?: string }) => {

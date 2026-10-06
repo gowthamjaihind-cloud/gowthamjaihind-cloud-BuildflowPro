@@ -2,7 +2,7 @@ import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import * as crypto from "crypto";
 import { db } from "./db";
-import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE, slotPurchasePatch, prorateUpgrade } from "./plans";
+import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE, slotPurchasePatch, prorateUpgrade, addGst, GST_RATE_PCT } from "./plans";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
 
@@ -47,6 +47,53 @@ async function placeRazorpayOrder(
 }
 
 // ---- Operator config (super-admin) ----
+/**
+ * Seller-side GST configuration.
+ *
+ * The rate is deliberately gated on a GSTIN: charging GST without being
+ * registered is not a rounding error, it is collecting tax you have no right
+ * to. So an unset, blank or malformed GSTIN yields a 0% rate and checkout
+ * charges the net price, which is the correct behaviour below the ₹20L
+ * registration threshold. Set the GSTIN in the operator panel once registered
+ * and every subsequent order picks up the rate with no redeploy.
+ */
+export interface TaxConfig { gstin: string; ratePct: number; }
+
+export async function getTaxConfig(): Promise<TaxConfig> {
+  const snap = await db.doc("app_config/tax").get();
+  const d: any = snap.exists ? snap.data() : {};
+  const gstin = String(d?.gstin || "").trim().toUpperCase();
+  if (!gstin) return { gstin: "", ratePct: 0 };
+  const configured = Number(d?.ratePct);
+  return { gstin, ratePct: Number.isFinite(configured) && configured > 0 ? configured : GST_RATE_PCT };
+}
+
+export const setTaxConfig = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  assertSuperAdmin(request);
+  const gstin = String(request.data?.gstin || "").trim().toUpperCase();
+  // Empty clears registration and takes the rate back to 0 -- the way to stop
+  // charging GST if registration lapses.
+  if (gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/.test(gstin)) {
+    throw new HttpsError("invalid-argument", "That doesn't look like a valid 15-character GSTIN.");
+  }
+  const raw = request.data?.ratePct;
+  const ratePct = raw === undefined || raw === null || raw === "" ? GST_RATE_PCT : Number(raw);
+  if (!Number.isFinite(ratePct) || ratePct < 0 || ratePct > 100) {
+    throw new HttpsError("invalid-argument", "GST rate must be between 0 and 100.");
+  }
+  await db.doc("app_config/tax").set(
+    { gstin, ratePct, updatedAt: new Date().toISOString(), updatedBy: request.auth!.uid },
+    { merge: true },
+  );
+  return { ok: true, gstin, ratePct: gstin ? ratePct : 0 };
+});
+
+export const getTaxConfigStatus = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  assertSuperAdmin(request);
+  const cfg = await getTaxConfig();
+  return { configured: !!cfg.gstin, gstin: cfg.gstin, ratePct: cfg.ratePct };
+});
+
 export const setRazorpayConfig = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   assertSuperAdmin(request);
   const keyId = String(request.data?.keyId || "").trim();
@@ -101,7 +148,12 @@ export const createRazorpayOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30
   // part-way through a cycle does not charge twice for the same days. Priced
   // here on the server: the client never supplies an amount.
   const quote = prorateUpgrade(orgSnap.data(), plan as PlanId, period);
-  const amount = quote.amountPaise;
+  // Catalog prices are net of GST, so tax is added on top of the PRORATED
+  // figure -- taxing the sticker would charge GST on days the customer is
+  // being credited for.
+  const tax = await getTaxConfig();
+  const charge = addGst(quote.amountPaise, tax.ratePct);
+  const amount = charge.totalPaise;
 
   const cfg = await getRazorpayConfig();
   if (!cfg) throw new HttpsError("failed-precondition", "Payments aren't configured yet.");
@@ -120,6 +172,10 @@ export const createRazorpayOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30
     period,
     uid,
     amount,
+    netAmount: charge.netPaise,
+    taxAmount: charge.taxPaise,
+    taxRatePct: charge.ratePct,
+    gstin: tax.gstin,
     listAmount: quote.fullPaise,
     creditApplied: quote.creditPaise,
     status: "created",
@@ -132,6 +188,9 @@ export const createRazorpayOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30
   return {
     orderId: order.id,
     amount,
+    net: charge.netPaise,
+    tax: charge.taxPaise,
+    taxRatePct: charge.ratePct,
     listAmount: quote.fullPaise,
     credit: quote.creditPaise,
     creditDays: quote.creditDays,
@@ -170,7 +229,9 @@ export const createSlotOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, 
   }
 
   const rate = Number(org.overageRate) || OVERAGE_RATE;
-  const amount = quantity * rate * 100; // paise
+  const tax = await getTaxConfig();
+  const charge = addGst(quantity * rate * 100, tax.ratePct); // net paise -> +GST
+  const amount = charge.totalPaise;
 
   const cfg = await getRazorpayConfig();
   if (!cfg) throw new HttpsError("failed-precondition", "Payments aren't configured yet.");
@@ -188,11 +249,23 @@ export const createSlotOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, 
     quantity,
     uid,
     amount,
+    netAmount: charge.netPaise,
+    taxAmount: charge.taxPaise,
+    taxRatePct: charge.ratePct,
+    gstin: tax.gstin,
     status: "created",
     createdAt: new Date().toISOString(),
   });
 
-  return { orderId: order.id, amount, currency: "INR", keyId: cfg.keyId };
+  return {
+    orderId: order.id,
+    amount,
+    net: charge.netPaise,
+    tax: charge.taxPaise,
+    taxRatePct: charge.ratePct,
+    currency: "INR",
+    keyId: cfg.keyId,
+  };
 });
 
 // Apply the plan an order paid for. Idempotent (a repeat is a no-op).
