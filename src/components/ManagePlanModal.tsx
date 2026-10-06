@@ -1,3 +1,4 @@
+import { useTaxRate, gstNote } from "../hooks/useTaxRate";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Check, CircleNotch as Loader2, ArrowUp, ArrowDown, CalendarCheck } from "@phosphor-icons/react";
@@ -22,6 +23,9 @@ const TIERS: PlanId[] = ["starter", "business"];
 // Full plan switcher for an Owner/Admin: upgrade (immediate, paid) or schedule a
 // downgrade for the end of the current cycle. Shows any scheduled change.
 export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
+  // Pricing copy follows the rate checkout will actually charge: 0 until a
+  // GSTIN is configured, so the GST line is simply absent until it is true.
+  const taxRatePct = useTaxRate();
   const plan = usePlan();
   const { data: projects = [] } = useProjectsQuery();
   const { pay, busy: payBusy, error: payError } = useRazorpayCheckout();
@@ -207,7 +211,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
 
           <p className="text-center text-[11px] text-ink-muted mt-5">
-            {"Upgrades are charged now and apply immediately. Downgrades take effect at the end of your paid cycle — no refund, you keep your current plan until then. Prices exclusive of GST."}
+            {`Upgrades are charged now and apply immediately. Downgrades take effect at the end of your paid cycle — no refund, you keep your current plan until then.${gstNote(taxRatePct)}`}
           </p>
         </motion.div>
       </motion.div>

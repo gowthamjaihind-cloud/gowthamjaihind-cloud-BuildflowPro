@@ -263,7 +263,7 @@ export const translations: { en: Record<string, string> } = {
     "paywall.aiScans": "{n} AI scans / mo",
     "paywall.pay": "Pay ₹{amount}",
     "paywall.extraNote":
-      "Extra projects beyond your plan are ₹99/project/month. Prices exclusive of GST. Need more, or an Enterprise plan?",
+      "Extra projects beyond your plan are ₹99/project/month. Need more, or an Enterprise plan?",
     "paywall.contactUs": "Contact us",
     "paywall.wrongAccountTrial":
       "Wrong account, or already used your trial? Sign out to start fresh.",
@@ -325,7 +325,7 @@ export const translations: { en: Record<string, string> } = {
     "onb.starting": "Starting…",
     "onb.orPayNow": "or pay ₹{amount} now",
     "onb.footerNote":
-      "New to Sitetru? Try Starter free for 14 days — no card, upgrade anytime. Prices exclusive of GST. Extra projects ₹99/mo each. Need Enterprise?",
+      "New to Sitetru? Try Starter free for 14 days — no card, upgrade anytime. Extra projects ₹99/mo each. Need Enterprise?",
     "onb.haveInvite": "Have an invite code?",
 
     // ---- Settings ----

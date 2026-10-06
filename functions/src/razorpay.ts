@@ -68,6 +68,24 @@ export async function getTaxConfig(): Promise<TaxConfig> {
   return { gstin, ratePct: Number.isFinite(configured) && configured > 0 ? configured : GST_RATE_PCT };
 }
 
+/**
+ * The GST rate checkout will actually apply, and nothing else.
+ *
+ * Pricing copy has to tell the truth in BOTH states: while no GSTIN is set the
+ * customer pays the sticker, and the moment one is set they pay 18% more. A
+ * hard-coded "exclusive of GST" line is wrong in the first case (it implies a
+ * charge that never comes) and a silent 18% is worse in the second.
+ *
+ * Deliberately unauthenticated: the landing page quotes prices to visitors who
+ * have not signed in, and a tax rate is public information -- it is printed on
+ * every invoice. The GSTIN is NOT returned; only the number the copy needs.
+ * App Check still applies through CALLABLE_OPTS.
+ */
+export const getCheckoutTaxRate = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 15 }, async () => {
+  const { ratePct } = await getTaxConfig();
+  return { ratePct };
+});
+
 export const setTaxConfig = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   assertSuperAdmin(request);
   const gstin = String(request.data?.gstin || "").trim().toUpperCase();
