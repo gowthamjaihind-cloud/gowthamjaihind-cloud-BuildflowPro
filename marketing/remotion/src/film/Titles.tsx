@@ -268,7 +268,11 @@ export const EndCard: React.FC = () => {
             opacity: ramp(frame, [20, 34], arrive),
           }}
         >
-          Free to start · ₹999/month · English &amp; தமிழ்
+          {/* Must match the closing narration in films/launch.script.mjs and the
+              catalog in src/lib/plans.ts. It read "Free to start · ₹999/month ·
+              English & <Tamil>": no plan costs ₹999, there is no free tier, and
+              the web app is English only. */}
+          14 days free · ₹99 / project / month
         </div>
         <div
           style={{

@@ -203,11 +203,15 @@ export const EndCard: React.FC = () => {
           color: C.page,
         }}
       >
-        <span>Free plan to start</span>
+        {/* Three claims, two of which were wrong: there is no free PLAN (the
+            free entry point is the trial, which the third item already says),
+            and nothing costs ₹999. Starter is ₹99/month including one project.
+            films.spec.ts guards these strings. */}
+        <span>14-day free trial</span>
         <span style={{ color: C.primaryOnDark }}>·</span>
-        <span>From ₹999 / month</span>
+        <span>From ₹99 / month</span>
         <span style={{ color: C.primaryOnDark }}>·</span>
-        <span>14-day trial, no card</span>
+        <span>No card to start</span>
       </div>
       <div
         style={{

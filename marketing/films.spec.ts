@@ -94,6 +94,34 @@ describe("film scripts", () => {
         expect(free, "a ₹0 plan exists again — say so in the films instead of 'free for N days'").toHaveLength(0);
       });
 
+      it("the END CARD agrees with the catalog, not just the narration", () => {
+        // The checks above read film.beats[].vo. The closing CARD is a React
+        // component, so its text was invisible to them -- and it went on saying
+        // "Free to start · ₹999/month · English & <Tamil>" long after the
+        // narration was re-cut, which is exactly the claim this spec exists to
+        // stop. A film is what the viewer sees as well as what they hear.
+        const cards = [
+          "../marketing/remotion/src/film/Titles.tsx",  // Launch
+          "../marketing/remotion/src/Type.tsx",         // Hero
+        ].map((rel) =>
+          readFileSync(join(HERE, rel.replace("../marketing/", "./")), "utf8")
+            .replace(/\/\*[\s\S]*?\*\//g, "")
+            .replace(/\{\/\*[\s\S]*?\*\/\}/g, ""),
+        );
+        const live = new Set(
+          Object.values(PLANS).flatMap((p) => [p.monthly, p.annual]).filter((n): n is number => typeof n === "number"),
+        );
+        for (const src of cards) {
+          for (const m of src.matchAll(/₹([\d,]{2,})/g)) {
+            const amount = Number(m[1].replace(/,/g, ""));
+            expect(live.has(amount), `an end card shows ₹${amount}, which no plan charges`).toBe(true);
+          }
+          // No permanent free tier, and the web app is English only.
+          expect(src).not.toMatch(/free (plan|to start)/i);
+          expect(src).not.toMatch(/[஀-௿]/);
+        }
+      });
+
       it("names no real project, only the demo's placeholders", () => {
         // The instruction is that films use placeholder names. The fixtures are
         // already renamed; this stops a script from writing a real one back in
