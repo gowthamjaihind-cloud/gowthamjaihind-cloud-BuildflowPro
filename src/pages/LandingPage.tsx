@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "../i18n";
 import { BrandLogo } from "../components/BrandLogo";
+import { HeroVideo } from "../components/HeroVideo";
 import { TERMS_URL, PRIVACY_URL, REFUND_URL, SHIPPING_URL, CONTACT_URL, stashPendingConsent } from "../lib/legal";
 import { useAuthStore } from "../store";
 import {
@@ -417,6 +418,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             </div>
           </div>
         </motion.div>
+      </section>
+
+      {/* FILM — poster only until asked for; see HeroVideo for why it does not autoplay */}
+      <section id="film" className="max-w-5xl mx-auto px-5 sm:px-8 pb-4 md:pb-10">
+        <HeroVideo />
       </section>
 
       {/* WHO WE SERVE */}
