@@ -145,7 +145,7 @@ export const LAUNCH = {
     {
       id: "end",
       shot: "end",
-      vo: "Sitetru. Free to start, nine hundred and ninety nine rupees a month. Sitetru dot com.",
+      vo: "Sitetru. Fourteen days free, then ninety nine rupees a project, a month. Sitetru dot com.",
       hold: 2.2,
     },
   ],

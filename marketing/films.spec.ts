@@ -39,31 +39,34 @@ const SPOKEN: Record<string, number> = {
 };
 
 /**
- * Both films still close on "Free to start, nine hundred and ninety nine rupees
- * a month". Neither half is true any more: the catalog is Starter at ₹99 per
- * project, Business at ₹1,499, Enterprise custom, and there is no permanent free
- * tier -- the free entry point is the 14-day Starter trial.
+ * Both films used to close on "Free to start, nine hundred and ninety nine
+ * rupees a month", and neither half was true: the catalog is Starter at ₹99 per
+ * project, Business at ₹1,499, Enterprise custom, and the only free entry point
+ * is the 14-day Starter trial. They now close on "Fourteen days free, then
+ * ninety nine rupees a project, a month".
  *
- * Re-cutting is its own task, not a script edit. The closing line is one string,
- * but the voice is synthesised locally (marketing/voice/fetch-voice.sh fetches
- * the Kokoro model, then build-voice.mjs runs it) and that regenerates the
- * committed timing manifests under marketing/remotion/src/generated/, shifting
- * every beat offset in the film. Changing the text without rebuilding leaves the
- * script and the built voice disagreeing, which the timing check below catches.
+ * The re-cut was not a script edit. The voice is synthesised locally
+ * (marketing/voice/fetch-voice.sh fetches Kokoro, then build-voice.mjs runs it)
+ * and that regenerates the committed timing manifests under
+ * marketing/remotion/src/generated/, shifting every beat offset in the film.
+ * Changing the text without rebuilding leaves the script and the built voice
+ * disagreeing, which the timing check below catches.
  *
- * So the two claims are parked here rather than quietly deleted, and
- * "the parked claims are still actually wrong" below makes sure this cannot
- * outlive the re-cut: once the films are fixed, that test fails until the flag
- * is removed.
+ * The walkthrough also claimed "in English or Tamil". Tamil now lives only in
+ * the Telegram bot and that film's footage is the English-only web app, so the
+ * claim was dropped rather than qualified.
+ *
+ * The two checks below ran behind a FILMS_AWAITING_RECUT flag while that was
+ * outstanding, with a companion test that failed the moment the films stopped
+ * contradicting the catalog. Both are gone now that they do.
  */
-const FILMS_AWAITING_RECUT = true;
 
 describe("film scripts", () => {
   for (const { id, film } of scripts) {
     describe(id, () => {
       const all = film.beats.map((b: { vo: string }) => b.vo).join(" ");
 
-      it.skipIf(FILMS_AWAITING_RECUT)("quotes a price that is actually a plan's price", () => {
+      it("quotes a price that is actually a plan's price", () => {
         // Longest match wins: "ninety nine" is a substring of "nine hundred and
         // ninety nine", so without this a retired price would also register as
         // the current one and the check would pass on the wrong number.
@@ -75,7 +78,7 @@ describe("film scripts", () => {
         expect(prices, `${amount} is not a plan price`).toContain(amount);
       });
 
-      it.skipIf(FILMS_AWAITING_RECUT)("promises a free start only where one actually exists", () => {
+      it("promises a free start only where one actually exists", () => {
         if (!/\bfree\b/i.test(all)) return;
         // There is no permanent free tier any more, so the free entry point is
         // the self-serve trial. Read it from the source rather than trusting the
@@ -89,19 +92,6 @@ describe("film scripts", () => {
         }
         const free = Object.values(PLANS).filter((p) => p.monthly === 0);
         expect(free, "a ₹0 plan exists again — say so in the films instead of 'free for N days'").toHaveLength(0);
-      });
-
-      it.runIf(FILMS_AWAITING_RECUT)("the parked claims are still actually wrong", () => {
-        // The moment the films are re-cut this fails, which is the only thing
-        // that makes FILMS_AWAITING_RECUT safe to have written down. Delete the
-        // flag and this test together; the two checks above then do their job.
-        const quotesRetiredPrice = /nine hundred and ninety nine/.test(all);
-        const claimsFreeTier = /free to start/i.test(all);
-        const hasFreePlan = Object.values(PLANS).some((p) => p.monthly === 0);
-        expect(
-          quotesRetiredPrice || (claimsFreeTier && !hasFreePlan),
-          "this film no longer contradicts the catalog — remove FILMS_AWAITING_RECUT and this test",
-        ).toBe(true);
       });
 
       it("names no real project, only the demo's placeholders", () => {
