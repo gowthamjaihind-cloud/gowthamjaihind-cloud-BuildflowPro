@@ -141,7 +141,12 @@ export const Hero: React.FC = () => (
 
     <Sequence from={HERO_BEATS.dash[0]} durationInFrames={len(HERO_BEATS.dash)}>
       <Screen src={S.dash} from={F.dashWide} to={F.dashKpis} />
-      <Caption label="One place" title="43% built. ₹53.7L spent. Nothing at risk." />
+      {/* Reads off the KPI tiles this shot zooms into, so it has to match them.
+          It said "Nothing at risk" while the tile it lands on says "TASKS AT
+          RISK 1 - Require attention", which is the same drift the README warns
+          about on beat 4. Surfacing the one slipping task is the better claim
+          anyway: the product's point is that you find out. */}
+      <Caption label="One place" title="43% built. ₹53.7L spent. One task slipping." />
     </Sequence>
 
     <Sequence from={HERO_BEATS.end[0]} durationInFrames={len(HERO_BEATS.end)}>
