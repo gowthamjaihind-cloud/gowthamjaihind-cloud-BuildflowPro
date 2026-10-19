@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Stack, Copy, Check, Plus, SlidersHorizontal, CalendarCheck } from "@phosphor-icons/react";
+import { Stack, Copy, Check, Plus, SlidersHorizontal, CalendarCheck, WarningCircle } from "@phosphor-icons/react";
 import { usePlan } from "../../hooks/usePlan";
 import { useProjectsQuery } from "../../hooks/queries";
 import { useAuthStore } from "../../store";
@@ -35,6 +35,26 @@ export const PlanSummary: React.FC = () => {
   const [history, setHistory] = useState<BillingHistoryRow[] | null>(null);
   const [historyBusy, setHistoryBusy] = useState(false);
   if (plan.loading) return null;
+
+  // The panel used to render nothing here too, because `unavailable` did not
+  // exist and an unreachable backend never cleared `loading`. An owner whose
+  // subscription had lapsed opened Settings to fix it and found the billing
+  // section simply absent -- indistinguishable from having no plan at all.
+  // Say what happened instead; the SDK keeps retrying, so this clears itself.
+  if (plan.unavailable) {
+    return (
+      <div className="soft-card squircle-24 p-5 mb-6 flex items-start gap-3 border border-warning/30 bg-warning/5">
+        <WarningCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" weight="fill" />
+        <div>
+          <p className="text-sm font-bold text-ink">We couldn't load your plan</p>
+          <p className="text-sm text-ink-muted mt-0.5">
+            Your billing details are still on our side — this is a connection problem, not a change
+            to your account. It'll fill in on its own once you're back online.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const planName =
     plan.plan && PLANS[plan.plan as PlanId] ? PLANS[plan.plan as PlanId].name : plan.plan || "—";
