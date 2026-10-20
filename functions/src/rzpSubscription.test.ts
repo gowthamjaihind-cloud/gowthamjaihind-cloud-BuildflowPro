@@ -192,3 +192,101 @@ describe("cancellation reaches Razorpay", () => {
     expect(body).toMatch(/throw new HttpsError\(\s*"unavailable"/);
   });
 });
+
+// ---- metered Starter billing --------------------------------------------
+import { desiredQuantity, quantityChange, isQuantityBilled } from "./rzpSubscription";
+import { PLANS, OVERAGE_RATE } from "./plans";
+
+describe("quantity-billed Starter", () => {
+  it("bills Starter per project and nothing else", () => {
+    expect(isQuantityBilled("starter")).toBe(true);
+    // Business includes 20 for a flat ₹1,499, so quantity would have to mean
+    // something different there; it stays at 1 until that is built.
+    for (const p of ["business", "enterprise", "free", "", "trial"]) {
+      expect(isQuantityBilled(p)).toBe(false);
+    }
+  });
+
+  it("charges ₹99 per project, which is exactly Starter's price", () => {
+    // The whole reason quantity works here: Starter IS ₹99 per project, so
+    // quantity x plan amount is the right bill at every count.
+    expect(PLANS.starter.monthly).toBe(OVERAGE_RATE);
+    expect(PLANS.starter.includedProjects).toBe(1);
+  });
+
+  it("never drops below 1, because Starter includes a project", () => {
+    // A customer between projects still has a plan, and Razorpay will not
+    // accept quantity 0 anyway.
+    for (const n of [0, -3, NaN, undefined, null, "x"]) {
+      expect(desiredQuantity("starter", n as any)).toBe(1);
+    }
+  });
+
+  it("tracks the project count upward", () => {
+    expect(desiredQuantity("starter", 1)).toBe(1);
+    expect(desiredQuantity("starter", 3)).toBe(3);
+    expect(desiredQuantity("starter", 20)).toBe(20);
+  });
+
+  it("leaves non-quantity plans at 1 whatever they have", () => {
+    expect(desiredQuantity("business", 17)).toBe(1);
+    expect(desiredQuantity("enterprise", 400)).toBe(1);
+  });
+});
+
+describe("quantityChange", () => {
+  it("does nothing when nothing moved", () => {
+    expect(quantityChange(3, 3)).toEqual({ kind: "none" });
+  });
+
+  it("raises immediately, because the project is usable immediately", () => {
+    expect(quantityChange(1, 2)).toEqual({ kind: "increase", quantity: 2, scheduleAt: "now" });
+  });
+
+  it("lowers only at cycle end, never refunding mid-period", () => {
+    // Matches the downgrade policy everywhere else: you keep what you paid for
+    // until the period runs out. Applying it now would hand back money for
+    // days already used.
+    expect(quantityChange(4, 2)).toEqual({ kind: "decrease", quantity: 2, scheduleAt: "cycle_end" });
+  });
+
+  it("treats a missing current quantity as an increase, not a crash", () => {
+    // An org subscribed before this existed has no billedQuantity.
+    for (const bad of [undefined, null, NaN, "", "two"]) {
+      expect(quantityChange(bad as any, 2)).toEqual({ kind: "increase", quantity: 2, scheduleAt: "now" });
+    }
+  });
+
+  it("refuses to target below 1", () => {
+    expect(quantityChange(5, 0).kind).toBe("decrease");
+    expect((quantityChange(5, 0) as any).quantity).toBe(1);
+  });
+});
+
+describe("the quantity sync is not something a client can dictate", () => {
+  const src = readFileSync(join(HERE, "./razorpay.ts"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+  const body = src.slice(src.indexOf("export const syncSubscriptionQuantity"), src.indexOf("export async function cancelRazorpaySubscription"));
+
+  it("counts projects on the server rather than trusting the caller", () => {
+    // Taking a quantity from request.data would let anyone set their own bill.
+    expect(body).toMatch(/\.count\(\)/);
+    expect(body).not.toMatch(/request\.data\?\.quantity/);
+  });
+
+  it("only an Owner or Admin may move the bill", () => {
+    expect(body).toMatch(/permission-denied/);
+  });
+
+  it("does not lower capacity until the decrease actually applies", () => {
+    // includedProjects may only be raised on an immediate increase; a cycle-end
+    // decrease must leave capacity alone or the customer loses a project they
+    // have already paid for.
+    expect(body).toMatch(/kind === "increase"\) patch\.includedProjects/);
+  });
+
+  it("makes no API call when nothing needs to move", () => {
+    expect(body).toMatch(/kind === "none"\) return \{ changed: false/);
+  });
+});

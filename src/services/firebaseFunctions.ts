@@ -265,6 +265,14 @@ export const callCreateSubscription = async (args: { plan: string; period: "mont
   return (await fn(args)).data;
 };
 
+// Owner/Admin: put the mandate's quantity in step with the project count.
+// Idempotent; no-ops when nothing needs to move or the plan is not metered.
+export const callSyncSubscriptionQuantity = async (args: { orgId?: string } = {}) => {
+  const fn = httpsCallable<typeof args, { changed: boolean; quantity?: number; effective?: string }>(
+    getFunctionsInstance(), 'syncSubscriptionQuantity');
+  return (await fn(args)).data;
+};
+
 // Owner/Admin: create a server-priced Razorpay order for a plan + period.
 // orgId is optional — used by the signup pay-now flow (org not yet linked).
 export const callCreateRazorpayOrder = async (args: { plan: string; period: 'monthly' | 'annual'; orgId?: string }) => {
