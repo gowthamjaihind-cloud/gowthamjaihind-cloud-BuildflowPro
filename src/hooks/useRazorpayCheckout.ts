@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { callCreateRazorpayOrder, callCreateSlotOrder, callVerifyRazorpayPayment } from "../services/firebaseFunctions";
+import { callCreateRazorpayOrder, callCreateSlotOrder, callVerifyRazorpayPayment, callCreateSubscription } from "../services/firebaseFunctions";
 import { useAuthStore } from "../store";
 
 declare global {
@@ -89,6 +89,53 @@ export function useRazorpayCheckout() {
     }
   };
 
+  /**
+   * Start a recurring subscription for the plan fee.
+   *
+   * Different from `pay` in a way that matters to the customer: checkout here
+   * authorises a MANDATE, so the bank asks them to approve future debits, not
+   * just this one. Nothing is verified client-side afterwards because nothing
+   * can be -- the authorisation payment and every renewal are confirmed by
+   * webhook, which is also what moves the org to active. The modal closing is
+   * not proof of payment, so the caller refreshes and waits for the server.
+   */
+  const subscribe = async (
+    plan: string,
+    period: "monthly" | "annual",
+    onSuccess?: () => void,
+    orgId?: string,
+  ) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const sub = await callCreateSubscription({ plan, period, orgId });
+      const ok = await loadScript(CHECKOUT_SRC);
+      if (!ok || !window.Razorpay) {
+        throw new Error("Couldn't load the payment window. Check your connection and try again.");
+      }
+      await new Promise<void>((resolve, reject) => {
+        const rzp = new window.Razorpay({
+          key: sub.keyId,
+          name: "Sitetru",
+          description: `${plan} plan · billed ${period === "annual" ? "yearly" : "monthly"}`,
+          // subscription_id, not order_id: this is what puts Razorpay into
+          // mandate mode rather than taking a single payment.
+          subscription_id: sub.subscriptionId,
+          prefill: { email: user?.email || "", name: user?.displayName || "" },
+          theme: { color: "#1D4ED8" },
+          handler: () => resolve(),
+          modal: { ondismiss: () => reject(new Error("Payment cancelled.")) },
+        });
+        rzp.open();
+      });
+      onSuccess?.();
+    } catch (e: any) {
+      setError(e?.message || "We couldn't start your subscription. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // Buy N extra project slots (₹99 each) for a paid org. Payment raises the cap.
   const paySlots = async (quantity: number, onSuccess?: () => void, orgId?: string) => {
     setBusy(true);
@@ -107,5 +154,5 @@ export function useRazorpayCheckout() {
     }
   };
 
-  return { pay, paySlots, busy, error };
+  return { pay, subscribe, paySlots, busy, error };
 }

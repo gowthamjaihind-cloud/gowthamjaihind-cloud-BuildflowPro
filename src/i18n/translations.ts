@@ -243,6 +243,11 @@ export const translations: { en: Record<string, string> } = {
     // ---- Paywall / Trial ----
     "paywall.trialEnded": "Your free trial has ended",
     "paywall.subNeeded": "Subscription needed",
+    // Nothing anywhere used to say whether money recurred. A customer who had
+    // used any other SaaS assumed it did, was never charged again, and lost
+    // access on day 30 believing they were a paying subscriber.
+    "paywall.recurs": "Billed automatically every month until you cancel. Cancel any time from Settings — you keep access until the period you've paid for ends.",
+    "paywall.recursAnnual": "Billed automatically every year until you cancel. Cancel any time from Settings — you keep access until the period you've paid for ends.",
     "paywall.accessPausedPre": "Access to",
     "paywall.accessPausedPost":
       "is paused. Please ask your organization's owner to activate a plan.",
@@ -323,7 +328,10 @@ export const translations: { en: Record<string, string> } = {
     "onb.startFree": "Start free trial",
     "onb.startTrial": "Start 14-day free trial",
     "onb.starting": "Starting…",
-    "onb.orPayNow": "or pay ₹{amount} now",
+    // Was "or pay ₹{amount} now", which said nothing about what the payment
+    // starts or that it forfeits the remaining trial days. Both now stated:
+    // this authorises a mandate, and the trial ends the moment you pay.
+    "onb.orPayNow": "or subscribe now at ₹{amount}/mo — skips the free trial",
     "onb.footerNote":
       "New to Sitetru? Try Starter free for 14 days — no card, upgrade anytime. Extra projects ₹99/mo each. Need Enterprise?",
     "onb.haveInvite": "Have an invite code?",

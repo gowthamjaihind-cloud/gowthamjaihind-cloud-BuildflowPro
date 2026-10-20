@@ -28,7 +28,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const taxRatePct = useTaxRate();
   const plan = usePlan();
   const { data: projects = [] } = useProjectsQuery();
-  const { pay, busy: payBusy, error: payError } = useRazorpayCheckout();
+  const { subscribe, busy: payBusy, error: payError } = useRazorpayCheckout();
   const [period, setPeriod] = useState<"monthly" | "annual">("monthly");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const fmtDate = (ms?: number) =>
     ms ? new Date(ms).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : null;
 
-  const doUpgrade = (id: PlanId) => pay(id, period, () => onClose());
+  const doUpgrade = (id: PlanId) => subscribe(id, period, () => onClose());
 
   const doDowngrade = async (id: PlanId) => {
     const cap = PLANS[id].includedProjects;
@@ -209,6 +209,15 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
               );
             })}
           </div>
+
+          {/* Nothing here used to say whether money recurred, so a customer who
+              had used any other SaaS assumed it did, was never charged again,
+              and lost access believing they were a paying subscriber. */}
+          <p className="text-center text-[11px] font-semibold text-ink-muted mt-5">
+            {period === "annual"
+              ? "Billed automatically every year until you cancel."
+              : "Billed automatically every month until you cancel."}
+          </p>
 
           <p className="text-center text-[11px] text-ink-muted mt-5">
             {`Upgrades are charged now and apply immediately. Downgrades take effect at the end of your paid cycle — no refund, you keep your current plan until then.${gstNote(taxRatePct)}`}
