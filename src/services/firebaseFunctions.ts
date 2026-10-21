@@ -255,6 +255,16 @@ export const callGetTaxConfigStatus = async () => {
   return (await fn({})).data;
 };
 
+// Owner/Admin: start a RECURRING subscription for the plan fee. The returned
+// subscriptionId opens Razorpay checkout in mandate mode; every later charge
+// then happens without the customer, and webhooks keep the org in step.
+export const callCreateSubscription = async (args: { plan: string; period: "monthly" | "annual"; orgId?: string }) => {
+  const fn = httpsCallable<typeof args, {
+    subscriptionId: string; shortUrl: string | null; keyId: string; plan: string; period: string;
+  }>(getFunctionsInstance(), 'createSubscription');
+  return (await fn(args)).data;
+};
+
 // Owner/Admin: create a server-priced Razorpay order for a plan + period.
 // orgId is optional — used by the signup pay-now flow (org not yet linked).
 export const callCreateRazorpayOrder = async (args: { plan: string; period: 'monthly' | 'annual'; orgId?: string }) => {

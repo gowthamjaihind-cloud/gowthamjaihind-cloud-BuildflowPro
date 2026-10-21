@@ -36,6 +36,23 @@ export const GRACE_MS = 7 * DAY_MS;
  */
 export const NOTICE_DAYS = [7, 1] as const;
 
+/**
+ * How long past its period end a SUBSCRIPTION-backed org is left alone.
+ *
+ * Razorpay charges on its own clock and tells us by webhook. Between the period
+ * ending and `subscription.charged` arriving there is a real gap -- Razorpay
+ * retries a failed card for days, and a webhook can be delayed or lost outright.
+ * Without this tolerance the nightly job would read "period ended" and move a
+ * customer Razorpay is about to charge, or has already charged, into dunning:
+ * the grace banner and the renewal emails, over nothing.
+ *
+ * Two days is longer than a healthy charge takes and shorter than the grace
+ * week that follows, so a genuinely failed subscription still lands in
+ * past_due well before it would lose access. Orgs with NO subscription are
+ * unaffected -- they pay by one-off order and nothing is coming.
+ */
+export const WEBHOOK_TOLERANCE_MS = 2 * 24 * 60 * 60 * 1000;
+
 /** Statuses the lifecycle job is allowed to move. Everything else it leaves. */
 const MOVABLE = new Set(["active", "past_due"]);
 
@@ -67,6 +84,14 @@ export function nextLifecycleState(org: any, now = Date.now()): Transition | nul
     // `end <= 0` rather than `!end`: a negative timestamp is junk, and reading
     // it as "a date long past" would expire the org on corrupt data.
     if (end <= 0 || now < end) return null;
+    // A live Razorpay subscription means a charge is Razorpay's to make, and
+    // its webhook is what moves currentPeriodEnd. Give that a window to arrive
+    // before treating a silent period end as a missed payment. A cancellation
+    // the customer already asked for is exempt: no charge is coming, so there
+    // is nothing to wait for.
+    if (org?.razorpaySubscriptionId && org?.cancelAtPeriodEnd !== true && now < end + WEBHOOK_TOLERANCE_MS) {
+      return null;
+    }
     // A customer who asked to leave gets what they asked for at the end of the
     // period they paid for -- no grace week, no dunning emails chasing money
     // they already said they did not want to spend. Asking someone to cancel

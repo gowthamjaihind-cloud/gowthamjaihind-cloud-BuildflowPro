@@ -2,6 +2,7 @@ import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import * as crypto from "crypto";
 import { db } from "./db";
+import { subscriptionPatch, planCacheKey, rzpPeriod, totalCycles } from "./rzpSubscription";
 import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE, slotPurchasePatch, prorateUpgrade, addGst, GST_RATE_PCT } from "./plans";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
@@ -136,6 +137,166 @@ export const getRazorpayConfigStatus = onCall({ ...CALLABLE_OPTS, timeoutSeconds
     mode: String(d?.keyId || "").startsWith("rzp_live_") ? "live" : "test",
   };
 });
+
+// ---- Recurring billing: Razorpay Subscriptions ----
+//
+// One-off orders never charged a second time, so renewal cut a customer off
+// without ever asking them for money. A subscription puts the charging on
+// Razorpay's side; rzpSubscription.ts translates its webhooks back into org
+// state. This covers the PLAN FEE only -- extra project slots are still bought
+// one-off through createSlotOrder.
+
+/** Create a Razorpay plan, or reuse the one already made for these terms. */
+async function ensureRazorpayPlan(
+  cfg: RzpConfig,
+  plan: PlanId,
+  period: "monthly" | "annual",
+  tax: { gstin: string; ratePct: number },
+): Promise<string> {
+  const key = planCacheKey(plan, period, tax.ratePct);
+  const ref = db.doc("app_config/razorpay_plans");
+  const snap = await ref.get();
+  const cached = (snap.exists ? (snap.data() as any) : {})?.[key];
+  if (typeof cached === "string" && cached) return cached;
+
+  const net = planAmountPaise(plan, period);
+  if (!net) throw new HttpsError("failed-precondition", "That plan has no published price.");
+  // The subscription charges ONE fixed amount, so tax has to be inside it.
+  const charge = addGst(net, tax.ratePct);
+
+  const auth = Buffer.from(`${cfg.keyId}:${cfg.keySecret}`).toString("base64");
+  const res = await fetch("https://api.razorpay.com/v1/plans", {
+    method: "POST",
+    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      period: rzpPeriod(period),
+      interval: 1,
+      item: {
+        name: `Sitetru ${plan} (${period})`,
+        amount: charge.totalPaise,
+        currency: "INR",
+        description: tax.ratePct > 0 ? `Includes ${tax.ratePct}% GST` : "No GST applied",
+      },
+      notes: { plan, period, gstRatePct: String(tax.ratePct) },
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new HttpsError("internal", `Razorpay plan failed: ${res.status} ${body.slice(0, 180)}`);
+  }
+  const created: any = await res.json();
+  const planId = String(created?.id || "");
+  if (!planId) throw new HttpsError("internal", "Razorpay returned a plan with no id.");
+  // merge, not set: four plans share this document.
+  await ref.set({ [key]: planId, [`${key}_amountPaise`]: charge.totalPaise }, { merge: true });
+  return planId;
+}
+
+/**
+ * Start a recurring subscription for the org's plan fee.
+ *
+ * The client opens Razorpay checkout with the returned subscription id; the
+ * mandate is authorised there and every later charge happens without us.
+ */
+export const createSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+  const uid = request.auth.uid;
+  const plan = String(request.data?.plan || "");
+  const period = request.data?.period === "annual" ? "annual" : "monthly";
+  if (!isPlanId(plan) || !planAmountPaise(plan as PlanId, period)) {
+    throw new HttpsError("invalid-argument", "Choose a plan that can be subscribed to.");
+  }
+
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const orgId = String(request.data?.orgId || "").trim() ||
+    (userSnap.exists ? (userSnap.data() as any).currentOrgId : undefined);
+  if (!orgId) throw new HttpsError("failed-precondition", "You're not part of an organization.");
+  const orgRef = db.doc(`organizations/${orgId}`);
+  const orgSnap = await orgRef.get();
+  if (!orgSnap.exists) throw new HttpsError("not-found", "Organization not found.");
+  const org: any = orgSnap.data();
+  if (!["Owner", "Admin"].includes((org.members || {})[uid])) {
+    throw new HttpsError("permission-denied", "Only an Owner or Admin can start a subscription.");
+  }
+  // Two live mandates would charge the customer twice a month, and the second
+  // would look exactly like the first on their statement.
+  if (org.razorpaySubscriptionId && org.subscriptionStatus === "active") {
+    throw new HttpsError("failed-precondition", "This workspace already has an active subscription.");
+  }
+
+  const cfg = await getRazorpayConfig();
+  if (!cfg) throw new HttpsError("failed-precondition", "Payments aren't configured yet.");
+  const tax = await getTaxConfig();
+  const planId = await ensureRazorpayPlan(cfg, plan as PlanId, period, tax);
+
+  const auth = Buffer.from(`${cfg.keyId}:${cfg.keySecret}`).toString("base64");
+  const res = await fetch("https://api.razorpay.com/v1/subscriptions", {
+    method: "POST",
+    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      plan_id: planId,
+      total_count: totalCycles(period),
+      quantity: 1,
+      customer_notify: 1,
+      notes: { orgId, plan, period, uid },
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new HttpsError("internal", `Razorpay subscription failed: ${res.status} ${body.slice(0, 180)}`);
+  }
+  const sub: any = await res.json();
+  const subId = String(sub?.id || "");
+  if (!subId) throw new HttpsError("internal", "Razorpay returned a subscription with no id.");
+
+  // Recorded BEFORE the customer authorises, so a webhook that arrives before
+  // this call returns still finds the org it belongs to.
+  await db.doc(`razorpay_subscriptions/${subId}`).set({
+    subscriptionId: subId,
+    orgId,
+    plan,
+    period,
+    uid,
+    planId,
+    taxRatePct: tax.ratePct,
+    status: "created",
+    createdAt: new Date().toISOString(),
+  });
+
+  return {
+    subscriptionId: subId,
+    shortUrl: sub?.short_url || null,
+    keyId: cfg.keyId,
+    plan,
+    period,
+  };
+});
+
+/**
+ * Stop a live mandate at Razorpay, at the end of the cycle already paid for.
+ *
+ * Returns false rather than throwing so the caller can decide: cancelSubscription
+ * refuses to record a local cancellation it could not actually enforce.
+ */
+export async function cancelRazorpaySubscription(subscriptionId: string): Promise<boolean> {
+  const cfg = await getRazorpayConfig();
+  if (!cfg) return false;
+  const auth = Buffer.from(`${cfg.keyId}:${cfg.keySecret}`).toString("base64");
+  try {
+    const res = await fetch(`https://api.razorpay.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`, {
+      method: "POST",
+      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ cancel_at_cycle_end: 1 }),
+    });
+    if (res.ok) return true;
+    // Already cancelled or already finished is success for our purposes: the
+    // mandate will not charge again, which is all the caller needs.
+    const body = await res.text().catch(() => "");
+    return /already cancelled|not in a valid state|completed/i.test(body);
+  } catch {
+    return false;
+  }
+}
 
 // ---- Checkout: create a server-priced order ----
 export const createRazorpayOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
@@ -386,6 +547,45 @@ export const razorpayWebhook = onRequest({ region: "asia-southeast1" }, async (r
       return;
     }
     const event: any = req.body;
+    // Subscription events are how a RECURRING charge reaches us. Razorpay owns
+    // when a charge happens and whether it worked; rzpSubscription.ts maps that
+    // onto this app's statuses, and anything it does not recognise is ignored
+    // rather than guessed at.
+    const name = String(event?.event || "");
+    if (name.startsWith("subscription.")) {
+      const entity = event?.payload?.subscription?.entity;
+      const subId = String(entity?.id || "");
+      const patch = subscriptionPatch(name, entity);
+      if (subId && patch) {
+        const subRef = db.doc(`razorpay_subscriptions/${subId}`);
+        const subSnap = await subRef.get();
+        // notes is the fallback: a webhook can beat createSubscription's write.
+        const orgId =
+          (subSnap.exists ? (subSnap.data() as any)?.orgId : "") ||
+          String(entity?.notes?.orgId || "");
+        if (orgId) {
+          const { reason, ...fields } = patch;
+          await db.doc(`organizations/${orgId}`).set(
+            {
+              ...fields,
+              // A charge that lands clears any pending cancellation: the
+              // customer paid, so they plainly did not mean to leave.
+              ...(fields.subscriptionStatus === "active"
+                ? { cancelAtPeriodEnd: FieldValue.delete() }
+                : {}),
+            },
+            { merge: true },
+          );
+          await subRef.set(
+            { subscriptionId: subId, orgId, status: entity?.status || null, lastEvent: name, lastReason: reason, updatedAt: new Date().toISOString() },
+            { merge: true },
+          );
+        }
+      }
+      res.status(200).send("ok");
+      return;
+    }
+
     if (event?.event === "payment.captured" || event?.event === "order.paid") {
       const orderId =
         event?.payload?.payment?.entity?.order_id || event?.payload?.order?.entity?.id;

@@ -27,7 +27,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
   const isOwnerish = user.role === "Owner" || user.role === "Admin";
   const org = access.companyName || "your organization";
   const [period, setPeriod] = useState<"monthly" | "annual">("monthly");
-  const { pay, busy, error } = useRazorpayCheckout();
+  const { subscribe, busy, error } = useRazorpayCheckout();
 
   const headline =
     access.reason === "trial_expired" ? t("paywall.trialEnded") : t("paywall.subNeeded");
@@ -103,7 +103,7 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
                   <li className="flex items-start gap-2"><Check weight="bold" className="w-4 h-4 mt-0.5 text-success shrink-0" /> {t("paywall.aiScans", { n: p.aiQuota })}</li>
                 </ul>
                 <button
-                  onClick={() => pay(id, period, () => window.location.reload())}
+                  onClick={() => subscribe(id, period, () => window.location.reload())}
                   disabled={busy}
                   className={`mt-auto w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 apple-transition disabled:opacity-50 ${id === "business" ? "bg-primary text-on-primary hover:bg-primary-deep" : "bg-panel border border-divider text-ink hover:bg-surface"}`}
                 >
@@ -114,7 +114,10 @@ export const Paywall: React.FC<{ access: OrgAccess; user: UserProfile }> = ({ ac
           })}
         </div>
 
-        <p className="text-center text-[11px] text-ink-muted mt-4">
+        <p className="text-center text-[11px] font-semibold text-ink-muted mt-4">
+          {t(period === "annual" ? "paywall.recursAnnual" : "paywall.recurs")}
+        </p>
+        <p className="text-center text-[11px] text-ink-muted mt-2">
           {t("paywall.extraNote")}{" "}
           <a href={`mailto:${SALES_EMAIL}?subject=${encodeURIComponent(`Plan for ${org}`)}`} className="text-primary font-semibold hover:underline">{t("paywall.contactUs")}</a>.
         </p>

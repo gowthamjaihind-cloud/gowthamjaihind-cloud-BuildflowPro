@@ -64,7 +64,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
   const [period, setPeriod] = useState<"monthly" | "annual">("monthly");
   const [creating, setCreating] = useState<string | null>(null); // which action is busy
   const [createError, setCreateError] = useState<string | null>(null);
-  const { pay } = useRazorpayCheckout();
+  const { subscribe } = useRazorpayCheckout();
 
   const requireName = () => {
     if (!companyName.trim()) {
@@ -109,7 +109,7 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
       // Access is granted only when the payment activates the plan — so closing
       // the payment window leaves the user right here, not inside the app.
       const res = await callCreateOrganization({ companyName: companyName.trim(), plan });
-      await pay(plan, period, () => reload(), res.orgId);
+      await subscribe(plan, period, () => reload(), res.orgId);
       setCreating(null); // reached only if the modal was dismissed without paying
     } catch (e: any) {
       setCreateError(e?.message || t("onb.errCheckout"));

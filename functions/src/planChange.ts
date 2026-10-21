@@ -1,4 +1,5 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { cancelRazorpaySubscription } from "./razorpay";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
@@ -153,6 +154,24 @@ export const cancelSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 
     );
   }
 
+  // Tell RAZORPAY first. The local flag alone stops nothing: with a live
+  // mandate Razorpay keeps charging on its own schedule, so a customer who
+  // cancelled in the app would still be debited next month and would be right
+  // to call that theft. Cancelled at cycle end, so they keep what they paid for.
+  let stoppedAtRazorpay: boolean | null = null;
+  if (org.razorpaySubscriptionId) {
+    stoppedAtRazorpay = await cancelRazorpaySubscription(String(org.razorpaySubscriptionId));
+    if (!stoppedAtRazorpay) {
+      // Do NOT write the local flag. Telling someone they have cancelled while
+      // the mandate still bills them is the worst of the three outcomes; far
+      // better that they see an error and try again.
+      throw new HttpsError(
+        "unavailable",
+        "We couldn't reach the payment provider to stop your subscription. Nothing has changed — please try again in a moment.",
+      );
+    }
+  }
+
   await db.doc(`organizations/${orgId}`).set(
     {
       cancelAtPeriodEnd: true,
@@ -163,7 +182,7 @@ export const cancelSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 
     },
     { merge: true },
   );
-  return { canceled: true, effectiveAt: Number(org.currentPeriodEnd) || null };
+  return { canceled: true, effectiveAt: Number(org.currentPeriodEnd) || null, stoppedAtRazorpay };
 });
 
 /** Undo a pending cancellation. Nothing has happened yet, so this just clears it. */
@@ -180,6 +199,17 @@ export const resumeSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 
     throw new HttpsError(
       "failed-precondition",
       "This workspace isn't scheduled to cancel, so there's nothing to resume.",
+    );
+  }
+
+  // Razorpay has no "uncancel". A subscription cancelled at cycle end cannot be
+  // revived, so resuming means the customer must authorise a new mandate --
+  // which createSubscription does. Saying "resumed" while nothing will ever
+  // charge again would be the cancel bug in reverse.
+  if (org.razorpaySubscriptionId) {
+    throw new HttpsError(
+      "failed-precondition",
+      "Your subscription was stopped with the payment provider and can't be restarted. Start a new subscription to keep your plan after this period ends.",
     );
   }
 
