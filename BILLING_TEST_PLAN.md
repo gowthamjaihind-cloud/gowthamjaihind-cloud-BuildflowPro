@@ -2,7 +2,7 @@
 
 Everything in `rzpSubscription.ts` is unit-tested and the callables run against
 the Firebase emulator, but **no part of this has ever talked to Razorpay**.
-Mandates, webhooks, quantity changes and renewal dates are their behaviour, not
+Mandates, webhooks and renewal dates are their behaviour, not
 ours, and the only way to know what they do is to watch them do it.
 
 Work through this in **test mode**. It takes about an hour, minus the waiting in
@@ -64,7 +64,6 @@ to Starter monthly.
 | `subscriptionStatus` | `active` |
 | `razorpaySubscriptionId` | `sub_…` |
 | `currentPeriodEnd` | about a month out, **in milliseconds** |
-| `billedQuantity` | `1` |
 
 **And in Razorpay** → Subscriptions: one subscription, status **active**,
 quantity **1**, amount **₹99**.
