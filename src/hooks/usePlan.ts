@@ -29,10 +29,6 @@ export interface OrgPlan {
   pendingPlanChange?: PendingPlanChange | null; // scheduled end-of-cycle downgrade
   /** True once the customer has asked to cancel; takes effect at period end. */
   cancelAtPeriodEnd?: boolean;
-  /** A live Razorpay mandate exists, so adding a project changes the bill. */
-  hasSubscription?: boolean;
-  /** Units the mandate currently charges for. Starter bills one per project. */
-  billedQuantity?: number;
 }
 
 // Realtime plan/capacity for the signed-in user's current org. Absent
@@ -70,8 +66,6 @@ export function usePlan(): OrgPlan {
           currentPeriodEnd: typeof d.currentPeriodEnd === "number" ? d.currentPeriodEnd : undefined,
           pendingPlanChange: d.pendingPlanChange || null,
           cancelAtPeriodEnd: d.cancelAtPeriodEnd === true,
-          hasSubscription: typeof d.razorpaySubscriptionId === "string" && !!d.razorpaySubscriptionId,
-          billedQuantity: typeof d.billedQuantity === "number" ? d.billedQuantity : undefined,
         });
       },
       () => {

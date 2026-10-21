@@ -114,36 +114,34 @@ billing. This test is to know what to *tell customers*, not to find a bug.
 
 ---
 
-## 4. Adding a project — does the bill go up, with consent?
+## 4. Adding a project — the one-off slot path
 
-**Do:** on that Starter workspace, add a second project.
+Extra projects are **not** part of the subscription. They are bought one at a
+time for ₹99 and expire 30 days from purchase. This is the same on Starter and
+on Business, deliberately — see "Why extra projects are not metered" below.
 
-**Expect:** a dialog saying **"Add this project for ₹99/month?"** and naming the
-change — ₹99 → ₹198 a month.
+**Do:** on the Starter workspace, add a second project.
 
-- **Press cancel first.** Nothing should happen: no project, no bill change.
-  A bill that can go up without agreement is the thing this dialog exists to
-  prevent, so check it actually stops.
-- Then accept.
+**Expect:** the add-capacity modal, a one-off ₹99 payment, and the project
+created once it succeeds.
 
-**Check:** `billedQuantity` and `includedProjects` both become `2`, and Razorpay
-shows quantity **2**, **₹198**. An invoice for the difference should appear —
-the increase applies immediately.
+**Check:** `purchasedSlots` becomes `1` and `slotsExpireAt` is about 30 days
+out. The **subscription is untouched** — still quantity 1, still ₹99 a month,
+in Razorpay.
 
----
+> Note the consequence, because customers will hit it: the plan fee renews on
+> its own date and the slot expires on a different one. Two dates, and only one
+> of them collects itself.
 
-## 5. Removing a project — does it drop, and when?
+## 5. Two clocks — confirm it, so you can explain it
 
-**Do:** delete the second project.
+**Do:** note both dates for that workspace.
 
-**Expect:** Razorpay shows a quantity change **scheduled for cycle end**, not
-applied now. `includedProjects` should **stay at 2** until that cycle ends.
+- Subscription renews: `________` (from `currentPeriodEnd`)
+- Slot expires: `________` (from `slotsExpireAt`)
 
-That is deliberate: you keep what you paid for, and there is no mid-cycle
-refund — the same policy as plan downgrades. If capacity drops immediately,
-that's a bug: a customer would lose a project they had paid for.
-
----
+They will not match unless you bought the slot on your renewal day. That is
+the known cost of keeping billing identical across plans; see below.
 
 ## 6. Cancelling — does it actually stop the money?
 
@@ -203,8 +201,8 @@ someone's mandate without their consent. They move when they next change plan.
 | 1 | First subscription activates | | |
 | 2 | Renews on the anniversary date | | |
 | 3 | 31 Jan → Feb / Mar dates | | Feb: ____ Mar: ____ |
-| 4 | Adding a project asks, then bills | | |
-| 5 | Removing drops at cycle end | | |
+| 4 | Extra project = one-off ₹99 slot | | |
+| 5 | Two separate dates, noted | | Renews: ____ Slot: ____ |
 | 6 | Cancel stops the money at Razorpay | | |
 | 7 | pending ≠ past_due; halted = past_due | | |
 | 8 | GST creates a new plan | | |
@@ -228,9 +226,39 @@ is wrong.
 
 ## What this does not cover
 
-- **Business overage.** Still one-off slots on a separate 30-day clock. Only
-  Starter is metered through the subscription.
+- **Metered per-project billing.** Not built, and not a simple omission --
+  see below.
 - **Live mode.** Test-mode mandates do not prove live e-mandate works; that
   needs one real subscription at ₹1, cancelled afterwards.
 - **UPI AutoPay vs cards.** They have different mandate limits and approval
   flows. Test whichever your customers will actually use.
+
+---
+
+## Why extra projects are not metered
+
+The obvious design is to put the project count into the subscription's
+`quantity`, so Starter at ₹99 a project charges ₹297 for three and collects
+itself. It was built, and then removed, for one reason:
+
+> **"You can only update a Subscription authorised using cards and not via UPI
+> and Emandate."** — Razorpay FAQ. The update endpoint returns `400` for UPI:
+> *"subscriptions cannot be updated when payment mode is UPI."*
+
+Quantity updates work **only for card-authorised subscriptions**. For a ₹99
+subscription in India, UPI AutoPay is likely the common choice, so metering
+would have worked for a minority of customers and silently failed for the rest
+-- their project created, their bill never raised.
+
+The alternative was a hybrid: metered for cards, slots for UPI. That was
+rejected deliberately. Two customers on the same plan would get different
+experiences depending on how they happened to pay, and neither they nor support
+could tell which they were on without checking Razorpay.
+
+So extra projects are one-off purchases for everyone, on both plans. The cost
+is the two dates in Test 5. The benefit is that billing behaves identically for
+every customer and every payment method.
+
+**If this is revisited**, the thing to check first is whether Razorpay has since
+allowed updates on UPI AutoPay mandates. The restriction is theirs, not ours,
+and it is the only reason this design was dropped.

@@ -8,8 +8,7 @@ import {
 import { projectService } from "../../../services/projectService";
 import { useProjectsQuery } from "../../../hooks/queries";
 import { usePlan } from "../../../hooks/usePlan";
-import { projectCapState, OVERAGE_RATE } from "../../../lib/plans";
-import { callSyncSubscriptionQuantity } from "../../../services/firebaseFunctions";
+import { projectCapState } from "../../../lib/plans";
 import { UserProfile } from "../../../types";
 import { AddCapacityModal } from "../../../components/AddCapacityModal";
 import { useTranslation } from "../../../i18n";
@@ -233,37 +232,6 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     // a paid plan at its cap opens the Add-capacity modal (buy ₹99 slots or
     // upgrade) and creates the project once capacity is added.
     const cap = projectCapState(plan, projects.length);
-
-    // A metered Starter bills one unit per project, so going over capacity
-    // raises the mandate instead of selling a separate 30-day slot. Nobody's
-    // bill may go up without them agreeing to it first, in the actual rupees
-    // it will cost -- "you are over your limit" is not consent.
-    const metered = plan.hasSubscription && plan.plan === "starter";
-    if (metered && cap.capped && cap.atOrOver) {
-      const rate = plan.overageRate || OVERAGE_RATE;
-      const next = projects.length + 1;
-      const ok = await confirmDialog({
-        title: `Add this project for ₹${rate}/month?`,
-        body:
-          `Your subscription goes from ₹${(projects.length * rate).toLocaleString("en-IN")} to ` +
-          `₹${(next * rate).toLocaleString("en-IN")} a month, charged automatically from now on. ` +
-          `Remove the project later and it drops back at the end of your billing period.`,
-      });
-      if (!ok) return;
-      await doCreate();
-      // Only after the project exists: the server counts projects itself, so
-      // syncing first would bill for one that was never created.
-      try {
-        await callSyncSubscriptionQuantity({});
-      } catch {
-        // The project is made and usable. A failed sync means it is not billed
-        // yet, which is the safe direction -- the nightly reconcile catches it,
-        // and charging for something they cannot see would be the bad one.
-        toast.info("Project created. We'll update your subscription shortly.");
-      }
-      return;
-    }
-
     if (cap.capped && cap.atOrOver) {
       if (cap.isFree) {
         toast.info(`Your Free plan includes ${cap.included} project. Upgrade to a paid plan to add more projects.`,);

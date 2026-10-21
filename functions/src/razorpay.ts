@@ -2,7 +2,7 @@ import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import * as crypto from "crypto";
 import { db } from "./db";
-import { subscriptionPatch, planCacheKey, rzpPeriod, totalCycles, desiredQuantity, quantityChange, isQuantityBilled } from "./rzpSubscription";
+import { subscriptionPatch, planCacheKey, rzpPeriod, totalCycles } from "./rzpSubscription";
 import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE, slotPurchasePatch, prorateUpgrade, addGst, GST_RATE_PCT } from "./plans";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
@@ -229,17 +229,6 @@ export const createSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 
   const tax = await getTaxConfig();
   const planId = await ensureRazorpayPlan(cfg, plan as PlanId, period, tax);
 
-  // Starter is billed per project, so the mandate starts at what they actually
-  // have. Opening it at 1 and correcting afterwards would authorise the
-  // customer for ₹99 and then immediately raise it, which is both a worse
-  // consent story and an extra charge on their statement.
-  const quantity = desiredQuantity(
-    plan,
-    isQuantityBilled(plan)
-      ? (await db.collection("projects").where("orgId", "==", orgId).count().get()).data().count
-      : 1,
-  );
-
   const auth = Buffer.from(`${cfg.keyId}:${cfg.keySecret}`).toString("base64");
   const res = await fetch("https://api.razorpay.com/v1/subscriptions", {
     method: "POST",
@@ -247,7 +236,7 @@ export const createSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 
     body: JSON.stringify({
       plan_id: planId,
       total_count: totalCycles(period),
-      quantity,
+      quantity: 1,
       customer_notify: 1,
       notes: { orgId, plan, period, uid },
     }),
@@ -269,7 +258,6 @@ export const createSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 
     period,
     uid,
     planId,
-    quantity,
     taxRatePct: tax.ratePct,
     status: "created",
     createdAt: new Date().toISOString(),
@@ -282,70 +270,6 @@ export const createSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 
     plan,
     period,
   };
-});
-
-/**
- * Put the subscription's quantity in step with how many projects the org has.
- *
- * Idempotent and safe to call after any project is created or deleted: when
- * nothing needs to move it makes no API call at all. The CALLER is responsible
- * for having told the customer what it will cost -- this does not ask, it
- * bills, so the confirmation belongs upstream of it.
- */
-export const syncSubscriptionQuantity = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
-  const userSnap = await db.doc(`users/${uid}`).get();
-  const orgId = String(request.data?.orgId || "").trim() ||
-    (userSnap.exists ? (userSnap.data() as any).currentOrgId : undefined);
-  if (!orgId) throw new HttpsError("failed-precondition", "You're not part of an organization.");
-
-  const orgRef = db.doc(`organizations/${orgId}`);
-  const orgSnap = await orgRef.get();
-  if (!orgSnap.exists) throw new HttpsError("not-found", "Organization not found.");
-  const org: any = orgSnap.data();
-  if (!["Owner", "Admin"].includes((org.members || {})[uid])) {
-    throw new HttpsError("permission-denied", "Only an Owner or Admin can change billed capacity.");
-  }
-
-  const subId = String(org.razorpaySubscriptionId || "");
-  if (!subId || !isQuantityBilled(String(org.plan || ""))) {
-    // Business and anything not on a live mandate bill by other means; saying
-    // "ok" here keeps the caller simple, since it fires after every project
-    // change regardless of plan.
-    return { changed: false, reason: "not a quantity-billed subscription" };
-  }
-
-  // Count the org's projects server-side. count() is a single read whatever the
-  // number, and trusting a client-supplied figure here would let anyone set
-  // their own bill.
-  const agg = await db.collection("projects").where("orgId", "==", orgId).count().get();
-  const projectCount = agg.data().count;
-  const want = desiredQuantity(String(org.plan), projectCount);
-  const change = quantityChange(org.billedQuantity, want);
-  if (change.kind === "none") return { changed: false, quantity: want };
-
-  const cfg = await getRazorpayConfig();
-  if (!cfg) throw new HttpsError("failed-precondition", "Payments aren't configured yet.");
-  const auth = Buffer.from(`${cfg.keyId}:${cfg.keySecret}`).toString("base64");
-  const res = await fetch(`https://api.razorpay.com/v1/subscriptions/${encodeURIComponent(subId)}`, {
-    method: "PATCH",
-    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ quantity: change.quantity, schedule_change_at: change.scheduleAt }),
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new HttpsError("internal", `Razorpay quantity update failed: ${res.status} ${body.slice(0, 180)}`);
-  }
-
-  // An increase is live immediately, so the cap moves with it. A decrease only
-  // applies at cycle end, so capacity must NOT drop now -- the customer has
-  // paid through the period and keeps what they paid for.
-  const patch: any = { billedQuantity: change.quantity, billedQuantityAt: Date.now() };
-  if (change.kind === "increase") patch.includedProjects = change.quantity;
-  await orgRef.set(patch, { merge: true });
-
-  return { changed: true, quantity: change.quantity, effective: change.scheduleAt };
 });
 
 /**
@@ -632,11 +556,6 @@ export const razorpayWebhook = onRequest({ region: "asia-southeast1" }, async (r
       const entity = event?.payload?.subscription?.entity;
       const subId = String(entity?.id || "");
       const patch = subscriptionPatch(name, entity);
-      // A decrease scheduled for cycle end arrives as the next charge. Taking
-      // quantity from the entity here is what finally lowers capacity, so a
-      // customer who removed a project stops paying for it from the cycle they
-      // were told it would stop.
-      const qty = Math.floor(Number(entity?.quantity) || 0);
       if (subId && patch) {
         const subRef = db.doc(`razorpay_subscriptions/${subId}`);
         const subSnap = await subRef.get();
@@ -646,15 +565,9 @@ export const razorpayWebhook = onRequest({ region: "asia-southeast1" }, async (r
           String(entity?.notes?.orgId || "");
         if (orgId) {
           const { reason, ...fields } = patch;
-          const subDoc = subSnap.exists ? (subSnap.data() as any) : {};
-          const quantityFields =
-            qty > 0 && isQuantityBilled(String(subDoc?.plan || ""))
-              ? { billedQuantity: qty, includedProjects: qty }
-              : {};
           await db.doc(`organizations/${orgId}`).set(
             {
               ...fields,
-              ...quantityFields,
               // A charge that lands clears any pending cancellation: the
               // customer paid, so they plainly did not mean to leave.
               ...(fields.subscriptionStatus === "active"
