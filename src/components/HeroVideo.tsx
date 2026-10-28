@@ -7,7 +7,7 @@ import { Play } from "@phosphor-icons/react";
  * NOT an autoplaying background loop, deliberately. The audience is contractors
  * and site engineers on Indian mobile data, often on a site with one bar, and
  * this page already ships ~471 KB of gzipped JS before anything renders. The
- * film is 4.8 MB -- ten times the rest of the page -- so spending that on someone
+ * film is 5.2 MB -- ten times the rest of the page -- so spending that on someone
  * who came to read the pricing would be the single most expensive thing here.
  *
  * So nothing of the video is fetched until it is asked for: `<source>` is not
@@ -15,13 +15,14 @@ import { Play } from "@phosphor-icons/react";
  * `preload="none"` (browsers still range-request metadata for a src they can
  * see). Until then the cost is the poster, at 48 KB.
  *
- * The film this plays is the KINETIC cut: 54 seconds, one scene per feature on
- * a 120 BPM grid, each explained in the app's own words, with a score. It replaced the 83-second silent cut, which still exists at
+ * The film this plays is the KINETIC cut: 60 seconds, one scene per feature on
+ * a 120 BPM grid, each explained on screen in the app's own words and spoken
+ * by a narrator, over a score. It replaced the 83-second silent cut, which still exists at
  * /media/sitetru-hero.mp4 and is still the better file for a context that
  * cannot play sound. The swap is why this component is no longer `muted`:
  * the older cut had an empty audio track and nothing to hear, so muting it
- * cost nothing and bought autoplay-policy immunity. This one has a score, and
- * muting it by default would throw away half of what it is.
+ * cost nothing and bought autoplay-policy immunity. This one has a narrator
+ * and a score, and muting it by default would throw away half of what it is.
  *
  * Losing `muted` is safe here only because play() is started by a real click.
  * Autoplay policies block unmuted playback that no one asked for; they do not
@@ -65,14 +66,14 @@ export const HeroVideo: React.FC<{ className?: string }> = ({ className = "" }) 
         <button
           type="button"
           onClick={start}
-          aria-label="Play the Sitetru film, 54 seconds, with sound"
+          aria-label="Play the Sitetru film, 60 seconds, with sound"
           className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink/35 hover:bg-ink/25 apple-transition focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/40"
         >
           <span className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/95 text-surface-dark flex items-center justify-center shadow-xl">
             <Play weight="fill" className="w-7 h-7 md:w-9 md:h-9 translate-x-0.5" />
           </span>
           <span className="text-white text-xs font-bold uppercase tracking-widest drop-shadow">
-            Watch · 54 seconds · with sound
+            Watch · 60 seconds · with sound
           </span>
         </button>
       )}

@@ -15,7 +15,8 @@
  * silently trims the end card.
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
+import { masterLines } from "../voice/master.mjs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -56,7 +57,93 @@ export function readGrid(src = readFileSync(join(REMOTION, "src/kinetic/film.jso
     marks.push(at / fps);
   }
   const frames = bars * bar;
-  return { fps, bpm, bars, beat, bar, frames, seconds: frames / fps, marks };
+  const scenes = [];
+  let t = 0;
+  for (const s of film.scenes) {
+    scenes.push({ ...s, startS: t / fps, durS: (s.bars * bar) / fps });
+    t += s.bars * bar;
+  }
+  return { fps, bpm, bars, beat, bar, frames, seconds: frames / fps, marks, film, scenes };
+}
+
+/**
+ * Narration windows. A line starts VO_LEAD after its scene's transition
+ * midpoint -- once the incoming scene has arrived -- and must finish VO_TAIL
+ * before the next one, so a line never talks across a transition into a
+ * screen it is not about.
+ */
+export const VO_LEAD = 0.3;
+export const VO_TAIL = 0.3;
+
+/** Recorded takes, by scene id, that replace the synthesised line. */
+export const TAKES = join(HERE, "takes", "kinetic");
+
+/**
+ * Speak the narration, master it, and place it on the timeline.
+ *
+ * The picture is cut to a musical grid, so -- unlike the launch film, which
+ * lays its picture out FROM the measured voice -- here the voice has to fit
+ * the picture. A line that runs past its window fails the build with the
+ * numbers needed to fix it, rather than being sped up: a voice pushed faster
+ * than its natural pace is the quickest way to make it sound synthetic.
+ *
+ * Any scene with a WAV in films/takes/kinetic/<id>.wav uses that instead of the
+ * synthesised line. That is how a human recording, or a line from a hosted
+ * voice, goes in: drop the file, rebuild. script.txt in films/out/kinetic says
+ * exactly how long each one is allowed to be.
+ */
+export function buildVoiceover(grid) {
+  const voice = grid.film.voice ?? {};
+  const dir = join(HERE, "out", "kinetic");
+  const raw = join(dir, "raw");
+  mkdirSync(raw, { recursive: true });
+  const spoken = grid.scenes.filter((s) => s.vo);
+  const take = (s) => join(TAKES, `${s.id}.wav`);
+  const toSynth = spoken.filter((s) => !existsSync(take(s)));
+
+  let lines = [];
+  if (toSynth.length) {
+    const spec = {
+      outDir: raw,
+      ...(voice.name ? { voice: voice.name } : {}),
+      ...(voice.accent ? { accent: voice.accent } : {}),
+      ...(voice.speed ? { speed: voice.speed } : {}),
+      lines: toSynth.map((s) => ({ id: s.id, text: s.vo })),
+    };
+    const out = execFileSync("python3", [join(ROOT, "marketing/voice/synth.py")], {
+      input: JSON.stringify(spec), encoding: "utf8", stdio: ["pipe", "pipe", "inherit"],
+      cwd: join(ROOT, "marketing/voice"),
+    });
+    lines = JSON.parse(out).lines;
+  }
+  for (const s of spoken.filter((s) => existsSync(take(s)))) {
+    console.error(`  ${s.id.padEnd(14)} recorded take`);
+    lines.push({ id: s.id, text: s.vo, file: take(s) });
+  }
+  const rawManifest = join(raw, "manifest.json");
+  writeFileSync(rawManifest, JSON.stringify({ lines }, null, 2));
+  const mastered = masterLines(rawManifest, dir).lines;
+
+  const byId = new Map(mastered.map((l) => [l.id, l]));
+  const placed = [];
+  const over = [];
+  for (const s of spoken) {
+    const l = byId.get(s.id);
+    const room = s.durS - VO_LEAD - VO_TAIL;
+    if (l.seconds > room) over.push(`  ${s.id}: ${l.seconds.toFixed(2)}s of speech in a ${room.toFixed(2)}s window (${s.bars} bars). Add a bar in film.json or shorten the line.`);
+    placed.push({ ...l, at: s.startS + VO_LEAD, room });
+  }
+  if (over.length) throw new Error("narration does not fit its scenes:\n" + over.join("\n"));
+
+  const stamp = (x) => `${String(Math.floor(x / 60)).padStart(2, "0")}:${(x % 60).toFixed(1).padStart(4, "0")}`;
+  writeFileSync(join(dir, "script.txt"), [
+    "kinetic — voiceover script",
+    "For re-recording: each line starts at its timestamp and must be NO LONGER",
+    "than its max. Save each as films/takes/kinetic/<id>.wav and rebuild.",
+    "",
+    ...placed.map((l) => `[${stamp(l.at)}]  ${l.id}  (max ${l.room.toFixed(1)}s, synthesised ${l.seconds.toFixed(1)}s)\n  ${l.text}\n`),
+  ].join("\n"));
+  return placed;
 }
 
 /**
@@ -132,14 +219,56 @@ const seconds = (file) =>
     ], { encoding: "utf8" }).trim(),
   );
 
+/**
+ * The score under the voice. The cue is peak-normalised and measures ~-18
+ * LUFS against narration mastered to -16, so at unity it would sit within 2 dB
+ * of the voice -- a duel, not a bed. Pulled down here and then ducked further
+ * whenever someone is speaking, with mix.mjs's broadcast settings: enough to
+ * get out of the way, not enough to disappear.
+ */
+export const MUSIC_DB = -6;
+
+/** Voice + ducked score, before loudness. Also writes the two stems, for measuring. */
+function premix(grid, lines, scoreWav, outWav) {
+  const n = lines.length;
+  const inputs = ["-i", scoreWav, ...lines.flatMap((l) => ["-i", l.file])];
+  const legs = lines.map((l, i) => {
+    const ms = Math.round(l.at * 1000);
+    return `[${i + 1}:a]aresample=48000,aformat=channel_layouts=stereo,adelay=${ms}|${ms}[v${i}]`;
+  });
+  const graph = [
+    ...legs,
+    // Padded to the full picture: without it the voice bus ends with the last
+    // line, the sidechain stops with it, and -shortest trims the end card --
+    // the failure mix.mjs records.
+    `${lines.map((_, i) => `[v${i}]`).join("")}amix=inputs=${n}:normalize=0:dropout_transition=0,apad=whole_dur=${grid.seconds.toFixed(3)}[vo]`,
+    `[vo]asplit=3[voa][vob][voc]`,
+    `[0:a]aresample=48000,aformat=channel_layouts=stereo,volume=${MUSIC_DB}dB[mus]`,
+    `[mus][vob]sidechaincompress=threshold=0.05:ratio=4:attack=12:release=380:makeup=1[musd]`,
+    `[musd]asplit=2[musa][musb]`,
+    `[voa][musa]amix=inputs=2:normalize=0:dropout_transition=0[mix]`,
+  ].join(";");
+  ff([
+    "-y", ...inputs, "-filter_complex", graph,
+    "-map", "[mix]", "-t", grid.seconds.toFixed(3), "-c:a", "pcm_s16le", outWav,
+    "-map", "[voc]", "-t", grid.seconds.toFixed(3), "-c:a", "pcm_s16le", outWav.replace(/\.wav$/, "-voice.wav"),
+    "-map", "[musb]", "-t", grid.seconds.toFixed(3), "-c:a", "pcm_s16le", outWav.replace(/\.wav$/, "-music.wav"),
+  ]);
+}
+
 function main() {
   const preview = process.argv.includes("--preview");
+  // Re-mix against the picture already rendered: voice and level work should
+  // not cost a seven-minute render each time.
+  const muxOnly = process.argv.includes("--mux-only");
   const grid = readGrid();
   mkdirSync(OUT, { recursive: true });
 
   const wav = join(OUT, "kinetic-score.wav");
+  const mixWav = join(OUT, "kinetic-premix.wav");
   const silent = join(OUT, "kinetic-silent.mp4");
   const final = join(OUT, "sitetru-kinetic.mp4");
+  if (muxOnly && !existsSync(silent)) throw new Error(`--mux-only needs ${silent}; run a full build first`);
 
   console.error(
     `grid: ${grid.bars} bars @ ${grid.bpm} BPM = ${grid.frames} frames ` +
@@ -147,13 +276,26 @@ function main() {
   );
 
   // 1. The score, at exactly the picture's length and tempo.
-  execFileSync("python3", [
+  if (!muxOnly) execFileSync("python3", [
     join(ROOT, "marketing/music/score.py"),
     "kinetic", wav, String(grid.seconds), String(grid.bpm),
     "--marks", grid.marks.join(","),
   ], { stdio: "inherit", cwd: join(ROOT, "marketing/music") });
 
-  // 2. The picture, silent.
+  // 2. The narration, placed -- before the picture, so a line that does not fit
+  //    its scene fails in seconds rather than after a seven-minute render.
+  console.error("narration:");
+  const lines = buildVoiceover(grid);
+  premix(grid, lines, wav, mixWav);
+
+  // 3. The picture, silent.
+  if (!muxOnly) renderPicture(preview, silent);
+
+  // 4. Mux.
+  mux(silent, mixWav, final);
+}
+
+function renderPicture(preview, silent) {
   const chrome = findChromium();
   if (!chrome) {
     throw new Error(
@@ -188,16 +330,20 @@ function main() {
     "--x264-preset=slow",
     ...(preview ? ["--scale=0.5"] : []),
   ], { stdio: "inherit", cwd: REMOTION });
+}
 
-  // 3. Mux. One loudnorm pass at the end, to the same -14 LUFS / -1 dBTP every
-  //    platform normalises to; `alimiter` ahead of it guards the ceiling so a
-  //    downbeat cannot clip before the measurement sees it.
-  const stats = measure(wav);
+/**
+ * Loudness and delivery: two-pass loudnorm to -14 LUFS, then a true-peak limiter
+ * at 4x the sample rate, then AAC. Measured on the MIX, voice and all, because
+ * that is what the listener hears.
+ */
+function mux(silent, mixWav, final) {
+  const stats = measure(mixWav);
   console.error(
-    `score measured: ${stats.input_i} LUFS in, ${stats.input_tp} dBTP in`,
+    `mix measured: ${stats.input_i} LUFS in, ${stats.input_tp} dBTP in`,
   );
   ff([
-    "-y", "-i", silent, "-i", wav,
+    "-y", "-i", silent, "-i", mixWav,
     "-filter_complex",
     "[1:a]aresample=48000,aformat=channel_layouts=stereo," +
       // Guard the ceiling BEFORE loudnorm measures, so a downbeat cannot clip

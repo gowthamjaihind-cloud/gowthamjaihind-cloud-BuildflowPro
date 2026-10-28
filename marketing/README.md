@@ -19,7 +19,7 @@ surfaces later, when a video is doing well.
 | `remotion/out/sitetru-launch.mp4` | The launch film. Argues. Cut from stills. Voiceover + score. | ~79s |
 | `remotion/out/sitetru-hero.mp4` | The same stills, SILENT, captions only. The autoplay cut for the site. | ~83s |
 | `walkthrough/out/sitetru-walkthrough.mp4` | The walkthrough. Explains. The product actually running. | ~2:30 |
-| `remotion/out/sitetru-kinetic.mp4` | The kinetic cut. The landing-page hero. A scene per feature, explained in the app's own words. Scored, LIGHT theme, 16:9. | ~54s |
+| `remotion/out/sitetru-kinetic.mp4` | The kinetic cut. The landing-page hero. A scene per feature, explained in the app's own words, narrated in an Indian-English voice. Scored, LIGHT theme, 16:9. | ~60s |
 
 Different jobs, on purpose. The launch film opens on the evening a contractor
 spends finding out what happened today, names the one genuinely unusual thing
@@ -444,7 +444,7 @@ node marketing/films/kinetic.mjs              # score -> picture -> mux
 node marketing/films/kinetic.mjs --preview    # half scale, for checking framing
 ```
 
-One output: `remotion/out/sitetru-kinetic.mp4`, 1920x1080, 54s, ~4.8 MB, served
+One output: `remotion/out/sitetru-kinetic.mp4`, 1920x1080, 60s, ~5.2 MB, served
 by the landing page through `src/components/HeroVideo.tsx`.
 
 ### Why it is a scene per feature, not a shot every 0.8s
@@ -473,6 +473,64 @@ shows eight parts and which one you are on.
 `marketing/kinetic.spec.ts` pins the pace so it cannot quietly come back: every
 feature gets at least two bars, and every explainer has to be readable at 3.5
 words a second or slower in the time its scene is actually on screen.
+
+### The narration, and the accent
+
+Each scene has a `vo` line in film.json, spoken over it. The lines follow the
+app's own description of each screen, said the way a person would say it --
+"Inventory tells you what's in stock, and what's running out" -- and claim
+nothing the screen does not show.
+
+**The voice is Indian English, and the accent is carried twice.** Kokoro has
+four voices trained on Hindi speech (`hf_alpha`, `hf_beta`, `hm_omega`,
+`hm_psi`), but its phonemiser only speaks `en-us`, so on their own they were
+handed AMERICAN pronunciation -- an Indian speaker doing an American accent,
+which is the uncanny result to avoid. `voice/accent.py` rewrites the IPA to the
+documented features of General Indian English before Kokoro sees it: retroflex
+t and d, dental th, one labiodental sound for w and v, pure vowels in "day" and
+"go", no American flap in "water", and -- at the `full` level -- a tapped,
+rhotic r. Set in film.json:
+
+```json
+"voice": { "name": "hm_psi", "accent": "full", "speed": 1.0 }
+```
+
+What was measured, on two lines of this script (`voice/quality.py`, the code
+behind the README's long-quoted octave-jump and HNR numbers, finally committed):
+
+| voice | octave-jumps | HNR | local recogniser |
+| --- | --- | --- | --- |
+| `af_bella` (the launch film's) | 1.3% | 5.39 dB | 77% |
+| `hf_alpha` light | 0.2% | 6.14 dB | 32% |
+| `hf_beta` light | 0.4% | 5.50 dB | 36% |
+| `hm_omega` light | 0.0% | 3.37 dB | 45% |
+| `hm_psi` full | 0.0% | 3.22 dB | 50% |
+
+The Hindi-trained voices are as free of robotic artefacts as the American ones
+(male voices measure lower HNR across the board: `am_adam` 2.29, `bm_george`
+4.42). The recogniser column needs care: it is pocketsphinx, trained on
+American speech, so it under-scores ANY Indian accent -- the Hindi voice reading
+American phonemes scores 50% too. Its use is catching a line turned to mush, not
+ranking accents. Which voice sounds natural is a listener's call, and nothing
+here makes it.
+
+**Lines must fit their scenes; they are never sped up.** A line starts 0.3s after
+its scene arrives and must end 0.3s before the next transition. The build fails
+with the numbers if one overruns -- three scenes gained a bar for exactly this,
+taking the film from 54s to 60s. Pushing a voice faster than its natural pace is
+the quickest way to make it sound synthetic.
+
+**A human voice is a file drop.** Any `films/takes/kinetic/<id>.wav` replaces the
+synthesised line for that scene. `films/out/kinetic/script.txt` lists every line
+with its start time and the longest it may run. The same works for a line from a
+hosted TTS service.
+
+**The score ducks under the voice** with mix.mjs's broadcast sidechain (4:1,
+12/380 ms), from a bed at -6 dB. Measured from the stems: voice sits a median
+15.2 dB over the music while speaking, and the music dips 9 dB under each line.
+
+`node marketing/films/kinetic.mjs --mux-only` re-mixes against the picture already
+rendered, so voice and level work do not cost a seven-minute render each.
 
 ### Transitions, not cuts
 
@@ -552,7 +610,7 @@ because an earlier cut shipped one no plan charged.
 - **True peak.** The mix is two-pass loudnorm into a limiter run at 4× the
   sample rate, so it can see the peaks a decoder reconstructs BETWEEN samples:
   at the native rate a -2 dB limit still came out at -0.2 dBTP through AAC.
-  Delivered at -14.2 LUFS, -1.4 dBTP. Earlier builds of this film went out at
+  Delivered at -14.5 LUFS, -1.8 dBTP with narration. Earlier builds of this film went out at
   -0.9 and -0.8 dBTP and were reported as under the -1.0 ceiling; they were
   not, and `kinetic.mjs` now FAILS the build above it.
 

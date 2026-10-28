@@ -42,6 +42,8 @@ export interface Scene {
   irisFrom?: [number, number];
   kicker?: string;
   line?: string;
+  /** The narration for this scene. Must fit inside it; see films/kinetic.mjs. */
+  vo?: string;
   chips?: string[];
   url?: string;
   src?: string;
@@ -53,6 +55,8 @@ export interface Film {
   fps: number;
   bpm: number;
   transitionBeats: number;
+  /** Kokoro voice, Indian-English accent level (voice/accent.py), and pace. */
+  voice?: { name?: string; accent?: "light" | "full"; speed?: number };
   scenes: Scene[];
 }
 

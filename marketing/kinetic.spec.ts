@@ -203,6 +203,82 @@ describe("the transitions", () => {
   });
 });
 
+describe("the narration", () => {
+  // Mirrors films/kinetic.mjs: a line starts VO_LEAD after its scene arrives
+  // and must end VO_TAIL before the next transition.
+  const LEAD = 0.3;
+  const TAIL = 0.3;
+
+  it("narrates every scene", () => {
+    for (const s of TIMELINE) expect(s.vo, `${s.id} has no narration`).toBeTruthy();
+  });
+
+  it("gives every line room to be spoken at a natural pace", () => {
+    /*
+      The build measures the synthesised lines exactly and fails on overflow,
+      but only on a machine with the voice model. This is the cheap version CI
+      can run: 2.6 words a second is about where unhurried narration sits, and
+      a line that needs more than that in its window would have to be SPED UP
+      to fit -- the quickest way to make a voice sound synthetic, and the thing
+      this pipeline refuses to do.
+    */
+    for (const s of TIMELINE) {
+      const words = (s.vo ?? "").split(/\s+/).filter(Boolean).length;
+      const room = s.dur / FPS - LEAD - TAIL;
+      expect(words / room, `${s.id}: ${words} words in ${room.toFixed(1)}s`).toBeLessThanOrEqual(2.6);
+    }
+  });
+
+  it("names the product the way the phonemiser says it", () => {
+    // "Sitetru" is SITE-troo on its own (/saittru:/). Hyphenated or spaced
+    // spellings change how it is spoken, and nothing downstream would notice.
+    for (const s of TIMELINE) expect(s.vo ?? "").not.toMatch(/site[\s-]tru/i);
+  });
+});
+
+describe("the accent", () => {
+  const indianize = (ipa: string, level: string) =>
+    execFileSync(
+      "python3",
+      ["-c", `import sys; sys.path.insert(0, ${JSON.stringify(join(ROOT, "marketing/voice"))})\n` +
+        `from accent import indianize\nprint(indianize(sys.stdin.read(), ${JSON.stringify(level)}), end="")`],
+      { input: ipa, encoding: "utf8" },
+    );
+
+  it("keeps the affricates in 'job' and 'change' whole", () => {
+    // t and d become retroflex -- but dʒ and tʃ are single sounds, and
+    // retroflexing their first half turns "job" into something else.
+    const out = indianize("dʒˈɑːb tʃˈeɪndʒ", "full");
+    expect(out).toContain("dʒ");
+    expect(out).toContain("tʃ");
+    expect(out).not.toMatch(/ɖʒ|ʈʃ/);
+  });
+
+  it("turns the American flap into a t, not into the Indian tapped r", () => {
+    // "water" is wɔːɾɚ in en-us. The flap must become ʈ BEFORE r becomes ɾ,
+    // or "water" and "warer" come out the same.
+    expect(indianize("wˈɔːɾɚ", "full")).toBe("ʋˈɔːʈəɾ");
+  });
+
+  it("leaves the r and the vowels alone at the light level", () => {
+    const out = indianize("ɹˈaɪt fɹʌm pˈeɪpɚ", "light");
+    expect(out).toContain("ɹ");
+    expect(out).toContain("ʌ");
+    expect(out).toContain("ɚ");
+    expect(out).toContain("eː");
+  });
+
+  it("emits nothing Kokoro would silently drop", () => {
+    // Kokoro DROPS phonemes it has no id for, so a target outside its
+    // vocabulary deletes sounds instead of changing them. These are the
+    // symbols accent.py may introduce; each is in Kokoro's vocab (checked
+    // against the real tokenizer in synth.py at synthesis time).
+    const out = indianize("θɹˈiː ðə wˈɜːk dˈeɪ ɡˈoʊ tˈɛlᵻɡɹˌæm wʌts", "full");
+    const introduced = new Set([...out].filter((c) => !"θɹiːðəwɜkdeɪɡoʊtɛlᵻæmʌsˈˌ ".includes(c)));
+    for (const c of introduced) expect("ʈɖɾʋːʰəɛɔeoatdɪ").toContain(c);
+  });
+});
+
 /** ffmpeg is not on the CI runner; the luma check skips itself there. */
 const CAN_MEASURE = (() => {
   try {

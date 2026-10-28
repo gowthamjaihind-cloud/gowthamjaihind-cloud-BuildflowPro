@@ -2,12 +2,18 @@
   "fps": 30,
   "bpm": 120,
   "transitionBeats": 2,
+  "voice": {
+    "name": "hm_psi",
+    "accent": "full",
+    "speed": 1.0
+  },
   "scenes": [
     {
       "id": "intro",
       "kind": "title",
       "bars": 3,
-      "line": "Truth, reported from site."
+      "line": "Truth, reported from site.",
+      "vo": "This is Sitetru. Truth, reported from site."
     },
     {
       "id": "telegram",
@@ -29,7 +35,8 @@
           "w": 787,
           "h": 124
         }
-      ]
+      ],
+      "vo": "Your site engineer logs the day on Telegram, right from the phone."
     },
     {
       "id": "daily-logs",
@@ -67,7 +74,8 @@
           "w": 1589,
           "h": 456
         }
-      ]
+      ],
+      "vo": "It lands straight in your daily logs."
     },
     {
       "id": "dashboard",
@@ -124,12 +132,13 @@
           "w": 579,
           "h": 232
         }
-      ]
+      ],
+      "vo": "The dashboard shows where the job stands today: progress, spend, and what's slipping."
     },
     {
       "id": "inventory",
       "kind": "screen",
-      "bars": 2,
+      "bars": 3,
       "enter": "rise",
       "kicker": "Inventory",
       "line": "What's in stock, what's running out.",
@@ -142,16 +151,10 @@
           "w": 2900
         },
         {
-          "at": 10,
+          "at": 15,
           "cx": 1944,
           "cy": 1000,
           "w": 2900
-        },
-        {
-          "at": 45,
-          "cx": 1640,
-          "cy": 820,
-          "w": 1950
         },
         {
           "at": 68,
@@ -160,7 +163,13 @@
           "w": 1950
         },
         {
-          "at": 90,
+          "at": 102,
+          "cx": 1640,
+          "cy": 820,
+          "w": 1950
+        },
+        {
+          "at": 135,
           "cx": 2260,
           "cy": 820,
           "w": 1950
@@ -168,25 +177,26 @@
       ],
       "marks": [
         {
-          "at": 42,
+          "at": 63,
           "x": 736,
           "y": 571,
           "w": 773,
           "h": 330
         },
         {
-          "at": 80,
+          "at": 120,
           "x": 2379,
           "y": 571,
           "w": 773,
           "h": 330
         }
-      ]
+      ],
+      "vo": "Inventory tells you what's in stock, and what's running out."
     },
     {
       "id": "procurement",
       "kind": "screen",
-      "bars": 2,
+      "bars": 3,
       "enter": "push",
       "kicker": "Procurement",
       "chips": [
@@ -203,25 +213,25 @@
           "w": 2900
         },
         {
-          "at": 10,
+          "at": 15,
           "cx": 1944,
           "cy": 1000,
           "w": 2900
         },
         {
-          "at": 45,
+          "at": 68,
           "cx": 1500,
           "cy": 800,
           "w": 1900
         },
         {
-          "at": 66,
+          "at": 99,
           "cx": 1500,
           "cy": 800,
           "w": 1900
         },
         {
-          "at": 90,
+          "at": 135,
           "cx": 2300,
           "cy": 700,
           "w": 1900
@@ -229,25 +239,26 @@
       ],
       "marks": [
         {
-          "at": 32,
+          "at": 48,
           "x": 792,
           "y": 328,
           "w": 1128,
           "h": 91
         },
         {
-          "at": 78,
+          "at": 117,
           "x": 2600,
           "y": 704,
           "w": 330,
           "h": 528
         }
-      ]
+      ],
+      "vo": "Purchase orders, goods receipts and bills, in one place."
     },
     {
       "id": "insights",
       "kind": "screen",
-      "bars": 3,
+      "bars": 4,
       "enter": "iris",
       "kicker": "Project Insights",
       "line": "Reads your costs, schedule and daily logs, then flags what needs attention.",
@@ -260,25 +271,25 @@
           "w": 2900
         },
         {
-          "at": 12,
+          "at": 16,
           "cx": 1944,
           "cy": 900,
           "w": 2900
         },
         {
-          "at": 55,
+          "at": 73,
           "cx": 1700,
           "cy": 820,
           "w": 2000
         },
         {
-          "at": 100,
+          "at": 133,
           "cx": 1700,
           "cy": 820,
           "w": 2000
         },
         {
-          "at": 140,
+          "at": 187,
           "cx": 2540,
           "cy": 1560,
           "w": 1900
@@ -286,27 +297,28 @@
       ],
       "marks": [
         {
-          "at": 50,
+          "at": 67,
           "x": 736,
           "y": 565,
           "w": 1355,
           "h": 77
         },
         {
-          "at": 88,
+          "at": 117,
           "x": 736,
           "y": 818,
           "w": 1797,
           "h": 206
         },
         {
-          "at": 140,
+          "at": 187,
           "x": 1965,
           "y": 1722,
           "w": 1187,
           "h": 230
         }
-      ]
+      ],
+      "vo": "Insights reads your costs, schedule and daily logs, then flags what needs attention."
     },
     {
       "id": "estimates",
@@ -351,7 +363,8 @@
           "w": 1820,
           "h": 100
         }
-      ]
+      ],
+      "vo": "Track the estimates you send your client, and what they've approved."
     },
     {
       "id": "reports",
@@ -408,7 +421,8 @@
           "w": 645,
           "h": 96
         }
-      ]
+      ],
+      "vo": "And turn daily logs into a report you can send."
     },
     {
       "id": "outro",
@@ -416,7 +430,8 @@
       "bars": 3,
       "enter": "zoom",
       "line": "Every project, ledger, and daily log in one place.",
-      "url": "sitetru.com"
+      "url": "sitetru.com",
+      "vo": "Sitetru. Every project, ledger and daily log, in one place."
     }
   ]
 }
