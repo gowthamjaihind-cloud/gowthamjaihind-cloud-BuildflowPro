@@ -19,6 +19,8 @@ surfaces later, when a video is doing well.
 | `remotion/out/sitetru-launch.mp4` | The launch film. Argues. Cut from stills. Voiceover + score. | ~79s |
 | `remotion/out/sitetru-hero.mp4` | The same stills, SILENT, captions only. The autoplay cut for the site. | ~83s |
 | `walkthrough/out/sitetru-walkthrough.mp4` | The walkthrough. Explains. The product actually running. | ~2:30 |
+| `remotion/out/sitetru-kinetic.mp4` | The kinetic cut. The landing-page hero. A scene per feature, explained in the app's own words, narrated. Scored, LIGHT theme, 16:9. | ~60s |
+| `remotion/out/sitetru-kinetic-music.mp4` | The same picture with no narration: the score at full level and a sound on each of the picture's effects. | ~60s |
 
 Different jobs, on purpose. The launch film opens on the evening a contractor
 spends finding out what happened today, names the one genuinely unusual thing
@@ -197,6 +199,15 @@ noise. Two cues with different jobs:
 - **walkthrough** — A minor, 72 BPM, no percussion, almost no movement. Its
   whole job is to stop the room sounding dead under a voice that talks for two
   and a half minutes. If you notice it, it is too loud.
+- **kinetic** — D minor, 120 BPM, the only cue with nothing talking over it,
+  so it can be fuller than the beds without competing with anything. Its
+  signature is a held pad that PUMPS -- ducked on every kick and swelling back
+  between them -- which gives the motion the first edit got from busy
+  sixteenth-note stabs without putting a new attack under every word a viewer
+  is reading. Claps on 2 and 4, an eighth-note arpeggio, and a whoosh landing
+  on every scene transition: `films/kinetic.mjs` passes the transition times
+  out of `film.json` as `--marks`, so a scene that changes length moves its
+  whoosh with it. The beat drops on the first mark, as the first feature arrives.
 
 `mix.mjs` places each line at its beat and ducks the score under the voice with
 `sidechaincompress`, then delivers at −14 LUFS with a −1 dBTP ceiling, which is
@@ -250,6 +261,29 @@ npm run capture:screens                      # -> marketing/video/screens/
 
 Captures at 3200x2000. The video crops *into* these images, so the resolution
 is load-bearing — do not shrink them.
+
+**There are two sets, and which one you overwrite matters.**
+
+```bash
+npm run capture:screens                                   # dark  -> video/screens/
+FILM_THEME=light OUT_DIR=marketing/video/screens-light \
+  npm run capture:screens                                 # light -> video/screens-light/
+```
+
+`capture-screens.mjs` defaults to **dark**, and the launch film, the silent
+Hero cut and the walkthrough cut-aways all want it that way — the launch film
+opens and closes on dark brand cards, and white screenshots in its middle gave
+it a 185-luma jump in two frames. The kinetic cut is the one film set in the
+LIGHT theme, and it reads `l-*.png` in `remotion/public`.
+
+So a re-capture that forgets `FILM_THEME=light` does not fail: it overwrites
+the light set with dark frames under light names, and the kinetic cut renders
+dark with ink captions on near-black screens. `marketing/kinetic.spec.ts`
+measures the actual luma of three referenced screenshots for exactly this, and
+skips itself where there is no ffmpeg.
+
+The layout is pixel-identical between the two themes, which is why every crop
+in the kinetic cut carried over from the dark version unchanged.
 
 The script prints `[EMPTY STATE -- check fixtures]` next to any screen that
 rendered with no data. Treat that as a failure: it usually means a hook reads
@@ -357,9 +391,20 @@ headless shell instead:
 
 ```
 npx remotion render Hero out/sitetru-hero.mp4 \
-  --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell \
+  --browser-executable="$(node -e 'import("./../films/kinetic.mjs").then(m=>console.log(m.findChromium()))')" \
   --concurrency=2 --timeout=120000
 ```
+
+**Do not hardcode that path.** It has already drifted twice in one sandbox:
+`chromium_headless_shell-1194/chrome-linux/headless_shell` became
+`chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell`
+-- the version moved AND the directory layout changed underneath it. The
+version that used to be written here no longer exists, so anyone following the
+old instruction got "no such file" rather than a render.
+
+`findChromium()` in `films/kinetic.mjs` globs for it and prefers a headless
+shell over full Chrome; `CHROME_PATH` still overrides. `films/kinetic.mjs` uses
+it automatically.
 
 **Render the Launch composition at `--concurrency=2`, not 4.** `film/Fonts.tsx`
 holds the render open with `delayRender` until Manrope has actually been
@@ -392,6 +437,209 @@ overruns a 2000px-tall screenshot.
 
 Captions are one full-bleed band across the foot of the frame. Text is never set
 in a coloured chip, and nothing decorative is laid over a screen.
+
+## The kinetic cut — the landing-page hero
+
+```bash
+node marketing/films/kinetic.mjs              # score -> picture -> mux
+node marketing/films/kinetic.mjs --preview    # half scale, for checking framing
+```
+
+One output: `remotion/out/sitetru-kinetic.mp4`, 1920x1080, 60s, ~5.2 MB, served
+by the landing page through `src/components/HeroVideo.tsx`.
+
+### Why it is a scene per feature, not a shot every 0.8s
+
+The first edit was a 29-second montage: 24 hard cuts, one every 0.8 seconds.
+The verdict was that a customer could not understand any of it, and the
+verdict was right for a structural reason rather than a speed one -- at that
+rate there is no time to READ, so the film could say "there is software" and
+never "this is what it does".
+
+So the unit is now a SCENE: one feature, two or three bars, sized to how long
+its sentence takes to read. Each scene does three things in order, and the
+order is the explanation:
+
+1. the feature's name and the app's own one-line description, word by word;
+2. the real screen in a floating window, wide, so the viewer sees where they are;
+3. the camera pushing in to the part the sentence is about, with a spotlight on
+   it -- and where the sentence has two halves ("what's in stock, *what's
+   running out*"), the camera and spotlight travel from one to the other.
+
+The story runs in the order a job does: the site engineer logs from Telegram,
+the log lands in Daily Logs, it rolls up into the Dashboard, then stock,
+buying, insight, the client estimate and the report. A chapter bar at the foot
+shows eight parts and which one you are on.
+
+`marketing/kinetic.spec.ts` pins the pace so it cannot quietly come back: every
+feature gets at least two bars, and every explainer has to be readable at 3.5
+words a second or slower in the time its scene is actually on screen.
+
+### The narration, and the accent
+
+Each scene has a `vo` line in film.json, spoken over it. The lines follow the
+app's own description of each screen, said the way a person would say it --
+"Inventory tells you what's in stock, and what's running out" -- and claim
+nothing the screen does not show.
+
+**The voice is `am_puck`, American, chosen by ear from eight.** Four were
+Indian English and four American; the comparison reels were built from the same
+two lines of this script, at matched loudness. Set in film.json:
+
+```json
+"voice": { "name": "am_puck", "speed": 1.0 }
+```
+
+The Indian-English route is kept, because it was not a dead end -- just not the
+choice. Kokoro has four voices trained on Hindi speech (`hf_alpha`, `hf_beta`,
+`hm_omega`, `hm_psi`), but its phonemiser only speaks `en-us`, so on their own
+they were handed AMERICAN pronunciation: an Indian speaker doing an American
+accent. `voice/accent.py` rewrites the IPA to the documented features of General
+Indian English first -- retroflex t and d, dental th, one sound for w and v,
+pure vowels in "day" and "go", no flap in "water", and at `full` a tapped r. Set
+`"accent": "light" | "full"` beside a Hindi-trained voice to use it; the spec
+refuses it on any other voice.
+
+What was measured on the candidates (`voice/quality.py`, the code behind the
+README's long-quoted octave-jump and HNR numbers, finally committed):
+
+| voice | octave-jumps | HNR | local recogniser |
+| --- | --- | --- | --- |
+| `am_puck` (chosen) | 0.0% | 3.36 dB | 82% |
+| `am_echo` | 0.0% | 2.97 dB | 86% |
+| `af_aoede` | 0.0% | 5.84 dB | 82% |
+| `af_jessica` | 0.4% | 5.17 dB | 86% |
+| `hm_psi` full accent | 0.0% | 3.22 dB | 50% |
+| `hf_beta` light accent | 0.4% | 5.50 dB | 36% |
+
+All of them are free of robotic artefacts (male voices measure lower HNR across
+the board). The recogniser column needs care: pocketsphinx is trained on
+American speech, so it under-scores any Indian accent -- a Hindi voice reading
+American phonemes scores 50% too. It catches a line turned to mush; it does not
+rank accents.
+
+**Lines must fit their scenes; they are never sped up.** A line starts 0.3s after
+its scene arrives and must end 0.3s before the next transition. The build fails
+with the numbers if one overruns -- three scenes gained a bar for exactly this,
+taking the film from 54s to 60s. Pushing a voice faster than its natural pace is
+the quickest way to make it sound synthetic.
+
+**A human voice is a file drop.** Any `films/takes/kinetic/<id>.wav` replaces the
+synthesised line for that scene. `films/out/kinetic/script.txt` lists every line
+with its start time and the longest it may run. The same works for a line from a
+hosted TTS service.
+
+**The score ducks under the voice** with mix.mjs's broadcast sidechain (4:1,
+12/380 ms), from a bed at -6 dB. Measured from the stems: voice sits a median
+15.2 dB over the music while speaking, and the music dips 9 dB under each line.
+
+`node marketing/films/kinetic.mjs --mux-only` re-mixes against the picture already
+rendered, so voice and level work do not cost a seven-minute render each.
+
+### The music-only version
+
+`sitetru-kinetic-music.mp4`: the same picture, built in the same run, with no
+narration. Without a voice telling the viewer where to look, the picture's own
+events have to be HEARD to land with the same weight, so `music/sfx.py` puts a
+sound on each one, at its frame:
+
+- a **bell** when a spotlight lands, climbing in pitch as it glides to the next
+  element (A5, D6, F6 -- the score's fifth, octave and third);
+- three **rising notes**, D F A, as the brand mark's three bars build -- the
+  score's home chord, so the logo builds the key it resolves to;
+- a **swish** under the wordmark wipe, a **pop** per Procurement chip, and a low
+  **boom** under each dolly zoom into and out of the title cards.
+
+The transition whooshes are the score's own, in both versions. Every effect is
+synthesised in the score's key, like the score -- no samples, no licence.
+
+The timings come from `film.json`'s `effects` block, which the components read
+too, rather than from a second copy in the build script. Levels were set by
+measuring each effect against the music in the 150 ms after it fires: bells
+started at a median -1.6 dB, vanishing to -9.1 in the drum bars, and the closing
+logo's notes at -6.9 under the finale; both were raised until every one reads.
+
+### Transitions, not cuts
+
+Scenes overlap by two beats, centred on the bar line, and every handover is
+continuous -- `remotion/src/kinetic/transitions.ts`:
+
+- **push** — lateral with motion blur, direction following the layout;
+- **zoom** — a dolly through the outgoing scene, into and out of the titles;
+- **rise** — the outgoing card drops back, the next rises with a forward tilt;
+- **iris** — the next scene opens from the element the viewer was just looking
+  at. Tap *Save* in Telegram and Daily Logs opens from the Save button.
+
+The iris origin is COMPUTED from the previous scene's last highlight, not
+stored. The first draft stored it, and it went stale the first time a phone
+card moved by ten pixels.
+
+Opacities are staggered so the outgoing scene is mostly gone before the
+incoming one is legible. Crossed linearly, every midpoint printed two
+sentences on top of each other at half strength.
+
+### One timeline, three readers
+
+`remotion/src/kinetic/film.json` holds every scene: its length in bars, its
+words, its screenshot, its camera keyframes and its highlights, in source
+pixels. Three things read it -- the composition, `films/kinetic.mjs` (which
+needs the transition times for the score's whooshes) and the spec -- and none
+of them restates it.
+
+The arithmetic lives in two pure modules BESIDE `whip.ts`, outside the Remotion
+package: `kinetic-timeline.ts` and `kinetic-camera.ts`. That placement is the
+lesson `whip.ts` already records, relearned: the root tsconfig excludes
+`marketing/remotion`, but `exclude` only filters what SEEDS the program, so a
+root test importing any file from inside the package resolves React from the
+package's own node_modules and the app stops type-checking -- `src/App.tsx`,
+untouched, broke the moment the spec imported grid.ts.
+
+### The camera has to get close enough to read
+
+Body text in the captures is ~28 source px. The window is 1200 px wide, so a
+crop W px wide shows that text at 28 × 1200 / W. The first draft's closest
+crops were ~2450 wide and put it at ~13px: the screens were visible and
+unreadable. Every screen scene now reaches a crop of 2000 or less, and the spec
+fails if one does not. It also checks that every spotlight is INSIDE the
+camera's frame when it lands -- a mark with the right rect under a camera that
+has panned away draws its ring off the edge of the window, and nothing else
+would notice.
+
+### It is set in the light theme
+
+Which theme a film is captured in is a decision about luma, not about taste.
+The light screenshots average 208 luma against the dark set's 37, so the film
+cannot be half and half. `remotion/src/kinetic/palette.ts` holds every colour
+the film draws itself; the spec fails on any use of `primaryOnDark` (a lifted
+cobalt for navy -- about 1.5:1 on this ground) or `surfaceDark`. The
+spotlight's dim is 12%: at 34% and then 18% it read as the window going grey
+rather than as one element being lit.
+
+### Nothing in it is invented
+
+Real light-theme screenshots, real screenshots of the real Telegram bot, the
+real brand mark at its real geometry, and every word on screen is a string the
+app displays: each explainer is the line printed under that screen's title,
+the chips are Procurement's own tab names. The spec greps every one against the
+app source and fails on anything that appears nowhere in it. The end card
+carries the name, the portfolio's own tagline and the address -- no price,
+because an earlier cut shipped one no plan charged.
+
+### Render and delivery notes
+
+- **`--concurrency=2`**: the composition mounts `Fonts`, and higher concurrency
+  races its `delayRender` past the 30s default.
+- **CRF 30, `--x264-preset=slow`**, chosen on a 10-second slice against a CRF 12
+  master: CRF 26 was 5.9 MB/54s, 30 is 3.7, 32 is 3.2, and at 1:1 on the
+  smallest text in the film all three are indistinguishable from the master.
+  The first edit sat at 3 MB on CRF 26 because it was static screenshots; this
+  one pans and blurs, so every pixel changes on most frames.
+- **True peak.** The mix is two-pass loudnorm into a limiter run at 4× the
+  sample rate, so it can see the peaks a decoder reconstructs BETWEEN samples:
+  at the native rate a -2 dB limit still came out at -0.2 dBTP through AAC.
+  Delivered at -14.7 LUFS, -1.8 dBTP narrated; -14.3 / -1.6 music-only. Earlier builds of this film went out at
+  -0.9 and -0.8 dBTP and were reported as under the -1.0 ceiling; they were
+  not, and `kinetic.mjs` now FAILS the build above it.
 
 ## walkthrough/ — the screen recording
 

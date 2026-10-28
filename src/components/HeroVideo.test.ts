@@ -29,8 +29,22 @@ describe("the landing page film", () => {
   });
 
   it("keeps the poster small enough to be free, and the film small enough to be fair", () => {
-    const poster = statSync(join(ROOT, "public/media/sitetru-hero-poster.jpg")).size;
-    const film = statSync(join(ROOT, "public/media/sitetru-hero.mp4")).size;
+    /*
+      Derived from the component, not hardcoded.
+
+      These two paths used to be written out literally, and when the film was
+      swapped for the kinetic cut the test went on weighing the OLD files --
+      which still exist, so it still passed, while measuring nothing the page
+      actually serves. A size guard that does not follow the component it
+      guards is worse than no guard, because it reads green.
+    */
+    const refs = [...SRC.matchAll(/["'](\/media\/[^"']+)["']/g)].map((m) => m[1]);
+    const posterRef = refs.find((r) => /\.(jpg|jpeg|png|webp)$/i.test(r));
+    const filmRef = refs.find((r) => /\.(mp4|webm)$/i.test(r));
+    expect(posterRef, "HeroVideo references no poster image").toBeTruthy();
+    expect(filmRef, "HeroVideo references no video file").toBeTruthy();
+    const poster = statSync(join(ROOT, "public", posterRef!)).size;
+    const film = statSync(join(ROOT, "public", filmRef!)).size;
     // The poster is the only part every visitor pays for.
     expect(poster, "the poster is what loads for everyone — keep it under 120 KB").toBeLessThan(120 * 1024);
     // The source render is ~16.7 MB; it is re-encoded for the web before it
