@@ -1,51 +1,52 @@
+import film from "./film.json";
+import { Film, layout } from "../../../kinetic-timeline";
+
 /**
- * The tempo grid the kinetic cut is built on.
+ * The tempo grid, and the timeline laid out on it.
  *
- * Every number in this file exists so that the picture and the score can be
- * laid out against the SAME grid rather than two grids that happen to be
- * close. The launch film established why that matters: a cut a frame either
- * side of the music reads as merely quick, while a cut on it reads as driven.
- * In a film whose shortest shot is 24 frames, one frame is 4% of a shot.
+ * Every number the film runs on lives in film.json, not here. That file is read
+ * by three things -- this composition, films/kinetic.mjs (which renders the
+ * score) and marketing/kinetic.spec.ts -- and the reason it is JSON is that all
+ * three can read it without any of them restating it. The first version of this
+ * cut kept the tempo as TypeScript literals and the build script scraped them
+ * out with a regex; adding scenes of different lengths made that untenable,
+ * because the score has to know where every scene boundary falls in order to
+ * put a whoosh on it.
  *
- * 150 BPM is chosen for the PICTURE, not the music. At 30fps:
+ * WHY 120 BPM. The first cut ran at 150 with a shot every two beats -- 0.8s --
+ * and could not be read: a viewer got an impression of software and no idea
+ * what any of it did. This cut gives each feature two or three BARS, sized to
+ * how long its explainer takes to read, and 120 is chosen for the picture the
+ * same way 150 was:
  *
- *     60 / 150 * 30 = 12.0 frames to the beat
- *     12 * 4        = 48   frames to the bar
+ *     60 / 120 * 30 = 15 frames to the beat, 60 to the bar
  *
- * Both whole numbers, so a cut can land on a beat, a half-beat (6 frames) or
- * even a quarter-beat (3 frames) and still sit on a real frame. The obvious
- * "fast" tempos do not: 140 BPM gives 12.857 frames to the beat, so every
- * third cut lands off the music and no amount of rounding fixes it -- the
- * error accumulates across the film.
- *
- * `grid.test.ts` beside this file checks the arithmetic rather than trusting
- * the comment, because the failure is silent: a wrong BEAT still renders a
- * film, just one whose cuts drift against its own soundtrack.
+ * Both whole, so a scene boundary, a transition midpoint and a highlight cue
+ * can all sit on real frames. 120 is also where most modern pop and house
+ * sits, which matters for the score: it can stay driving while the picture
+ * slows down, rather than the music slowing with it and the film going soft.
  */
 
-export const FPS = 30;
+export type { CameraKey, Enter, Film, Kind, MarkRect, Placed, Scene } from "../../../kinetic-timeline";
 
-/** Beats per minute. Shared with marketing/music/score.py's `kinetic` cue. */
-export const BPM = 150;
+const L = layout(film as Film);
 
-/** Frames per beat. Whole by construction -- see the note above. */
-export const BEAT = (60 / BPM) * FPS;
-
+export const FPS = L.FPS;
+export const BPM = L.BPM;
+/** Frames per beat. Whole by construction -- see the spec. */
+export const BEAT = L.BEAT;
 /** Frames per bar, 4/4. */
-export const BAR = BEAT * 4;
-
+export const BAR = L.BAR;
 /**
- * Length in bars.
- *
- * 18 bars is 28.8 seconds. A hero film is watched with a cursor already
- * heading for the scroll bar, so the length is chosen against attention
- * rather than against how much there is to show: the 83-second silent cut
- * already exists for anyone who wants the long version, and this one has to
- * earn its first three seconds.
+ * Transition length. Two beats, centred ON the bar line: the outgoing scene
+ * spends its last beat leaving and the incoming spends its first arriving, so
+ * the moment the picture is half one thing and half the other lands exactly on
+ * the downbeat the score marks with a whoosh.
  */
-export const BARS = 18;
-
-export const KINETIC_FRAMES = BARS * BAR;
-
-/** Seconds, for the score render -- which takes a duration, not a frame count. */
-export const KINETIC_SECONDS = KINETIC_FRAMES / FPS;
+export const TRANSITION = L.TRANSITION;
+export const HALF = L.HALF;
+export const SCENES = L.SCENES;
+export const FEATURES = L.FEATURES;
+export const TIMELINE = L.TIMELINE;
+export const KINETIC_FRAMES = L.KINETIC_FRAMES;
+export const KINETIC_SECONDS = L.KINETIC_SECONDS;

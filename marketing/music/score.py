@@ -86,7 +86,7 @@ def pluck(freq, seconds, gain=1.0):
     return out * gain * 0.28
 
 
-def pad(freq, seconds, gain=1.0, detune=0.004):
+def pad(freq, seconds, gain=1.0, detune=0.004, attack=None, release=None):
     """
     Seven detuned saws through a gentle lowpass -- the warm bed under
     everything. Detuning is what stops a stack of oscillators sounding like one
@@ -102,7 +102,12 @@ def pad(freq, seconds, gain=1.0, detune=0.004):
     out = low_pass(out, 1400, order=4)
     # A slow tremolo keeps a long chord from sounding like a held organ key.
     out *= 1 + 0.05 * np.sin(2 * np.pi * 0.23 * t)
-    out *= adsr(n, min(0.9, seconds * 0.35), 0.3, 0.85, min(1.2, seconds * 0.4))
+    # The slow swell suits a bed under a voice. A pumped pad that is re-struck
+    # every bar needs it gone, or every bar line becomes a dip -- hence the
+    # overrides, which default to the original shape for the other cues.
+    a = min(0.9, seconds * 0.35) if attack is None else attack
+    r = min(1.2, seconds * 0.4) if release is None else release
+    out *= adsr(n, a, 0.3, 0.85, r)
     return out * gain * 0.14
 
 
@@ -151,6 +156,49 @@ def swell(seconds, gain=1.0, seed=1):
     out = high_pass(out, 700)
     out *= (t / max(t[-1], 1e-9)) ** 2.4
     return out * gain * 0.16
+
+
+def clap(seconds=0.22, gain=1.0, seed=3):
+    """
+    Three noise bursts a few milliseconds apart, then a short tail, band-passed
+    into the 1-3 kHz band. That stagger is what makes a clap a clap rather than
+    a snare: real hands never meet once.
+    """
+    rng = np.random.default_rng(seed)
+    n = int(seconds * SR)
+    t = np.arange(n) / SR
+    env = np.zeros(n)
+    for k, off in enumerate((0.0, 0.009, 0.019)):
+        env += np.where(t >= off, np.exp(-140 * np.maximum(t - off, 0)), 0) * (0.7 if k < 2 else 1.0)
+    env += np.where(t >= 0.019, 0.35 * np.exp(-22 * np.maximum(t - 0.019, 0)), 0)
+    out = rng.standard_normal(n) * env
+    out = low_pass(high_pass(out, 900), 3200)
+    return out * gain * 0.22
+
+
+def whoosh(rise=0.55, tail=0.30, gain=1.0, seed=5):
+    """
+    A transition whoosh: noise that rises and brightens INTO a point, then
+    falls away after it. Returns (audio, peak_offset) so the caller can land
+    the peak exactly on the cut.
+
+    The brightening is a crossfade from low-passed to high-passed noise rather
+    than a swept filter -- a swept Butterworth needs per-sample coefficients,
+    and the crossfade reads the same at this length.
+    """
+    rng = np.random.default_rng(seed)
+    n1 = int(rise * SR)
+    n2 = int(tail * SR)
+    noise = rng.standard_normal(n1 + n2)
+    dark = low_pass(noise, 700)
+    bright = high_pass(noise, 2400)
+    u = np.concatenate([np.linspace(0, 1, n1), np.ones(n2)])
+    body = (1 - u) * dark * 2.2 + u * bright
+    env = np.concatenate([
+        np.linspace(0, 1, n1) ** 2.4,
+        np.exp(-np.arange(n2) / SR * 14),
+    ])
+    return body * env * gain * 0.20, rise
 
 
 # ------------------------------------------------------------- filtering ----
@@ -356,45 +404,51 @@ def walkthrough(total, bpm=72, bloom=None):
     return t.out(total)
 
 
-def kinetic(total, bpm=150):
+def kinetic(total, bpm=120, marks=None):
     """
-    D minor, 150 BPM, no resolution until the last bar. The cue for the kinetic
-    cut.
+    D minor, 120 BPM, for the kinetic cut's second edit.
 
-    150 is chosen for the PICTURE, the same way launch's 100 was: at 30fps it is
-    exactly 12 frames to the beat and 48 to the bar, so a cut can land on any
-    beat, half-beat or quarter-beat and still sit on a whole frame. At 140 the
-    beat is 12.857 frames and every third cut lands a frame off the music --
-    which, in a cut this fast, is a third of the shot.
+    The first version of this cue was written for a film that cut every 0.8s:
+    150 BPM, a sixteenth-note pluck figure and chord stabs, all of it busy on
+    purpose because the picture was. The picture is now a scene per feature
+    with a sentence to read in each, and the cue changes with it -- not slower
+    in feel, but less CROWDED:
 
-    The arrangement is the opposite of `launch`'s on purpose. That cue sits
-    under a voice, so it is sparse by necessity and its pad does most of the
-    work. Nothing talks over this one, so the mid band is free and the
-    arrangement can be dense: a sixteenth-note pluck figure carries the pace,
-    the kick is four-on-floor rather than placed, and the pad plays SHORT
-    STABS instead of held chords. That last one matters more than it sounds --
-    a sustained pad reads as slow however fast the notes on top of it move,
-    because the ear takes its tempo from how often something changes, and a
-    held chord changes once a bar.
+      * 120 BPM, chosen for the picture as before: 15 frames to the beat.
+      * A held pad that PUMPS -- ducked on every kick and swelling back between
+        them. That breathing is the sound most modern pop and house is built on,
+        and it does the job the stabs did -- motion -- without a new attack
+        every quarter-beat competing with a sentence for attention.
+      * An eighth-note arpeggio instead of sixteenths; claps on 2 and 4.
+      * A WHOOSH landing on every scene transition. `marks` are the transition
+        midpoints in seconds, which films/kinetic.mjs reads out of film.json,
+        so a scene that gets longer moves its whoosh with it.
 
-    The chord sequence is the same i - VI - III - VII as the launch film, which
-    is deliberate: it is the one musical thing the two films share, and a
-    viewer who has seen both should feel they come from the same place.
+    Percussion comes in on the first mark -- the end of the title card -- so the
+    beat drops exactly as the first feature arrives. Without marks it falls
+    back to the arc, which is what the render test exercises.
+
+    The chord sequence is the same i - VI - III - VII as the launch film, so the
+    two films still sound like they come from the same place.
     """
     beat = 60 / bpm
     bar = 4 * beat
     t = Track(total)
+    marks = sorted(m for m in (marks or []) if 0 < m < total)
+    drums_from = marks[0] if marks else None
 
     progression = [
-        (["D4", "F4", "A4"], "D2"),
-        (["A#3", "D4", "F4"], "A#1"),
-        (["F3", "A3", "C4"], "F2"),
-        (["C4", "E4", "G4"], "C2"),
+        (["D3", "F3", "A3", "D4"], "D2"),
+        (["A#2", "D3", "F3", "A#3"], "A#1"),
+        (["F3", "A3", "C4", "F4"], "F2"),
+        (["C3", "E3", "G3", "C4"], "C2"),
     ]
-    # The sixteenth figure, as scale degrees into the bar's chord. Syncopated
-    # against the kick rather than doubling it: a riff that lands on every
-    # downbeat with the drum just thickens the drum.
-    figure = [0, 2, 1, 2, 0, 1, 2, 1, 0, 2, 1, 0, 2, 1, 2, 1]
+
+    # The pump: every beat the pad ducks to 35% and recovers. Built once at
+    # bar length and applied to each bar's chord.
+    nb = int(bar * SR)
+    phase = (np.arange(nb) / SR % beat) / beat
+    pump = 1 - 0.65 * np.exp(-phase * 6.5)
 
     n_bars = int(total / bar) + 1
     for b in range(n_bars):
@@ -403,49 +457,46 @@ def kinetic(total, bpm=150):
             break
         g = kinetic_arc(at / total)
         notes, bass = progression[b % 4]
+        drums = (at >= drums_from - 1e-6) if drums_from is not None else g > 0.55
 
-        # Stabs, not a bed: a fifth of a beat, so the chord punctuates.
-        chord(t, at, notes, beat * 0.22, pad, g * 1.5)
-        chord(t, at + beat * 2.5, notes, beat * 0.18, pad, g * 0.9)
+        held = sum(pad(hz(n), bar, 1.0, attack=0.02, release=0.06) for n in notes)
+        t.add(at, held[:nb] * pump[: len(held[:nb])], g * 1.35)
 
-        # Eighth-note sub. The pulse everything else is hung on.
+        # Eighth-note bass, root on the beat and octave on the off-beat.
         for i in range(8):
-            t.add(at + i * beat / 2, sub(hz(bass), beat * 0.42), g * (0.95 if i % 2 == 0 else 0.5))
+            f = hz(bass) * (2 if i % 2 else 1)
+            t.add(at + i * beat / 2, sub(f, beat * 0.45), g * (0.95 if i % 2 == 0 else 0.42))
 
-        if g > 0.55:
-            # Four on the floor, with the offbeat ghost that stops it marching.
+        if drums:
             for i in range(4):
-                t.add(at + i * beat, kick(0.30), g * (1.0 if i % 2 == 0 else 0.85))
-            t.add(at + 3.5 * beat, kick(0.22), g * 0.4)
+                t.add(at + i * beat, kick(0.32), g * 1.0)
+            for i in (1, 3):
+                t.add(at + i * beat, clap(seed=b * 4 + i), g * 0.95)
+            for i in range(8):
+                # Open on the off-beat, closed on the beat: the house pattern.
+                off = i % 2 == 1
+                t.add(at + i * beat / 2, hat(0.11 if off else 0.05, seed=b * 8 + i), g * (1.0 if off else 0.45))
 
-            # Sixteenth hats, accented on the beat so the grid is audible.
-            for i in range(16):
-                accent = 1.0 if i % 4 == 0 else (0.45 if i % 2 else 0.7)
-                t.add(at + i * beat / 4, hat(seed=b * 16 + i), g * accent)
+            arp = notes[1:] + [notes[1]]
+            for i in range(8):
+                if b % 4 == 3 and i >= 6:
+                    continue                     # breathe into the turnaround
+                t.add(at + i * beat / 2,
+                      pluck(hz(arp[i % len(arp)]) * 2, beat * 0.6),
+                      g * (0.42 if i % 2 == 0 else 0.30))
 
-            # The figure itself, an octave up on the last quarter of the bar so
-            # it lifts into the next one instead of looping flat.
-            for i, deg in enumerate(figure):
-                up = 2 if i >= 12 else 1
-                t.add(at + i * beat / 4,
-                      pluck(hz(notes[deg]) * up, beat * 0.5),
-                      g * (0.50 if i % 2 == 0 else 0.34))
+    # Whooshes, peaking on each transition midpoint.
+    for k, m in enumerate(marks):
+        w, peak = whoosh(seed=11 + k)
+        t.add(max(m - peak, 0), w, 0.9)
 
-    # One riser into the last bar, and a single sustained arrival under the end
-    # card. The cue does not modulate to F the way launch does -- this film ends
-    # on its own name rather than on an argument, so it lands on the tonic.
-    resolve_at = max(total - bar, 0)
-    # Gains here are deliberately close to the body's, not above it.
-    # `write_wav` peak-normalises the whole cue, so an arrival written LOUDER
-    # does not arrive -- it just divides every bar before it by the amount it
-    # overshot. Measured: at pad 1.5 the drive bars sat at 0.65 of the peak and
-    # the last bar at 1.00; at 1.0 the body comes up and the arrival still
-    # reads, because what marks it is the sustain and the empty grid around it
-    # rather than the level.
-    t.add(max(resolve_at - beat * 2, 0), swell(beat * 2, 0.8), 0.7)
-    chord(t, resolve_at, ["D4", "F4", "A4", "D5"], bar * 1.4, pad, 1.0)
-    t.add(resolve_at, sub(hz("D2"), bar * 1.2), 0.8)
-    t.add(resolve_at, kick(0.46), 0.9)
+    # One sustained voicing under the closing card, an octave up so it sits
+    # ABOVE the pumped bed rather than doubling it. Measured: stacked at the
+    # bed's own register with an extra kick on the downbeat, the closing bar
+    # came out 1.00 against a body of 0.72 -- and since write_wav normalises
+    # to the loudest moment, that overshoot is taken straight out of the body.
+    resolve_at = marks[-1] if marks else max(total - bar * 2, 0)
+    chord(t, resolve_at, ["D4", "F4", "A4"], total - resolve_at + 1.0, pad, 0.42)
 
     return t.out(total)
 
@@ -483,9 +534,16 @@ def main():
         i = args.index("--bloom")
         bloom = float(args[i + 1])
         del args[i : i + 2]
+    # Transition midpoints in seconds, for the kinetic cue's whooshes. Only the
+    # caller knows them: they come out of film.json via films/kinetic.mjs.
+    marks = None
+    if "--marks" in args:
+        i = args.index("--marks")
+        marks = [float(x) for x in args[i + 1].split(",") if x.strip()]
+        del args[i : i + 2]
     if len(args) not in (3, 4):
         print(
-            "usage: score.py <launch|walkthrough> <out.wav> <seconds> [bpm] [--bloom <sec>]",
+            "usage: score.py <launch|walkthrough|kinetic> <out.wav> <seconds> [bpm] [--bloom <sec>] [--marks a,b,c]",
             file=sys.stderr,
         )
         return 1
@@ -499,12 +557,14 @@ def main():
         kw["bpm"] = bpm
     if bloom is not None and cue == "walkthrough":
         kw["bloom"] = bloom
+    if marks is not None and cue == "kinetic":
+        kw["marks"] = marks
     audio = CUES[cue](seconds, **kw)
     # Reverb is per-cue because the cues move at different speeds. The two
-    # slow beds want a room around them; at 150 BPM with sixteenth hats a 0.34
-    # mix smears consecutive hits into each other and the grid stops being
-    # audible -- which, in a film cut ON that grid, loses the thing the tempo
-    # was chosen for.
+    # slow beds want a room around them; under the kinetic cue's claps and
+    # off-beat hats a 0.34 mix smears consecutive hits into each other and the
+    # grid stops being audible -- which, in a film whose transitions land ON
+    # that grid, loses the thing the tempo was chosen for.
     audio = reverb(audio, mix={"launch": 0.30, "kinetic": 0.16}.get(cue, 0.34))
     # Nothing in either cue needs to be below 45 Hz; leaving it there only eats
     # headroom that the limiter then takes back out of the music.

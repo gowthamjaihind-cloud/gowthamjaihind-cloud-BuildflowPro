@@ -1,128 +1,209 @@
 import { describe, it, expect } from "vitest";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
+import { layout } from "./kinetic-timeline";
+import { crop, focusAt, WIN_H, WIN_W } from "./kinetic-camera";
 
 /**
  * Checks on the kinetic cut that a render cannot make for you.
  *
  * These live at `marketing/*.spec.ts` rather than next to the code they test,
  * and that is load-bearing rather than tidy: the root vitest config collects
- * `marketing/*.spec.ts` ONLY -- not `marketing/remotion/src/**`. `marketing/`
- * is a separate package with its own node_modules and no CI step of its own,
- * which is exactly how five renderers kept a retired palette for months. A
- * test file under remotion/src would be a test nobody ever runs.
+ * `marketing/*.spec.ts` ONLY. `marketing/` is a separate package with its own
+ * node_modules and no CI step of its own, which is how five renderers once kept
+ * a retired palette for months. A test under remotion/src would never run.
  *
- * What is worth pinning here is everything whose failure is SILENT. A wrong
- * tempo still renders a film. A label invented for the film still renders. A
- * missing screenshot renders as a blank frame. None of them throw, and none of
- * them are visible in a progress bar that says 864/864.
+ * It imports kinetic-timeline.ts and kinetic-camera.ts -- pure, beside whip.ts,
+ * OUTSIDE marketing/remotion -- and reads film.json with fs, so the arithmetic
+ * under test is the same code the film renders with. It must not import
+ * anything from inside marketing/remotion: see kinetic-timeline.ts.
+ *
+ * What is worth pinning is everything whose failure is SILENT. A scene too
+ * short to read still renders. A spotlight pointing off the edge of its window
+ * still renders. An invented caption still renders. None of them throw, and
+ * none show up in a progress bar that says 1620/1620.
  */
 
 const ROOT = join(__dirname, "..");
 const KIN = join(ROOT, "marketing/remotion/src/kinetic");
 const read = (p: string) => readFileSync(join(KIN, p), "utf8");
+const film = JSON.parse(read("film.json"));
+const { BAR, BEAT, FPS, HALF, KINETIC_SECONDS, TIMELINE, TRANSITION } = layout(film);
+const strip = (x: string) => x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
-const grid = read("grid.ts");
-const shots = read("shots.ts");
-const mark = read("Mark.tsx");
-const kinetic = read("Kinetic.tsx");
-const palette = read("palette.ts");
-
-const num = (src: string, name: string): number => {
-  const m = new RegExp(`export const ${name} = (\\d+(?:\\.\\d+)?)`).exec(src);
-  expect(m, `${name} must be exported as a plain literal`).toBeTruthy();
-  return Number(m![1]);
-};
+const features = TIMELINE.filter((s) => s.kind !== "title");
 
 describe("the tempo grid", () => {
-  const FPS = num(grid, "FPS");
-  const BPM = num(grid, "BPM");
-  const BARS = num(grid, "BARS");
-
-  it("puts a whole number of frames on every beat", () => {
-    // The entire reason 150 was chosen over a rounder-sounding 140. A
-    // fractional beat means a cut lands off the music by an amount that
-    // accumulates, and nothing about the render reports it.
-    const beat = (60 / BPM) * FPS;
-    expect(Number.isInteger(beat)).toBe(true);
-    expect(beat).toBe(12);
+  it("puts a whole number of frames on every beat, bar and half-transition", () => {
+    // A fractional beat still renders a film -- one whose transitions drift
+    // against the whooshes the score lands on them.
+    expect(Number.isInteger(BEAT)).toBe(true);
+    expect(BEAT).toBe(15);
+    expect(Number.isInteger(BAR)).toBe(true);
+    // Transitions are centred on the bar line, so half of one must be whole.
+    expect(Number.isInteger(HALF)).toBe(true);
+    expect(HALF * 2).toBe(TRANSITION);
   });
 
-  it("puts a whole number of frames on every quarter-beat", () => {
-    // Shots are placed on half-beats and the flash on quarter-beats.
-    expect(Number.isInteger(((60 / BPM) * FPS) / 4)).toBe(true);
-  });
-
-  it("stays the length a hero film can be", () => {
-    const seconds = (BARS * ((60 / BPM) * FPS) * 4) / FPS;
-    expect(seconds).toBeGreaterThan(20);
-    expect(seconds).toBeLessThan(40);
+  it("lasts long enough to explain and short enough to finish", () => {
+    expect(KINETIC_SECONDS).toBeGreaterThan(40);
+    expect(KINETIC_SECONDS).toBeLessThan(70);
   });
 });
 
-describe("the cut", () => {
-  const srcs = [...shots.matchAll(/src: "([^"]+)"/g)].map((m) => m[1]);
-  const labels = [...shots.matchAll(/label: "([^"]+)"/g)].map((m) => m[1]);
+describe("the pace", () => {
+  /*
+    The regression guard for the reason this edit exists.
 
-  it("references only screenshots that exist", () => {
-    // A `staticFile` that is not there renders as a blank frame, not an error.
-    expect(srcs.length).toBeGreaterThan(20);
-    for (const s of srcs) {
-      expect(existsSync(join(ROOT, "marketing/remotion/public", s)), `missing ${s}`).toBe(true);
+    The first cut changed shot every 0.8 seconds and the verdict was that a
+    customer could not understand any of it. Nothing in the pipeline objected,
+    because nothing in the pipeline knew a film is supposed to be READ. These
+    two tests are that knowledge, written down.
+  */
+  it("gives every feature at least two bars", () => {
+    for (const s of features) {
+      expect(s.bars, `${s.id} is ${s.bars} bar(s)`).toBeGreaterThanOrEqual(2);
     }
   });
 
-  it("fills every act, so no shot list is silently empty", () => {
-    for (const act of ["BLITZ", "FIGURES", "HOLDS"]) {
-      const m = new RegExp(`export const ${act}: Shot\\[\\] = \\[([\\s\\S]*?)\\n\\];`).exec(shots);
-      expect(m, `${act} not found`).toBeTruthy();
-      expect(m![1].match(/\{ src:|\{\s*\n\s*src:/g)?.length ?? 0).toBeGreaterThan(0);
+  it("leaves time to read every explainer at a comfortable pace", () => {
+    // Visible time is the scene minus its two half-transitions. 3.5 words a
+    // second is a relaxed reading pace for a short line; a film that needs more
+    // than that is asking the viewer to race it.
+    for (const s of features) {
+      const words = [s.line ?? "", ...(s.chips ?? [])].join(" ").split(/\s+/).filter(Boolean).length;
+      const visible = (s.dur - TRANSITION) / FPS;
+      expect(words / visible, `${s.id}: ${words} words in ${visible.toFixed(1)}s`).toBeLessThanOrEqual(3.5);
     }
   });
+});
+
+describe("the content", () => {
+  const appSource = (() => {
+    const out: string[] = [];
+    const walk = (d: string) => {
+      for (const f of readdirSync(d)) {
+        const p = join(d, f);
+        if (statSync(p).isDirectory()) walk(p);
+        else if (/\.(ts|tsx)$/.test(f) && !/\.test\./.test(f)) out.push(readFileSync(p, "utf8"));
+      }
+    };
+    walk(join(ROOT, "src"));
+    return out.join("\n");
+  })();
 
   it("says nothing the product does not say", () => {
     /*
-      The rule the whole film is built on, and the only one a reader cannot
-      check by watching it: every caption is a string the APP displays.
+      The rule the whole film is built on, and the one a viewer cannot check by
+      watching it: every word on screen is a string the APP displays. The
+      explainer lines are each screen's own one-line description, the chips are
+      Procurement's real tab names, the kicker is the sidebar label.
 
-      This matters because the film is made of real screenshots. A caption
-      written for the film, laid over a real screen, is the one element in the
-      frame that would be a claim rather than a record -- and the failure mode
-      is specific and has already happened in this repo, where an end card
-      carried a price no plan charged.
-
-      Substring, not equality: "Every project" is the opening of
-      portfolio.taglineSub. That is still the app's own words, and the shot it
-      labels is that screen. What this forbids is a label whose words appear
-      nowhere in the product at all.
+      The film is made of real screenshots, so a sentence written FOR the film
+      laid beside them would be the one element in frame that is a claim rather
+      than a record -- and this repo has already shipped an end card with a
+      price no plan charged. Test files are excluded from the haystack so a test
+      quoting a string cannot vouch for it.
     */
-    const appSrc = [
-      "src/i18n/translations.ts",
-      "src/components/ProcurementView.tsx",
-      "src/components/CostManagement.tsx",
-      "src/components/DashboardView.tsx",
-      "src/components/EstimateTrackerView.tsx",
-      "src/components/ProgressReportsView.tsx",
-      "src/components/schedule/PhaseStrips.tsx",
-      "src/pages/LandingPage.tsx",
-      "src/App.tsx",
-    ]
-      .map((f) => readFileSync(join(ROOT, f), "utf8"))
-      .join("\n");
+    const strings = film.scenes.flatMap((s: any) => [s.kicker, s.line, s.url, ...(s.chips ?? [])]).filter(Boolean);
+    expect(strings.length).toBeGreaterThan(15);
+    for (const str of strings) {
+      expect(appSource.includes(str), `"${str}" appears nowhere in the app`).toBe(true);
+    }
+  });
 
-    expect(labels.length).toBeGreaterThan(10);
-    for (const label of labels) {
-      expect(appSrc.includes(label), `"${label}" appears nowhere in the app`).toBe(true);
+  it("references only images that exist", () => {
+    // A missing staticFile renders as an empty box, not an error.
+    const pub = join(ROOT, "marketing/remotion/public");
+    const wall = [...read("Title.tsx").matchAll(/"(l-[^"]+\.png)"/g)].map((m) => m[1]);
+    const imgs = [
+      ...film.scenes.flatMap((s: any) => [s.src, ...(s.images ?? [])]).filter(Boolean),
+      ...wall,
+    ];
+    expect(wall.length).toBeGreaterThan(8);
+    for (const f of imgs) expect(existsSync(join(pub, f)), `missing ${f}`).toBe(true);
+  });
+
+  it("carries no claim that can go stale", () => {
+    // An end card that says only the name and the address cannot go out of
+    // date when the pricing does.
+    const all = JSON.stringify(film) + strip(read("Title.tsx")) + strip(read("Explainer.tsx"));
+    expect(all).not.toMatch(/₹\s*\d|Rs\.?\s*\d|\/\s*month|per month|free trial/i);
+  });
+});
+
+describe("the camera", () => {
+  const screens = TIMELINE.filter((s) => s.kind === "screen");
+
+  it("moves forward in time, within the scene", () => {
+    for (const s of screens) {
+      const keys = s.camera!;
+      for (let i = 1; i < keys.length; i++) {
+        expect(keys[i].at, `${s.id} key ${i}`).toBeGreaterThanOrEqual(keys[i - 1].at);
+      }
+      // Finished before the scene starts leaving, or the push is cut off mid-move.
+      expect(keys[keys.length - 1].at, `${s.id} camera`).toBeLessThanOrEqual(s.dur - HALF);
+      for (const m of s.marks ?? []) expect(m.at, `${s.id} mark`).toBeLessThanOrEqual(s.dur - HALF);
+    }
+  });
+
+  it("gets close enough to read", () => {
+    /*
+      The measured legibility fix. Body text in the captures is ~28 source px;
+      the window is WIN_W wide; so a crop W px wide shows that text at
+      28 * WIN_W / W. The first draft's closest crops were ~2450 wide -- 13px at
+      a 1130 window -- and the screens were visible and unreadable. Every screen
+      scene has to get to a crop where body text is at least 16px.
+    */
+    for (const s of screens) {
+      const closest = Math.min(...s.camera!.map((k) => k.w));
+      expect((28 * WIN_W) / closest, `${s.id} closest crop ${closest}px`).toBeGreaterThanOrEqual(16);
+    }
+  });
+
+  it("has every spotlight inside the frame when it lands", () => {
+    /*
+      The failure this guards is invisible in review: a mark whose rect is
+      right, under a camera that has panned somewhere else, draws its ring off
+      the edge of the window. The scene still "works"; the sentence just points
+      at nothing. Checked at the moment each mark has finished gliding in.
+    */
+    for (const s of screens) {
+      for (const m of s.marks ?? []) {
+        const c = crop(focusAt(s.camera!, m.at + 16), WIN_W, WIN_H, 3200, 2000);
+        const left = -c.left / c.scale;
+        const top = -c.top / c.scale;
+        const right = left + WIN_W / c.scale;
+        const bottom = top + WIN_H / c.scale;
+        const where = `${s.id} mark @${m.at}`;
+        expect(m.x, where).toBeGreaterThanOrEqual(left - 1);
+        expect(m.y, where).toBeGreaterThanOrEqual(top - 1);
+        expect(m.x + m.w, where).toBeLessThanOrEqual(right + 1);
+        expect(m.y + m.h, where).toBeLessThanOrEqual(bottom + 1);
+      }
     }
   });
 });
 
-/**
- * Can this machine measure a PNG? The theme check shells out to ffmpeg, which
- * the CI runner that deploys this app does not have. Everything else in this
- * file is pure string work and runs anywhere.
- */
+describe("the transitions", () => {
+  it("are continuous everywhere -- no scene after the first arrives on a hard cut", () => {
+    for (const s of TIMELINE.slice(1)) expect(s.enter, `${s.id} has no transition`).toBeTruthy();
+  });
+
+  it("open every iris from something the viewer was looking at", () => {
+    // The iris origin is derived from the previous scene's last highlight. A
+    // previous scene with no highlight would open it from the frame centre --
+    // a transition that claims a connection it does not have.
+    for (const s of TIMELINE) {
+      if (s.enter !== "iris") continue;
+      const prev = TIMELINE[s.index - 1];
+      expect(prev.marks?.length ?? 0, `${s.id} irises from ${prev.id}, which has no mark`).toBeGreaterThan(0);
+    }
+  });
+});
+
+/** ffmpeg is not on the CI runner; the luma check skips itself there. */
 const CAN_MEASURE = (() => {
   try {
     execFileSync("ffmpeg", ["-version"], { stdio: "ignore" });
@@ -133,60 +214,39 @@ const CAN_MEASURE = (() => {
 })();
 
 describe("the light theme", () => {
-  it("draws its own chrome with light-ground tokens only", () => {
-    /*
-      `surfaceDark` and `primaryOnDark` are the DARK-SURFACE tokens. The second
-      is the trap: it is a lifted cobalt that exists because base cobalt is
-      2.40:1 on navy -- put it on this film's off-white ground and it measures
-      about 1.5:1, which is an end-card address nobody can read. It was on the
-      end card, and the theme swap is what removed it.
+  const files = ["Kinetic.tsx", "Stage.tsx", "Explainer.tsx", "Title.tsx", "Mark.tsx"];
 
-      Comments are stripped first, so the paragraph above explaining the rule
-      does not trip the rule.
-    */
-    const strip = (x: string) =>
-      x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-    for (const [name, src] of [["Kinetic.tsx", kinetic], ["Mark.tsx", mark]] as const) {
-      expect(strip(src), `${name} reaches for a dark-surface token`).not.toMatch(
-        /C\.surfaceDark|C\.primaryOnDark/,
-      );
+  it("draws its own chrome with light-ground tokens only", () => {
+    // `primaryOnDark` is a LIFTED cobalt for navy surfaces; on this film's
+    // off-white ground it measures about 1.5:1 -- unreadable.
+    for (const f of files) {
+      expect(strip(read(f)), `${f} reaches for a dark-surface token`).not.toMatch(/C\.surfaceDark|C\.primaryOnDark/);
     }
-    // And the palette it does use is declared in one place.
+    const palette = read("palette.ts");
     expect(palette).toContain("ground: C.page");
     expect(palette).toContain("accent: C.primary");
   });
 
   it("cuts from the light screenshot set", () => {
-    // Both sets exist and are byte-different; only the prefix says which is
-    // which, so the filename is the first thing to pin.
-    const srcs = [...shots.matchAll(/src: "([^"]+)"/g)].map((m) => m[1]);
-    for (const s of srcs) expect(s, `${s} is not from the light set`).toMatch(/^l-/);
+    for (const s of film.scenes as any[]) {
+      if (s.src) expect(s.src, `${s.id}`).toMatch(/^l-/);
+    }
   });
 
   it.skipIf(!CAN_MEASURE)("and those screenshots are actually light", () => {
-    /*
-      The filename is a claim; this is the measurement.
-
-      `capture-screens.mjs` defaults to FILM_THEME=dark, so a re-capture that
-      forgets the flag would overwrite the light set with dark frames under
-      light names. Nothing downstream would complain -- the film would just
-      render dark, with ink captions on near-black screens, which is the one
-      failure that makes it unreadable rather than merely wrong.
-
-      Measured: the dark set averages 37 luma, the light set 208.
-    */
+    // The filename is a claim; this is the measurement. capture-screens.mjs
+    // defaults to dark, so a re-capture that forgets FILM_THEME=light writes
+    // dark frames under light names and nothing downstream complains.
     const luma = (file: string): number => {
-      const out = execFileSync("ffmpeg", [
-        "-v", "error", "-i", file,
-        "-vf", "signalstats,metadata=print:key=lavfi.signalstats.YAVG:file=-",
-        "-f", "null", "-",
-      ], { encoding: "utf8" });
-      const m = /=([0-9.]+)/.exec(out.trim());
-      expect(m, `no luma reading for ${file}`).toBeTruthy();
-      return Number(m![1]);
+      const out = execFileSync(
+        "ffmpeg",
+        ["-v", "error", "-i", file, "-vf", "signalstats,metadata=print:key=lavfi.signalstats.YAVG:file=-", "-f", "null", "-"],
+        { encoding: "utf8" },
+      );
+      return Number(/=([0-9.]+)/.exec(out.trim())![1]);
     };
     const pub = join(ROOT, "marketing/remotion/public");
-    for (const f of ["l-01-dashboard.png", "l-09-cost-management.png", "l-12-vault.png"]) {
+    for (const f of ["l-01-dashboard.png", "l-06-inventory.png", "l-11-reports.png"]) {
       expect(luma(join(pub, f)), `${f} is not a light-theme capture`).toBeGreaterThan(140);
     }
   });
@@ -194,93 +254,48 @@ describe("the light theme", () => {
 
 describe("the brand mark", () => {
   const app = readFileSync(join(ROOT, "src/components/BrandLogo.tsx"), "utf8");
+  const mark = read("Mark.tsx");
+  const num = (name: string) => Number(new RegExp(`export const ${name} = (\\d+)`).exec(mark)![1]);
 
   it("is the product's drawing, not a redrawing of it", () => {
-    /*
-      Mark.tsx animates the logo by rebuilding it as three <rect>s it controls.
-      That is the only way to make the bars rise -- but it also means the film
-      now holds a SECOND copy of the mark, and a second copy is how a logo
-      quietly becomes two logos.
-
-      So the numbers are pinned against BrandLogo.tsx. If the product's mark
-      moves, this fails rather than the film shipping yesterday's logo.
-    */
-    const appRects = [...app.matchAll(/x="(\d+)" y="(\d+)" width="(\d+)" height="(\d+)" rx="(\d+)"/g)]
-      .map((m) => ({ x: +m[1], y: +m[2], w: +m[3], h: +m[4], rx: +m[5] }));
-    expect(appRects).toHaveLength(3);
-
-    const baseline = num(mark, "BASELINE");
-    const barW = num(mark, "BAR_W");
-    const barR = num(mark, "BAR_R");
-    const filmBars = [...mark.matchAll(/\{ x: (\d+), h: (\d+) \}/g)].map((m) => ({
-      x: +m[1],
-      h: +m[2],
+    // Mark.tsx rebuilds the logo as three animatable rects -- a second copy of
+    // the mark, which is how a logo quietly becomes two. Pinned to the app's.
+    const appRects = [...app.matchAll(/x="(\d+)" y="(\d+)" width="(\d+)" height="(\d+)" rx="(\d+)"/g)].map((m) => ({
+      x: +m[1], y: +m[2], w: +m[3], h: +m[4], rx: +m[5],
     }));
+    const filmBars = [...mark.matchAll(/\{ x: (\d+), h: (\d+) \}/g)].map((m) => ({ x: +m[1], h: +m[2] }));
+    expect(appRects).toHaveLength(3);
     expect(filmBars).toHaveLength(3);
-
     for (let i = 0; i < 3; i++) {
-      expect(filmBars[i].x, `bar ${i} x`).toBe(appRects[i].x);
-      expect(filmBars[i].h, `bar ${i} height`).toBe(appRects[i].h);
-      // Every bar in the app's mark ends on the same baseline; the rise
-      // animation depends on that being true.
-      expect(appRects[i].y + appRects[i].h).toBe(baseline);
-      expect(appRects[i].w).toBe(barW);
-      expect(appRects[i].rx).toBe(barR);
+      expect(filmBars[i].x).toBe(appRects[i].x);
+      expect(filmBars[i].h).toBe(appRects[i].h);
+      expect(appRects[i].y + appRects[i].h).toBe(num("BASELINE"));
+      expect(appRects[i].w).toBe(num("BAR_W"));
+      expect(appRects[i].rx).toBe(num("BAR_R"));
     }
   });
 
-  it("keeps the tile's cobalt, not a colour picked for the film", () => {
+  it("keeps the tile's cobalt", () => {
     expect(app).toContain('fill="#1D4ED8"');
     expect(mark).toContain("C.primary");
   });
 });
 
 describe("the composition", () => {
-  it("renders every act back to back with no gap and no overrun", () => {
-    /*
-      Remotion will happily render a Sequence that starts after the composition
-      ends, or leave a hole between two acts. Either is a black frame in a
-      finished film, and the progress bar still reads 864/864.
-
-      Checked as arithmetic on the exported constants rather than by rendering,
-      so it runs on the CI box that has no browser.
-    */
-    const n = (name: string) => {
-      const m = new RegExp(`export const ${name} = ([^;]+);`).exec(kinetic);
-      expect(m, `${name} not exported`).toBeTruthy();
-      return m![1];
-    };
-    // The end card must consume exactly the remainder.
-    expect(n("ENDCARD_FRAMES").replace(/\s+/g, " ")).toContain("KINETIC_FRAMES - ENDCARD_AT");
-    // And each act must start where the previous one ended.
-    expect(n("BLITZ_AT")).toContain("OPENER_FRAMES");
-    expect(n("FIGURES_AT").replace(/\s+/g, " ")).toContain("BLITZ_AT + BLITZ_FRAMES");
-    expect(n("HOLDS_AT").replace(/\s+/g, " ")).toContain("FIGURES_AT + FIGURES_FRAMES");
-    expect(n("ENDCARD_AT").replace(/\s+/g, " ")).toContain("HOLDS_AT + HOLDS_FRAMES");
-  });
-
   it("loads the font, which the older Hero composition does not", () => {
-    /*
-      Hero.tsx mounts no font loader at all, so it has always rendered in
-      whatever the fallback stack resolves to -- silently, for its whole life.
-      This composition must not inherit that. `Fonts` both loads Manrope from
-      disk and holds the render open until it has rasterised.
-    */
-    expect(kinetic).toMatch(/<Fonts\s*\/>/);
-    expect(kinetic).toContain('from "../film/Fonts"');
+    // Hero.tsx mounts no font loader, so it has always rendered in a fallback
+    // face, silently. Fonts loads Manrope from disk and holds the render.
+    const k = read("Kinetic.tsx");
+    expect(k).toMatch(/<Fonts\s*\/>/);
+    expect(k).toContain('from "../film/Fonts"');
   });
 
-  it("keeps the end card free of any claim that can go stale", () => {
-    // The silent hero cut shipped a price no plan charged. An end card that
-    // says only the name and the address cannot go out of date.
-    //
-    // Comments are stripped before matching, as the other source assertions in
-    // this repo do. Without that this test fails on the comment IN Mark.tsx
-    // that explains why the rule exists -- it quotes the offending price, so
-    // the prose describing the fix trips the check for the bug.
-    const code = mark
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/^\s*\/\/.*$/gm, "");
-    expect(code).not.toMatch(/₹|Rs\.?\s*\d|\/\s*month|per month|free trial/i);
+  it("is described on the landing page at its real length", () => {
+    // HeroVideo's caption is hand-typed ("Watch · 54 seconds"), and it was
+    // already wrong once -- it said 29 after the film had become 54.
+    const hero = readFileSync(join(ROOT, "src/components/HeroVideo.tsx"), "utf8");
+    const secs = Math.round(KINETIC_SECONDS);
+    expect(hero).toContain(`Watch · ${secs} seconds`);
+    expect(hero).toContain(`${secs} seconds, with sound`);
   });
 });

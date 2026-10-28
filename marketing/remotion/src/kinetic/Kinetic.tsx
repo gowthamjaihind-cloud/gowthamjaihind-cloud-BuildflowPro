@@ -1,233 +1,192 @@
 import React from "react";
 import { AbsoluteFill, Sequence, useCurrentFrame } from "remotion";
-import { C } from "../theme";
-import { Screen } from "../Screen";
-import { Flash, Grain, Punch, Vignette, arrive, ramp } from "../film/Cinema";
 import { Fonts, typeStyle } from "../film/Fonts";
-import { BAR, BEAT, KINETIC_FRAMES } from "./grid";
-import { BLITZ, BLITZ_STEP, FIGURES, HOLDS, Shot } from "./shots";
-import { EndCard, Opener } from "./Mark";
+import { Explainer } from "./Explainer";
+import { FEATURES, HALF, KINETIC_FRAMES, Placed, TIMELINE, TRANSITION } from "./grid";
 import { T } from "./palette";
+import { anchorOf, Phones, Window } from "./Stage";
+import { Title } from "./Title";
+import { enterStyle, exitStyle } from "./transitions";
 
 /**
- * The kinetic cut: 18 bars at 150 BPM, 28.8 seconds, 16:9.
+ * The kinetic cut, second edit: a self-explaining tour, ~54 seconds.
  *
- * A different job from the two films already here. The launch film argues and
- * the walkthrough explains; both assume someone has decided to watch. This one
- * runs on a landing page above the fold, where the only question is whether a
- * visitor keeps scrolling -- so it does not build, it starts, and the whole
- * thing is over before the 83-second silent cut has finished its first beat.
+ * WHAT CHANGED, AND WHY. The first edit cut every 0.8 seconds -- 24 shots in
+ * 29 seconds -- and the verdict was that a customer could not understand any of
+ * it. That was a structural problem, not a speed setting: at that rate there is
+ * no time to READ, so the film could only ever say "there is software" and
+ * never "this is what it does".
  *
- * Everything in frame is the real product. Fifteen real screenshots, the real
- * brand mark with its real geometry, and labels that are strings the app
- * itself displays. Nothing is staged, drawn or written for the film.
+ * So the unit is no longer a shot. It is a SCENE: one feature, two or three
+ * bars long, sized to how long its sentence takes to read. Each scene says
+ * three things in order, and the order is the explanation --
  *
- * It uses `Fonts` -- which the older Hero composition does not, and which is
- * why Hero has always rendered in a fallback face without anyone noticing.
- * That has a render cost attached: `Fonts` holds the render open with
- * `delayRender` until Manrope has rasterised, and at high concurrency the
- * headless tabs race that past the 30-second default and one gives up. Render
- * this at `--concurrency=2`, as the Launch composition does, for the same
- * reason. The alternative -- dropping `Fonts` to render faster -- buys speed by
- * shipping the wrong typeface.
+ *   1. its name and the app's own one-line description, word by word;
+ *   2. the real screen, wide, so the viewer sees where they are;
+ *   3. the camera pushing in to the part the sentence is about, with a
+ *      spotlight on it -- and where the sentence has two halves, the spotlight
+ *      gliding from one to the other.
+ *
+ * Scenes overlap by one transition, centred on the bar line, and the transition
+ * is always continuous rather than a cut -- see transitions.ts. The story runs
+ * in the order a job does: the site engineer logs from Telegram, the log lands
+ * in Daily Logs, it rolls up into the Dashboard, then stock, buying, insight,
+ * billing the client, and the report.
+ *
+ * Mounts `Fonts`, so render at --concurrency=2: at higher concurrency the
+ * headless tabs race its delayRender past the 30s default.
  */
 
-/** Where each act begins. Derived, so a change to the grid moves everything. */
-export const OPENER_FRAMES = BAR * 2;
-export const BLITZ_AT = OPENER_FRAMES;
-export const BLITZ_FRAMES = BLITZ.length * BLITZ_STEP;
-export const FIGURES_AT = BLITZ_AT + BLITZ_FRAMES;
-export const FIGURES_FRAMES = FIGURES.length * BLITZ_STEP;
-export const HOLDS_AT = FIGURES_AT + FIGURES_FRAMES;
-export const HOLDS_FRAMES = HOLDS.reduce((n, s) => n + (s.span ?? BAR), 0);
-export const ENDCARD_AT = HOLDS_AT + HOLDS_FRAMES;
-export const ENDCARD_FRAMES = KINETIC_FRAMES - ENDCARD_AT;
+const W = 1920;
+const H = 1080;
 
-/**
- * The label band: a rule and a word, bottom left.
- *
- * Not the full-bleed caption band the other films use. That band is 18.5% of
- * the frame and exists to carry a sentence under a shot that holds for five
- * seconds; here a shot holds for eight tenths of one, and a band that size
- * would cover the product for a third of the film to deliver two words.
- *
- * The reveal is a horizontal wipe rather than a fade for the same reason the
- * name is in the opener: at this rate a fade has not finished before the cut
- * arrives, so it reads as the type being dim rather than as the type arriving.
- */
-const Label: React.FC<{ text: string }> = ({ text }) => {
+/** A window on the right is entered from the right, and so on. */
+const windowSide = (s: Placed): "left" | "right" => ((s.chapter ?? 1) % 2 === 1 ? "right" : "left");
+const dirOf = (s: Placed | undefined) => (s && s.kind !== "title" && windowSide(s) === "left" ? -1 : 1);
+
+const IrisRing: React.FC<{ x: number; y: number; r: number; p: number }> = ({ x, y, r, p }) => (
+  <div
+    style={{
+      position: "absolute",
+      left: x - r,
+      top: y - r,
+      width: r * 2,
+      height: r * 2,
+      borderRadius: "50%",
+      border: `${(5 * (1 - p) + 1).toFixed(2)}px solid ${T.accent}`,
+      opacity: 1 - p,
+      pointerEvents: "none",
+    }}
+  />
+);
+
+const SceneLayer: React.FC<{ s: Placed; lead: number }> = ({ s, lead }) => {
   const frame = useCurrentFrame();
-  const p = ramp(frame, [1, 1 + BEAT * 0.75], arrive);
-  const rule = ramp(frame, [0, BEAT * 0.5], arrive);
+  const t = frame - lead;
+  const next = TIMELINE[s.index + 1];
+
+  const pIn = s.index === 0 ? 1 : (t + HALF) / TRANSITION;
+  const pOut = next ? (t - (s.dur - HALF)) / TRANSITION : 0;
+  const from = s.irisFrom ?? anchorOf(TIMELINE[s.index - 1]);
+  const enter = enterStyle(s.enter, pIn, { dir: dirOf(s), width: W, height: H, from });
+  const exit = exitStyle(s.exit, pOut, { dir: dirOf(next), width: W });
+
+  const side = windowSide(s);
+  const textSide = side === "right" ? "left" : "right";
+
+  let body: React.ReactNode = null;
+  if (s.kind === "title") {
+    body = <Title t={t} line={s.line ?? ""} url={s.url} closing={!!s.url} />;
+  } else if (s.kind === "phones") {
+    body = (
+      <>
+        <Explainer t={t} side="left" chapter={s.chapter!} total={FEATURES} kicker={s.kicker!} line={s.line} chips={s.chips} />
+        <Phones t={t} images={s.images ?? []} marks={s.marks ?? []} />
+      </>
+    );
+  } else {
+    body = (
+      <>
+        <Explainer t={t} side={textSide} chapter={s.chapter!} total={FEATURES} kicker={s.kicker!} line={s.line} chips={s.chips} />
+        <Window t={t} side={side} src={s.src!} camera={s.camera ?? []} marks={s.marks ?? []} />
+      </>
+    );
+  }
+
+  // Exit wraps enter, so a scene that is both arriving and (briefly, for a very
+  // short scene) leaving composes the two rather than one overwriting the other.
   return (
-    <>
-      {/*
-        A soft scrim under the type, not a chip behind it.
-
-        The shadow alone was enough on thirteen of the sixteen screens, because
-        they are dark. It is not enough on `m-11-reports`, whose subject is a
-        WHITE report preview filling most of the frame -- white type with a dark
-        shadow on white paper is unreadable, and that shot is the one carrying
-        the "Progress Reports" label. Picking a different crop would have been
-        the easy fix and the wrong one: the white report IS the thing worth
-        showing on that screen.
-
-        So the scrim is a large, very soft corner gradient rather than a box.
-        At this size and falloff it reads as the frame being lit from the other
-        side, which is also what the Vignette is already doing -- the thing the
-        other films' README warns against is text set in a visible coloured
-        card, and this deliberately has no edge to see.
-      */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          bottom: 0,
-          width: "62%",
-          height: "42%",
-          zIndex: 4,
-          pointerEvents: "none",
-          background:
-            `radial-gradient(ellipse at 0% 100%, rgba(${T.scrim},0.94) 0%, rgba(${T.scrim},0.74) 34%, rgba(${T.scrim},0) 72%)`,
-        }}
-      />
-    <div
-      style={{
-        position: "absolute",
-        left: 86,
-        bottom: 78,
-        zIndex: 5,
-        display: "flex",
-        flexDirection: "column",
-        gap: 16,
-        alignItems: "flex-start",
-      }}
-    >
-      <div
-        style={{
-          height: 6,
-          width: 104 * rule,
-          borderRadius: 3,
-          background: T.accent,
-        }}
-      />
-      <div
-        style={{
-          fontSize: 58,
-          fontWeight: 800,
-          letterSpacing: "-0.025em",
-          color: T.text,
-          clipPath: `inset(0 ${((1 - p) * 100).toFixed(2)}% 0 0)`,
-          transform: `translateY(${((1 - p) * 10).toFixed(2)}px)`,
-          // Inverted with the theme: a WHITE halo, so ink type still separates
-          // from whatever it lands on. It has to survive the one genuinely
-          // dark panel in the light theme -- the Project Dashboard banner --
-          // which the first blitz shot of that screen crops straight through.
-          textShadow: "0 4px 30px rgba(255,255,255,0.95), 0 1px 3px rgba(255,255,255,0.9)",
-        }}
-      >
-        {text}
-      </div>
-    </div>
-    </>
-  );
-};
-
-/**
- * One shot: a crop, punched, with its label.
- *
- * The punch is 4.5% settling over a third of a beat. It is the cheapest thing
- * that makes a hard cut read as deliberate rather than abrupt -- the launch
- * film's note on this applies unchanged, and matters more here because there
- * are twenty-four cuts instead of twenty-nine across three times the length.
- */
-const Beat: React.FC<{ shot: Shot; span: number; index: number }> = ({ shot, span, index }) => {
-  const frame = useCurrentFrame();
-  const punch = ramp(frame, [0, BEAT * 0.75], arrive);
-  // A flash on every fourth cut -- the downbeat of the bar, since the blitz
-  // steps every half bar. On every cut it would be a strobe; on none of them
-  // the bar line is inaudible in the picture.
-  const flash = index % 4 === 0 ? ramp(frame, [0, 5], arrive) : 1;
-  return (
-    <AbsoluteFill>
-      <Punch progress={punch}>
-        <Screen src={shot.src} from={shot.from} to={shot.to} moveFrames={span} />
-      </Punch>
-      <Vignette strength={T.vignette} />
-      <Grain opacity={T.grain} />
-      {shot.label ? <Label text={shot.label} /> : null}
-      <Flash progress={flash} />
+    <AbsoluteFill style={exit.style}>
+      <AbsoluteFill style={enter.style}>{body}</AbsoluteFill>
+      {enter.iris && <IrisRing {...enter.iris} />}
     </AbsoluteFill>
   );
 };
 
 /**
- * A hairline that crosses the frame once, over the whole film.
+ * Light behind everything: two soft cobalt glows that drift.
  *
- * It is the only element on screen that is not the product, and it earns that
- * by doing something the product cannot: it tells a viewer how much is left.
- * Two pixels at the very foot of the frame, in the brand's cobalt. On a hero
- * film the most common reason someone stops watching is not knowing whether
- * they are thirty seconds from the end or three minutes.
+ * Painted once, under all scenes, rather than by each scene -- otherwise two
+ * overlapping scenes each paint a ground and the cross-fade passes through a
+ * double-exposed grey.
  */
-const Progress: React.FC = () => {
-  const frame = useCurrentFrame();
-  const p = Math.min(frame / KINETIC_FRAMES, 1);
+const Backdrop: React.FC = () => {
+  const f = useCurrentFrame();
+  const a = Math.sin(f / 140) * 80;
+  const b = Math.cos(f / 170) * 90;
   return (
-    <div
+    <AbsoluteFill
       style={{
-        position: "absolute",
-        left: 0,
-        bottom: 0,
-        height: 4,
-        width: `${(p * 100).toFixed(3)}%`,
-        background: T.accent,
-        zIndex: 20,
+        background: [
+          `radial-gradient(42% 52% at ${(28 + a / 30).toFixed(2)}% ${(30 + b / 40).toFixed(2)}%, rgba(29,78,216,0.10) 0%, rgba(29,78,216,0) 70%)`,
+          `radial-gradient(46% 56% at ${(76 - b / 30).toFixed(2)}% ${(74 - a / 40).toFixed(2)}%, rgba(29,78,216,0.07) 0%, rgba(29,78,216,0) 70%)`,
+          T.ground,
+        ].join(", "),
       }}
     />
   );
 };
 
-export const Kinetic: React.FC = () => {
-  let at = BLITZ_AT;
-  const blitz = BLITZ.map((shot, i) => {
-    const from = at;
-    at += shot.span ?? BLITZ_STEP;
-    return { shot, from, span: shot.span ?? BLITZ_STEP, key: `b${i}`, index: i };
-  });
-  let fat = FIGURES_AT;
-  const figures = FIGURES.map((shot, i) => {
-    const from = fat;
-    fat += shot.span ?? BLITZ_STEP;
-    return { shot, from, span: shot.span ?? BLITZ_STEP, key: `f${i}`, index: i };
-  });
-  let hat = HOLDS_AT;
-  const holds = HOLDS.map((shot, i) => {
-    const from = hat;
-    const span = shot.span ?? BAR;
-    hat += span;
-    return { shot, from, span, key: `h${i}`, index: i };
-  });
-
+/**
+ * Chapters: one segment per feature, filling as the film goes.
+ *
+ * The single most useful thing a viewer can know about a minute-long film is
+ * how much of it is left. Segments also say the film has STRUCTURE -- eight
+ * parts, you are on the third -- which is half of what makes it self-explaining.
+ */
+const Chapters: React.FC = () => {
+  const f = useCurrentFrame();
+  const feats = TIMELINE.filter((s) => s.kind !== "title");
+  const first = feats[0];
+  const last = feats[feats.length - 1];
+  const show =
+    Math.min(
+      Math.max((f - (first.start - HALF)) / TRANSITION, 0),
+      Math.max(((last.start + last.dur + HALF) - f) / TRANSITION, 0),
+      1,
+    );
+  if (show <= 0) return null;
   return (
-    <AbsoluteFill style={{ backgroundColor: T.ground, ...typeStyle }}>
-      <Fonts />
-
-      <Sequence from={0} durationInFrames={OPENER_FRAMES}>
-        <Opener />
-      </Sequence>
-
-      {[...blitz, ...figures, ...holds].map(({ shot, from, span, key, index }) => (
-        <Sequence key={key} from={from} durationInFrames={span}>
-          <Beat shot={shot} span={span} index={index} />
-        </Sequence>
-      ))}
-
-      <Sequence from={ENDCARD_AT} durationInFrames={ENDCARD_FRAMES}>
-        <EndCard />
-      </Sequence>
-
-      <Progress />
-    </AbsoluteFill>
+    <div
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 54,
+        display: "flex",
+        justifyContent: "center",
+        gap: 10,
+        opacity: show,
+        zIndex: 20,
+      }}
+    >
+      {feats.map((s) => {
+        const fill = Math.min(Math.max((f - s.start) / s.dur, 0), 1);
+        return (
+          <div key={s.id} style={{ width: 64, height: 5, borderRadius: 3, background: "rgba(15,23,42,0.10)", overflow: "hidden" }}>
+            <div style={{ width: `${(fill * 100).toFixed(2)}%`, height: "100%", background: T.accent }} />
+          </div>
+        );
+      })}
+    </div>
   );
 };
+
+export const Kinetic: React.FC = () => (
+  <AbsoluteFill style={{ backgroundColor: T.ground, ...typeStyle }}>
+    <Fonts />
+    <Backdrop />
+    {TIMELINE.map((s, i) => {
+      const lead = i === 0 ? 0 : HALF;
+      const tail = i === TIMELINE.length - 1 ? 0 : HALF;
+      return (
+        <Sequence key={s.id} from={s.start - lead} durationInFrames={s.dur + lead + tail}>
+          <SceneLayer s={s} lead={lead} />
+        </Sequence>
+      );
+    })}
+    <Chapters />
+  </AbsoluteFill>
+);
+
+export { KINETIC_FRAMES };

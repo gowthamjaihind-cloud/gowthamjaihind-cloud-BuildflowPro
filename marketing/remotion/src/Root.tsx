@@ -45,8 +45,8 @@ export const RemotionRoot: React.FC = () => (
     />
 
     {/*
-      The kinetic cut: the landing-page hero. Its length is derived from the
-      tempo grid rather than written here, so changing the bar count in grid.ts
+      The kinetic cut: the landing-page hero. Its length is derived from
+      kinetic/film.json rather than written here, so lengthening a scene there
       moves the composition with it -- the same reason LAUNCH_FRAMES is
       imported above rather than typed.
 

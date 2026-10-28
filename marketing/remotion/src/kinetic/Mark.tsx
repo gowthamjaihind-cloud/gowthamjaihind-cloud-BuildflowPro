@@ -1,8 +1,7 @@
 import React from "react";
-import { AbsoluteFill, useCurrentFrame } from "remotion";
+import { useCurrentFrame } from "remotion";
 import { C } from "../theme";
-import { T } from "./palette";
-import { arrive, ramp, smooth } from "../film/Cinema";
+import { arrive, ramp } from "../film/Cinema";
 import { BEAT } from "./grid";
 
 /**
@@ -13,8 +12,9 @@ import { BEAT } from "./grid";
  * all sharing a 376 baseline. It is copied rather than imported because the app
  * and this film are separate packages with separate builds, and a mark redrawn
  * by eye for a film is how a logo quietly becomes two logos. If the product's
- * mark changes, `mark.test.ts` beside this file fails: it reads BrandLogo.tsx
- * and compares the numbers.
+ * mark changes, `marketing/kinetic.spec.ts` fails: it reads BrandLogo.tsx and
+ * compares the numbers. (It lives there rather than beside this file because
+ * the root vitest only collects `marketing/*.spec.ts`.)
  *
  * The animation is the drawing's own idea. Three ascending bars are already a
  * rising skyline, so the build is simply to let them rise -- each growing from
@@ -42,8 +42,11 @@ export const Mark: React.FC<{
   rise?: number;
   /** Frames between one bar starting and the next. */
   stagger?: number;
-}> = ({ size, at = 0, rise = BEAT * 0.75, stagger = BEAT * 0.5 }) => {
-  const frame = useCurrentFrame();
+  /** Scene time, when the caller's clock is not the Sequence's own. */
+  t?: number;
+}> = ({ size, at = 0, rise = BEAT * 0.75, stagger = BEAT * 0.5, t }) => {
+  const current = useCurrentFrame();
+  const frame = t ?? current;
   // The tile arrives first and the bars rise inside it, so the mark is never
   // three bars floating with no ground.
   const tile = ramp(frame, [at, at + BEAT * 0.6], arrive);
@@ -76,101 +79,5 @@ export const Mark: React.FC<{
         );
       })}
     </svg>
-  );
-};
-
-/**
- * The opening: the mark builds, then the name arrives beside it.
- *
- * On the brand's deep navy rather than on a screenshot. The film has
- * twenty-four cuts of product in it; the one thing it should not open on is a
- * twenty-fifth, because an opening frame that looks like the rest of the film
- * gives a viewer nothing to orient on.
- */
-export const Opener: React.FC = () => {
-  const frame = useCurrentFrame();
-  // The name comes in on beat 3, after the last bar has finished rising, so the
-  // two events read as cause and effect rather than as one busy moment.
-  const nameAt = BEAT * 3;
-  const name = ramp(frame, [nameAt, nameAt + BEAT], arrive);
-  // A short settle on the whole lockup, so the hold before the first cut is
-  // never completely static.
-  const settle = ramp(frame, [0, BEAT * 6], smooth);
-
-  return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: T.ground,
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 40,
-        flexDirection: "row",
-        transform: `scale(${(1 + 0.03 * settle).toFixed(4)})`,
-      }}
-    >
-      <Mark size={190} at={BEAT * 0.5} />
-      <div
-        style={{
-          fontSize: 132,
-          fontWeight: 800,
-          letterSpacing: "-0.035em",
-          color: T.text,
-          // Revealed by a wipe rather than a fade: the mark's bars arrive by
-          // moving, and a name that merely brightens next to them reads as a
-          // different film.
-          clipPath: `inset(0 ${((1 - name) * 100).toFixed(2)}% 0 0)`,
-          transform: `translateX(${((1 - name) * -26).toFixed(2)}px)`,
-        }}
-      >
-        Sitetru
-      </div>
-    </AbsoluteFill>
-  );
-};
-
-/**
- * The end card. The mark, the name, and the address -- nothing else.
- *
- * Deliberately NO price and no claim. The silent hero cut in this repo shipped
- * "From Rs999 / month" on its end card for a plan that charges something else,
- * and it took a re-cut to remove. An end card that says only where to go cannot
- * go out of date when the pricing does.
- */
-export const EndCard: React.FC = () => {
-  const frame = useCurrentFrame();
-  const url = ramp(frame, [BEAT, BEAT * 2], arrive);
-  const settle = ramp(frame, [0, BEAT * 4], smooth);
-
-  return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: T.ground,
-        alignItems: "center",
-        justifyContent: "center",
-        flexDirection: "column",
-        gap: 30,
-        transform: `scale(${(1 + 0.02 * settle).toFixed(4)})`,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 34 }}>
-        <Mark size={132} at={0} rise={BEAT * 0.6} stagger={BEAT * 0.3} />
-        <div style={{ fontSize: 96, fontWeight: 800, letterSpacing: "-0.035em", color: T.text }}>
-          Sitetru
-        </div>
-      </div>
-      <div
-        style={{
-          fontSize: 34,
-          fontWeight: 700,
-          letterSpacing: "0.22em",
-          textTransform: "uppercase",
-          color: T.accent,
-          opacity: url,
-          transform: `translateY(${((1 - url) * 14).toFixed(2)}px)`,
-        }}
-      >
-        sitetru.com
-      </div>
-    </AbsoluteFill>
   );
 };

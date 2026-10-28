@@ -19,7 +19,7 @@ surfaces later, when a video is doing well.
 | `remotion/out/sitetru-launch.mp4` | The launch film. Argues. Cut from stills. Voiceover + score. | ~79s |
 | `remotion/out/sitetru-hero.mp4` | The same stills, SILENT, captions only. The autoplay cut for the site. | ~83s |
 | `walkthrough/out/sitetru-walkthrough.mp4` | The walkthrough. Explains. The product actually running. | ~2:30 |
-| `remotion/out/sitetru-kinetic.mp4` | The kinetic cut. The landing-page hero. Scored, LIGHT theme, 16:9. | ~29s |
+| `remotion/out/sitetru-kinetic.mp4` | The kinetic cut. The landing-page hero. A scene per feature, explained in the app's own words. Scored, LIGHT theme, 16:9. | ~54s |
 
 Different jobs, on purpose. The launch film opens on the evening a contractor
 spends finding out what happened today, names the one genuinely unusual thing
@@ -198,14 +198,15 @@ noise. Two cues with different jobs:
 - **walkthrough** — A minor, 72 BPM, no percussion, almost no movement. Its
   whole job is to stop the room sounding dead under a voice that talks for two
   and a half minutes. If you notice it, it is too loud.
-- **kinetic** — D minor, 150 BPM, the only cue with nothing talking over it.
-  That changes the arrangement rather than just the tempo: the other two are
-  beds and have to leave the 300 Hz - 3 kHz band alone, while this one is the
-  thing carrying the film, so it is dense -- sixteenth-note pluck figure,
-  four-on-floor kick, and a pad that plays SHORT STABS rather than held
-  chords. The last one does most of the work; the ear takes its tempo from how
-  often something changes, and a sustained pad changes once a bar however fast
-  the notes above it move.
+- **kinetic** — D minor, 120 BPM, the only cue with nothing talking over it,
+  so it can be fuller than the beds without competing with anything. Its
+  signature is a held pad that PUMPS -- ducked on every kick and swelling back
+  between them -- which gives the motion the first edit got from busy
+  sixteenth-note stabs without putting a new attack under every word a viewer
+  is reading. Claps on 2 and 4, an eighth-note arpeggio, and a whoosh landing
+  on every scene transition: `films/kinetic.mjs` passes the transition times
+  out of `film.json` as `--marks`, so a scene that changes length moves its
+  whoosh with it. The beat drops on the first mark, as the first feature arrives.
 
 `mix.mjs` places each line at its beat and ducks the score under the voice with
 `sidechaincompress`, then delivers at −14 LUFS with a −1 dBTP ceiling, which is
@@ -443,95 +444,117 @@ node marketing/films/kinetic.mjs              # score -> picture -> mux
 node marketing/films/kinetic.mjs --preview    # half scale, for checking framing
 ```
 
-One output: `remotion/out/sitetru-kinetic.mp4`, 1920x1080, 28.8s, ~3 MB. It is
-the file the landing page serves, via `src/components/HeroVideo.tsx`.
+One output: `remotion/out/sitetru-kinetic.mp4`, 1920x1080, 54s, ~4.8 MB, served
+by the landing page through `src/components/HeroVideo.tsx`.
 
-A different job from the other two films. The launch film argues and the
-walkthrough explains; both assume someone has already chosen to watch. This one
-runs above the fold, where the only question is whether a visitor keeps
-scrolling — so it does not build, it starts, and it is over before the
-83-second silent cut has finished its first beat.
+### Why it is a scene per feature, not a shot every 0.8s
 
-### One grid, two renderers
+The first edit was a 29-second montage: 24 hard cuts, one every 0.8 seconds.
+The verdict was that a customer could not understand any of it, and the
+verdict was right for a structural reason rather than a speed one -- at that
+rate there is no time to READ, so the film could say "there is software" and
+never "this is what it does".
 
-`remotion/src/kinetic/grid.ts` holds the tempo and nothing else, and both the
-picture and the score are derived from it. 150 BPM is chosen for the PICTURE:
-at 30fps that is exactly 12 frames to the beat and 48 to the bar, so a cut can
-land on a beat, a half-beat or a quarter-beat and still sit on a whole frame.
-140 BPM would give 12.857, and the error accumulates across the film.
+So the unit is now a SCENE: one feature, two or three bars, sized to how long
+its sentence takes to read. Each scene does three things in order, and the
+order is the explanation:
 
-`films/kinetic.mjs` READS those numbers out of grid.ts rather than restating
-them. Two copies of "18 bars at 150 BPM" is how a score ends up a bar longer
-than its picture, and the symptom — a truncated end card — points at ffmpeg
-rather than at the number that is actually wrong.
+1. the feature's name and the app's own one-line description, word by word;
+2. the real screen in a floating window, wide, so the viewer sees where they are;
+3. the camera pushing in to the part the sentence is about, with a spotlight on
+   it -- and where the sentence has two halves ("what's in stock, *what's
+   running out*"), the camera and spotlight travel from one to the other.
+
+The story runs in the order a job does: the site engineer logs from Telegram,
+the log lands in Daily Logs, it rolls up into the Dashboard, then stock,
+buying, insight, the client estimate and the report. A chapter bar at the foot
+shows eight parts and which one you are on.
+
+`marketing/kinetic.spec.ts` pins the pace so it cannot quietly come back: every
+feature gets at least two bars, and every explainer has to be readable at 3.5
+words a second or slower in the time its scene is actually on screen.
+
+### Transitions, not cuts
+
+Scenes overlap by two beats, centred on the bar line, and every handover is
+continuous -- `remotion/src/kinetic/transitions.ts`:
+
+- **push** — lateral with motion blur, direction following the layout;
+- **zoom** — a dolly through the outgoing scene, into and out of the titles;
+- **rise** — the outgoing card drops back, the next rises with a forward tilt;
+- **iris** — the next scene opens from the element the viewer was just looking
+  at. Tap *Save* in Telegram and Daily Logs opens from the Save button.
+
+The iris origin is COMPUTED from the previous scene's last highlight, not
+stored. The first draft stored it, and it went stale the first time a phone
+card moved by ten pixels.
+
+Opacities are staggered so the outgoing scene is mostly gone before the
+incoming one is legible. Crossed linearly, every midpoint printed two
+sentences on top of each other at half strength.
+
+### One timeline, three readers
+
+`remotion/src/kinetic/film.json` holds every scene: its length in bars, its
+words, its screenshot, its camera keyframes and its highlights, in source
+pixels. Three things read it -- the composition, `films/kinetic.mjs` (which
+needs the transition times for the score's whooshes) and the spec -- and none
+of them restates it.
+
+The arithmetic lives in two pure modules BESIDE `whip.ts`, outside the Remotion
+package: `kinetic-timeline.ts` and `kinetic-camera.ts`. That placement is the
+lesson `whip.ts` already records, relearned: the root tsconfig excludes
+`marketing/remotion`, but `exclude` only filters what SEEDS the program, so a
+root test importing any file from inside the package resolves React from the
+package's own node_modules and the app stops type-checking -- `src/App.tsx`,
+untouched, broke the moment the spec imported grid.ts.
+
+### The camera has to get close enough to read
+
+Body text in the captures is ~28 source px. The window is 1200 px wide, so a
+crop W px wide shows that text at 28 × 1200 / W. The first draft's closest
+crops were ~2450 wide and put it at ~13px: the screens were visible and
+unreadable. Every screen scene now reaches a crop of 2000 or less, and the spec
+fails if one does not. It also checks that every spotlight is INSIDE the
+camera's frame when it lands -- a mark with the right rect under a camera that
+has panned away draws its ring off the edge of the window, and nothing else
+would notice.
 
 ### It is set in the light theme
 
 Which theme a film is captured in is a decision about luma, not about taste.
 The light screenshots average 208 luma against the dark set's 37, so the film
-cannot be half and half: a navy opener in front of light screens would
-reproduce the launch film's worst moment, 24 times over.
-
-`remotion/src/kinetic/palette.ts` holds every colour the film draws itself and
-nothing reaches past it. The token that matters is `primaryOnDark` — a lifted
-cobalt that exists because base cobalt is 2.40:1 on navy. On this film's
-off-white ground it measures about 1.5:1, which is an end-card address nobody
-can read. It was on the end card before the swap. The spec now fails on any
-use of it, or of `surfaceDark`, anywhere in the cut.
-
-The brand mark is the one thing that does not change between themes: its tile
-is 6.24:1 on the light page and 3.11:1 on the dark canvas, which is why
-BrandLogo.tsx draws it once for both.
-
-Two things inverted with the ground and are easy to miss: the caption scrim
-(near-black at 92% becomes near-white at 94%, so INK type can sit on any
-screenshot) and the vignette, which paints BLACK — at the dark cut's 0.34 it
-visibly greys the corners of a white frame, so it runs at 0.13.
+cannot be half and half. `remotion/src/kinetic/palette.ts` holds every colour
+the film draws itself; the spec fails on any use of `primaryOnDark` (a lifted
+cobalt for navy -- about 1.5:1 on this ground) or `surfaceDark`. The
+spotlight's dim is 12%: at 34% and then 18% it read as the window going grey
+rather than as one element being lit.
 
 ### Nothing in it is invented
 
-Fifteen real screenshots, the real brand mark at its real geometry, and every
-caption is a string the app itself displays. That last one is enforced rather
-than intended: `marketing/kinetic.spec.ts` greps each label against the app's
-own source and fails on anything that appears nowhere in the product. The rule
-exists because an earlier cut shipped "From ₹999 / month" on its end card for a
-plan that charged something else — so this end card carries the name and the
-address and no claim at all.
+Real light-theme screenshots, real screenshots of the real Telegram bot, the
+real brand mark at its real geometry, and every word on screen is a string the
+app displays: each explainer is the line printed under that screen's title,
+the chips are Procurement's own tab names. The spec greps every one against the
+app source and fails on anything that appears nowhere in it. The end card
+carries the name, the portfolio's own tagline and the address -- no price,
+because an earlier cut shipped one no plan charged.
 
-The mark is the same check. `Mark.tsx` has to rebuild the logo as three
-animatable rects, which means the film holds a second copy of it; the spec pins
-those numbers against `src/components/BrandLogo.tsx` so the film cannot ship
-yesterday's logo.
+### Render and delivery notes
 
-### Crops are left-anchored, not centred
-
-The app's content area runs x 739–3160, so centring on it means `cx: 1950`.
-Every blitz crop was written that way and every one was wrong: at 2100px wide
-that lands the left edge at x=900 and clips the first 160px — which is exactly
-where row labels, card titles and first table columns live. Sixteen shots came
-back reading "ample Residence", "abour rates", "k Inventory".
-
-So `cx = 739 + w/2`. What falls off the right is the actions column, which is
-the correct thing to lose. The wide holds are the deliberate exception: they
-are showing a whole screen rather than a part of one.
-
-### Render notes
-
-- **`--concurrency=2`, not 4.** This composition mounts `Fonts`, and at higher
-  concurrency the headless tabs race its `delayRender` past the 30s default.
-  The older `Hero` composition renders at 4 only because it mounts no font
-  loader at all — which is why Hero has always rendered in a fallback face,
-  silently, for its whole life.
-- **CRF 26 at render time**, not by re-encoding after. Remotion defaults to 18,
-  which put this cut at 7.5 MB. Checked rather than assumed: at 1:1 on the
-  densest table shot, CRF 24, 27 and 30 are all indistinguishable from the
-  CRF 18 master, and whole-film SSIM stays above 0.9988 even at 30. Flat dark
-  UI with hard cuts is close to h264's best case.
-- **The mix is two-pass.** A single loudnorm pass put it at −13.6 LUFS and
-  −0.7 dBTP against a −14 / −1.0 target — both hot. There is also a true-peak
-  limiter after loudnorm, the same guard `mix.mjs` carries, because the
-  inter-sample peaks a lossy encoder reconstructs sit above `alimiter`'s
-  sample-peak limit.
+- **`--concurrency=2`**: the composition mounts `Fonts`, and higher concurrency
+  races its `delayRender` past the 30s default.
+- **CRF 30, `--x264-preset=slow`**, chosen on a 10-second slice against a CRF 12
+  master: CRF 26 was 5.9 MB/54s, 30 is 3.7, 32 is 3.2, and at 1:1 on the
+  smallest text in the film all three are indistinguishable from the master.
+  The first edit sat at 3 MB on CRF 26 because it was static screenshots; this
+  one pans and blurs, so every pixel changes on most frames.
+- **True peak.** The mix is two-pass loudnorm into a limiter run at 4× the
+  sample rate, so it can see the peaks a decoder reconstructs BETWEEN samples:
+  at the native rate a -2 dB limit still came out at -0.2 dBTP through AAC.
+  Delivered at -14.2 LUFS, -1.4 dBTP. Earlier builds of this film went out at
+  -0.9 and -0.8 dBTP and were reported as under the -1.0 ceiling; they were
+  not, and `kinetic.mjs` now FAILS the build above it.
 
 ## walkthrough/ — the screen recording
 

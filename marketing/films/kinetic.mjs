@@ -8,9 +8,9 @@
  * Unlike `film:launch`, there is no voice step. That removes the whole timing
  * problem the other two films have -- nothing here is laid out from measured
  * narration, because nothing is narrated. The picture and the score are both
- * derived from ONE tempo grid, so the only thing that has to agree is the
- * arithmetic, and this script reads that arithmetic out of grid.ts rather than
- * repeating it. A film whose score is rendered a bar longer than its picture
+ * derived from ONE timeline, film.json, so the only thing that has to agree is
+ * the arithmetic, and this script reads it from there rather than repeating
+ * it -- including the transition points the score puts its whooshes on. A film whose score is rendered a bar longer than its picture
  * is the exact failure mix.mjs documents: the audio graph ends early and ffmpeg
  * silently trims the end card.
  */
@@ -25,31 +25,38 @@ const REMOTION = join(ROOT, "marketing/remotion");
 const OUT = join(REMOTION, "out");
 
 /**
- * The grid, read from the TypeScript rather than restated here.
+ * The timeline, read from film.json -- the same file the composition renders.
  *
- * Two copies of "18 bars at 150 BPM" is how a score comes out 1.6 seconds
- * longer than the film it is for, and the symptom -- a truncated end card --
- * points at ffmpeg rather than at the number that is actually wrong.
+ * Two copies of the timing is how a score comes out a bar longer than its film,
+ * and the symptom -- a truncated end card -- points at ffmpeg rather than at the
+ * number that is actually wrong. The first version of this scraped literals out
+ * of grid.ts with a regex, which held while every shot was the same length.
+ * The second edit has scenes of two and three bars, and the score needs to know
+ * where each boundary falls to put a whoosh on it; JSON both sides can parse is
+ * the only form of that which cannot drift.
  */
-export function readGrid(src = readFileSync(join(REMOTION, "src/kinetic/grid.ts"), "utf8")) {
-  const num = (name) => {
-    const m = new RegExp(`export const ${name} = (\\d+(?:\\.\\d+)?)`).exec(src);
-    if (!m) throw new Error(`grid.ts does not export ${name} as a literal`);
-    return Number(m[1]);
-  };
-  const fps = num("FPS");
-  const bpm = num("BPM");
-  const bars = num("BARS");
+export function readGrid(src = readFileSync(join(REMOTION, "src/kinetic/film.json"), "utf8")) {
+  const film = JSON.parse(src);
+  const { fps, bpm } = film;
   const beat = (60 / bpm) * fps;
   if (!Number.isInteger(beat)) {
     throw new Error(
       `${bpm} BPM at ${fps}fps gives ${beat} frames to the beat. ` +
-        "The cut is placed on beats, so a fractional beat puts every shot " +
-        "boundary a little off the music. Pick a tempo where 60/bpm*fps is whole.",
+        "Scenes and transitions are placed on beats, so a fractional beat puts " +
+        "every boundary a little off the music. Pick a tempo where 60/bpm*fps is whole.",
     );
   }
-  const frames = bars * beat * 4;
-  return { fps, bpm, bars, beat, bar: beat * 4, frames, seconds: frames / fps };
+  const bar = beat * 4;
+  const bars = film.scenes.reduce((n, s) => n + s.bars, 0);
+  // Transition midpoints, in seconds: every scene boundary except the ends.
+  const marks = [];
+  let at = 0;
+  for (const s of film.scenes.slice(0, -1)) {
+    at += s.bars * bar;
+    marks.push(at / fps);
+  }
+  const frames = bars * bar;
+  return { fps, bpm, bars, beat, bar, frames, seconds: frames / fps, marks };
 }
 
 /**
@@ -143,6 +150,7 @@ function main() {
   execFileSync("python3", [
     join(ROOT, "marketing/music/score.py"),
     "kinetic", wav, String(grid.seconds), String(grid.bpm),
+    "--marks", grid.marks.join(","),
   ], { stdio: "inherit", cwd: join(ROOT, "marketing/music") });
 
   // 2. The picture, silent.
@@ -161,18 +169,23 @@ function main() {
     // past its 30s default by four tabs competing for the same font load.
     "--concurrency=2",
     "--timeout=120000",
-    // Remotion defaults to CRF 18, which put this cut at 7.5 MB -- for a hero
-    // film on a landing page whose audience is on Indian mobile data, that is
-    // the single heaviest thing on the page by a wide margin. 26 lands near
-    // 3 MB, matching the existing silent hero's footprint.
+    // Remotion defaults to CRF 18. The first, hard-cut edit was mostly static
+    // screenshots and sat at 3 MB on CRF 26; this edit pans, pushes and blurs
+    // across every transition, so EVERY pixel changes on most frames and CRF 26
+    // came out at 7.7 MB. Chosen by measurement on a 10-second slice with two
+    // transitions and three camera moves, against a CRF 12 master:
     //
-    // Set HERE rather than by re-encoding the mux, which would be a second
-    // lossy generation for no benefit. Checked rather than assumed: at 1:1 on
-    // the densest table shot in the film, CRF 24, 27 and 30 are all visually
-    // identical to the CRF 18 master, and whole-film SSIM stays above 0.9988
-    // even at 30. Flat dark UI with hard cuts is close to the best case h264
-    // has; this is not a film where bitrate buys legibility.
-    "--crf=26",
+    //   crf 26 medium  5.9 MB/54s  ssim 0.9943
+    //   crf 30 slow    3.7 MB/54s  ssim 0.9915   <- this
+    //   crf 32 vslow   3.2 MB/54s  ssim 0.9905
+    //
+    // and, because averaged SSIM is dominated by easy frames, by eye at 1:1 on
+    // the smallest text in the film (the KPI labels at the end of the
+    // Dashboard push): all three are indistinguishable from the master. 30
+    // rather than 32 leaves margin for the blurred transition frames, which are
+    // the hardest thing in the film to encode and the ones not inspected.
+    "--crf=30",
+    "--x264-preset=slow",
     ...(preview ? ["--scale=0.5"] : []),
   ], { stdio: "inherit", cwd: REMOTION });
 
@@ -190,20 +203,29 @@ function main() {
       // Guard the ceiling BEFORE loudnorm measures, so a downbeat cannot clip
       // ahead of the thing that exists to stop it clipping.
       "alimiter=limit=0.97," +
-      `loudnorm=I=-14:TP=-1.0:LRA=11:measured_I=${stats.input_i}:` +
+      `loudnorm=I=-14:TP=-2.0:LRA=11:measured_I=${stats.input_i}:` +
       `measured_TP=${stats.input_tp}:measured_LRA=${stats.input_lra}:` +
       `measured_thresh=${stats.input_thresh}:offset=${stats.target_offset}:linear=true,` +
-      // A true-peak limiter AFTER loudnorm, the same guard mix.mjs carries and
-      // for the same reason: loudnorm's TP target is a request, not a
-      // guarantee, and `alimiter`'s own limit is a SAMPLE peak -- the
-      // inter-sample peaks a lossy encoder reconstructs sit above it. Measured
-      // here: asking loudnorm for -1.0 and encoding to AAC landed at -0.6 dBTP,
-      // over the ceiling that exists to stop decoders clipping.
-      // level=disabled stops it re-normalising what loudnorm just set.
-      "alimiter=level_in=1:level_out=1:limit=-1.2dB:asc=1:level=disabled," +
+      // A true-peak limiter AFTER loudnorm, run at 4x the sample rate.
+      //
+      // loudnorm's TP target is a request, not a guarantee, and `alimiter` at
+      // the native rate only sees SAMPLES -- the peaks a lossy decoder
+      // reconstructs BETWEEN them sit above whatever it allows. Upsampling
+      // first puts those in-between peaks on real samples it can catch.
+      // Measured on this cue, through AAC at 128k:
+      //
+      //   native rate, limit -2.0 dB     -13.9 LUFS   -0.2 dBTP   over
+      //   4x, limit -2.0 dB              -14.0 LUFS   -0.9 dBTP   over
+      //   4x, limit -2.5 dB              -14.1 LUFS   -1.6 dBTP   <- this
+      //
+      // Earlier builds of this film were delivered at -0.9 and -0.8 dBTP and
+      // reported as under the ceiling. They were not. The gate below now fails
+      // the build rather than letting that happen silently again.
+      "aresample=192000," +
+      "alimiter=level_in=1:level_out=1:limit=-2.5dB:level=disabled," +
       "aresample=48000[a]",
     "-map", "0:v", "-map", "[a]",
-    "-c:v", "copy", "-c:a", "aac", "-b:a", "160k",
+    "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
     // Without this the moov atom sits at the END of the file, and a browser
     // cannot begin playback until the whole thing has downloaded -- which on
     // the connection this audience actually has is the difference between a
@@ -227,6 +249,13 @@ function main() {
     "-i", final, "-af", "loudnorm=I=-14:TP=-1.0:print_format=summary", "-f", "null", "-",
   ]);
   const grab = (k) => (new RegExp(`${k}:\\s*([-0-9.]+)`).exec(measured) ?? [])[1] ?? "?";
+  const tp = Number(grab("Input True Peak"));
+  if (!(tp <= -1.0)) {
+    throw new Error(
+      `delivered at ${tp} dBTP, over the -1.0 ceiling. Lossy decoders clip above it, ` +
+        "and the earlier builds of this film shipped over it unnoticed because nothing failed.",
+    );
+  }
   console.error(
     `\nout: ${final}\n  ${out.toFixed(2)}s  ${grab("Input Integrated")} LUFS  ` +
       `${grab("Input True Peak")} dBTP  ${grab("Input LRA")} LU range`,

@@ -95,33 +95,24 @@ def kinetic_arc(position):
     """
     The kinetic cue's dynamic shape, 0..1 across the film, as a multiplier.
 
-    Different job from the other two, and the shape says so. `arc` and
-    `walk_arc` both sit UNDER a voice -- they are beds, and most of their
-    shaping is about getting out of the way of a line. This cue has no voice
-    over it at all, so it is not accompaniment: it is the only thing carrying
-    the film's pace, and the cuts are placed on it rather than the other way
-    round.
+    The second edit of the kinetic cut slowed the picture right down -- a scene
+    per feature, two or three bars each, with explainer text to read -- and the
+    cue's shape follows. The first version opened near its ceiling because the
+    film was a 29-second rush; this one has a real title card at the front, so
+    the cue holds back under it and arrives with the first feature.
 
-    So it opens near its ceiling rather than climbing to one. A kinetic cut
-    that starts quiet reads as a slow film that speeds up, which is exactly
-    what it must not be -- the first second is the one deciding whether anyone
-    watches the rest. The only real move is a short breath at 0.72, which
-    exists for the picture: the figures land there, and a half-bar of less
-    noise is what makes four numbers in a row read as four separate arrivals
-    rather than one continuous rush.
+    After that it is deliberately FLAT. A viewer reading a sentence should not
+    have the music swelling and receding underneath them -- the movement in the
+    picture now comes from the camera and the transitions, and the music's job
+    is a steady pulse those can land on. The only lift is into the closing card.
 
-    Kept inside the same bounds the other two are tested against: never below
-    0.2 (silence in a cue this short is a hole, not dynamics), never above 1.0,
-    and ending louder than it starts so the end card arrives.
+    Kept inside the bounds every cue arc is tested against: never below 0.2,
+    never above 1.0, continuous at the joins, and ending louder than it starts.
     """
-    if position < 0.05:
-        return 0.42                       # one bar of almost nothing, then in
-    if position < 0.12:
-        return 0.42 + (position - 0.05) / 0.07 * 0.58   # the logo hit
-    if position < 0.72:
-        return 1.00                       # the drive: flat out, on purpose
-    if position < 0.78:
-        return 1.00 - (position - 0.72) / 0.06 * 0.30   # breath, for the figures
+    if position < 0.07:
+        return 0.45                      # the title card: pad and bass only
+    if position < 0.11:
+        return 0.45 + (position - 0.07) / 0.04 * 0.45   # into the first feature
     if position < 0.88:
-        return 0.70 + (position - 0.78) / 0.10 * 0.30
-    return 1.00
+        return 0.90                      # the body: steady under reading
+    return 0.90 + (position - 0.88) / 0.12 * 0.10       # lift into the close
