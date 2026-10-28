@@ -3,6 +3,8 @@ import { Composition } from "remotion";
 import { Hero, Social } from "./Hero";
 import { WalkEndCard } from "./film/Titles";
 import { LAUNCH_FPS, LAUNCH_FRAMES, Launch } from "./film/Launch";
+import { Kinetic } from "./kinetic/Kinetic";
+import { FPS as KINETIC_FPS, KINETIC_FRAMES } from "./kinetic/grid";
 
 export const RemotionRoot: React.FC = () => (
   <>
@@ -38,6 +40,25 @@ export const RemotionRoot: React.FC = () => (
       component={WalkEndCard}
       durationInFrames={70}
       fps={30}
+      width={1920}
+      height={1080}
+    />
+
+    {/*
+      The kinetic cut: the landing-page hero. Its length is derived from the
+      tempo grid rather than written here, so changing the bar count in grid.ts
+      moves the composition with it -- the same reason LAUNCH_FRAMES is
+      imported above rather than typed.
+
+      Render at --concurrency=2. This composition mounts `Fonts`, and at higher
+      concurrency the headless tabs race its delayRender past the 30s default.
+      See the note in Kinetic.tsx.
+    */}
+    <Composition
+      id="Kinetic"
+      component={Kinetic}
+      durationInFrames={KINETIC_FRAMES}
+      fps={KINETIC_FPS}
       width={1920}
       height={1080}
     />

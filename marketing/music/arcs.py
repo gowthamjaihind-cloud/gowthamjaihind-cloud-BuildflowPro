@@ -89,3 +89,39 @@ def walk_arc(position, bloom=0.94, ramp=0.02):
     # composition gain that normalisation then takes back out.
     t = min((position - bloom) / max(1e-6, ramp), 1.0)
     return 0.82 + (t * t * (3 - 2 * t)) * 0.18
+
+
+def kinetic_arc(position):
+    """
+    The kinetic cue's dynamic shape, 0..1 across the film, as a multiplier.
+
+    Different job from the other two, and the shape says so. `arc` and
+    `walk_arc` both sit UNDER a voice -- they are beds, and most of their
+    shaping is about getting out of the way of a line. This cue has no voice
+    over it at all, so it is not accompaniment: it is the only thing carrying
+    the film's pace, and the cuts are placed on it rather than the other way
+    round.
+
+    So it opens near its ceiling rather than climbing to one. A kinetic cut
+    that starts quiet reads as a slow film that speeds up, which is exactly
+    what it must not be -- the first second is the one deciding whether anyone
+    watches the rest. The only real move is a short breath at 0.72, which
+    exists for the picture: the figures land there, and a half-bar of less
+    noise is what makes four numbers in a row read as four separate arrivals
+    rather than one continuous rush.
+
+    Kept inside the same bounds the other two are tested against: never below
+    0.2 (silence in a cue this short is a hole, not dynamics), never above 1.0,
+    and ending louder than it starts so the end card arrives.
+    """
+    if position < 0.05:
+        return 0.42                       # one bar of almost nothing, then in
+    if position < 0.12:
+        return 0.42 + (position - 0.05) / 0.07 * 0.58   # the logo hit
+    if position < 0.72:
+        return 1.00                       # the drive: flat out, on purpose
+    if position < 0.78:
+        return 1.00 - (position - 0.72) / 0.06 * 0.30   # breath, for the figures
+    if position < 0.88:
+        return 0.70 + (position - 0.78) / 0.10 * 0.30
+    return 1.00

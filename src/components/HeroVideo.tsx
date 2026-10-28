@@ -13,10 +13,21 @@ import { Play } from "@phosphor-icons/react";
  * So nothing of the video is fetched until it is asked for: `<source>` is not
  * rendered at all until the play button is pressed, which is stronger than
  * `preload="none"` (browsers still range-request metadata for a src they can
- * see). Until then the cost is the poster, at 47 KB.
+ * see). Until then the cost is the poster, at 52 KB.
  *
- * The film is also silent, which is why there is no mute control: the source
- * composition carries an empty audio track and nothing to hear.
+ * The film this plays is the KINETIC cut: 29 seconds, cut on a 150 BPM grid,
+ * with a score. It replaced the 83-second silent cut, which still exists at
+ * /media/sitetru-hero.mp4 and is still the better file for a context that
+ * cannot play sound. The swap is why this component is no longer `muted`:
+ * the older cut had an empty audio track and nothing to hear, so muting it
+ * cost nothing and bought autoplay-policy immunity. This one has a score, and
+ * muting it by default would throw away half of what it is.
+ *
+ * Losing `muted` is safe here only because play() is started by a real click.
+ * Autoplay policies block unmuted playback that no one asked for; they do not
+ * block playback a user gesture initiated. If the promise rejects anyway the
+ * catch swallows it and the native controls are already on screen, so the
+ * viewer can simply press play themselves.
  */
 export const HeroVideo: React.FC<{ className?: string }> = ({ className = "" }) => {
   const [started, setStarted] = useState(false);
@@ -41,29 +52,27 @@ export const HeroVideo: React.FC<{ className?: string }> = ({ className = "" }) 
     >
       <video
         ref={videoRef}
-        poster="/media/sitetru-hero-poster.jpg"
+        poster="/media/sitetru-kinetic-poster.jpg"
         controls={started}
         playsInline
         preload="none"
         className="w-full h-full block"
-        // Silent film; muted also keeps autoplay policies from blocking play().
-        muted
       >
-        {started && <source src="/media/sitetru-hero.mp4" type="video/mp4" />}
+        {started && <source src="/media/sitetru-kinetic.mp4" type="video/mp4" />}
       </video>
 
       {!started && (
         <button
           type="button"
           onClick={start}
-          aria-label="Play the Sitetru film, 83 seconds, no sound"
+          aria-label="Play the Sitetru film, 29 seconds, with sound"
           className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink/35 hover:bg-ink/25 apple-transition focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/40"
         >
           <span className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/95 text-surface-dark flex items-center justify-center shadow-xl">
             <Play weight="fill" className="w-7 h-7 md:w-9 md:h-9 translate-x-0.5" />
           </span>
           <span className="text-white text-xs font-bold uppercase tracking-widest drop-shadow">
-            Watch · 83 seconds · no sound
+            Watch · 29 seconds · with sound
           </span>
         </button>
       )}

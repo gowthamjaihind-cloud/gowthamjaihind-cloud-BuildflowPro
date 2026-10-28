@@ -76,7 +76,14 @@ function sample(fn: string, n = 400, extra = ""): number[] {
   return vals;
 }
 
-describe.each(["arc", "walk_arc"])("%s", (fn) => {
+/*
+  `kinetic_arc` joins the other two here rather than getting its own file,
+  because the three properties below are properties of a CUE ARC, not of a
+  particular cue: continuous at the joins, never silent and never doubled, and
+  ending louder than it starts. A third curve that does not hold them would be
+  a third curve with a step in it under a finished film.
+*/
+describe.each(["arc", "walk_arc", "kinetic_arc"])("%s", (fn) => {
   const v = sample(fn);
 
   it("is continuous across every join", () => {
@@ -129,7 +136,7 @@ describe("walk_arc", () => {
 });
 
 /**
- * Both cues have to be RENDERABLE, not just shaped right.
+ * Every cue has to be RENDERABLE, not just shaped right.
  *
  * Twice while building the arrival I replaced a line that `launch` and
  * `walkthrough` happen to share -- `beat = 60 / bpm` and the three lines under
@@ -138,8 +145,8 @@ describe("walk_arc", () => {
  * because re-mixing the walkthrough never imports the launch cue. The second
  * time it would have shipped a launch film that could not render at all.
  */
-describe.skipIf(!CAN_RENDER)("both cues render (needs numpy + scipy)", () => {
-  it.each(["launch", "walkthrough"])("%s builds without an undefined name", (cue) => {
+describe.skipIf(!CAN_RENDER)("every cue renders (needs numpy + scipy)", () => {
+  it.each(["launch", "walkthrough", "kinetic"])("%s builds without an undefined name", (cue) => {
     const out = execFileSync(
       "python3",
       [

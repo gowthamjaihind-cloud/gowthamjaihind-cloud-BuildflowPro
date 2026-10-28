@@ -19,6 +19,7 @@ surfaces later, when a video is doing well.
 | `remotion/out/sitetru-launch.mp4` | The launch film. Argues. Cut from stills. Voiceover + score. | ~79s |
 | `remotion/out/sitetru-hero.mp4` | The same stills, SILENT, captions only. The autoplay cut for the site. | ~83s |
 | `walkthrough/out/sitetru-walkthrough.mp4` | The walkthrough. Explains. The product actually running. | ~2:30 |
+| `remotion/out/sitetru-kinetic.mp4` | The kinetic cut. The landing-page hero. Scored, 16:9. | ~29s |
 
 Different jobs, on purpose. The launch film opens on the evening a contractor
 spends finding out what happened today, names the one genuinely unusual thing
@@ -197,6 +198,14 @@ noise. Two cues with different jobs:
 - **walkthrough** — A minor, 72 BPM, no percussion, almost no movement. Its
   whole job is to stop the room sounding dead under a voice that talks for two
   and a half minutes. If you notice it, it is too loud.
+- **kinetic** — D minor, 150 BPM, the only cue with nothing talking over it.
+  That changes the arrangement rather than just the tempo: the other two are
+  beds and have to leave the 300 Hz - 3 kHz band alone, while this one is the
+  thing carrying the film, so it is dense -- sixteenth-note pluck figure,
+  four-on-floor kick, and a pad that plays SHORT STABS rather than held
+  chords. The last one does most of the work; the ear takes its tempo from how
+  often something changes, and a sustained pad changes once a bar however fast
+  the notes above it move.
 
 `mix.mjs` places each line at its beat and ducks the score under the voice with
 `sidechaincompress`, then delivers at −14 LUFS with a −1 dBTP ceiling, which is
@@ -357,9 +366,20 @@ headless shell instead:
 
 ```
 npx remotion render Hero out/sitetru-hero.mp4 \
-  --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell \
+  --browser-executable="$(node -e 'import("./../films/kinetic.mjs").then(m=>console.log(m.findChromium()))')" \
   --concurrency=2 --timeout=120000
 ```
+
+**Do not hardcode that path.** It has already drifted twice in one sandbox:
+`chromium_headless_shell-1194/chrome-linux/headless_shell` became
+`chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell`
+-- the version moved AND the directory layout changed underneath it. The
+version that used to be written here no longer exists, so anyone following the
+old instruction got "no such file" rather than a render.
+
+`findChromium()` in `films/kinetic.mjs` globs for it and prefers a headless
+shell over full Chrome; `CHROME_PATH` still overrides. `films/kinetic.mjs` uses
+it automatically.
 
 **Render the Launch composition at `--concurrency=2`, not 4.** `film/Fonts.tsx`
 holds the render open with `delayRender` until Manrope has actually been
@@ -392,6 +412,80 @@ overruns a 2000px-tall screenshot.
 
 Captions are one full-bleed band across the foot of the frame. Text is never set
 in a coloured chip, and nothing decorative is laid over a screen.
+
+## The kinetic cut — the landing-page hero
+
+```bash
+node marketing/films/kinetic.mjs              # score -> picture -> mux
+node marketing/films/kinetic.mjs --preview    # half scale, for checking framing
+```
+
+One output: `remotion/out/sitetru-kinetic.mp4`, 1920x1080, 28.8s, ~3 MB. It is
+the file the landing page serves, via `src/components/HeroVideo.tsx`.
+
+A different job from the other two films. The launch film argues and the
+walkthrough explains; both assume someone has already chosen to watch. This one
+runs above the fold, where the only question is whether a visitor keeps
+scrolling — so it does not build, it starts, and it is over before the
+83-second silent cut has finished its first beat.
+
+### One grid, two renderers
+
+`remotion/src/kinetic/grid.ts` holds the tempo and nothing else, and both the
+picture and the score are derived from it. 150 BPM is chosen for the PICTURE:
+at 30fps that is exactly 12 frames to the beat and 48 to the bar, so a cut can
+land on a beat, a half-beat or a quarter-beat and still sit on a whole frame.
+140 BPM would give 12.857, and the error accumulates across the film.
+
+`films/kinetic.mjs` READS those numbers out of grid.ts rather than restating
+them. Two copies of "18 bars at 150 BPM" is how a score ends up a bar longer
+than its picture, and the symptom — a truncated end card — points at ffmpeg
+rather than at the number that is actually wrong.
+
+### Nothing in it is invented
+
+Fifteen real screenshots, the real brand mark at its real geometry, and every
+caption is a string the app itself displays. That last one is enforced rather
+than intended: `marketing/kinetic.spec.ts` greps each label against the app's
+own source and fails on anything that appears nowhere in the product. The rule
+exists because an earlier cut shipped "From ₹999 / month" on its end card for a
+plan that charged something else — so this end card carries the name and the
+address and no claim at all.
+
+The mark is the same check. `Mark.tsx` has to rebuild the logo as three
+animatable rects, which means the film holds a second copy of it; the spec pins
+those numbers against `src/components/BrandLogo.tsx` so the film cannot ship
+yesterday's logo.
+
+### Crops are left-anchored, not centred
+
+The app's content area runs x 739–3160, so centring on it means `cx: 1950`.
+Every blitz crop was written that way and every one was wrong: at 2100px wide
+that lands the left edge at x=900 and clips the first 160px — which is exactly
+where row labels, card titles and first table columns live. Sixteen shots came
+back reading "ample Residence", "abour rates", "k Inventory".
+
+So `cx = 739 + w/2`. What falls off the right is the actions column, which is
+the correct thing to lose. The wide holds are the deliberate exception: they
+are showing a whole screen rather than a part of one.
+
+### Render notes
+
+- **`--concurrency=2`, not 4.** This composition mounts `Fonts`, and at higher
+  concurrency the headless tabs race its `delayRender` past the 30s default.
+  The older `Hero` composition renders at 4 only because it mounts no font
+  loader at all — which is why Hero has always rendered in a fallback face,
+  silently, for its whole life.
+- **CRF 26 at render time**, not by re-encoding after. Remotion defaults to 18,
+  which put this cut at 7.5 MB. Checked rather than assumed: at 1:1 on the
+  densest table shot, CRF 24, 27 and 30 are all indistinguishable from the
+  CRF 18 master, and whole-film SSIM stays above 0.9988 even at 30. Flat dark
+  UI with hard cuts is close to h264's best case.
+- **The mix is two-pass.** A single loudnorm pass put it at −13.6 LUFS and
+  −0.7 dBTP against a −14 / −1.0 target — both hot. There is also a true-peak
+  limiter after loudnorm, the same guard `mix.mjs` carries, because the
+  inter-sample peaks a lossy encoder reconstructs sit above `alimiter`'s
+  sample-peak limit.
 
 ## walkthrough/ — the screen recording
 

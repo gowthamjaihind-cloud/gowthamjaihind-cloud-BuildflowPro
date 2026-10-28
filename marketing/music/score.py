@@ -37,7 +37,7 @@ from scipy.signal import butter, fftconvolve, sosfilt
 
 # The dynamic shapes live in a module with no numpy/scipy import, so their
 # tests can run on a machine that has neither. See arcs.py.
-from arcs import arc, walk_arc
+from arcs import arc, kinetic_arc, walk_arc
 
 SR = 48000
 
@@ -356,7 +356,101 @@ def walkthrough(total, bpm=72, bloom=None):
     return t.out(total)
 
 
-CUES = {"launch": launch, "walkthrough": walkthrough}
+def kinetic(total, bpm=150):
+    """
+    D minor, 150 BPM, no resolution until the last bar. The cue for the kinetic
+    cut.
+
+    150 is chosen for the PICTURE, the same way launch's 100 was: at 30fps it is
+    exactly 12 frames to the beat and 48 to the bar, so a cut can land on any
+    beat, half-beat or quarter-beat and still sit on a whole frame. At 140 the
+    beat is 12.857 frames and every third cut lands a frame off the music --
+    which, in a cut this fast, is a third of the shot.
+
+    The arrangement is the opposite of `launch`'s on purpose. That cue sits
+    under a voice, so it is sparse by necessity and its pad does most of the
+    work. Nothing talks over this one, so the mid band is free and the
+    arrangement can be dense: a sixteenth-note pluck figure carries the pace,
+    the kick is four-on-floor rather than placed, and the pad plays SHORT
+    STABS instead of held chords. That last one matters more than it sounds --
+    a sustained pad reads as slow however fast the notes on top of it move,
+    because the ear takes its tempo from how often something changes, and a
+    held chord changes once a bar.
+
+    The chord sequence is the same i - VI - III - VII as the launch film, which
+    is deliberate: it is the one musical thing the two films share, and a
+    viewer who has seen both should feel they come from the same place.
+    """
+    beat = 60 / bpm
+    bar = 4 * beat
+    t = Track(total)
+
+    progression = [
+        (["D4", "F4", "A4"], "D2"),
+        (["A#3", "D4", "F4"], "A#1"),
+        (["F3", "A3", "C4"], "F2"),
+        (["C4", "E4", "G4"], "C2"),
+    ]
+    # The sixteenth figure, as scale degrees into the bar's chord. Syncopated
+    # against the kick rather than doubling it: a riff that lands on every
+    # downbeat with the drum just thickens the drum.
+    figure = [0, 2, 1, 2, 0, 1, 2, 1, 0, 2, 1, 0, 2, 1, 2, 1]
+
+    n_bars = int(total / bar) + 1
+    for b in range(n_bars):
+        at = b * bar
+        if at > total:
+            break
+        g = kinetic_arc(at / total)
+        notes, bass = progression[b % 4]
+
+        # Stabs, not a bed: a fifth of a beat, so the chord punctuates.
+        chord(t, at, notes, beat * 0.22, pad, g * 1.5)
+        chord(t, at + beat * 2.5, notes, beat * 0.18, pad, g * 0.9)
+
+        # Eighth-note sub. The pulse everything else is hung on.
+        for i in range(8):
+            t.add(at + i * beat / 2, sub(hz(bass), beat * 0.42), g * (0.95 if i % 2 == 0 else 0.5))
+
+        if g > 0.55:
+            # Four on the floor, with the offbeat ghost that stops it marching.
+            for i in range(4):
+                t.add(at + i * beat, kick(0.30), g * (1.0 if i % 2 == 0 else 0.85))
+            t.add(at + 3.5 * beat, kick(0.22), g * 0.4)
+
+            # Sixteenth hats, accented on the beat so the grid is audible.
+            for i in range(16):
+                accent = 1.0 if i % 4 == 0 else (0.45 if i % 2 else 0.7)
+                t.add(at + i * beat / 4, hat(seed=b * 16 + i), g * accent)
+
+            # The figure itself, an octave up on the last quarter of the bar so
+            # it lifts into the next one instead of looping flat.
+            for i, deg in enumerate(figure):
+                up = 2 if i >= 12 else 1
+                t.add(at + i * beat / 4,
+                      pluck(hz(notes[deg]) * up, beat * 0.5),
+                      g * (0.50 if i % 2 == 0 else 0.34))
+
+    # One riser into the last bar, and a single sustained arrival under the end
+    # card. The cue does not modulate to F the way launch does -- this film ends
+    # on its own name rather than on an argument, so it lands on the tonic.
+    resolve_at = max(total - bar, 0)
+    # Gains here are deliberately close to the body's, not above it.
+    # `write_wav` peak-normalises the whole cue, so an arrival written LOUDER
+    # does not arrive -- it just divides every bar before it by the amount it
+    # overshot. Measured: at pad 1.5 the drive bars sat at 0.65 of the peak and
+    # the last bar at 1.00; at 1.0 the body comes up and the arrival still
+    # reads, because what marks it is the sustain and the empty grid around it
+    # rather than the level.
+    t.add(max(resolve_at - beat * 2, 0), swell(beat * 2, 0.8), 0.7)
+    chord(t, resolve_at, ["D4", "F4", "A4", "D5"], bar * 1.4, pad, 1.0)
+    t.add(resolve_at, sub(hz("D2"), bar * 1.2), 0.8)
+    t.add(resolve_at, kick(0.46), 0.9)
+
+    return t.out(total)
+
+
+CUES = {"launch": launch, "walkthrough": walkthrough, "kinetic": kinetic}
 
 
 def write_wav(path, mono):
@@ -406,7 +500,12 @@ def main():
     if bloom is not None and cue == "walkthrough":
         kw["bloom"] = bloom
     audio = CUES[cue](seconds, **kw)
-    audio = reverb(audio, mix=0.30 if cue == "launch" else 0.34)
+    # Reverb is per-cue because the cues move at different speeds. The two
+    # slow beds want a room around them; at 150 BPM with sixteenth hats a 0.34
+    # mix smears consecutive hits into each other and the grid stops being
+    # audible -- which, in a film cut ON that grid, loses the thing the tempo
+    # was chosen for.
+    audio = reverb(audio, mix={"launch": 0.30, "kinetic": 0.16}.get(cue, 0.34))
     # Nothing in either cue needs to be below 45 Hz; leaving it there only eats
     # headroom that the limiter then takes back out of the music.
     audio = high_pass(audio, 45)
