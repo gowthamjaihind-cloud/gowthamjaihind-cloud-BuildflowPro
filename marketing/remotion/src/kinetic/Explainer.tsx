@@ -1,5 +1,6 @@
 import React from "react";
 import { arrive, ramp } from "../film/Cinema";
+import { EFFECTS } from "./grid";
 import { T } from "./palette";
 
 /**
@@ -121,7 +122,8 @@ export const Explainer: React.FC<{
       {chips && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start" }}>
           {chips.map((c, i) => {
-            const p = ramp(t, [10 + i * 9, 10 + i * 9 + 14], arrive);
+            const at = EFFECTS.chips.at + i * EFFECTS.chips.stagger;
+            const p = ramp(t, [at, at + 14], arrive);
             return (
               <div
                 key={c}

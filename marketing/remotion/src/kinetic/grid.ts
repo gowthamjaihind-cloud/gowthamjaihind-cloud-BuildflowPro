@@ -50,3 +50,5 @@ export const FEATURES = L.FEATURES;
 export const TIMELINE = L.TIMELINE;
 export const KINETIC_FRAMES = L.KINETIC_FRAMES;
 export const KINETIC_SECONDS = L.KINETIC_SECONDS;
+/** When the logo builds, the name wipes and the chips pop. See film.json. */
+export const EFFECTS = L.EFFECTS;

@@ -3,9 +3,23 @@
   "bpm": 120,
   "transitionBeats": 2,
   "voice": {
-    "name": "hm_psi",
-    "accent": "full",
+    "name": "am_puck",
     "speed": 1.0
+  },
+  "effects": {
+    "logo": {
+      "intro": 10,
+      "outro": 4,
+      "stagger": 7.5
+    },
+    "name": {
+      "intro": 37.5,
+      "outro": 18
+    },
+    "chips": {
+      "at": 10,
+      "stagger": 9
+    }
   },
   "scenes": [
     {

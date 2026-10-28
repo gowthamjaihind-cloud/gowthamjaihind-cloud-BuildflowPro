@@ -162,6 +162,26 @@ describe.skipIf(!CAN_RENDER)("every cue renders (needs numpy + scipy)", () => {
     expect(out[1]).toBeGreaterThan(0); // and it is not silence
   }, RENDER_TIMEOUT_MS);
 
+  it("renders every kind of sound effect the music-only version uses", () => {
+    // sfx.py is a separate renderer with its own instruments; a typo in one
+    // effect would only surface when a cut happened to contain that effect.
+    const out = execFileSync(
+      "python3",
+      [
+        "-c",
+        `import sys; sys.path.insert(0, ${JSON.stringify(join(ROOT, "marketing/music"))})\n` +
+          `import numpy, sfx\n` +
+          `ev = [{"t":0.2,"kind":"bell","note":"A5"},{"t":0.6,"kind":"rise","note":"D5"},` +
+          `{"t":1.0,"kind":"swish"},{"t":1.4,"kind":"pop"},{"t":1.8,"kind":"boom"}]\n` +
+          `a = sfx.render(3.0, ev)\n` +
+          `print(len(a), float(numpy.abs(a).max()))`,
+      ],
+      { encoding: "utf8" },
+    ).trim().split(/\s+/).map(Number);
+    expect(out[0]).toBeGreaterThan(0);
+    expect(out[1]).toBeGreaterThan(0.01);
+  }, RENDER_TIMEOUT_MS);
+
   it("walkthrough accepts the bloom point the mix passes it", () => {
     const out = execFileSync(
       "python3",

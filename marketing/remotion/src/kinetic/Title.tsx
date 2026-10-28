@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Img, staticFile } from "remotion";
 import { arrive, ramp } from "../film/Cinema";
-import { BEAT } from "./grid";
+import { BEAT, EFFECTS } from "./grid";
 import { Mark } from "./Mark";
 import { T } from "./palette";
 import { Word, STAGGER } from "./Explainer";
@@ -94,8 +94,9 @@ export const Title: React.FC<{ t: number; line: string; url?: string; closing?: 
 }) => {
   // Intro: mark builds first, then the name, then the line. Closing: quicker,
   // because the viewer already knows whose film it is.
-  const markAt = closing ? 4 : 10;
-  const nameAt = closing ? 18 : BEAT * 2.5;
+  // From film.json, so the music-only version's sounds land on these frames.
+  const markAt = closing ? EFFECTS.logo.outro : EFFECTS.logo.intro;
+  const nameAt = closing ? EFFECTS.name.outro : EFFECTS.name.intro;
   const lineAt = closing ? 36 : BEAT * 4.5;
   const name = ramp(t, [nameAt, nameAt + BEAT], arrive);
   const urlP = ramp(t, [lineAt + 40, lineAt + 56], arrive);
@@ -113,7 +114,7 @@ export const Title: React.FC<{ t: number; line: string; url?: string; closing?: 
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 36 }}>
-          <Mark size={150} at={markAt} t={t} />
+          <Mark size={150} at={markAt} stagger={EFFECTS.logo.stagger} t={t} />
           <div
             style={{
               fontSize: 118,

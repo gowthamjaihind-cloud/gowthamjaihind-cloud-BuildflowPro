@@ -19,7 +19,8 @@ surfaces later, when a video is doing well.
 | `remotion/out/sitetru-launch.mp4` | The launch film. Argues. Cut from stills. Voiceover + score. | ~79s |
 | `remotion/out/sitetru-hero.mp4` | The same stills, SILENT, captions only. The autoplay cut for the site. | ~83s |
 | `walkthrough/out/sitetru-walkthrough.mp4` | The walkthrough. Explains. The product actually running. | ~2:30 |
-| `remotion/out/sitetru-kinetic.mp4` | The kinetic cut. The landing-page hero. A scene per feature, explained in the app's own words, narrated in an Indian-English voice. Scored, LIGHT theme, 16:9. | ~60s |
+| `remotion/out/sitetru-kinetic.mp4` | The kinetic cut. The landing-page hero. A scene per feature, explained in the app's own words, narrated. Scored, LIGHT theme, 16:9. | ~60s |
+| `remotion/out/sitetru-kinetic-music.mp4` | The same picture with no narration: the score at full level and a sound on each of the picture's effects. | ~60s |
 
 Different jobs, on purpose. The launch film opens on the evening a contractor
 spends finding out what happened today, names the one genuinely unusual thing
@@ -481,38 +482,41 @@ app's own description of each screen, said the way a person would say it --
 "Inventory tells you what's in stock, and what's running out" -- and claim
 nothing the screen does not show.
 
-**The voice is Indian English, and the accent is carried twice.** Kokoro has
-four voices trained on Hindi speech (`hf_alpha`, `hf_beta`, `hm_omega`,
-`hm_psi`), but its phonemiser only speaks `en-us`, so on their own they were
-handed AMERICAN pronunciation -- an Indian speaker doing an American accent,
-which is the uncanny result to avoid. `voice/accent.py` rewrites the IPA to the
-documented features of General Indian English before Kokoro sees it: retroflex
-t and d, dental th, one labiodental sound for w and v, pure vowels in "day" and
-"go", no American flap in "water", and -- at the `full` level -- a tapped,
-rhotic r. Set in film.json:
+**The voice is `am_puck`, American, chosen by ear from eight.** Four were
+Indian English and four American; the comparison reels were built from the same
+two lines of this script, at matched loudness. Set in film.json:
 
 ```json
-"voice": { "name": "hm_psi", "accent": "full", "speed": 1.0 }
+"voice": { "name": "am_puck", "speed": 1.0 }
 ```
 
-What was measured, on two lines of this script (`voice/quality.py`, the code
-behind the README's long-quoted octave-jump and HNR numbers, finally committed):
+The Indian-English route is kept, because it was not a dead end -- just not the
+choice. Kokoro has four voices trained on Hindi speech (`hf_alpha`, `hf_beta`,
+`hm_omega`, `hm_psi`), but its phonemiser only speaks `en-us`, so on their own
+they were handed AMERICAN pronunciation: an Indian speaker doing an American
+accent. `voice/accent.py` rewrites the IPA to the documented features of General
+Indian English first -- retroflex t and d, dental th, one sound for w and v,
+pure vowels in "day" and "go", no flap in "water", and at `full` a tapped r. Set
+`"accent": "light" | "full"` beside a Hindi-trained voice to use it; the spec
+refuses it on any other voice.
+
+What was measured on the candidates (`voice/quality.py`, the code behind the
+README's long-quoted octave-jump and HNR numbers, finally committed):
 
 | voice | octave-jumps | HNR | local recogniser |
 | --- | --- | --- | --- |
-| `af_bella` (the launch film's) | 1.3% | 5.39 dB | 77% |
-| `hf_alpha` light | 0.2% | 6.14 dB | 32% |
-| `hf_beta` light | 0.4% | 5.50 dB | 36% |
-| `hm_omega` light | 0.0% | 3.37 dB | 45% |
-| `hm_psi` full | 0.0% | 3.22 dB | 50% |
+| `am_puck` (chosen) | 0.0% | 3.36 dB | 82% |
+| `am_echo` | 0.0% | 2.97 dB | 86% |
+| `af_aoede` | 0.0% | 5.84 dB | 82% |
+| `af_jessica` | 0.4% | 5.17 dB | 86% |
+| `hm_psi` full accent | 0.0% | 3.22 dB | 50% |
+| `hf_beta` light accent | 0.4% | 5.50 dB | 36% |
 
-The Hindi-trained voices are as free of robotic artefacts as the American ones
-(male voices measure lower HNR across the board: `am_adam` 2.29, `bm_george`
-4.42). The recogniser column needs care: it is pocketsphinx, trained on
-American speech, so it under-scores ANY Indian accent -- the Hindi voice reading
-American phonemes scores 50% too. Its use is catching a line turned to mush, not
-ranking accents. Which voice sounds natural is a listener's call, and nothing
-here makes it.
+All of them are free of robotic artefacts (male voices measure lower HNR across
+the board). The recogniser column needs care: pocketsphinx is trained on
+American speech, so it under-scores any Indian accent -- a Hindi voice reading
+American phonemes scores 50% too. It catches a line turned to mush; it does not
+rank accents.
 
 **Lines must fit their scenes; they are never sped up.** A line starts 0.3s after
 its scene arrives and must end 0.3s before the next transition. The build fails
@@ -531,6 +535,29 @@ hosted TTS service.
 
 `node marketing/films/kinetic.mjs --mux-only` re-mixes against the picture already
 rendered, so voice and level work do not cost a seven-minute render each.
+
+### The music-only version
+
+`sitetru-kinetic-music.mp4`: the same picture, built in the same run, with no
+narration. Without a voice telling the viewer where to look, the picture's own
+events have to be HEARD to land with the same weight, so `music/sfx.py` puts a
+sound on each one, at its frame:
+
+- a **bell** when a spotlight lands, climbing in pitch as it glides to the next
+  element (A5, D6, F6 -- the score's fifth, octave and third);
+- three **rising notes**, D F A, as the brand mark's three bars build -- the
+  score's home chord, so the logo builds the key it resolves to;
+- a **swish** under the wordmark wipe, a **pop** per Procurement chip, and a low
+  **boom** under each dolly zoom into and out of the title cards.
+
+The transition whooshes are the score's own, in both versions. Every effect is
+synthesised in the score's key, like the score -- no samples, no licence.
+
+The timings come from `film.json`'s `effects` block, which the components read
+too, rather than from a second copy in the build script. Levels were set by
+measuring each effect against the music in the 150 ms after it fires: bells
+started at a median -1.6 dB, vanishing to -9.1 in the drum bars, and the closing
+logo's notes at -6.9 under the finale; both were raised until every one reads.
 
 ### Transitions, not cuts
 
@@ -610,7 +637,7 @@ because an earlier cut shipped one no plan charged.
 - **True peak.** The mix is two-pass loudnorm into a limiter run at 4× the
   sample rate, so it can see the peaks a decoder reconstructs BETWEEN samples:
   at the native rate a -2 dB limit still came out at -0.2 dBTP through AAC.
-  Delivered at -14.5 LUFS, -1.8 dBTP with narration. Earlier builds of this film went out at
+  Delivered at -14.7 LUFS, -1.8 dBTP narrated; -14.3 / -1.6 music-only. Earlier builds of this film went out at
   -0.9 and -0.8 dBTP and were reported as under the -1.0 ceiling; they were
   not, and `kinetic.mjs` now FAILS the build above it.
 

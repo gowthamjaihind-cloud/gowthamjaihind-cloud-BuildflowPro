@@ -57,6 +57,17 @@ export interface Film {
   transitionBeats: number;
   /** Kokoro voice, Indian-English accent level (voice/accent.py), and pace. */
   voice?: { name?: string; accent?: "light" | "full"; speed?: number };
+  /**
+   * When the picture's own effects happen, in frames from their scene's start.
+   * Held here rather than as constants in the components because the music-only
+   * version puts a sound on each one, and a second copy of a timing in the build
+   * script is a timing that drifts.
+   */
+  effects: {
+    logo: { intro: number; outro: number; stagger: number };
+    name: { intro: number; outro: number };
+    chips: { at: number; stagger: number };
+  };
   scenes: Scene[];
 }
 
@@ -98,6 +109,7 @@ export function layout(film: Film) {
   const KINETIC_FRAMES = TIMELINE.reduce((n, s) => n + s.dur, 0);
   return {
     FPS, BPM, BEAT, BAR, TRANSITION, HALF, SCENES, FEATURES, TIMELINE,
+    EFFECTS: film.effects,
     KINETIC_FRAMES,
     KINETIC_SECONDS: KINETIC_FRAMES / FPS,
   };

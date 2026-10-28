@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { layout } from "./kinetic-timeline";
 import { crop, focusAt, WIN_H, WIN_W } from "./kinetic-camera";
+import { effectEvents, readGrid } from "./films/kinetic.mjs";
 
 /**
  * Checks on the kinetic cut that a render cannot make for you.
@@ -276,6 +277,60 @@ describe("the accent", () => {
     const out = indianize("θɹˈiː ðə wˈɜːk dˈeɪ ɡˈoʊ tˈɛlᵻɡɹˌæm wʌts", "full");
     const introduced = new Set([...out].filter((c) => !"θɹiːðəwɜkdeɪɡoʊtɛlᵻæmʌsˈˌ ".includes(c)));
     for (const c of introduced) expect("ʈɖɾʋːʰəɛɔeoatdɪ").toContain(c);
+  });
+});
+
+describe("the voice", () => {
+  it("names one Kokoro voice, with an accent only where one is wanted", () => {
+    // `accent` respells American IPA as Indian English (voice/accent.py). It
+    // belongs with the Hindi-trained voices; on an American voice it would make
+    // an American speaker do an Indian accent -- the mirror of the problem the
+    // respelling exists to fix.
+    const v = film.voice;
+    expect(v.name).toMatch(/^[a-z]{2}_[a-z]+$/);
+    if (v.accent) {
+      expect(["light", "full"]).toContain(v.accent);
+      expect(v.name, "accent set on a non-Hindi voice").toMatch(/^h[fm]_/);
+    }
+  });
+});
+
+describe("the music-only version", () => {
+  const grid = readGrid();
+  const events = effectEvents(grid);
+
+  it("takes every effect timing from film.json, not from a constant in a component", () => {
+    // The sounds are placed from film.json. A component that went back to its
+    // own number would move the picture and leave the sound behind.
+    const title = strip(read("Title.tsx"));
+    expect(title).toMatch(/EFFECTS\.logo\.(intro|outro)/);
+    expect(title).toMatch(/EFFECTS\.name\.(intro|outro)/);
+    expect(title).not.toMatch(/closing \? 4 : 10/);
+    expect(strip(read("Explainer.tsx"))).toMatch(/EFFECTS\.chips\.at \+ i \* EFFECTS\.chips\.stagger/);
+  });
+
+  it("puts a bell on every spotlight and a pop on every chip", () => {
+    const marks = TIMELINE.reduce((n, s) => n + (s.marks?.length ?? 0), 0);
+    const chips = TIMELINE.reduce((n, s) => n + (s.chips?.length ?? 0), 0);
+    expect(events.filter((e: any) => e.kind === "bell")).toHaveLength(marks);
+    expect(events.filter((e: any) => e.kind === "pop")).toHaveLength(chips);
+    // Three logo notes at each end.
+    expect(events.filter((e: any) => e.kind === "rise")).toHaveLength(6);
+  });
+
+  it("lands every sound inside the scene whose effect it is", () => {
+    for (const e of events as any[]) {
+      expect(e.t).toBeGreaterThanOrEqual(0);
+      expect(e.t).toBeLessThan(grid.seconds);
+    }
+    // And each bell inside its own scene, not leaked across a boundary.
+    for (const s of grid.scenes) {
+      for (const m of s.marks ?? []) {
+        const t = s.startS + m.at / grid.fps;
+        expect(t, `${s.id} bell`).toBeLessThan(s.startS + s.durS);
+        expect(events.some((e: any) => e.kind === "bell" && Math.abs(e.t - t) < 0.002)).toBe(true);
+      }
+    }
   });
 });
 

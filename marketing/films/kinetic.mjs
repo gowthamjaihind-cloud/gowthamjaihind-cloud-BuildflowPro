@@ -256,6 +256,61 @@ function premix(grid, lines, scoreWav, outWav) {
   ]);
 }
 
+/**
+ * The picture's own effects, as timed sound events -- for the music-only version.
+ *
+ * Every time comes from film.json: scene starts from the bar grid, highlight
+ * times from each scene's marks, and the logo, name and chip timings from
+ * `effects`, which the components read too. Nothing here is a second copy of a
+ * frame number, so a retimed scene moves its sounds with it.
+ */
+export function effectEvents(grid) {
+  const { film, fps } = grid;
+  const E = film.effects;
+  const ev = [];
+  // Spotlight bells climb within a scene as the light moves on: the first
+  // element gets the score's fifth, the next its octave, then the third above.
+  const BELLS = ["A5", "D6", "F6"];
+  for (const s of grid.scenes) {
+    const at = (frame) => Number((s.startS + frame / fps).toFixed(3));
+    if (s.kind === "title") {
+      const closing = Boolean(s.url);
+      const m = closing ? E.logo.outro : E.logo.intro;
+      // +2 frames: the bars rise on an ease-out, so the visible jump is just
+      // after the ramp starts, not on its first frame.
+      ["D5", "F5", "A5"].forEach((note, i) =>
+        ev.push({ t: at(m + i * E.logo.stagger + 2), kind: "rise", note }),
+      );
+      ev.push({ t: at(closing ? E.name.outro : E.name.intro), kind: "swish" });
+    }
+    (s.marks ?? []).forEach((m, i) => ev.push({ t: at(m.at), kind: "bell", note: BELLS[i % BELLS.length] }));
+    (s.chips ?? []).forEach((_, i) => ev.push({ t: at(E.chips.at + i * E.chips.stagger + 2), kind: "pop" }));
+    if (s.enter === "zoom") ev.push({ t: Number(s.startS.toFixed(3)), kind: "boom" });
+  }
+  return ev.sort((a, b) => a.t - b.t);
+}
+
+/** Effects level against the score in the music-only version. */
+export const SFX_DB = 0;
+
+function musicOnly(grid, scoreWav, outWav) {
+  const events = effectEvents(grid);
+  const evJson = join(OUT, "kinetic-effects.json");
+  const sfxWav = join(OUT, "kinetic-sfx.wav");
+  writeFileSync(evJson, JSON.stringify(events, null, 2));
+  execFileSync("python3", [join(ROOT, "marketing/music/sfx.py"), sfxWav, String(grid.seconds), evJson], {
+    stdio: "inherit", cwd: join(ROOT, "marketing/music"),
+  });
+  ff([
+    "-y", "-i", scoreWav, "-i", sfxWav, "-filter_complex",
+    "[0:a]aresample=48000,aformat=channel_layouts=stereo[m];" +
+      `[1:a]aresample=48000,aformat=channel_layouts=stereo,volume=${SFX_DB}dB[s];` +
+      "[m][s]amix=inputs=2:normalize=0:dropout_transition=0[a]",
+    "-map", "[a]", "-t", grid.seconds.toFixed(3), "-c:a", "pcm_s16le", outWav,
+  ]);
+  return events.length;
+}
+
 function main() {
   const preview = process.argv.includes("--preview");
   // Re-mix against the picture already rendered: voice and level work should
@@ -291,8 +346,16 @@ function main() {
   // 3. The picture, silent.
   if (!muxOnly) renderPicture(preview, silent);
 
-  // 4. Mux.
+  // 4. Mux the narrated version.
   mux(silent, mixWav, final);
+
+  // 5. The music-only version: the same picture, the score at full level with
+  //    no voice to duck under, and a sound on each of the picture's effects.
+  const musicWav = join(OUT, "kinetic-music-only.wav");
+  const finalMusic = join(OUT, "sitetru-kinetic-music.mp4");
+  const n = musicOnly(grid, wav, musicWav);
+  console.error(`\nmusic-only: ${n} effects`);
+  mux(silent, musicWav, finalMusic);
 }
 
 function renderPicture(preview, silent) {
