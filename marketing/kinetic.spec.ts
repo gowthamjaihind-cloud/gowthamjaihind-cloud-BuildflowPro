@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 
 /**
@@ -26,6 +27,7 @@ const grid = read("grid.ts");
 const shots = read("shots.ts");
 const mark = read("Mark.tsx");
 const kinetic = read("Kinetic.tsx");
+const palette = read("palette.ts");
 
 const num = (src: string, name: string): number => {
   const m = new RegExp(`export const ${name} = (\\d+(?:\\.\\d+)?)`).exec(src);
@@ -112,6 +114,80 @@ describe("the cut", () => {
     expect(labels.length).toBeGreaterThan(10);
     for (const label of labels) {
       expect(appSrc.includes(label), `"${label}" appears nowhere in the app`).toBe(true);
+    }
+  });
+});
+
+/**
+ * Can this machine measure a PNG? The theme check shells out to ffmpeg, which
+ * the CI runner that deploys this app does not have. Everything else in this
+ * file is pure string work and runs anywhere.
+ */
+const CAN_MEASURE = (() => {
+  try {
+    execFileSync("ffmpeg", ["-version"], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+describe("the light theme", () => {
+  it("draws its own chrome with light-ground tokens only", () => {
+    /*
+      `surfaceDark` and `primaryOnDark` are the DARK-SURFACE tokens. The second
+      is the trap: it is a lifted cobalt that exists because base cobalt is
+      2.40:1 on navy -- put it on this film's off-white ground and it measures
+      about 1.5:1, which is an end-card address nobody can read. It was on the
+      end card, and the theme swap is what removed it.
+
+      Comments are stripped first, so the paragraph above explaining the rule
+      does not trip the rule.
+    */
+    const strip = (x: string) =>
+      x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    for (const [name, src] of [["Kinetic.tsx", kinetic], ["Mark.tsx", mark]] as const) {
+      expect(strip(src), `${name} reaches for a dark-surface token`).not.toMatch(
+        /C\.surfaceDark|C\.primaryOnDark/,
+      );
+    }
+    // And the palette it does use is declared in one place.
+    expect(palette).toContain("ground: C.page");
+    expect(palette).toContain("accent: C.primary");
+  });
+
+  it("cuts from the light screenshot set", () => {
+    // Both sets exist and are byte-different; only the prefix says which is
+    // which, so the filename is the first thing to pin.
+    const srcs = [...shots.matchAll(/src: "([^"]+)"/g)].map((m) => m[1]);
+    for (const s of srcs) expect(s, `${s} is not from the light set`).toMatch(/^l-/);
+  });
+
+  it.skipIf(!CAN_MEASURE)("and those screenshots are actually light", () => {
+    /*
+      The filename is a claim; this is the measurement.
+
+      `capture-screens.mjs` defaults to FILM_THEME=dark, so a re-capture that
+      forgets the flag would overwrite the light set with dark frames under
+      light names. Nothing downstream would complain -- the film would just
+      render dark, with ink captions on near-black screens, which is the one
+      failure that makes it unreadable rather than merely wrong.
+
+      Measured: the dark set averages 37 luma, the light set 208.
+    */
+    const luma = (file: string): number => {
+      const out = execFileSync("ffmpeg", [
+        "-v", "error", "-i", file,
+        "-vf", "signalstats,metadata=print:key=lavfi.signalstats.YAVG:file=-",
+        "-f", "null", "-",
+      ], { encoding: "utf8" });
+      const m = /=([0-9.]+)/.exec(out.trim());
+      expect(m, `no luma reading for ${file}`).toBeTruthy();
+      return Number(m![1]);
+    };
+    const pub = join(ROOT, "marketing/remotion/public");
+    for (const f of ["l-01-dashboard.png", "l-09-cost-management.png", "l-12-vault.png"]) {
+      expect(luma(join(pub, f)), `${f} is not a light-theme capture`).toBeGreaterThan(140);
     }
   });
 });

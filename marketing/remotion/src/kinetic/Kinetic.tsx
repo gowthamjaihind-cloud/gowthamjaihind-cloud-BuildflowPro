@@ -7,6 +7,7 @@ import { Fonts, typeStyle } from "../film/Fonts";
 import { BAR, BEAT, KINETIC_FRAMES } from "./grid";
 import { BLITZ, BLITZ_STEP, FIGURES, HOLDS, Shot } from "./shots";
 import { EndCard, Opener } from "./Mark";
+import { T } from "./palette";
 
 /**
  * The kinetic cut: 18 bars at 150 BPM, 28.8 seconds, 16:9.
@@ -87,7 +88,7 @@ const Label: React.FC<{ text: string }> = ({ text }) => {
           zIndex: 4,
           pointerEvents: "none",
           background:
-            "radial-gradient(ellipse at 0% 100%, rgba(5,10,24,0.92) 0%, rgba(5,10,24,0.72) 34%, rgba(5,10,24,0) 72%)",
+            `radial-gradient(ellipse at 0% 100%, rgba(${T.scrim},0.94) 0%, rgba(${T.scrim},0.74) 34%, rgba(${T.scrim},0) 72%)`,
         }}
       />
     <div
@@ -107,7 +108,7 @@ const Label: React.FC<{ text: string }> = ({ text }) => {
           height: 6,
           width: 104 * rule,
           borderRadius: 3,
-          background: C.primary,
+          background: T.accent,
         }}
       />
       <div
@@ -115,12 +116,14 @@ const Label: React.FC<{ text: string }> = ({ text }) => {
           fontSize: 58,
           fontWeight: 800,
           letterSpacing: "-0.025em",
-          color: C.white,
+          color: T.text,
           clipPath: `inset(0 ${((1 - p) * 100).toFixed(2)}% 0 0)`,
           transform: `translateY(${((1 - p) * 10).toFixed(2)}px)`,
-          // The screens are dark and busy; without this the type sits in them
-          // rather than on them.
-          textShadow: "0 4px 34px rgba(5,10,24,0.92), 0 1px 3px rgba(5,10,24,0.8)",
+          // Inverted with the theme: a WHITE halo, so ink type still separates
+          // from whatever it lands on. It has to survive the one genuinely
+          // dark panel in the light theme -- the Project Dashboard banner --
+          // which the first blitz shot of that screen crops straight through.
+          textShadow: "0 4px 30px rgba(255,255,255,0.95), 0 1px 3px rgba(255,255,255,0.9)",
         }}
       >
         {text}
@@ -150,8 +153,8 @@ const Beat: React.FC<{ shot: Shot; span: number; index: number }> = ({ shot, spa
       <Punch progress={punch}>
         <Screen src={shot.src} from={shot.from} to={shot.to} moveFrames={span} />
       </Punch>
-      <Vignette strength={0.34} />
-      <Grain opacity={0.03} />
+      <Vignette strength={T.vignette} />
+      <Grain opacity={T.grain} />
       {shot.label ? <Label text={shot.label} /> : null}
       <Flash progress={flash} />
     </AbsoluteFill>
@@ -178,7 +181,7 @@ const Progress: React.FC = () => {
         bottom: 0,
         height: 4,
         width: `${(p * 100).toFixed(3)}%`,
-        background: C.primary,
+        background: T.accent,
         zIndex: 20,
       }}
     />
@@ -207,7 +210,7 @@ export const Kinetic: React.FC = () => {
   });
 
   return (
-    <AbsoluteFill style={{ backgroundColor: C.surfaceDark, ...typeStyle }}>
+    <AbsoluteFill style={{ backgroundColor: T.ground, ...typeStyle }}>
       <Fonts />
 
       <Sequence from={0} durationInFrames={OPENER_FRAMES}>

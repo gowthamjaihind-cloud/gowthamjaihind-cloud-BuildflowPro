@@ -19,7 +19,7 @@ surfaces later, when a video is doing well.
 | `remotion/out/sitetru-launch.mp4` | The launch film. Argues. Cut from stills. Voiceover + score. | ~79s |
 | `remotion/out/sitetru-hero.mp4` | The same stills, SILENT, captions only. The autoplay cut for the site. | ~83s |
 | `walkthrough/out/sitetru-walkthrough.mp4` | The walkthrough. Explains. The product actually running. | ~2:30 |
-| `remotion/out/sitetru-kinetic.mp4` | The kinetic cut. The landing-page hero. Scored, 16:9. | ~29s |
+| `remotion/out/sitetru-kinetic.mp4` | The kinetic cut. The landing-page hero. Scored, LIGHT theme, 16:9. | ~29s |
 
 Different jobs, on purpose. The launch film opens on the evening a contractor
 spends finding out what happened today, names the one genuinely unusual thing
@@ -260,6 +260,29 @@ npm run capture:screens                      # -> marketing/video/screens/
 Captures at 3200x2000. The video crops *into* these images, so the resolution
 is load-bearing — do not shrink them.
 
+**There are two sets, and which one you overwrite matters.**
+
+```bash
+npm run capture:screens                                   # dark  -> video/screens/
+FILM_THEME=light OUT_DIR=marketing/video/screens-light \
+  npm run capture:screens                                 # light -> video/screens-light/
+```
+
+`capture-screens.mjs` defaults to **dark**, and the launch film, the silent
+Hero cut and the walkthrough cut-aways all want it that way — the launch film
+opens and closes on dark brand cards, and white screenshots in its middle gave
+it a 185-luma jump in two frames. The kinetic cut is the one film set in the
+LIGHT theme, and it reads `l-*.png` in `remotion/public`.
+
+So a re-capture that forgets `FILM_THEME=light` does not fail: it overwrites
+the light set with dark frames under light names, and the kinetic cut renders
+dark with ink captions on near-black screens. `marketing/kinetic.spec.ts`
+measures the actual luma of three referenced screenshots for exactly this, and
+skips itself where there is no ffmpeg.
+
+The layout is pixel-identical between the two themes, which is why every crop
+in the kinetic cut carried over from the dark version unchanged.
+
 The script prints `[EMPTY STATE -- check fixtures]` next to any screen that
 rendered with no data. Treat that as a failure: it usually means a hook reads
 Firestore directly and has no demo branch, which is a real bug in the demo
@@ -441,6 +464,29 @@ land on a beat, a half-beat or a quarter-beat and still sit on a whole frame.
 them. Two copies of "18 bars at 150 BPM" is how a score ends up a bar longer
 than its picture, and the symptom — a truncated end card — points at ffmpeg
 rather than at the number that is actually wrong.
+
+### It is set in the light theme
+
+Which theme a film is captured in is a decision about luma, not about taste.
+The light screenshots average 208 luma against the dark set's 37, so the film
+cannot be half and half: a navy opener in front of light screens would
+reproduce the launch film's worst moment, 24 times over.
+
+`remotion/src/kinetic/palette.ts` holds every colour the film draws itself and
+nothing reaches past it. The token that matters is `primaryOnDark` — a lifted
+cobalt that exists because base cobalt is 2.40:1 on navy. On this film's
+off-white ground it measures about 1.5:1, which is an end-card address nobody
+can read. It was on the end card before the swap. The spec now fails on any
+use of it, or of `surfaceDark`, anywhere in the cut.
+
+The brand mark is the one thing that does not change between themes: its tile
+is 6.24:1 on the light page and 3.11:1 on the dark canvas, which is why
+BrandLogo.tsx draws it once for both.
+
+Two things inverted with the ground and are easy to miss: the caption scrim
+(near-black at 92% becomes near-white at 94%, so INK type can sit on any
+screenshot) and the vignette, which paints BLACK — at the dark cut's 0.34 it
+visibly greys the corners of a white frame, so it runs at 0.13.
 
 ### Nothing in it is invented
 

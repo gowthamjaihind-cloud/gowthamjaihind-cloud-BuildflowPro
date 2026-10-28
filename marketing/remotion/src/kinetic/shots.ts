@@ -65,23 +65,33 @@ const QUICK = BEAT * 2;
  * sidebar lists, for the reason the walkthrough's README already gives: a tour
  * that goes down the menu teaches the menu.
  */
+/*
+ * `l-` not `m-`: the LIGHT captures.
+ *
+ * Both sets are kept. The launch film, the silent Hero cut and the walkthrough
+ * cut-aways all use the dark `m-` set deliberately, so re-capturing over it to
+ * change this film would have silently re-themed three others.
+ * `FILM_THEME=light npm run capture:screens` writes the light set; the layout
+ * is pixel-identical between themes, which is why every crop here carried over
+ * from the dark cut unchanged.
+ */
 export const BLITZ: Shot[] = [
-  { src: "m-00-portfolio.png", from: { cx: 1470, cy: 620, w: 2300 }, label: "Portfolio" },
-  { src: "m-00-portfolio.png", from: { cx: 1520, cy: 1340, w: 2400 }, label: "Every project" },
-  { src: "m-01-dashboard.png", from: { cx: 1690, cy: 676, w: 1900 }, label: "Dashboard" },
-  { src: "m-01-dashboard.png", from: { cx: 1589, cy: 1520, w: 1700 }, label: "Phase Timeline" },
-  { src: "m-02-insights.png", from: { cx: 1790, cy: 860, w: 2100 }, label: "Project Insights" },
-  { src: "m-03-wbs.png", from: { cx: 1840, cy: 1250, w: 2200 }, label: "WBS" },
-  { src: "m-04-daily-logs.png", from: { cx: 1890, cy: 870, w: 2300 }, label: "Daily Logs" },
-  { src: "m-05-labour.png", from: { cx: 1840, cy: 900, w: 2200 }, label: "Labour & Billing" },
-  { src: "m-06-inventory.png", from: { cx: 1790, cy: 1060, w: 2100 }, label: "Stock Inventory" },
-  { src: "m-07-procurement.png", from: { cx: 1840, cy: 1000, w: 2200 }, label: "Procurement" },
-  { src: "m-07-procurement-grn.png", from: { cx: 1840, cy: 900, w: 2200 }, label: "Goods Receipt" },
-  { src: "m-08-consumption.png", from: { cx: 1790, cy: 1010, w: 2100 }, label: "Consumption History" },
-  { src: "m-09-cost-management-tasks.png", from: { cx: 1890, cy: 1150, w: 2300 }, label: "Task Costs" },
-  { src: "m-09-cost-management.png", from: { cx: 1840, cy: 830, w: 2200 }, label: "Cost Management" },
-  { src: "m-10-client-estimates.png", from: { cx: 1840, cy: 900, w: 2200 }, label: "Client Estimates" },
-  { src: "m-12-vault.png", from: { cx: 1890, cy: 1290, w: 2300 }, label: "Digital Project Vault" },
+  { src: "l-00-portfolio.png", from: { cx: 1470, cy: 620, w: 2300 }, label: "Portfolio" },
+  { src: "l-00-portfolio.png", from: { cx: 1520, cy: 1340, w: 2400 }, label: "Every project" },
+  { src: "l-01-dashboard.png", from: { cx: 1690, cy: 676, w: 1900 }, label: "Dashboard" },
+  { src: "l-01-dashboard.png", from: { cx: 1589, cy: 1520, w: 1700 }, label: "Phase Timeline" },
+  { src: "l-02-insights.png", from: { cx: 1790, cy: 860, w: 2100 }, label: "Project Insights" },
+  { src: "l-03-wbs.png", from: { cx: 1840, cy: 1250, w: 2200 }, label: "WBS" },
+  { src: "l-04-daily-logs.png", from: { cx: 1890, cy: 870, w: 2300 }, label: "Daily Logs" },
+  { src: "l-05-labour.png", from: { cx: 1840, cy: 900, w: 2200 }, label: "Labour & Billing" },
+  { src: "l-06-inventory.png", from: { cx: 1790, cy: 1060, w: 2100 }, label: "Stock Inventory" },
+  { src: "l-07-procurement.png", from: { cx: 1840, cy: 1000, w: 2200 }, label: "Procurement" },
+  { src: "l-07-procurement-grn.png", from: { cx: 1840, cy: 900, w: 2200 }, label: "Goods Receipt" },
+  { src: "l-08-consumption.png", from: { cx: 1790, cy: 1010, w: 2100 }, label: "Consumption History" },
+  { src: "l-09-cost-management-tasks.png", from: { cx: 1890, cy: 1150, w: 2300 }, label: "Task Costs" },
+  { src: "l-09-cost-management.png", from: { cx: 1840, cy: 830, w: 2200 }, label: "Cost Management" },
+  { src: "l-10-client-estimates.png", from: { cx: 1840, cy: 900, w: 2200 }, label: "Client Estimates" },
+  { src: "l-12-vault.png", from: { cx: 1890, cy: 1290, w: 2300 }, label: "Digital Project Vault" },
 ];
 
 /**
@@ -96,14 +106,14 @@ export const BLITZ: Shot[] = [
  * whole screen, which is what stops eight more cuts reading as more of the same.
  */
 export const FIGURES: Shot[] = [
-  { src: "m-01-dashboard.png", from: { cx: 1025, cy: 676, w: 820 } },
-  { src: "m-01-dashboard.png", from: { cx: 2249, cy: 676, w: 820 } },
-  { src: "m-01-dashboard.png", from: { cx: 2861, cy: 676, w: 820 } },
-  { src: "m-09-cost-management.png", from: { cx: 1021, cy: 830, w: 860 } },
-  { src: "m-06-inventory.png", from: { cx: 1150, cy: 790, w: 900 } },
-  { src: "m-04-daily-logs.png", from: { cx: 2760, cy: 820, w: 880 } },
-  { src: "m-08-consumption.png", from: { cx: 1000, cy: 860, w: 880 } },
-  { src: "m-11-reports.png", from: { cx: 1600, cy: 1150, w: 2000 }, label: "Progress Reports" },
+  { src: "l-01-dashboard.png", from: { cx: 1025, cy: 676, w: 820 } },
+  { src: "l-01-dashboard.png", from: { cx: 2249, cy: 676, w: 820 } },
+  { src: "l-01-dashboard.png", from: { cx: 2861, cy: 676, w: 820 } },
+  { src: "l-09-cost-management.png", from: { cx: 1021, cy: 830, w: 860 } },
+  { src: "l-06-inventory.png", from: { cx: 1150, cy: 790, w: 900 } },
+  { src: "l-04-daily-logs.png", from: { cx: 2760, cy: 820, w: 880 } },
+  { src: "l-08-consumption.png", from: { cx: 1000, cy: 860, w: 880 } },
+  { src: "l-11-reports.png", from: { cx: 1600, cy: 1150, w: 2000 }, label: "Progress Reports" },
 ];
 
 /**
@@ -117,19 +127,19 @@ export const FIGURES: Shot[] = [
  */
 export const HOLDS: Shot[] = [
   {
-    src: "m-01-dashboard.png",
+    src: "l-01-dashboard.png",
     from: { cx: 1950, cy: 1000, w: 2450 },
     to: { cx: 1950, cy: 980, w: 2330 },
     span: BAR,
   },
   {
-    src: "m-09-cost-management.png",
+    src: "l-09-cost-management.png",
     from: { cx: 1950, cy: 1000, w: 2450 },
     to: { cx: 1950, cy: 1020, w: 2330 },
     span: BAR,
   },
   {
-    src: "m-00-portfolio.png",
+    src: "l-00-portfolio.png",
     from: { cx: 1600, cy: 1000, w: 3000 },
     to: { cx: 1600, cy: 980, w: 2860 },
     span: BAR,

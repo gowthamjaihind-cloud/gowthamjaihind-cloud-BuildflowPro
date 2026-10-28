@@ -1,6 +1,7 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { C } from "../theme";
+import { T } from "./palette";
 import { arrive, ramp, smooth } from "../film/Cinema";
 import { BEAT } from "./grid";
 
@@ -99,7 +100,7 @@ export const Opener: React.FC = () => {
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: C.surfaceDark,
+        backgroundColor: T.ground,
         alignItems: "center",
         justifyContent: "center",
         gap: 40,
@@ -113,7 +114,7 @@ export const Opener: React.FC = () => {
           fontSize: 132,
           fontWeight: 800,
           letterSpacing: "-0.035em",
-          color: C.white,
+          color: T.text,
           // Revealed by a wipe rather than a fade: the mark's bars arrive by
           // moving, and a name that merely brightens next to them reads as a
           // different film.
@@ -143,7 +144,7 @@ export const EndCard: React.FC = () => {
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: C.surfaceDark,
+        backgroundColor: T.ground,
         alignItems: "center",
         justifyContent: "center",
         flexDirection: "column",
@@ -153,7 +154,7 @@ export const EndCard: React.FC = () => {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 34 }}>
         <Mark size={132} at={0} rise={BEAT * 0.6} stagger={BEAT * 0.3} />
-        <div style={{ fontSize: 96, fontWeight: 800, letterSpacing: "-0.035em", color: C.white }}>
+        <div style={{ fontSize: 96, fontWeight: 800, letterSpacing: "-0.035em", color: T.text }}>
           Sitetru
         </div>
       </div>
@@ -163,7 +164,7 @@ export const EndCard: React.FC = () => {
           fontWeight: 700,
           letterSpacing: "0.22em",
           textTransform: "uppercase",
-          color: C.primaryOnDark,
+          color: T.accent,
           opacity: url,
           transform: `translateY(${((1 - url) * 14).toFixed(2)}px)`,
         }}
