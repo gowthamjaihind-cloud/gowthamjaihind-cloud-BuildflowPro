@@ -46,7 +46,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Keep this on the same major as functions/package.json engines.node.
+          # That field is the runtime Cloud Functions actually runs, and this is
+          # only the compiler; letting them drift means tsc passes here on one
+          # major and the deployed function runs on another. Node 20 was
+          # decommissioned on 2026-10-30 -- after a decommission date Google
+          # refuses to create OR update functions on that runtime, so the pin
+          # has to move before the date, not after something breaks. Node 22
+          # runs to 2027-10-31.
+          node-version: 22
           cache: npm
           cache-dependency-path: functions/package-lock.json
 

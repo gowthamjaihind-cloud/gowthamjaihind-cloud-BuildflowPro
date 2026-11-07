@@ -1,0 +1,451 @@
+{
+  "fps": 30,
+  "bpm": 120,
+  "transitionBeats": 2,
+  "voice": {
+    "name": "am_puck",
+    "speed": 1.0
+  },
+  "effects": {
+    "logo": {
+      "intro": 10,
+      "outro": 4,
+      "stagger": 7.5
+    },
+    "name": {
+      "intro": 37.5,
+      "outro": 18
+    },
+    "chips": {
+      "at": 10,
+      "stagger": 9
+    }
+  },
+  "scenes": [
+    {
+      "id": "intro",
+      "kind": "title",
+      "bars": 3,
+      "line": "Truth, reported from site.",
+      "vo": "This is Sitetru. Truth, reported from site."
+    },
+    {
+      "id": "telegram",
+      "kind": "phones",
+      "bars": 3,
+      "enter": "zoom",
+      "kicker": "Telegram",
+      "line": "Connect your Telegram to file daily logs, scan invoices, and get updates from your phone.",
+      "images": [
+        "p-menu.png",
+        "p-mats.png"
+      ],
+      "marks": [
+        {
+          "at": 100,
+          "image": 0,
+          "x": 30,
+          "y": 662,
+          "w": 787,
+          "h": 124
+        }
+      ],
+      "vo": "Your site engineer logs the day on Telegram, right from the phone."
+    },
+    {
+      "id": "daily-logs",
+      "kind": "screen",
+      "bars": 2,
+      "enter": "iris",
+      "kicker": "Daily Logs",
+      "line": "Site-wide Activity Logs",
+      "src": "l-04-daily-logs.png",
+      "camera": [
+        {
+          "at": 0,
+          "cx": 1944,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 12,
+          "cx": 1944,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 55,
+          "cx": 1534,
+          "cy": 880,
+          "w": 1800
+        }
+      ],
+      "marks": [
+        {
+          "at": 50,
+          "x": 739,
+          "y": 640,
+          "w": 1589,
+          "h": 456
+        }
+      ],
+      "vo": "It lands straight in your daily logs."
+    },
+    {
+      "id": "dashboard",
+      "kind": "screen",
+      "bars": 3,
+      "enter": "push",
+      "kicker": "Dashboard",
+      "line": "Where the job stands today — progress, spend, and what's slipping.",
+      "src": "l-01-dashboard.png",
+      "camera": [
+        {
+          "at": 0,
+          "cx": 1944,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 15,
+          "cx": 1944,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 65,
+          "cx": 1634,
+          "cy": 700,
+          "w": 1950
+        },
+        {
+          "at": 115,
+          "cx": 1634,
+          "cy": 700,
+          "w": 1950
+        },
+        {
+          "at": 140,
+          "cx": 2260,
+          "cy": 700,
+          "w": 1950
+        }
+      ],
+      "marks": [
+        {
+          "at": 65,
+          "x": 736,
+          "y": 568,
+          "w": 1797,
+          "h": 232
+        },
+        {
+          "at": 130,
+          "x": 2573,
+          "y": 568,
+          "w": 579,
+          "h": 232
+        }
+      ],
+      "vo": "The dashboard shows where the job stands today: progress, spend, and what's slipping."
+    },
+    {
+      "id": "inventory",
+      "kind": "screen",
+      "bars": 3,
+      "enter": "rise",
+      "kicker": "Inventory",
+      "line": "What's in stock, what's running out.",
+      "src": "l-06-inventory.png",
+      "camera": [
+        {
+          "at": 0,
+          "cx": 1944,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 15,
+          "cx": 1944,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 68,
+          "cx": 1640,
+          "cy": 820,
+          "w": 1950
+        },
+        {
+          "at": 102,
+          "cx": 1640,
+          "cy": 820,
+          "w": 1950
+        },
+        {
+          "at": 135,
+          "cx": 2260,
+          "cy": 820,
+          "w": 1950
+        }
+      ],
+      "marks": [
+        {
+          "at": 63,
+          "x": 736,
+          "y": 571,
+          "w": 773,
+          "h": 330
+        },
+        {
+          "at": 120,
+          "x": 2379,
+          "y": 571,
+          "w": 773,
+          "h": 330
+        }
+      ],
+      "vo": "Inventory tells you what's in stock, and what's running out."
+    },
+    {
+      "id": "procurement",
+      "kind": "screen",
+      "bars": 3,
+      "enter": "push",
+      "kicker": "Procurement",
+      "chips": [
+        "Purchase Orders",
+        "Goods Receipt",
+        "Bills"
+      ],
+      "src": "l-07-procurement.png",
+      "camera": [
+        {
+          "at": 0,
+          "cx": 1944,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 15,
+          "cx": 1944,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 68,
+          "cx": 1500,
+          "cy": 800,
+          "w": 1900
+        },
+        {
+          "at": 99,
+          "cx": 1500,
+          "cy": 800,
+          "w": 1900
+        },
+        {
+          "at": 135,
+          "cx": 2300,
+          "cy": 700,
+          "w": 1900
+        }
+      ],
+      "marks": [
+        {
+          "at": 48,
+          "x": 792,
+          "y": 328,
+          "w": 1128,
+          "h": 91
+        },
+        {
+          "at": 117,
+          "x": 2600,
+          "y": 704,
+          "w": 330,
+          "h": 528
+        }
+      ],
+      "vo": "Purchase orders, goods receipts and bills, in one place."
+    },
+    {
+      "id": "insights",
+      "kind": "screen",
+      "bars": 4,
+      "enter": "iris",
+      "kicker": "Project Insights",
+      "line": "Reads your costs, schedule and daily logs, then flags what needs attention.",
+      "src": "l-02-insights.png",
+      "camera": [
+        {
+          "at": 0,
+          "cx": 1944,
+          "cy": 900,
+          "w": 2900
+        },
+        {
+          "at": 16,
+          "cx": 1944,
+          "cy": 900,
+          "w": 2900
+        },
+        {
+          "at": 73,
+          "cx": 1700,
+          "cy": 820,
+          "w": 2000
+        },
+        {
+          "at": 133,
+          "cx": 1700,
+          "cy": 820,
+          "w": 2000
+        },
+        {
+          "at": 187,
+          "cx": 2540,
+          "cy": 1560,
+          "w": 1900
+        }
+      ],
+      "marks": [
+        {
+          "at": 67,
+          "x": 736,
+          "y": 565,
+          "w": 1355,
+          "h": 77
+        },
+        {
+          "at": 117,
+          "x": 736,
+          "y": 818,
+          "w": 1797,
+          "h": 206
+        },
+        {
+          "at": 187,
+          "x": 1965,
+          "y": 1722,
+          "w": 1187,
+          "h": 230
+        }
+      ],
+      "vo": "Insights reads your costs, schedule and daily logs, then flags what needs attention."
+    },
+    {
+      "id": "estimates",
+      "kind": "screen",
+      "bars": 3,
+      "enter": "push",
+      "kicker": "Client Estimates",
+      "line": "Estimates sent to the client, and what they've approved.",
+      "src": "l-10-client-estimates.png",
+      "camera": [
+        {
+          "at": 0,
+          "cx": 1944,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 15,
+          "cx": 1944,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 65,
+          "cx": 1700,
+          "cy": 780,
+          "w": 1950
+        }
+      ],
+      "marks": [
+        {
+          "at": 70,
+          "x": 1320,
+          "y": 720,
+          "w": 300,
+          "h": 232
+        },
+        {
+          "at": 125,
+          "x": 790,
+          "y": 718,
+          "w": 1820,
+          "h": 100
+        }
+      ],
+      "vo": "Track the estimates you send your client, and what they've approved."
+    },
+    {
+      "id": "reports",
+      "kind": "screen",
+      "bars": 3,
+      "enter": "rise",
+      "kicker": "Progress Reports",
+      "line": "Turn daily logs into a report you can send.",
+      "src": "l-11-reports.png",
+      "camera": [
+        {
+          "at": 0,
+          "cx": 1944,
+          "cy": 1100,
+          "w": 2900
+        },
+        {
+          "at": 12,
+          "cx": 1944,
+          "cy": 1100,
+          "w": 2900
+        },
+        {
+          "at": 55,
+          "cx": 1640,
+          "cy": 1060,
+          "w": 1950
+        },
+        {
+          "at": 110,
+          "cx": 1640,
+          "cy": 1060,
+          "w": 1950
+        },
+        {
+          "at": 145,
+          "cx": 2620,
+          "cy": 620,
+          "w": 1700
+        }
+      ],
+      "marks": [
+        {
+          "at": 55,
+          "x": 820,
+          "y": 790,
+          "w": 1500,
+          "h": 470
+        },
+        {
+          "at": 145,
+          "x": 2507,
+          "y": 538,
+          "w": 645,
+          "h": 96
+        }
+      ],
+      "vo": "And turn daily logs into a report you can send."
+    },
+    {
+      "id": "outro",
+      "kind": "title",
+      "bars": 3,
+      "enter": "zoom",
+      "line": "Every project, ledger, and daily log in one place.",
+      "url": "sitetru.com",
+      "vo": "Sitetru. Every project, ledger and daily log, in one place."
+    }
+  ]
+}

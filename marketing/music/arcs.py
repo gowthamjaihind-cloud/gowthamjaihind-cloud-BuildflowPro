@@ -89,3 +89,30 @@ def walk_arc(position, bloom=0.94, ramp=0.02):
     # composition gain that normalisation then takes back out.
     t = min((position - bloom) / max(1e-6, ramp), 1.0)
     return 0.82 + (t * t * (3 - 2 * t)) * 0.18
+
+
+def kinetic_arc(position):
+    """
+    The kinetic cue's dynamic shape, 0..1 across the film, as a multiplier.
+
+    The second edit of the kinetic cut slowed the picture right down -- a scene
+    per feature, two or three bars each, with explainer text to read -- and the
+    cue's shape follows. The first version opened near its ceiling because the
+    film was a 29-second rush; this one has a real title card at the front, so
+    the cue holds back under it and arrives with the first feature.
+
+    After that it is deliberately FLAT. A viewer reading a sentence should not
+    have the music swelling and receding underneath them -- the movement in the
+    picture now comes from the camera and the transitions, and the music's job
+    is a steady pulse those can land on. The only lift is into the closing card.
+
+    Kept inside the bounds every cue arc is tested against: never below 0.2,
+    never above 1.0, continuous at the joins, and ending louder than it starts.
+    """
+    if position < 0.07:
+        return 0.45                      # the title card: pad and bass only
+    if position < 0.11:
+        return 0.45 + (position - 0.07) / 0.04 * 0.45   # into the first feature
+    if position < 0.88:
+        return 0.90                      # the body: steady under reading
+    return 0.90 + (position - 0.88) / 0.12 * 0.10       # lift into the close

@@ -76,7 +76,14 @@ function sample(fn: string, n = 400, extra = ""): number[] {
   return vals;
 }
 
-describe.each(["arc", "walk_arc"])("%s", (fn) => {
+/*
+  `kinetic_arc` joins the other two here rather than getting its own file,
+  because the three properties below are properties of a CUE ARC, not of a
+  particular cue: continuous at the joins, never silent and never doubled, and
+  ending louder than it starts. A third curve that does not hold them would be
+  a third curve with a step in it under a finished film.
+*/
+describe.each(["arc", "walk_arc", "kinetic_arc"])("%s", (fn) => {
   const v = sample(fn);
 
   it("is continuous across every join", () => {
@@ -129,7 +136,7 @@ describe("walk_arc", () => {
 });
 
 /**
- * Both cues have to be RENDERABLE, not just shaped right.
+ * Every cue has to be RENDERABLE, not just shaped right.
  *
  * Twice while building the arrival I replaced a line that `launch` and
  * `walkthrough` happen to share -- `beat = 60 / bpm` and the three lines under
@@ -138,8 +145,8 @@ describe("walk_arc", () => {
  * because re-mixing the walkthrough never imports the launch cue. The second
  * time it would have shipped a launch film that could not render at all.
  */
-describe.skipIf(!CAN_RENDER)("both cues render (needs numpy + scipy)", () => {
-  it.each(["launch", "walkthrough"])("%s builds without an undefined name", (cue) => {
+describe.skipIf(!CAN_RENDER)("every cue renders (needs numpy + scipy)", () => {
+  it.each(["launch", "walkthrough", "kinetic"])("%s builds without an undefined name", (cue) => {
     const out = execFileSync(
       "python3",
       [
@@ -153,6 +160,26 @@ describe.skipIf(!CAN_RENDER)("both cues render (needs numpy + scipy)", () => {
     ).trim().split(/\s+/).map(Number);
     expect(out[0]).toBeGreaterThan(0);
     expect(out[1]).toBeGreaterThan(0); // and it is not silence
+  }, RENDER_TIMEOUT_MS);
+
+  it("renders every kind of sound effect the music-only version uses", () => {
+    // sfx.py is a separate renderer with its own instruments; a typo in one
+    // effect would only surface when a cut happened to contain that effect.
+    const out = execFileSync(
+      "python3",
+      [
+        "-c",
+        `import sys; sys.path.insert(0, ${JSON.stringify(join(ROOT, "marketing/music"))})\n` +
+          `import numpy, sfx\n` +
+          `ev = [{"t":0.2,"kind":"bell","note":"A5"},{"t":0.6,"kind":"rise","note":"D5"},` +
+          `{"t":1.0,"kind":"swish"},{"t":1.4,"kind":"pop"},{"t":1.8,"kind":"boom"}]\n` +
+          `a = sfx.render(3.0, ev)\n` +
+          `print(len(a), float(numpy.abs(a).max()))`,
+      ],
+      { encoding: "utf8" },
+    ).trim().split(/\s+/).map(Number);
+    expect(out[0]).toBeGreaterThan(0);
+    expect(out[1]).toBeGreaterThan(0.01);
   }, RENDER_TIMEOUT_MS);
 
   it("walkthrough accepts the bloom point the mix passes it", () => {

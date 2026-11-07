@@ -119,8 +119,17 @@ class Voice:
         # first of the next (…pˈeɪpɚwˌɜːk.sˈaɪttɹuː…).
         return " ".join("".join(s) for s in self.phonemizer.phonemize(text))
 
-    def say(self, text: str, speed: float = DEFAULT_SPEED) -> np.ndarray:
-        ids = [0] + [self.vocab[c] for c in self.phonemes(text) if c in self.vocab] + [0]
+    def say(self, text: str, speed: float = DEFAULT_SPEED, accent: str | None = None) -> np.ndarray:
+        ph = self.phonemes(text)
+        if accent:
+            # The phonemiser only speaks en-us; accent.py respells its output
+            # as Indian English. Unset, nothing changes for the other films.
+            from accent import check_vocab, indianize
+            dropped = check_vocab(self.vocab)
+            if dropped:
+                raise SystemExit(f"accent needs phonemes Kokoro lacks: {dropped}")
+            ph = indianize(ph, accent)
+        ids = [0] + [self.vocab[c] for c in ph if c in self.vocab] + [0]
         if len(ids) > MAX_TOKENS:
             raise SystemExit(
                 f"line is {len(ids)} tokens, over Kokoro's {MAX_TOKENS}: split it.\n  {text[:90]}"
@@ -161,7 +170,11 @@ def main() -> int:
 
     manifest = []
     for line in spec["lines"]:
-        audio = voice.say(line["text"], speed=line.get("speed", spec.get("speed", DEFAULT_SPEED)))
+        audio = voice.say(
+            line["text"],
+            speed=line.get("speed", spec.get("speed", DEFAULT_SPEED)),
+            accent=line.get("accent", spec.get("accent")),
+        )
         path = out_dir / f"{line['id']}.wav"
         seconds = write_wav(path, audio)
         manifest.append({
