@@ -4,6 +4,7 @@ import { arrive, ramp } from "../film/Cinema";
 import { BEAT, EFFECTS } from "./grid";
 import { Mark } from "./Mark";
 import { T } from "./palette";
+import { useFormat } from "./format";
 import { Word, STAGGER } from "./Explainer";
 
 /**
@@ -35,9 +36,10 @@ const WALL = [
 const TILE_W = 620;
 const TILE_H = 388;
 const GAP = 34;
-const COLS = 4;
-
 const Wall: React.FC<{ t: number; drift: number }> = ({ t, drift }) => {
+  // Tall frames take the same twelve screens in three columns and four rows,
+  // scaled up, so the wall still runs off every edge of a 9:16 frame.
+  const { cols: COLS, wallScale } = useFormat().title;
   const rows = Math.ceil(WALL.length / COLS);
   const w = COLS * TILE_W + (COLS - 1) * GAP;
   const h = rows * TILE_H + (rows - 1) * GAP;
@@ -53,7 +55,7 @@ const Wall: React.FC<{ t: number; drift: number }> = ({ t, drift }) => {
           height: h,
           marginLeft: -w / 2,
           marginTop: -h / 2,
-          transform: `perspective(2200px) rotateX(34deg) rotateZ(-13deg) scale(1.32) translate(${pan.toFixed(2)}px, ${(-pan * 0.45).toFixed(2)}px)`,
+          transform: `perspective(2200px) rotateX(34deg) rotateZ(-13deg) scale(${wallScale}) translate(${pan.toFixed(2)}px, ${(-pan * 0.45).toFixed(2)}px)`,
           display: "grid",
           gridTemplateColumns: `repeat(${COLS}, ${TILE_W}px)`,
           gap: GAP,
@@ -95,6 +97,7 @@ export const Title: React.FC<{ t: number; line: string; url?: string; closing?: 
   // Intro: mark builds first, then the name, then the line. Closing: quicker,
   // because the viewer already knows whose film it is.
   // From film.json, so the music-only version's sounds land on these frames.
+  const ty = useFormat().title;
   const markAt = closing ? EFFECTS.logo.outro : EFFECTS.logo.intro;
   const nameAt = closing ? EFFECTS.name.outro : EFFECTS.name.intro;
   const lineAt = closing ? 36 : BEAT * 4.5;
@@ -114,10 +117,10 @@ export const Title: React.FC<{ t: number; line: string; url?: string; closing?: 
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 36 }}>
-          <Mark size={150} at={markAt} stagger={EFFECTS.logo.stagger} t={t} />
+          <Mark size={ty.mark} at={markAt} stagger={EFFECTS.logo.stagger} t={t} />
           <div
             style={{
-              fontSize: 118,
+              fontSize: ty.name,
               fontWeight: 800,
               letterSpacing: "-0.035em",
               color: T.text,
@@ -130,12 +133,12 @@ export const Title: React.FC<{ t: number; line: string; url?: string; closing?: 
         </div>
         <div
           style={{
-            fontSize: 48,
+            fontSize: ty.line,
             fontWeight: 650,
             letterSpacing: "-0.018em",
             color: T.text,
             textAlign: "center",
-            maxWidth: 1200,
+            maxWidth: ty.lineWidth,
           }}
         >
           {words.map((w, i) => (
@@ -146,7 +149,7 @@ export const Title: React.FC<{ t: number; line: string; url?: string; closing?: 
           <div
             style={{
               marginTop: 8,
-              fontSize: 30,
+              fontSize: ty.url,
               fontWeight: 700,
               letterSpacing: "0.22em",
               textTransform: "uppercase",

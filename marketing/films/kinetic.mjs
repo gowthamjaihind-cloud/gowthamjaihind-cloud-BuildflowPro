@@ -4,6 +4,7 @@
  *
  *   node marketing/films/kinetic.mjs
  *   node marketing/films/kinetic.mjs --preview      # half scale, for framing
+ *   node marketing/films/kinetic.mjs --vertical     # 9:16 for Reels/Shorts/Status
  *
  * Unlike `film:launch`, there is no voice step. That removes the whole timing
  * problem the other two films have -- nothing here is laid out from measured
@@ -311,8 +312,29 @@ function musicOnly(grid, scoreWav, outWav) {
   return events.length;
 }
 
+/**
+ * The tall cut for Reels, Shorts and WhatsApp Status. Same timeline frame for
+ * frame, so it takes the wide cut's two mixes as they are: every bell is still
+ * on its spotlight, every whoosh on its transition. Needs a full build first.
+ */
+function vertical(preview) {
+  const mixWav = join(OUT, "kinetic-premix.wav");
+  const musicWav = join(OUT, "kinetic-music-only.wav");
+  for (const f of [mixWav, musicWav]) {
+    if (!existsSync(f)) throw new Error(`--vertical needs ${f}; run a full build first`);
+  }
+  const silent = join(OUT, "kinetic-vertical-silent.mp4");
+  renderPicture(preview, silent, "KineticVertical");
+  mux(silent, mixWav, join(OUT, "sitetru-kinetic-vertical.mp4"));
+  mux(silent, musicWav, join(OUT, "sitetru-kinetic-vertical-music.mp4"));
+}
+
 function main() {
   const preview = process.argv.includes("--preview");
+  if (process.argv.includes("--vertical")) {
+    mkdirSync(OUT, { recursive: true });
+    return vertical(preview);
+  }
   // Re-mix against the picture already rendered: voice and level work should
   // not cost a seven-minute render each time.
   const muxOnly = process.argv.includes("--mux-only");
@@ -358,7 +380,7 @@ function main() {
   mux(silent, musicWav, finalMusic);
 }
 
-function renderPicture(preview, silent) {
+function renderPicture(preview, silent, composition = "Kinetic") {
   const chrome = findChromium();
   if (!chrome) {
     throw new Error(
@@ -368,7 +390,7 @@ function renderPicture(preview, silent) {
   }
   console.error(`chromium: ${chrome}`);
   execFileSync("npx", [
-    "remotion", "render", "Kinetic", silent,
+    "remotion", "render", composition, silent,
     `--browser-executable=${chrome}`,
     // Two, not four. This composition mounts Fonts, whose delayRender is raced
     // past its 30s default by four tabs competing for the same font load.

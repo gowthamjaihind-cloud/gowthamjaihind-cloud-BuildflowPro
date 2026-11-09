@@ -1,6 +1,7 @@
 import React from "react";
 import { arrive, ramp } from "../film/Cinema";
 import { EFFECTS } from "./grid";
+import { useFormat } from "./format";
 import { T } from "./palette";
 
 /**
@@ -51,27 +52,31 @@ export const Explainer: React.FC<{
   line?: string;
   chips?: string[];
 }> = ({ t, side, chapter, total, kicker, line, chips }) => {
+  const fmt = useFormat();
+  const box = fmt.text(side);
+  const ty = fmt.type;
   const head = ramp(t, [-4, 10], arrive);
   const rule = ramp(t, [0, 14], arrive);
   const words = line ? line.split(" ") : [];
   // Long sentences step down a size rather than running to six lines.
-  const size = line && line.length > 62 ? 44 : 54;
+  const size = line && line.length > 62 ? ty.lineLong : ty.line;
   const n = (i: number) => String(i).padStart(2, "0");
 
   return (
     <div
       style={{
         position: "absolute",
-        top: 0,
-        bottom: 0,
-        width: COLUMN,
-        left: side === "left" ? 70 : undefined,
-        right: side === "right" ? 70 : undefined,
+        top: box.top,
+        height: box.height,
+        width: box.width,
+        left: box.left,
         display: "flex",
         flexDirection: "column",
-        justifyContent: "center",
+        // Tall: the block sits on the window below it, so short and long
+        // sentences both end the same distance above the screen they describe.
+        justifyContent: fmt.id === "tall" ? "flex-end" : "center",
         gap: 22,
-        paddingBottom: 40,
+        paddingBottom: fmt.id === "tall" ? 0 : 40,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 16, opacity: head }}>
@@ -80,7 +85,7 @@ export const Explainer: React.FC<{
           style={{
             fontFamily: '"JetBrains Mono", monospace',
             fontWeight: 600,
-            fontSize: 19,
+            fontSize: ty.chapter,
             letterSpacing: "0.08em",
             color: T.muted,
           }}
@@ -91,7 +96,7 @@ export const Explainer: React.FC<{
 
       <div
         style={{
-          fontSize: 24,
+          fontSize: ty.kicker,
           fontWeight: 800,
           letterSpacing: "0.2em",
           textTransform: "uppercase",
@@ -134,7 +139,7 @@ export const Explainer: React.FC<{
                   border: `2px solid rgba(29,78,216,0.22)`,
                   boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
                   color: T.text,
-                  fontSize: 36,
+                  fontSize: ty.chip,
                   fontWeight: 750,
                   letterSpacing: "-0.015em",
                   opacity: p,

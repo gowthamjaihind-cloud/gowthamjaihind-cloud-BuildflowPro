@@ -3,7 +3,7 @@ import { Composition } from "remotion";
 import { Hero, Social } from "./Hero";
 import { WalkEndCard } from "./film/Titles";
 import { LAUNCH_FPS, LAUNCH_FRAMES, Launch } from "./film/Launch";
-import { Kinetic } from "./kinetic/Kinetic";
+import { Kinetic, KineticVertical } from "./kinetic/Kinetic";
 import { FPS as KINETIC_FPS, KINETIC_FRAMES } from "./kinetic/grid";
 
 export const RemotionRoot: React.FC = () => (
@@ -61,6 +61,15 @@ export const RemotionRoot: React.FC = () => (
       fps={KINETIC_FPS}
       width={1920}
       height={1080}
+    />
+    {/* The same cut laid out for phones: Reels, Shorts, WhatsApp Status. */}
+    <Composition
+      id="KineticVertical"
+      component={KineticVertical}
+      durationInFrames={KINETIC_FRAMES}
+      fps={KINETIC_FPS}
+      width={1080}
+      height={1920}
     />
 
     {/* The earlier silent cuts, kept: they are the captioned versions, which
