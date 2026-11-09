@@ -50,6 +50,18 @@ service cloud.firestore {
     function thisOrgUnclaimed() {
       return thisOrgMembers().size() == 0;
     }
+    // The ONLY org-document fields a client may write. Everything else on an
+    // org -- plan, subscriptionStatus, trialEndsAt, currentPeriodEnd,
+    // includedProjects, userLimit, aiQuota, overageRate, pendingPayment,
+    // Razorpay ids -- is billing state, written by Cloud Functions (Admin SDK)
+    // after a verified payment, and read by those functions to decide what an
+    // org may do. It was client-writable: any Owner could open the browser
+    // console and set subscriptionStatus "active" and a bigger plan for free.
+    // An allowlist, not a denylist, so a billing field added later is closed
+    // by default. scripts/rules-escalation-probe.mjs covers this.
+    function orgClientKeys() {
+      return ['companyName', 'gstin', 'stateCode', 'members'];
+    }
     function isValidClaim() {
       return request.auth != null
         && thisOrgUnclaimed()
@@ -86,11 +98,13 @@ service cloud.firestore {
       // Brand-new org (future self-serve onboarding): the creator must seed
       // themselves as Owner.
       allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(orgClientKeys())
         && (request.auth.uid in request.resource.data.get('members', {}))
         && request.resource.data.members[request.auth.uid] == 'Owner';
       // A one-time claim, or an existing admin-member editing org settings
-      // (company name, GSTIN, membership changes).
-      allow update: if isValidClaim() || (isMemberOfThisOrg() && isAdminOrManager());
+      // (company name, GSTIN, membership changes) -- never billing state.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(orgClientKeys())
+        && (isValidClaim() || (isMemberOfThisOrg() && isAdminOrManager()));
       allow delete: if false;
 
       // AI usage meters — written only by Cloud Functions (Admin SDK); members
@@ -245,21 +259,53 @@ service cloud.firestore {
     // profile only when both belong to the SAME organization. This closes the
     // cross-org leak where any signed-in user could read every user document.
     // (Cloud Functions use the Admin SDK and bypass these rules.)
+    //
+    // "Same organization" is checked against the org's own members map, not
+    // just the reader's currentOrgId: that field is the reader's to write, and
+    // pointing it at another org used to open that org's profiles to them.
     function readerOrg() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('currentOrgId', '');
     }
+    function sharesReaderOrg() {
+      return readerOrg() != ''
+        && isOrgMember(readerOrg())
+        && resource.data.get('currentOrgId', '') == readerOrg();
+    }
+    function changed() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
     match /users/{userId} {
       allow read: if request.auth != null && (
-        request.auth.uid == userId ||
-        (readerOrg() != '' && resource.data.get('currentOrgId', '') == readerOrg())
+        request.auth.uid == userId || sharesReaderOrg()
       );
-      // Users create their own profile on first sign-in.
-      allow create: if request.auth != null && request.auth.uid == userId;
-      // Self edits anything on their own doc; an admin may edit a member of
-      // their OWN org (e.g. role / project access).
+      // Users create their own profile on first sign-in -- as a Viewer, or as
+      // whatever role a verified custom claim already gives them. Roles are
+      // granted by Cloud Functions (createOrganization, acceptInvite) or by an
+      // admin of the same org, never by the user.
+      allow create: if request.auth != null && request.auth.uid == userId
+        && (request.resource.data.get('role', 'Viewer') == 'Viewer'
+            || request.resource.data.get('role', '') == request.auth.token.get('role', ''))
+        && !('projectAccess' in request.resource.data)
+        && (request.resource.data.get('currentOrgId', '') == ''
+            || isOrgMember(request.resource.data.currentOrgId));
+      // Self edits their own doc EXCEPT the fields that grant power. `role`
+      // was self-editable, and every rule above trusts it: a Site Engineer
+      // could write role "Owner" and become an Admin of their org. currentOrgId
+      // may only point at an org that lists them as a member.
+      //
+      // An admin may edit a member of their OWN org: role, project access, and
+      // unlinking a Telegram chat -- nothing else on someone else's profile.
       allow update: if request.auth != null && (
-        request.auth.uid == userId ||
-        (isAdminOrManager() && readerOrg() != '' && resource.data.get('currentOrgId', '') == readerOrg())
+        (request.auth.uid == userId
+          && !changed().hasAny(['role', 'projectAccess'])
+          && (!changed().hasAny(['currentOrgId'])
+              || request.resource.data.get('currentOrgId', '') == ''
+              || isOrgMember(request.resource.data.currentOrgId)))
+        ||
+        (request.auth.uid != userId
+          && isAdminOrManager()
+          && sharesReaderOrg()
+          && changed().hasOnly(['role', 'projectAccess', 'telegramChatId', 'telegramLinkedAt']))
       );
       allow delete: if false;
     }

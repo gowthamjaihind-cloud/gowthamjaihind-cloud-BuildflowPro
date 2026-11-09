@@ -79,38 +79,28 @@ export function useAuthInit() {
                   data.legal = pendingConsent;
                   clearPendingConsent();
                 }
-                // Auto-upgrade specific email to Admin for testing
-                if (
-                  firebaseUser.email === "gowtham.jaihind@gmail.com" &&
-                  data.role !== "Admin" &&
-                  data.role !== "Owner"
-                ) {
-                  const updatedProfile = { ...data, role: "Owner" as const };
-                  await updateDoc(doc(db, "users", firebaseUser.uid), {
-                    role: "Owner",
-                  });
-                  setUser({ uid: firebaseUser.uid, ...updatedProfile });
-                } else {
-                  // Backfill anything the stored doc is missing rather than
-                  // spreading it blind: a profile written by an older build (or
-                  // a partial write) otherwise yields a user with no email,
-                  // which the post-sign-up screen renders as "Signed in as .".
-                  setUser({
-                    uid: firebaseUser.uid,
-                    ...data,
-                    email: data.email || firebaseUser.email || "",
-                    displayName: data.displayName || firebaseUser.displayName || "User",
-                    role: data.role || "Viewer",
-                  });
-                }
+                // Roles come from the org (createOrganization, invites, or an
+                // admin of the same org) -- firestore.rules refuses a user
+                // writing their own. There used to be an email-based
+                // self-promotion to Owner here; the rules now deny it.
+                // Backfill anything the stored doc is missing rather than
+                // spreading it blind: a profile written by an older build (or
+                // a partial write) otherwise yields a user with no email,
+                // which the post-sign-up screen renders as "Signed in as .".
+                setUser({
+                  uid: firebaseUser.uid,
+                  ...data,
+                  email: data.email || firebaseUser.email || "",
+                  displayName: data.displayName || firebaseUser.displayName || "User",
+                  role: data.role || "Viewer",
+                });
                 setLoading(false);
               } else {
                 // Create default profile
                 const idTokenResult = await firebaseUser.getIdTokenResult();
-                const isAdminFallback =
-                  idTokenResult.claims?.role === "Admin" ||
-                  idTokenResult.claims?.admin === true ||
-                  firebaseUser.email === "gowtham.jaihind@gmail.com";
+                // A new profile is a Viewer unless a verified custom claim says
+                // otherwise -- the only other role firestore.rules accepts here.
+                const claimedAdmin = idTokenResult.claims?.role === "Admin";
 
                 // First sign-in only happens after the consent gate, so record
                 // acceptance on the profile (fall back to the current version).
@@ -120,7 +110,7 @@ export function useAuthInit() {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email || "",
                   displayName: firebaseUser.displayName || "User",
-                  role: firebaseUser.email === "gowtham.jaihind@gmail.com" ? "Owner" : (isAdminFallback ? "Admin" : "Viewer"),
+                  role: claimedAdmin ? "Admin" : "Viewer",
                   photoURL: firebaseUser.photoURL || undefined,
                   legal: consent,
                 };
