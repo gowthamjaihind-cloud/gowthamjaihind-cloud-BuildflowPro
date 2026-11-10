@@ -49,6 +49,7 @@ import { EmptyState } from "./EmptyState";
 import { SkeletonRows } from "./Skeleton";
 import { DialogBehaviour } from "../lib/useDialog";
 import { newestLogFirst, timeKey } from "../lib/timeKey";
+import { standaloneIssues } from "../lib/dailyLogIssues";
 
 interface ProgressReportsViewProps {
   projectId: string;
@@ -135,8 +136,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
     const startDt = parseISO(startDate);
     const endDt = parseISO(endDate);
 
-    allMaterialIssues
-      .filter((issue) => !issue.remarks?.startsWith("Daily Progress") && !issue.notes?.startsWith("Daily Progress"))
+    standaloneIssues(allMaterialIssues, rawLogs)
       .forEach((issue) => {
         const issueDate = issue.issueDate || issue.date;
         if (issueDate && issueDate >= startDate && issueDate <= endDate) {
