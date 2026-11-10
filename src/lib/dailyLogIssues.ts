@@ -103,39 +103,3 @@ export function standaloneIssues<T>(issues: T[], logs: any[]): T[] {
 export function isDailyLogIssue(issue: any, logs: any[]): boolean {
   return standaloneIssues([issue], logs).length === 0;
 }
-
-/**
- * Opt-in readout for when a duplicate survives: open the app with
- * ?debugIssues=1 and the console lists, per task, each issue line and whether
- * a log covers it, with the exact keys compared. Shows ids, names and dates
- * only -- no costs or people.
- */
-export function debugIssueMatching(taskId: string, issues: any[], logs: any[]) {
-  try {
-    if (typeof window === "undefined" || !new URLSearchParams(window.location.search).has("debugIssues")) return;
-    const ix = logIndex(logs);
-    const rows = (issues || [])
-      .filter((i: any) => i?.taskId === taskId)
-      .flatMap((iss: any) =>
-        (Array.isArray(iss.items) ? iss.items : [{ materialId: iss.materialId, name: iss.name }]).map((m: any) => ({
-          issue: iss.id,
-          tagged: isTaggedDailyLogIssue(iss),
-          day: issueDay(iss),
-          id: idOf(m),
-          name: nameKey(m),
-          covered: lineCovered(iss, m, ix),
-        })),
-      );
-    const logRows = (logs || [])
-      .filter((l: any) => l?.taskId === taskId)
-      .flatMap((l: any) =>
-        (l.materials || []).map((m: any) => ({ log: l.id, day: dayOf(l.workDate), rawDay: typeof l.workDate, id: idOf(m), name: nameKey(m) })),
-      );
-    console.groupCollapsed(`[debugIssues] task ${taskId}`);
-    console.table(rows);
-    console.table(logRows);
-    console.groupEnd();
-  } catch {
-    /* diagnostics must never break the page */
-  }
-}

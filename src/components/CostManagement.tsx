@@ -70,7 +70,7 @@ import { EmptyState } from "./EmptyState";
 import { DialogBehaviour } from "../lib/useDialog";
 
 import { chartChrome, chartSeries } from "../lib/chartTheme";
-import { debugIssueMatching, standaloneIssues } from "../lib/dailyLogIssues";
+import { standaloneIssues } from "../lib/dailyLogIssues";
 interface CostManagementProps {
   projectId: string;
 }
@@ -1079,7 +1079,6 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         ))}
 
                       {/* 2. Material Issues */}
-                      {(debugIssueMatching(task.id, materialIssues, dailyLogs), null)}
                       {standaloneIssues(materialIssues, dailyLogs)
                         .filter((iss: any) => iss.taskId === task.id)
                         .flatMap((iss: any) => {
