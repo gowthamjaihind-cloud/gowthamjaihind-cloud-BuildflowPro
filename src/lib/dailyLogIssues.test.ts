@@ -30,4 +30,15 @@ describe("daily-log issues", () => {
     expect(isDailyLogIssue({ taskId: "t1", issueDate: "2026-03-17", items: [{ itemId: "STEEL-8" }, { itemId: "SAND" }] }, logs)).toBe(false);
     expect(standaloneIssues([{ taskId: "t9", issueDate: "2026-03-17", items: [{ itemId: "X" }] }], logs)).toHaveLength(1);
   });
+
+  it("matches a legacy log whose workDate is a Timestamp", () => {
+    const tsLog = { ...log, workDate: { seconds: Date.parse("2026-03-17T00:00:00Z") / 1000, nanoseconds: 0 } };
+    expect(isDailyLogIssue({ taskId: "t1", issueDate: "2026-03-17", items: [{ itemId: "STEEL-8" }] }, [tsLog])).toBe(true);
+  });
+
+  it("matches by material name when the legacy item id differs from the log's", () => {
+    const named = { taskId: "t1", workDate: "2026-03-17", materials: [{ materialId: "inv-abc", name: "STEEL-8mm" }] };
+    expect(isDailyLogIssue({ taskId: "t1", issueDate: "2026-03-17", items: [{ itemId: "old-key", name: "STEEL-8mm" }] }, [named])).toBe(true);
+    expect(isDailyLogIssue({ taskId: "t1", issueDate: "2026-03-17", items: [{ itemId: "old-key", name: "STEEL-10mm" }] }, [named])).toBe(false);
+  });
 });
