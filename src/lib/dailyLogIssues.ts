@@ -20,7 +20,17 @@
  * its quantities but never rewrote the issue, and the log is the one to trust.
  */
 
+import { timeKey } from "./timeKey";
+
 const itemId = (m: any): string => String(m?.materialId || m?.itemId || "");
+const itemName = (m: any): string =>
+  String(m?.name || m?.materialName || "").trim().toLowerCase().replace(/\s+/g, " ");
+/**
+ * The calendar day of a date-ish value. Legacy logs carry workDate as a
+ * Firestore Timestamp (the cost breakdown has always had a branch for it), so
+ * comparing raw values missed exactly the logs this file exists for.
+ */
+const dayOf = (v: unknown): string => timeKey(v).slice(0, 10);
 
 export function isTaggedDailyLogIssue(issue: any): boolean {
   return Boolean(issue?.remarks?.startsWith?.("Daily Progress") || issue?.notes?.startsWith?.("Daily Progress"));
@@ -28,14 +38,26 @@ export function isTaggedDailyLogIssue(issue: any): boolean {
 
 export function isDailyLogIssue(issue: any, logs: any[]): boolean {
   if (isTaggedDailyLogIssue(issue)) return true;
-  const date = issue?.issueDate || issue?.date;
-  if (!issue?.taskId || !date) return false;
-  const ids = Array.isArray(issue.items) ? issue.items.map(itemId) : issue.materialId ? [String(issue.materialId)] : [];
-  if (!ids.length || ids.some((id: string) => !id)) return false;
+  const day = dayOf(issue?.issueDate || issue?.date);
+  if (!issue?.taskId || !day) return false;
+  const items: any[] = Array.isArray(issue.items)
+    ? issue.items
+    : issue.materialId
+      ? [{ materialId: issue.materialId, name: issue.name }]
+      : [];
+  if (!items.length) return false;
   return logs.some((log) => {
-    if (log?.taskId !== issue.taskId || log?.workDate !== date || !Array.isArray(log?.materials)) return false;
-    const have = new Set(log.materials.map(itemId));
-    return ids.every((id: string) => have.has(id));
+    if (log?.taskId !== issue.taskId || dayOf(log?.workDate) !== day || !Array.isArray(log?.materials)) return false;
+    // By id first; by name where the ids differ or are missing, because the
+    // retired server keyed items by whatever its session held, not always the
+    // inventory id the app writes.
+    const ids = new Set(log.materials.map(itemId).filter(Boolean));
+    const names = new Set(log.materials.map(itemName).filter(Boolean));
+    return items.every((m) => {
+      const id = itemId(m);
+      const name = itemName(m);
+      return (id && ids.has(id)) || (name && names.has(name));
+    });
   });
 }
 
