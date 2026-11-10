@@ -3,6 +3,7 @@ import { defineSecret } from "firebase-functions/params";
 import { db } from "../db";
 import { chargeAiUsage } from "./usage";
 import { CALLABLE_OPTS } from "../callable";
+import { AI_MAX_INSTANCES, requireOrgMember } from "./access";
 
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-1.5-flash"];
@@ -14,14 +15,17 @@ const norm = (s: any) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "")
 
 // Callable wrapper used by the web app's Scan Invoice flow.
 export const extractVendorInvoice = onCall(
-  { ...CALLABLE_OPTS, secrets: [GEMINI_API_KEY], timeoutSeconds: 120, memory: "512MiB" },
+  { ...CALLABLE_OPTS, secrets: [GEMINI_API_KEY], timeoutSeconds: 120, memory: "512MiB", maxInstances: AI_MAX_INSTANCES },
   async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
     const { orgId, projectId, fileBase64, mimeType } = request.data || {};
     if (!projectId || !fileBase64 || !mimeType) {
       throw new HttpsError("invalid-argument", "Missing file or project.");
     }
-    return await readAndMatchInvoice(fileBase64, mimeType, orgId, projectId, GEMINI_API_KEY.value());
+    // The org is the caller's claim; check it against the org's own members
+    // map before reading its vendors or charging its quota. See ai/access.ts.
+    const checked = await requireOrgMember(request.auth.uid, orgId);
+    return await readAndMatchInvoice(fileBase64, mimeType, checked, projectId, GEMINI_API_KEY.value());
   }
 );
 
