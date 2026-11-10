@@ -25,6 +25,7 @@ import { useTranslation } from "../i18n";
 import { demoRequested } from "../demo";
 import { demoInsights, DEMO_PROJECT_ID } from "@demo";
 import { AnalyticsTabs } from "./analytics/AnalyticsTabs";
+import { byTime } from "../lib/timeKey";
 
 /**
  * The figures the executive digest discusses, read straight from project data
@@ -233,7 +234,7 @@ export const ProjectInsights: React.FC<ProjectInsightsProps> = ({ projectId }) =
     const taskName = (id: string) => tasks.find((t) => t.id === id)?.name || "Unknown task";
 
     const recentLogs = [...dailyLogs]
-      .sort((a, b) => (b.workDate || "").localeCompare(a.workDate || ""))
+      .sort((a, b) => byTime(b.workDate, a.workDate))
       .slice(0, 40)
       .map((l: any) => ({
         date: l.workDate,

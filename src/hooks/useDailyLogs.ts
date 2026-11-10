@@ -8,6 +8,7 @@ import { runTransaction } from "firebase/firestore";
 import { getProjectSubCollectionPath } from "../utils/projectPath";
 import { demoRequested } from "../demo";
 import { demoCollections, DEMO_PROJECT_ID } from "@demo";
+import { byTime, newestLogFirst } from "../lib/timeKey";
 
 export const getTenantPath = (user: any, projectId: string, subPath: string) => {
   if (!user || !projectId) return null;
@@ -33,8 +34,7 @@ const demoLogs = (projectId: string): DailyLogEntry[] => {
   const rows = (demoCollections.dailyLogs ?? []) as DailyLogEntry[];
   return [...rows].sort(
     (a, b) =>
-      b.workDate.localeCompare(a.workDate) ||
-      (b.createdAt || "").localeCompare(a.createdAt || ""),
+      newestLogFirst(a, b),
   );
 };
 
@@ -64,7 +64,7 @@ export function useDailyLogsQuery(projectId: string, taskId: string) {
       );
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);
-      return items.sort((a,b) => b.workDate.localeCompare(a.workDate) || (b.createdAt || "").localeCompare(a.createdAt || ""));
+      return items.sort(newestLogFirst);
     },
     enabled: !!user && !!projectId && !!taskId,
   });
@@ -90,7 +90,7 @@ export function useProjectDailyLogsQuery(projectId: string, date?: string) {
 
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);
-      return items.sort((a,b) => b.workDate.localeCompare(a.workDate) || (b.createdAt || "").localeCompare(a.createdAt || ""));
+      return items.sort(newestLogFirst);
     },
     enabled: !!user && !!projectId,
   });
@@ -124,9 +124,9 @@ export function useDateRangeLogsQuery(projectId: string, startDate?: string, end
       const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);
       // Sort in memory to avoid needing a composite index
       return items.sort((a, b) => {
-        const dateDiff = b.workDate.localeCompare(a.workDate);
+        const dateDiff = byTime(b.workDate, a.workDate);
         if (dateDiff !== 0) return dateDiff;
-        return (b.createdAt || "").localeCompare(a.createdAt || "");
+        return byTime(b.createdAt, a.createdAt);
       });
     },
     enabled: !!user && !!projectId && !!startDate && !!endDate,

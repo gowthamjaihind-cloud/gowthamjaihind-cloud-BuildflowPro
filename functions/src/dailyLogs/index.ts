@@ -67,16 +67,16 @@ async function handleDailyLogRollup(
   let actualEnd: string | null = null;
   if (completingEntries.length > 0) {
     // Sort descending by workDate
-    const sortedCompletions = completingEntries.sort((a, b) => b.workDate.localeCompare(a.workDate));
+    const sortedCompletions = completingEntries.sort((a, b) => timeKey(b.workDate).localeCompare(timeKey(a.workDate)));
     actualEnd = sortedCompletions[0].workDate;
   }
 
   // 3. progress: latest workDate (tie-break createdAt desc)
   const sortedLogsDesc = [...allLogs].sort((a, b) => {
-    if (a.workDate !== b.workDate) {
-      return b.workDate.localeCompare(a.workDate);
-    }
-    return b.createdAt.localeCompare(a.createdAt);
+    // timeKey: some logs carry a Timestamp rather than an ISO string, and
+    // .localeCompare on one throws -- see src/lib/timeKey.ts.
+    return timeKey(b.workDate).localeCompare(timeKey(a.workDate)) ||
+      timeKey(b.createdAt).localeCompare(timeKey(a.createdAt));
   });
   const currentProgress = sortedLogsDesc[0].progressPercent;
 
@@ -221,3 +221,15 @@ export const onOrgDailyLogWritten = onDocumentWritten(
     await handleInventoryRollup(logsPath, inventoryPath, beforeData, afterData);
   }
 );
+
+/** ISO string for an ISO string or a Firestore Timestamp; mirrors src/lib/timeKey.ts. */
+function timeKey(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (v && typeof v === "object") {
+    const o = v as { toDate?: () => Date; seconds?: number; _seconds?: number };
+    if (typeof o.toDate === "function") return o.toDate().toISOString();
+    const s = o.seconds ?? o._seconds;
+    if (typeof s === "number") return new Date(s * 1000).toISOString();
+  }
+  return "";
+}
