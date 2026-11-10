@@ -62,6 +62,8 @@ export const whatsappWebhook = onRequest(
     region: "asia-southeast1",
     secrets: [WA_TOKEN, WA_PHONE_ID, WA_VERIFY_TOKEN, WA_APP_SECRET, GEMINI_API_KEY],
     cors: false,
+    // Reads invoices with Gemini; capped like the AI callables (ai/access.ts).
+    maxInstances: 10,
     minInstances: 0,
   },
   async (req, res) => {

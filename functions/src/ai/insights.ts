@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { chargeAiUsage, orgIdForUser } from "./usage";
+import { AI_MAX_INSTANCES, requireOrgMember } from "./access";
 import { CALLABLE_OPTS } from "../callable";
 
 // The Gemini API key lives in Secret Manager (never in the client bundle), so
@@ -27,7 +28,7 @@ interface Insights {
 // Region is left as the default (us-central1) to match the other callables the
 // web app already invokes via getFunctions(getApp()).
 export const generateProjectInsights = onCall(
-  { ...CALLABLE_OPTS, secrets: [GEMINI_API_KEY], timeoutSeconds: 120 },
+  { ...CALLABLE_OPTS, secrets: [GEMINI_API_KEY], timeoutSeconds: 120, maxInstances: AI_MAX_INSTANCES },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "You must be signed in.");
@@ -38,7 +39,9 @@ export const generateProjectInsights = onCall(
     }
 
     // Meter against the org's monthly AI quota (throws if exceeded).
-    await chargeAiUsage(await orgIdForUser(request.auth.uid), "insights");
+    // A user with no company used to be metered against nothing -- unlimited.
+    const orgId = await requireOrgMember(request.auth.uid, await orgIdForUser(request.auth.uid));
+    await chargeAiUsage(orgId, "insights");
 
     const prompt = buildPrompt(brief);
     const { text, model } = await callGemini(prompt, GEMINI_API_KEY.value());

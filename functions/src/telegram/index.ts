@@ -50,6 +50,8 @@ export const telegramWebhook = onRequest({
     region: "asia-southeast1",
     secrets: [BOT_TOKEN, WEBHOOK_SECRET, GEMINI_API_KEY],
     cors: false,
+    // Reads invoices with Gemini; capped like the AI callables (ai/access.ts).
+    maxInstances: 10,
     // No warm instance kept here: the handler now does its work before
     // responding (see below), so it finishes in ~1-2s once running. A cold
     // start only adds ~3s to the very first message after a long idle spell,
