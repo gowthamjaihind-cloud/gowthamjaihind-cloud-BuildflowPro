@@ -41,7 +41,10 @@ const genCode = () => randomBytes(6).toString("hex").toUpperCase();
 
 function assertSuperAdmin(request: any) {
   const email = String(request.auth?.token?.email || "").toLowerCase();
-  if (!request.auth || !SUPER_ADMINS.includes(email)) {
+  // email_verified too: the operator panel holds the live Razorpay keys, and
+  // an address alone is only as strong as the weakest sign-in provider that
+  // can assert it.
+  if (!request.auth || !SUPER_ADMINS.includes(email) || request.auth.token?.email_verified !== true) {
     throw new HttpsError("permission-denied", "Operator access required.");
   }
 }

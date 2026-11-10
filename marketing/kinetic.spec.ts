@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { layout } from "./kinetic-timeline";
 import { crop, focusAt, WIN_H, WIN_W } from "./kinetic-camera";
 import { effectEvents, readGrid } from "./films/kinetic.mjs";
+import { TALL, TALL_SAFE, WIDE, tallCamera } from "./kinetic-format";
 
 /**
  * Checks on the kinetic cut that a render cannot make for you.
@@ -428,5 +429,50 @@ describe("the composition", () => {
     const secs = Math.round(KINETIC_SECONDS);
     expect(hero).toContain(`Watch · ${secs} seconds`);
     expect(hero).toContain(`${secs} seconds, with sound`);
+  });
+});
+
+describe("the tall cut", () => {
+  const screens = TIMELINE.filter((s) => s.kind === "screen");
+  const win = TALL.win("right");
+
+  it("keeps the wide cut's geometry exactly where it was", () => {
+    // The landing-page hero must not move because a phone cut exists.
+    expect(WIDE.win("right")).toEqual({ left: 650, top: 140, width: WIN_W, height: WIN_H });
+    expect(WIDE.win("left").left).toBe(70);
+  });
+
+  it("puts everything that must be read inside the Reels/Shorts safe area", () => {
+    const text = TALL.text("left");
+    expect(text.top).toBeGreaterThanOrEqual(TALL_SAFE.top);
+    expect(text.left + text.width).toBeLessThanOrEqual(TALL_SAFE.right);
+    expect(win.top).toBeGreaterThanOrEqual(text.top + text.height);
+    expect(win.top + win.height).toBeLessThanOrEqual(TALL_SAFE.bottom);
+    expect(win.left + win.width).toBeLessThanOrEqual(TALL_SAFE.right);
+    for (const p of TALL.phones) expect(p.top + p.height).toBeLessThanOrEqual(TALL_SAFE.bottom);
+  });
+
+  it("has every spotlight inside the window when it lands", () => {
+    for (const s of screens) {
+      const keys = tallCamera(s.marks ?? [], win, { w: 3200, h: 2000 });
+      for (const m of s.marks ?? []) {
+        const c = crop(focusAt(keys, m.at + 16), win.width, win.height, 3200, 2000);
+        const left = -c.left / c.scale;
+        const top = -c.top / c.scale;
+        const where = `${s.id} mark @${m.at}`;
+        expect(m.x, where).toBeGreaterThanOrEqual(left - 1);
+        expect(m.y, where).toBeGreaterThanOrEqual(top - 1);
+        expect(m.x + m.w, where).toBeLessThanOrEqual(left + win.width / c.scale + 1);
+        expect(m.y + m.h, where).toBeLessThanOrEqual(top + win.height / c.scale + 1);
+      }
+    }
+  });
+
+  it("lands the camera on each mark by the time its sound plays, and finishes before the scene leaves", () => {
+    for (const s of screens) {
+      const keys = tallCamera(s.marks ?? [], win, { w: 3200, h: 2000 });
+      for (let i = 1; i < keys.length; i++) expect(keys[i].at).toBeGreaterThanOrEqual(keys[i - 1].at);
+      expect(keys[keys.length - 1].at, s.id).toBeLessThanOrEqual(s.dur - HALF);
+    }
   });
 });

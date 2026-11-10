@@ -3,8 +3,21 @@ import { Img, staticFile } from "remotion";
 import { SRC_H, SRC_W } from "../theme";
 import { arrive, ramp, smooth } from "../film/Cinema";
 import { crop, focusAt, project, spotlightAt, WIN_H, WIN_TOP, WIN_W, winLeft } from "../../../kinetic-camera";
+import { tallCamera, type Format } from "../../../kinetic-format";
+import { useFormat } from "./format";
 import type { CameraKey, MarkRect, Placed } from "./grid";
 import { T } from "./palette";
+
+/**
+ * The camera a screen scene uses in this format: film.json's hand-set keys in
+ * the wide cut, keys derived from the marks in the tall one (kinetic-format.ts
+ * says why).
+ */
+export function cameraFor(fmt: Format, side: "left" | "right", camera: CameraKey[], marks: MarkRect[]): CameraKey[] {
+  if (fmt.id === "wide") return camera;
+  const r = fmt.win(side);
+  return tallCamera(marks, r, { w: SRC_W, h: SRC_H });
+}
 
 /**
  * The window a screen sits in, and the phones the Telegram scene uses.
@@ -91,12 +104,16 @@ export const Window: React.FC<{
   camera: CameraKey[];
   marks: MarkRect[];
 }> = ({ t, side, src, camera, marks }) => {
-  const f = focusAt(camera, t);
-  const c = crop(f, WIN_W, WIN_H, SRC_W, SRC_H);
+  const fmt = useFormat();
+  const r = fmt.win(side);
+  const f = focusAt(cameraFor(fmt, side, camera, marks), t);
+  const c = crop(f, r.width, r.height, SRC_W, SRC_H);
   // The window starts turned toward the explainer and straightens as the camera
   // pushes in -- it settles at the moment there is something to read in it.
+  // In the tall cut the explainer is ABOVE, so it tips back from it instead.
   const settle = ramp(t, [0, 70], smooth);
-  const turn = (side === "right" ? -1 : 1) * (7 - 5 * settle);
+  const turn = fmt.id === "tall" ? 0 : (side === "right" ? -1 : 1) * (7 - 5 * settle);
+  const tip = fmt.id === "tall" ? 6 - 5 * settle : 0;
   // A drift so a held frame is never wholly still.
   const drift = Math.sin(t / 38) * 4;
 
@@ -104,12 +121,12 @@ export const Window: React.FC<{
     <div
       style={{
         position: "absolute",
-        left: winLeft(side),
-        top: WIN_TOP,
-        width: WIN_W,
-        height: WIN_H,
-        transform: `perspective(2400px) rotateY(${turn.toFixed(3)}deg) translateY(${drift.toFixed(2)}px)`,
-        transformOrigin: side === "right" ? "0% 50%" : "100% 50%",
+        left: r.left,
+        top: r.top,
+        width: r.width,
+        height: r.height,
+        transform: `perspective(2400px) rotateY(${turn.toFixed(3)}deg) rotateX(${tip.toFixed(3)}deg) translateY(${drift.toFixed(2)}px)`,
+        transformOrigin: fmt.id === "tall" ? "50% 0%" : side === "right" ? "0% 50%" : "100% 50%",
       }}
     >
       <div
@@ -133,7 +150,7 @@ export const Window: React.FC<{
             height: SRC_H * c.scale,
           }}
         />
-        <Spotlight marks={marks} t={t} toView={(r) => project(r, c)} w={WIN_W} h={WIN_H} />
+        <Spotlight marks={marks} t={t} toView={(m) => project(m, c)} w={r.width} h={r.height} />
       </div>
     </div>
   );
@@ -147,17 +164,13 @@ export const Window: React.FC<{
  * frame is a device the film would be inventing; a rounded card with a shadow is
  * a presentation of a screenshot, which is all this is.
  */
-const PHONES = [
-  // [left, top, height, srcW, srcH, depth]
-  { left: 700, top: 236, height: 620, sw: 1320, sh: 1330, depth: 1 },
-  { left: 1220, top: 150, height: 560, sw: 1320, sh: 1290, depth: 0.82 },
-];
-
 export const Phones: React.FC<{ t: number; images: string[]; marks: MarkRect[] }> = ({
   t,
   images,
   marks,
-}) => (
+}) => {
+  const PHONES = useFormat().phones;
+  return (
   <>
     {/* Back card first, so the front one overlaps it. */}
     {[1, 0].map((i) => {
@@ -212,7 +225,8 @@ export const Phones: React.FC<{ t: number; images: string[]; marks: MarkRect[] }
       );
     })}
   </>
-);
+  );
+};
 
 /**
  * Where a scene's LAST highlight sits on the frame when the scene ends.
@@ -224,19 +238,20 @@ export const Phones: React.FC<{ t: number; images: string[]; marks: MarkRect[] }
  * time a phone card moved by ten pixels. The window's small turn and drift are
  * ignored -- a few pixels at the centre of a circle that covers the frame.
  */
-export function anchorOf(s: Placed | undefined): [number, number] | undefined {
+export function anchorOf(s: Placed | undefined, fmt: Format): [number, number] | undefined {
   if (!s?.marks?.length) return undefined;
   const m = s.marks[s.marks.length - 1];
   if (s.kind === "phones") {
-    const p = PHONES[m.image ?? 0];
+    const p = fmt.phones[m.image ?? 0];
     const k = p.height / p.sh;
     return [p.left + (m.x + m.w / 2) * k, p.top + (m.y + m.h / 2) * k];
   }
   if (s.kind === "screen" && s.camera?.length) {
     const side = (s.chapter ?? 1) % 2 === 1 ? "right" : "left";
-    const c = crop(focusAt(s.camera, s.dur), WIN_W, WIN_H, SRC_W, SRC_H);
+    const w = fmt.win(side);
+    const c = crop(focusAt(cameraFor(fmt, side, s.camera, s.marks), s.dur), w.width, w.height, SRC_W, SRC_H);
     const r = project(m, c);
-    return [winLeft(side) + r.x + r.w / 2, WIN_TOP + r.y + r.h / 2];
+    return [w.left + r.x + r.w / 2, w.top + r.y + r.h / 2];
   }
   return undefined;
 }

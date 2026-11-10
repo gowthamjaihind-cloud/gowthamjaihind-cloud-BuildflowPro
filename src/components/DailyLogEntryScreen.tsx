@@ -35,6 +35,7 @@ import { compressImage } from "../utils/imageCompressor";
 import { useTranslation } from "../i18n";
 import { toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
+import { newestLogFirst } from "../lib/timeKey";
 
 interface DailyLogEntryScreenProps {
   projectId: string;
@@ -131,8 +132,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
   );
 
   const latestLog = [...existingLogs].sort((a, b) => {
-    if (a.workDate !== b.workDate) return b.workDate.localeCompare(a.workDate);
-    return b.createdAt.localeCompare(a.createdAt);
+    return newestLogFirst(a, b);
   })[0];
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

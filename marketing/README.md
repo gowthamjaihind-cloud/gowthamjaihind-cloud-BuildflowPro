@@ -694,3 +694,15 @@ Playwright moves a real mouse but paints no pointer, so a raw recording looks
 like the UI is operating itself. The runner draws a cursor, glides it with
 easing, and pings a ring on each click. Scrolling is eased for the same reason:
 a jump cut mid-page reads as a glitch.
+
+### The tall (9:16) cut for Reels, Shorts and WhatsApp Status
+
+`node marketing/films/kinetic.mjs --vertical` (after a full build) renders the
+`KineticVertical` composition and muxes both existing mixes onto it:
+`out/sitetru-kinetic-vertical.mp4` (narrated) and
+`out/sitetru-kinetic-vertical-music.mp4` (music + effects). It is the same
+timeline frame for frame, so every bell still lands on its spotlight. The
+geometry lives in `marketing/kinetic-format.ts`: explainer stacked above the
+screen, everything readable inside the Reels/Shorts safe area (y 250-1560, clear
+of the right-hand button column), and the screen's camera derived from each
+scene's marks so it frames one spotlight at a time in the near-square window.

@@ -48,6 +48,7 @@ import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
 import { SkeletonRows } from "./Skeleton";
 import { DialogBehaviour } from "../lib/useDialog";
+import { newestLogFirst, timeKey } from "../lib/timeKey";
 
 interface ProgressReportsViewProps {
   projectId: string;
@@ -160,7 +161,9 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             taskId: issue.taskId,
             projectId: issue.projectId,
             workDate: issueDate,
-            createdAt: issue.createdAt || issueDate,
+            // Material issues are written with serverTimestamp(), so this is
+            // a Timestamp, not the ISO string a DailyLogEntry carries.
+            createdAt: timeKey(issue.createdAt) || issueDate,
             createdByUid: "",
             createdByName: "System (Procurement)",
             progressPercent: 0,
@@ -197,11 +200,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       }
     });
 
-    combinedLogs.sort(
-      (a, b) =>
-        b.workDate.localeCompare(a.workDate) ||
-        (b.createdAt || "").localeCompare(a.createdAt || ""),
-    );
+    combinedLogs.sort(newestLogFirst);
     return combinedLogs;
   }, [rawLogs, allMaterialIssues, allLaborLogs, startDate, endDate]);
 
@@ -330,8 +329,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       // get earliest and latest progress for this task in the window
       const sorted = [...tLogs].sort(
         (a, b) =>
-          a.workDate.localeCompare(b.workDate) ||
-          a.createdAt.localeCompare(b.createdAt),
+          newestLogFirst(b, a),
       );
       const first = sorted[0];
       const last = sorted[sorted.length - 1];
@@ -552,11 +550,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
               {Array.from(logsByTask.entries()).map(([taskId, tLogs]) => {
                 const task = tasks.find((t) => t.id === taskId);
                 const sortedLogs = [...tLogs].sort(
-                  (a, b) =>
-                    b.workDate.localeCompare(a.workDate) ||
-                    String(b.createdAt || "").localeCompare(
-                      String(a.createdAt || ""),
-                    ),
+                  newestLogFirst,
                 );
                 const latestLog =
                   sortedLogs.find(

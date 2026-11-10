@@ -6,6 +6,8 @@ import { FEATURES, HALF, KINETIC_FRAMES, Placed, TIMELINE, TRANSITION } from "./
 import { T } from "./palette";
 import { anchorOf, Phones, Window } from "./Stage";
 import { Title } from "./Title";
+import { FormatProvider, useFormat } from "./format";
+import { TALL, WIDE, type Format } from "../../../kinetic-format";
 import { enterStyle, exitStyle } from "./transitions";
 
 /**
@@ -37,8 +39,6 @@ import { enterStyle, exitStyle } from "./transitions";
  * headless tabs race its delayRender past the 30s default.
  */
 
-const W = 1920;
-const H = 1080;
 
 /** A window on the right is entered from the right, and so on. */
 const windowSide = (s: Placed): "left" | "right" => ((s.chapter ?? 1) % 2 === 1 ? "right" : "left");
@@ -62,12 +62,15 @@ const IrisRing: React.FC<{ x: number; y: number; r: number; p: number }> = ({ x,
 
 const SceneLayer: React.FC<{ s: Placed; lead: number }> = ({ s, lead }) => {
   const frame = useCurrentFrame();
+  const fmt = useFormat();
+  const W = fmt.W;
+  const H = fmt.H;
   const t = frame - lead;
   const next = TIMELINE[s.index + 1];
 
   const pIn = s.index === 0 ? 1 : (t + HALF) / TRANSITION;
   const pOut = next ? (t - (s.dur - HALF)) / TRANSITION : 0;
-  const from = s.irisFrom ?? anchorOf(TIMELINE[s.index - 1]);
+  const from = s.irisFrom ?? anchorOf(TIMELINE[s.index - 1], fmt);
   const enter = enterStyle(s.enter, pIn, { dir: dirOf(s), width: W, height: H, from });
   const exit = exitStyle(s.exit, pOut, { dir: dirOf(next), width: W });
 
@@ -136,6 +139,8 @@ const Backdrop: React.FC = () => {
  */
 const Chapters: React.FC = () => {
   const f = useCurrentFrame();
+  const fmt = useFormat();
+  const seg = fmt.id === "tall" ? 88 : 64;
   const feats = TIMELINE.filter((s) => s.kind !== "title");
   const first = feats[0];
   const last = feats[feats.length - 1];
@@ -152,7 +157,7 @@ const Chapters: React.FC = () => {
         position: "absolute",
         left: 0,
         right: 0,
-        bottom: 54,
+        bottom: fmt.chaptersBottom,
         display: "flex",
         justifyContent: "center",
         gap: 10,
@@ -163,7 +168,7 @@ const Chapters: React.FC = () => {
       {feats.map((s) => {
         const fill = Math.min(Math.max((f - s.start) / s.dur, 0), 1);
         return (
-          <div key={s.id} style={{ width: 64, height: 5, borderRadius: 3, background: "rgba(15,23,42,0.10)", overflow: "hidden" }}>
+          <div key={s.id} style={{ width: seg, height: fmt.id === "tall" ? 6 : 5, borderRadius: 3, background: "rgba(15,23,42,0.10)", overflow: "hidden" }}>
             <div style={{ width: `${(fill * 100).toFixed(2)}%`, height: "100%", background: T.accent }} />
           </div>
         );
@@ -172,7 +177,8 @@ const Chapters: React.FC = () => {
   );
 };
 
-export const Kinetic: React.FC = () => (
+const Film: React.FC<{ format: Format }> = ({ format }) => (
+  <FormatProvider format={format}>
   <AbsoluteFill style={{ backgroundColor: T.ground, ...typeStyle }}>
     <Fonts />
     <Backdrop />
@@ -187,6 +193,16 @@ export const Kinetic: React.FC = () => (
     })}
     <Chapters />
   </AbsoluteFill>
+  </FormatProvider>
 );
+
+export const Kinetic: React.FC = () => <Film format={WIDE} />;
+
+/**
+ * The same film, 1080 x 1920, for Reels, Shorts and WhatsApp Status. Same
+ * timeline frame for frame, so the music-only mix built for the wide cut is
+ * the soundtrack of this one too: every bell is still on its spotlight.
+ */
+export const KineticVertical: React.FC = () => <Film format={TALL} />;
 
 export { KINETIC_FRAMES };
