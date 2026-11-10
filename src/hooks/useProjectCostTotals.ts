@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Task, CostEntry, InventoryItem, DailyLaborLog } from "../types";
 import { useProjectDataQuery } from "./queries";
 import { round2 } from "../utils/num";
+import { standaloneIssues } from "../lib/dailyLogIssues";
 
 export const useProjectCostTotals = (projectId: string) => {
   const { data: entries = [] } = useProjectDataQuery<CostEntry>(projectId, "costs");
@@ -129,8 +130,8 @@ export const useProjectCostTotals = (projectId: string) => {
             }, 0)
           );
         }, 0);
-        const issueMat = materialIssues
-          .filter((iss: any) => iss.taskId === taskId && !iss.remarks?.startsWith("Daily Progress") && !iss.notes?.startsWith("Daily Progress"))
+        const issueMat = standaloneIssues(materialIssues, dailyLogs)
+          .filter((iss: any) => iss.taskId === taskId)
           .reduce((sum: number, iss: any) => {
             if (iss.items && Array.isArray(iss.items)) {
               return sum + iss.items.reduce((s: number, it: any) => s + (it.totalPrice || 0), 0);

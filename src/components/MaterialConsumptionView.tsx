@@ -27,6 +27,7 @@ import {
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
 import { SkeletonCards, SkeletonRows } from "./Skeleton";
+import { standaloneIssues } from "../lib/dailyLogIssues";
 
 interface MaterialConsumptionViewProps {
   projectId: string;
@@ -91,8 +92,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   // Derive all consumption records from issues and logs
   const allRecords = useMemo(() => {
     let records: any[] = [];
-    allIssues
-      .filter((issue) => !issue.remarks?.startsWith("Daily Progress") && !issue.notes?.startsWith("Daily Progress"))
+    standaloneIssues(allIssues, allLogs)
       .forEach((issue) => {
         if (issue.items && Array.isArray(issue.items)) {
           issue.items.forEach((m) => {
