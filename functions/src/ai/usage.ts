@@ -64,3 +64,34 @@ export async function chargeAiUsage(
     );
   });
 }
+
+/**
+ * Give back one unit charged by chargeAiUsage, when the AI call it paid for
+ * failed. The charge happens BEFORE the call so concurrent calls cannot slip
+ * past the cap; without this, every Gemini overload cost the customer a unit
+ * of their monthly allowance for a scan they never got. Never goes below 0.
+ */
+export async function refundAiUsage(orgId: string | undefined, kind: string, count = 1): Promise<void> {
+  if (!orgId) return;
+  const usageRef = db.doc(`organizations/${orgId}/usage/${monthKey()}`);
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(usageRef);
+      if (!snap.exists) return;
+      const data: any = snap.data();
+      const byKind = data.byKind || {};
+      tx.set(
+        usageRef,
+        {
+          aiCalls: Math.max(0, (Number(data.aiCalls) || 0) - count),
+          byKind: { ...byKind, [kind]: Math.max(0, (Number(byKind[kind]) || 0) - count) },
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
+    });
+  } catch (e) {
+    // A failed refund must not mask the error the customer needs to see.
+    console.error("AI usage refund failed", orgId, kind, e);
+  }
+}

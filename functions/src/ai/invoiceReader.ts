@@ -1,12 +1,12 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { db } from "../db";
-import { chargeAiUsage } from "./usage";
+import { chargeAiUsage, refundAiUsage } from "./usage";
+import { geminiText } from "./gemini";
 import { CALLABLE_OPTS } from "../callable";
 import { AI_MAX_INSTANCES, requireOrgMember } from "./access";
 
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
-const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-1.5-flash"];
 
 const projPath = (orgId?: string, projectId?: string) =>
   orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -53,7 +53,15 @@ export async function readAndMatchInvoice(
     companyState = org.exists ? org.data()!.stateCode || companyGstin.slice(0, 2) : "";
   }
 
-  const raw = await callGeminiVision(fileBase64, mimeType, key);
+  let raw: any;
+  try {
+    raw = await callGeminiVision(fileBase64, mimeType, key);
+  } catch (e) {
+    // The scan was charged up front (so concurrent scans cannot pass the cap);
+    // one that produced nothing is given back.
+    await refundAiUsage(orgId, "invoice_scan");
+    throw e;
+  }
 
   // ---- match vendor ----
   const vendorsSnap = await db.collection(`${base}/suppliers`).get();
@@ -244,23 +252,14 @@ async function callGeminiJSON(prompt: string, key: string): Promise<any> {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig: { temperature: 0, responseMimeType: "application/json" },
   };
-  for (const model of MODELS) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
-    let res: Response;
-    try {
-      res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    } catch { continue; }
-    if (res.status === 404) continue;
-    if (!res.ok) throw new Error(`gemini ${res.status}`);
-    const data: any = await res.json();
-    const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) continue;
-    try { return JSON.parse(text); } catch {
-      const m = text.match(/[[{][\s\S]*[\]}]/);
-      if (m) return JSON.parse(m[0]);
-    }
+  // A short budget: the caller falls back to token matching if this fails, so
+  // it must not eat the time the invoice read itself needs.
+  const { text } = await geminiText(body, key, 15_000);
+  try { return JSON.parse(text); } catch {
+    const m = text.match(/[[{][\s\S]*[\]}]/);
+    if (m) return JSON.parse(m[0]);
+    throw new Error("unparseable line match");
   }
-  throw new Error("no model for line match");
 }
 
 const sum = (a: number[]) => a.reduce((x, y) => x + (y || 0), 0);
@@ -290,27 +289,11 @@ async function callGeminiVision(fileBase64: string, mimeType: string, key: strin
     generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
   };
 
-  let lastErr = "no models tried";
-  for (const model of MODELS) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
-    let res: Response;
-    try {
-      res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    } catch (e) { lastErr = `network ${e}`; continue; }
-    if (res.status === 404) { lastErr = `model ${model} unavailable`; continue; }
-    if (!res.ok) {
-      const b = await res.text().catch(() => "");
-      throw new HttpsError("internal", `AI service error (${res.status}): ${b.slice(0, 200)}`);
-    }
-    const data: any = await res.json();
-    const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) { lastErr = `empty from ${model}`; continue; }
-    try { return JSON.parse(text); }
-    catch {
-      const m = text.match(/\{[\s\S]*\}/);
-      if (m) return JSON.parse(m[0]);
-      lastErr = "unparseable";
-    }
+  const { text } = await geminiText(body, key);
+  try { return JSON.parse(text); }
+  catch {
+    const m = text.match(/\{[\s\S]*\}/);
+    if (m) return JSON.parse(m[0]);
+    throw new HttpsError("internal", "Couldn't read the invoice. Try a clearer photo or PDF.");
   }
-  throw new HttpsError("internal", `Could not read the invoice (${lastErr}).`);
 }
