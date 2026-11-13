@@ -109,8 +109,7 @@ export const applyScheduledPlanChanges = onSchedule(
         continue;
       }
       try {
-        // Capacity resets to the target plan; no project is ever deleted — an
-        // org over the new cap simply pays per-project overage.
+        // Capacity resets to the target plan; no project is ever deleted.
         // Capacity only. planPatch(target, 1) would set `active` and push
         // currentPeriodEnd a month out, handing over a free month nobody paid
         // for. The period the customer bought has already ended -- that is why
@@ -121,6 +120,9 @@ export const applyScheduledPlanChanges = onSchedule(
           { ...planCapacityPatch(target as PlanId), pendingPlanChange: FieldValue.delete() },
           { merge: true },
         );
+        // The smaller plan's project limit takes effect now: the newest
+        // projects past it become read-only until subscribed individually.
+        await refreshSlotSummary(orgDoc.id);
         applied++;
       } catch (e) {
         captureError(e, { where: "applyScheduledPlanChanges", orgId: orgDoc.id });

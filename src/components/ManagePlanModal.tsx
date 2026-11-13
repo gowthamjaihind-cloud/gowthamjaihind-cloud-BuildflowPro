@@ -53,7 +53,7 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
     const when = fmtDate(plan.currentPeriodEnd) || "the end of your current cycle";
     const overMsg =
       over > 0
-        ? `\n\nYou have ${projects.length} projects; ${PLANS[id].name} includes ${cap}. The ${over} extra will be billed at ₹${plan.overageRate}/project/mo — no projects are deleted.`
+        ? `\n\nYou have ${projects.length} projects; ${PLANS[id].name} includes ${cap}. Your oldest ${cap === 1 ? "project stays" : `${cap} projects stay`} open. The ${over} newest will become read-only: you can still view and export ${over === 1 ? "it" : "them"}, and re-open any of them for ₹${plan.overageRate}/month each. No projects are deleted.`
         : "";
     const ok = (await confirmDialog({ title: `Switch to ${PLANS[id].name} on ${when}? You keep your current plan until then.${overMsg}`, }));
     if (!ok) return;

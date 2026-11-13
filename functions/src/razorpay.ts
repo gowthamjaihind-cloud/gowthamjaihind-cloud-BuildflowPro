@@ -4,7 +4,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import * as crypto from "crypto";
 import { db } from "./db";
 import { subscriptionPatch, planCacheKey, rzpPeriod, totalCycles } from "./rzpSubscription";
-import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE, slotPurchasePatch, prorateUpgrade, addGst, GST_RATE_PCT } from "./plans";
+import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE, slotPurchasePatch, prorateUpgrade, effectiveProjectCap, addGst, GST_RATE_PCT } from "./plans";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
 import { slotSubAfterEvent } from "./slotSubs";
@@ -271,6 +271,11 @@ async function applySubscriptionEvent(name: string, entity: any): Promise<void> 
     { subscriptionId: subId, orgId, status: entity?.status || null, lastEvent: name, lastReason: other && fields.subscriptionStatus !== "active" ? `${reason} (not the workspace's subscription; ignored)` : reason, updatedAt: new Date().toISOString() },
     { merge: true },
   );
+  // A plan change moves the project limit: lock or release projects to match,
+  // and stop extra-project subscriptions the plan now covers.
+  if (fields.subscriptionStatus === "active") {
+    await cancelUnneededSlots(orgId).catch((e) => captureError(e, { where: "cancelUnneededSlots", orgId }));
+  }
 }
 
 /**
@@ -473,6 +478,34 @@ async function ensureSlotPlan(cfg: RzpConfig, ratePerSlot: number, tax: { gstin:
 export { refreshSlotSummary };
 
 /**
+ * Stop slot subscriptions a bigger plan has made unnecessary.
+ *
+ * After an upgrade the plan itself has room for the projects those ₹99
+ * subscriptions were paying for; left alone they would keep renewing for
+ * nothing, and the customer would only find out from a bank statement.
+ * Each is stopped at the end of the month already paid for. Safe to call any
+ * time: it does nothing unless the plan has room AND a subscription is empty.
+ */
+export async function cancelUnneededSlots(orgId: string): Promise<number> {
+  const { unneeded } = await refreshSlotSummary(orgId);
+  if (!unneeded.length) return 0;
+  const orgRef = db.doc(`organizations/${orgId}`);
+  const org: any = (await orgRef.get()).data() || {};
+  const patch: Record<string, any> = {};
+  for (const id of unneeded) {
+    const existing = (org.slotSubs || {})[id];
+    if (existing && (await cancelRazorpaySubscription(id))) {
+      patch[id] = { ...existing, status: "cancelling", autoCancelled: true };
+      await db.doc(`razorpay_subscriptions/${id}`).set({ cancelRequestedAt: Date.now(), cancelRequestedBy: "plan-upgrade" }, { merge: true });
+    }
+  }
+  if (!Object.keys(patch).length) return 0;
+  await orgRef.set({ slotSubs: patch }, { merge: true });
+  await refreshSlotSummary(orgId);
+  return Object.keys(patch).length;
+}
+
+/**
  * Start a RECURRING subscription for extra project slots (slotSubs.ts says why
  * it is separate from the plan's). The quantity is fixed here, at creation,
  * which every payment method allows; it is never updated afterwards.
@@ -503,6 +536,16 @@ export const createSlotSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds:
   // locked out of the day the trial ends.
   if (org.subscriptionStatus !== "active") {
     throw new HttpsError("failed-precondition", "Subscribe to your plan first, then add extra projects.");
+  }
+  // Do not sell capacity the plan already has. (Re-opening one named locked
+  // project is different: that project is past the limit by definition.)
+  if (!String(request.data?.projectId || "").trim()) {
+    const capNow = effectiveProjectCap(org);
+    const used = Number(org.projectCount) || 0;
+    if (typeof capNow === "number" && used < capNow) {
+      const spare = capNow - used;
+      throw new HttpsError("failed-precondition", `Your plan still has room for ${spare} more project${spare === 1 ? "" : "s"}. You don't need to pay for another one yet.`);
+    }
   }
   // Re-subscribing a locked project: the new subscription is for THAT project.
   const forProjectId = String(request.data?.projectId || "").trim();
@@ -794,6 +837,7 @@ async function activateOrgFromOrder(orderId: string): Promise<boolean> {
     );
   }
   await orderRef.set({ status: "paid", paidAt: new Date().toISOString() }, { merge: true });
+  await cancelUnneededSlots(o.orgId).catch((e) => captureError(e, { where: "cancelUnneededSlots", orgId: o.orgId }));
   return true;
 }
 
