@@ -355,6 +355,11 @@ export const PortfolioPage: React.FC = () => {
                       ? t(`status.${project.status.replace(/\s+/g, "").replace(/^./, (c) => c.toLowerCase())}`)
                       : t("status.planning")}
                   </span>
+                  {project.billingLocked && (
+                    <span className="absolute top-3 left-3 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest bg-surface-dark text-white">
+                      {"Read-only"}
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -383,6 +388,11 @@ export const PortfolioPage: React.FC = () => {
                   )}
 
                   <div className={`flex items-center gap-1 ${project.imageUrl ? "ml-auto" : "ml-auto"}`}>
+                    {!project.imageUrl && project.billingLocked && (
+                      <span className="text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest mr-1 bg-surface-dark text-white">
+                        {"Read-only"}
+                      </span>
+                    )}
                     {!project.imageUrl && (
                       <span
                         className={`text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest mr-1 ${statusPillClasses(

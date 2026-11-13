@@ -57,13 +57,20 @@ export interface SlotSubView {
   /** Epoch ms: end of the month already paid for. */
   until: number;
   status: string;
+  /** The projects this subscription pays for (set by the server). */
+  projectIds: string[];
+}
+
+/** Projects that count toward the plan's limit: a locked one is not being paid for. */
+export function billableProjectCount(projects: Array<{ billingLocked?: boolean }>): number {
+  return projects.filter((p) => !p.billingLocked).length;
 }
 
 /** Slot subscriptions whose capacity is in force (server copy: slotSubs.ts). */
 export function liveSlotSubs(org: any, now = Date.now()): SlotSubView[] {
   const m = org?.slotSubs && typeof org.slotSubs === "object" ? org.slotSubs : {};
   return Object.entries(m)
-    .map(([id, s]: [string, any]) => ({ id, qty: Math.floor(Number(s?.qty) || 0), until: Number(s?.until) || 0, status: String(s?.status || "") }))
+    .map(([id, s]: [string, any]) => ({ id, qty: Math.floor(Number(s?.qty) || 0), until: Number(s?.until) || 0, status: String(s?.status || ""), projectIds: Array.isArray(s?.projectIds) ? s.projectIds.map(String) : [] }))
     .filter((s) => {
       if (s.qty <= 0 || s.until <= 0) return false;
       const grace = s.status === "cancelled" || s.status === "cancelling" ? 0 : SLOT_GRACE_MS;

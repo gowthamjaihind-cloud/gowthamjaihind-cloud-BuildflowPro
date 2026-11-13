@@ -292,7 +292,7 @@ export const callCreateSlotOrder = async (args: { quantity: number; orgId?: stri
 
 // Extra project slots as a RECURRING subscription (₹99 each a month), separate
 // from the plan's. See functions/src/slotSubs.ts for why it is separate.
-export const callCreateSlotSubscription = async (args: { quantity: number; orgId?: string }) => {
+export const callCreateSlotSubscription = async (args: { quantity: number; orgId?: string; projectId?: string }) => {
   const fn = httpsCallable<typeof args, { subscriptionId: string; keyId: string; quantity: number; amount: number }>(
     getFunctionsInstance(), 'createSlotSubscription');
   const res = await fn(args);

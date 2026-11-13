@@ -38,7 +38,7 @@ export interface OrgPlan {
   purchasedSlots?: number;
   slotsExpireAt?: number;
   /** Recurring slot subscriptions, keyed by Razorpay subscription id. */
-  slotSubs?: Record<string, { qty: number; until: number; status: string }>;
+  slotSubs?: Record<string, { qty: number; until: number; status: string; projectIds?: string[] }>;
 }
 
 // Realtime plan/capacity for the signed-in user's current org. Absent

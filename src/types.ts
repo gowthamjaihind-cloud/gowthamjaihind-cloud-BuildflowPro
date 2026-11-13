@@ -13,6 +13,9 @@ export interface Project {
   imageUrl?: string;
   strictDataEntry?: boolean;
   orgId?: string;
+  /** Set by the billing functions when the monthly subscription that pays for
+   *  this project has ended. The project is read-only until re-subscribed. */
+  billingLocked?: boolean;
 }
 
 export type UserRole =
