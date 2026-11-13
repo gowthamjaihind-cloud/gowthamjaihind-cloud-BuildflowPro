@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Stack, Copy, Check, Plus, SlidersHorizontal, CalendarCheck, WarningCircle } from "@phosphor-icons/react";
 import { usePlan } from "../../hooks/usePlan";
 import { useProjectsQuery } from "../../hooks/queries";
@@ -9,6 +9,7 @@ import { ManagePlanModal } from "../ManagePlanModal";
 import { Tooltip } from "../Tooltip";
 import {
   callCancelSlotSubscription,
+  callConfirmSubscription,
   callCancelSubscription,
   callResumeSubscription,
   callGetBillingHistory,
@@ -31,6 +32,14 @@ export const PlanSummary: React.FC = () => {
   // Declared with the other state, above the early returns: hooks must run in
   // the same order on every render.
   const [slotBusy, setSlotBusy] = useState<string | null>(null);
+  // A payment whose webhook was late or lost leaves a paid workspace reading
+  // "not subscribed". Opening Settings asks the server to check with Razorpay.
+  // Owners and Admins only; it is a no-op for a workspace with nothing pending.
+  const unpaid = !!orgId && !!plan.subscriptionStatus && plan.subscriptionStatus !== "active";
+  const canManage = role === "Owner" || role === "Admin";
+  useEffect(() => {
+    if (unpaid && canManage) callConfirmSubscription().catch(() => {});
+  }, [unpaid, canManage, orgId]);
   const [copied, setCopied] = useState(false);
   const [showCapacity, setShowCapacity] = useState(false);
   const [showManage, setShowManage] = useState(false);

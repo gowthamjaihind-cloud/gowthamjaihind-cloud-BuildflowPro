@@ -265,6 +265,13 @@ export const callCreateSubscription = async (args: { plan: string; period: "mont
   return (await fn(args)).data;
 };
 
+// Owner/Admin: ask the server to confirm a subscription payment with Razorpay
+// directly. The webhook normally does this; it can be late or lost.
+export const callConfirmSubscription = async (args: { subscriptionId?: string; orgId?: string } = {}) => {
+  const fn = httpsCallable<typeof args, { active: boolean }>(getFunctionsInstance(), 'confirmSubscription');
+  return (await fn(args)).data;
+};
+
 // Owner/Admin: create a server-priced Razorpay order for a plan + period.
 // orgId is optional — used by the signup pay-now flow (org not yet linked).
 export const callCreateRazorpayOrder = async (args: { plan: string; period: 'monthly' | 'annual'; orgId?: string }) => {

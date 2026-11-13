@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { callCreateRazorpayOrder, callCreateSlotSubscription, callVerifyRazorpayPayment, callCreateSubscription } from "../services/firebaseFunctions";
+import { callCreateRazorpayOrder, callCreateSlotSubscription, callVerifyRazorpayPayment, callCreateSubscription, callConfirmSubscription } from "../services/firebaseFunctions";
 import { db, doc, getDocFromServer } from "../firebase";
 import { useAuthStore } from "../store";
 
@@ -37,6 +37,23 @@ async function waitForSlotSub(orgId: string, subscriptionId: string, timeoutMs =
       /* keep waiting */
     }
     await new Promise((r) => setTimeout(r, 1500));
+  }
+  return false;
+}
+
+/**
+ * Confirm a subscription payment with Razorpay through the server, without
+ * depending on the webhook. Razorpay can take a few seconds to move a
+ * subscription to active after checkout closes, so this asks a few times.
+ */
+async function confirmPaid(subscriptionId: string, orgId?: string, tries = 8): Promise<boolean> {
+  for (let i = 0; i < tries; i++) {
+    try {
+      if ((await callConfirmSubscription({ subscriptionId, orgId })).active) return true;
+    } catch {
+      /* the webhook may still do it; keep trying */
+    }
+    await new Promise((r) => setTimeout(r, 2500));
   }
   return false;
 }
@@ -145,6 +162,14 @@ export function useRazorpayCheckout() {
         });
         rzp.open();
       });
+      // Checkout closing is not proof of payment, and the webhook that is can
+      // be late. Without this the plan kept reading "not subscribed" and the
+      // customer could -- and did -- pay a second time.
+      const active = await confirmPaid(sub.subscriptionId, orgId);
+      if (!active) {
+        setError("Payment received. We're confirming it with the bank — this page will update within a minute. Please don't pay again.");
+        return;
+      }
       onSuccess?.();
     } catch (e: any) {
       setError(e?.message || "We couldn't start your subscription. Please try again.");
@@ -186,6 +211,7 @@ export function useRazorpayCheckout() {
         rzp.open();
       });
       const target = orgId || user?.currentOrgId;
+      await confirmPaid(sub.subscriptionId, orgId, 4);
       const granted = target ? await waitForSlotSub(target, sub.subscriptionId) : false;
       if (!granted) {
         setError("Payment received. Your extra project capacity is being added and will appear within a minute — then try again.");
