@@ -1,8 +1,8 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import * as admin from "firebase-admin";
 import { logAuditEvent } from "../audit/logEvent";
 import { db } from "../db";
 import { CALLABLE_OPTS } from "../callable";
+import { FieldValue } from "firebase-admin/firestore";
 
 export const processCostAnalysisData = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 300 }, async (request) => {
   if (!request.auth) {
@@ -30,7 +30,7 @@ export const processCostAnalysisData = onCall({ ...CALLABLE_OPTS, timeoutSeconds
     // 4. Save result
     await db.collection("projects").doc(projectId).collection("analytics").doc("latestInsights").set({
       insights: mockInsight,
-      generatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      generatedAt: FieldValue.serverTimestamp(),
       generatedBy: request.auth.uid
     });
 

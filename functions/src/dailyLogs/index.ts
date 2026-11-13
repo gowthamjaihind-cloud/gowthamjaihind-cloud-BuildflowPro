@@ -1,6 +1,7 @@
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
+import { FieldValue } from "firebase-admin/firestore";
 
 
 async function deletePhotos(photoUrls: string[]) {
@@ -46,8 +47,8 @@ async function handleDailyLogRollup(
 
       await taskRef.update({
         progress: 0,
-        actualStartDate: admin.firestore.FieldValue.delete(),
-        actualEndDate: admin.firestore.FieldValue.delete(),
+        actualStartDate: FieldValue.delete(),
+        actualEndDate: FieldValue.delete(),
         status: nextStatus,
       });
     }
@@ -105,7 +106,7 @@ async function handleDailyLogRollup(
   if (actualEnd) {
     updates.actualEndDate = actualEnd;
   } else {
-    updates.actualEndDate = admin.firestore.FieldValue.delete();
+    updates.actualEndDate = FieldValue.delete();
   }
 
   await taskRef.update(updates);

@@ -1,6 +1,7 @@
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
-import * as admin from "firebase-admin";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
+import { FieldValue } from "firebase-admin/firestore";
+import { intake } from "./stock";
 
 
 async function handleGRNWritten(
@@ -80,7 +81,7 @@ async function handleGRNWritten(
     lineItems: updatedLineItems,
     status: newStatus,
     ...(newStatus === "Closed" && poData.status !== "Closed" ? { closedReason: "auto" } : {}),
-    ...(newStatus !== "Closed" && poData.closedReason === "auto" ? { closedReason: admin.firestore.FieldValue.delete() } : {})
+    ...(newStatus !== "Closed" && poData.closedReason === "auto" ? { closedReason: FieldValue.delete() } : {})
   });
 
   // 2. Recompute Inventory Qty and avgUnitCost
@@ -161,16 +162,35 @@ async function handleGRNWritten(
       spendByItem.set(itemId, sumSpend);
     }
     
+    // What this write changed, per item, so "accepted before this write" can
+    // be told from "accepted now" (see stock.ts: opening stock is inferred only
+    // for an item no receipt had touched yet).
+    const acceptedIn = (d: any, itemId: string) =>
+      (d?.lineItems || []).reduce((s: number, li: any) => s + (li.poLineRef === itemId ? Math.max(0, li.acceptedQty || 0) : 0), 0);
+
     for (const itemId of itemsToUpdate) {
        const invRef = db.doc(`${tenantPath}/inventory/${itemId}`);
+       const invSnap = await invRef.get();
+       if (!invSnap.exists) continue; // item deleted; nothing to maintain
+       const inv = invSnap.data() || {};
        const sumQty = qtyByItem.get(itemId) || 0;
        const sumSpend = spendByItem.get(itemId) || 0;
-       const wac = sumQty > 0 ? (sumSpend / sumQty) : 0;
-       // We only update the intake "quantity" here, the logic for consumed etc is elsewhere. 
-       // In earlier schema: inventory.quantity is total intake.
-       batch.update(invRef, { 
-         quantity: sumQty,
-         avgUnitCost: wac
+       const acceptedBefore = sumQty - acceptedIn(afterData, itemId) + acceptedIn(beforeData, itemId);
+       // inventory.quantity is TOTAL INTAKE: opening stock + accepted receipts.
+       // Consumption lives in inventory.consumed (daily-log trigger).
+       const r = intake({
+         openingQty: inv.openingQty,
+         currentQuantity: inv.quantity,
+         consumed: inv.consumed,
+         unitCost: inv.unitCost,
+         acceptedQty: sumQty,
+         acceptedSpend: sumSpend,
+         acceptedBefore,
+       });
+       batch.update(invRef, {
+         openingQty: r.openingQty,
+         quantity: r.quantity,
+         avgUnitCost: r.avgUnitCost,
        });
     }
   }

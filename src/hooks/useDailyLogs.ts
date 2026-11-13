@@ -170,12 +170,11 @@ export function useSaveDailyLog(projectId: string) {
             const invDoc = invDocs[mat.materialId];
             if (invDoc && invDoc.exists()) {
                 const invData = invDoc.data();
-                const currentQty = invData.quantity || 0;
-                const invRef = doc(db, inventoryPath, mat.materialId);
-                transaction.update(invRef, {
-                  quantity: Math.max(0, currentQty - mat.quantity)
-                });
-                
+                // Stock is NOT decremented here. inventory.quantity is total
+                // intake; the daily-log trigger maintains inventory.consumed and
+                // every view shows quantity - consumed. Subtracting here as well
+                // counted each log's materials twice (55 bags showed as -40),
+                // and an edited or deleted log never gave its quantity back.
                 const unitCost = invData.avgUnitCost || invData.unitCost || 0;
                 const totalPrice = mat.quantity * unitCost;
                 const issueRef = doc(collection(db, issuesPath));

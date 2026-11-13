@@ -1,8 +1,8 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import * as admin from "firebase-admin";
 import { logAuditEvent } from "../audit/logEvent";
 import { db } from "../db";
 import { CALLABLE_OPTS } from "../callable";
+import { FieldValue } from "firebase-admin/firestore";
 
 export const processApproval = onCall({ ...CALLABLE_OPTS }, async (request) => {
   if (!request.auth) {
@@ -37,7 +37,7 @@ export const processApproval = onCall({ ...CALLABLE_OPTS }, async (request) => {
       transaction.update(approvalRef, {
         status: action,
         comments: comments || null,
-        processedAt: admin.firestore.FieldValue.serverTimestamp(),
+        processedAt: FieldValue.serverTimestamp(),
         processedBy: request.auth!.uid
       });
       

@@ -287,6 +287,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <button
                           onClick={() => {
                             setCompanyName(draftCompanyName);
+                            // The name lives on the organisation; the local
+                            // copy alone showed "Sitetru" to every new company.
+                            if (draftCompanyName.trim()) void saveOrgSettings({ companyName: draftCompanyName.trim() }).catch(() => {});
                             setIsEditingCompany(false);
                           }}
                           className="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-deep transition-colors"
@@ -297,11 +300,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     ) : (
                       <div className="flex items-center justify-between bg-surface border border-divider px-4 py-3 rounded-xl">
                         <span className="text-ink font-semibold">
-                          {companyName || "No Company Name Set"}
+                          {orgSettings?.companyName || companyName || "No Company Name Set"}
                         </span>
                         <button
                           onClick={() => {
-                            setDraftCompanyName(companyName);
+                            setDraftCompanyName(orgSettings?.companyName || companyName);
                             setIsEditingCompany(true);
                           }}
                           className="text-ink-muted hover:text-primary transition-colors flex items-center gap-2 text-sm font-bold"
@@ -343,6 +346,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       onClick={async (e) => {
                         const target = e.currentTarget;
                         const originalText = target.innerHTML;
+                        const g = draftGstin.trim().toUpperCase();
+                        // 15 characters: 2-digit state, 10-char PAN, entity, Z, checksum.
+                        if (g && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(g)) {
+                          target.innerHTML = "Not a valid GSTIN";
+                          setTimeout(() => { target.innerHTML = originalText; }, 2500);
+                          return;
+                        }
                         try {
                           await saveOrgSettings({ gstin: draftGstin });
                           target.innerHTML = "Saved!";

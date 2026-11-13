@@ -1,5 +1,5 @@
-import * as admin from "firebase-admin";
 import { db } from "../db";
+import { FieldValue } from "firebase-admin/firestore";
 
 interface AuditEvent {
   action: string;
@@ -12,7 +12,7 @@ export const logAuditEvent = async (event: AuditEvent) => {
   try {
     await db.collection("audit_logs").add({
       ...event,
-      timestamp: admin.firestore.FieldValue.serverTimestamp()
+      timestamp: FieldValue.serverTimestamp()
     });
   } catch (error) {
     console.error("Failed to log audit event:", error);

@@ -280,13 +280,13 @@ export const PortfolioPage: React.FC = () => {
                 </div>
               </div>
 
-              <button
+              {(user?.role === "Admin" || user?.role === "Owner") && <button
                 onClick={() => setIsCreatingProject(true)}
                 className="cta-shine w-full lg:w-auto justify-center bg-primary text-on-primary px-6 sm:px-8 md:px-10 py-4 md:py-5 rounded-2xl md:rounded-3xl font-bold text-[15px] sm:text-[17px] flex items-center gap-3 shadow-lg shadow-primary/30 hover:bg-primary/90 apple-transition sm:hover:-translate-y-1 active:scale-95 shrink-0"
               >
                 <Plus weight="bold" className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
                 <span className="truncate">{t("portfolio.initializeWorkspace")}</span>
-              </button>
+              </button>}
             </div>
           </div>
         </motion.header>
@@ -448,7 +448,9 @@ export const PortfolioPage: React.FC = () => {
                 {t("portfolio.noWorkspaces")}
               </h3>
               <p className="text-[15px] sm:text-[17px] text-ink-muted font-medium leading-relaxed max-w-[280px] sm:max-w-md mx-auto">
-                {t("portfolio.noWorkspacesSub")}
+                {user?.role === "Admin" || user?.role === "Owner"
+                  ? t("portfolio.noWorkspacesSub")
+                  : "You don't have access to a project yet. Ask your company's Owner or Admin to give you access under Settings → Identity & Authorization."}
               </p>
             </div>
           )}

@@ -171,7 +171,10 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                 (i: any) => !(i.receivedQty),
             );
             const c = poData.charges;
-            if (isFirstReceipt && c) {
+            // ...and only when this receipt ACCEPTS something. A delivery that
+            // was wholly rejected leaves receivedQty at 0, so the next receipt
+            // also looked like the first and freight was billed twice.
+            if (isFirstReceipt && c && totalAmount > 0) {
                 const chargesTotal =
                     (c.loading || 0) + (c.transport || 0) + (c.other || 0);
                 if (chargesTotal > 0) {

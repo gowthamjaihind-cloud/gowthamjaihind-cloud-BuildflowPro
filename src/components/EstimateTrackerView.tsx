@@ -45,6 +45,7 @@ import { toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
 import { DialogBehaviour } from "../lib/useDialog";
+import { canEditLine, canEditTax, isApproved, LOCKED_MESSAGE } from "../lib/estimateLock";
 
 interface EstimateTrackerViewProps {
   projectId: string;
@@ -201,6 +202,10 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
 
   const updateSelectedEstimate = async (updates: Partial<ClientEstimate>) => {
     if (!selectedEstimateId) return;
+    if ("taxRatePercent" in updates && !canEditTax(selectedEstimate)) {
+      toast.error(LOCKED_MESSAGE);
+      return;
+    }
     try {
       await updateDoc(
         doc(db, `${basePath}/estimates`, selectedEstimateId),
@@ -222,6 +227,9 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       unit: "Nos",
       rate: 0,
       totalAmount: 0,
+      // After approval the base contract is frozen (lib/estimateLock.ts), so
+      // anything added is a change order.
+      ...(isApproved(selectedEstimate) ? { isChangeOrder: true } : {}),
     };
     const items = [...selectedEstimate.items, newItem];
     const subTotal = items.reduce((sum, item) => sum + item.totalAmount, 0);
@@ -241,6 +249,10 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
     value: any,
   ) => {
     if (!selectedEstimate) return;
+    if (!canEditLine(selectedEstimate, selectedEstimate.items.find((i) => i.id === itemId))) {
+      toast.error(LOCKED_MESSAGE);
+      return;
+    }
     const items = selectedEstimate.items.map((item) => {
       if (item.id === itemId) {
         const updated = { ...item, [field]: value };
@@ -264,6 +276,10 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
 
   const removeLineItem = (itemId: string) => {
     if (!selectedEstimate) return;
+    if (!canEditLine(selectedEstimate, selectedEstimate.items.find((i) => i.id === itemId))) {
+      toast.error(LOCKED_MESSAGE);
+      return;
+    }
     const items = selectedEstimate.items.filter((item) => item.id !== itemId);
     const subTotal = items.reduce((sum, item) => sum + item.totalAmount, 0);
     const taxRate = selectedEstimate.taxRatePercent ?? 18;
@@ -292,7 +308,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
           unit: "Lump Sum",
           rate: 0,
           totalAmount: 0,
-          isChangeOrder: task?.isChangeOrder || false,
+          isChangeOrder: isApproved(selectedEstimate) ? true : task?.isChangeOrder || false,
         };
       },
     );

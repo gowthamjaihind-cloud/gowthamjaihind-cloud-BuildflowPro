@@ -1,7 +1,7 @@
-import * as admin from "firebase-admin";
 import { setSession, type ChatId } from "../session";
 import { db } from "../../db";
 import { tt, normalizeLang } from "../i18n";
+import { FieldValue } from "firebase-admin/firestore";
 
 export async function showProjects(tg: any, chatId: ChatId, session: any) {
   const lang = normalizeLang(session?.lang);
@@ -40,7 +40,7 @@ export async function pickProject(
   await setSession(chatId, {
     activeProjectId: projectId,
     step: null,
-    draft: admin.firestore.FieldValue.delete() as any,
+    draft: FieldValue.delete() as any,
   });
 
   let projectName = "Selected project";

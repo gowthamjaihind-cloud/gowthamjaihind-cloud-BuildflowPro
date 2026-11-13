@@ -44,7 +44,11 @@ export function useProjectsQuery() {
   const user = useAuthStore(state => state.user);
 
   return useQuery({
-    queryKey: queryKeys.projects,
+    // Keyed by the org: a user who has just created or joined a company used
+    // to keep the empty list cached under ['projects'] for five minutes, so
+    // their first project (or the ones they were invited to) never appeared
+    // until a reload.
+    queryKey: [...queryKeys.projects, user?.uid ?? null, user?.currentOrgId ?? null],
     queryFn: async () => {
       if (__DEMO__ && demoRequested()) return demoProjects as any as Project[];
       if (!user) return [];
@@ -52,19 +56,9 @@ export function useProjectsQuery() {
       const projectsList: Project[] = [];
       const seenIds = new Set<string>();
 
-      // 1. Always fetch from root projects collection
-      try {
-        const rootSnapshot = await getDocs(query(collection(db, "projects")));
-        rootSnapshot.docs.forEach(doc => {
-          if (!seenIds.has(doc.id)) {
-            seenIds.add(doc.id);
-            projectsList.push({ id: doc.id, ...doc.data() } as Project);
-          }
-        });
-      } catch (err) {
-        console.error("Failed to fetch root projects:", err);
-      }
-
+      // The legacy root /projects collection is closed to every client by
+      // firestore.rules, so querying it only logged a permission error on each
+      // load. Projects live under the organisation.
       // 2. Fetch from tenant projects if orgId is set
       if (user.currentOrgId) {
         try {
