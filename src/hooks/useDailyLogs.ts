@@ -10,6 +10,24 @@ import { demoRequested } from "../demo";
 import { demoCollections, DEMO_PROJECT_ID } from "@demo";
 import { byTime, newestLogFirst } from "../lib/timeKey";
 
+/**
+ * Stock on screen after a log is saved, edited or deleted.
+ *
+ * Consumption is rolled up by a server trigger a moment AFTER the write, so
+ * the inventory list was left showing the old figure for up to five minutes
+ * (its cache time). Refresh now, and again once the trigger has had time.
+ */
+function refreshStock(queryClient: { invalidateQueries: (o: { queryKey: unknown[] }) => unknown }, projectId: string) {
+  const go = () => {
+    queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'inventory'] });
+    queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'material_issues'] });
+  };
+  go();
+  setTimeout(go, 3000);
+  setTimeout(go, 8000);
+}
+
+
 export const getTenantPath = (user: any, projectId: string, subPath: string) => {
   if (!user || !projectId) return null;
   return getProjectSubCollectionPath(projectId, subPath);
@@ -229,6 +247,7 @@ export function useSaveDailyLog(projectId: string) {
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.byTask(projectId, variables.taskId) });
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.all(projectId) });
       queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'dailyLogs'] });
+      refreshStock(queryClient, projectId);
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.byDate(projectId, variables.workDate) });
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks(projectId) });
       queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'tasks'] });
@@ -300,6 +319,7 @@ export function useUpdateDailyLog(projectId: string) {
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.byTask(projectId, data.taskId) });
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.all(projectId) });
       queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'dailyLogs'] });
+      refreshStock(queryClient, projectId);
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.byDate(projectId, data.workDate) });
       // Invalidate the old date if it changed
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.all(projectId) });
@@ -349,6 +369,7 @@ export function useDeleteDailyLog(projectId: string) {
     onSuccess: (deletedLog) => {
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.byTask(projectId, deletedLog.taskId) });
       queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'dailyLogs'] });
+      refreshStock(queryClient, projectId);
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.byDate(projectId, deletedLog.workDate) });
       queryClient.invalidateQueries({ queryKey: dailyLogKeys.all(projectId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks(projectId) });
