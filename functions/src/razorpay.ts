@@ -123,6 +123,14 @@ export const setRazorpayConfig = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }
   const keySecret = String(request.data?.keySecret || "").trim();
   const webhookSecret = String(request.data?.webhookSecret || "").trim();
   if (!keyId || !keySecret) throw new HttpsError("invalid-argument", "Key ID and Key Secret are required.");
+  // Plan IDs belong to the Razorpay account AND mode that created them. The
+  // cache is not keyed by either, so after testing with rzp_test_ keys a
+  // switch to live keys would send test plan IDs to live Razorpay and every
+  // subscription would fail. A different key means a different set of plans.
+  const prior = await db.doc("app_config/razorpay").get();
+  if (prior.exists && (prior.data() as any)?.keyId !== keyId) {
+    await db.doc("app_config/razorpay_plans").delete();
+  }
   await db.doc("app_config/razorpay").set(
     { keyId, keySecret, webhookSecret, updatedAt: new Date().toISOString(), updatedBy: request.auth!.uid },
     { merge: true },
