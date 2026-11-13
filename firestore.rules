@@ -145,7 +145,10 @@ service cloud.firestore {
       let cap = o.get('includedProjects', null);
       let count = o.get('projectCount', null);
       let slots = o.get('slotsExpireAt', 0) > request.time.toMillis() ? o.get('purchasedSlots', 0) : 0;
-      return !(cap is number) || !(count is number) || count < cap + slots;
+      // Recurring slot subscriptions, summarised by the billing functions
+      // (functions/src/slotSubs.ts) because a rule cannot sum the map.
+      let recurring = o.get('recurringSlotsUntil', 0) > request.time.toMillis() ? o.get('recurringSlots', 0) : 0;
+      return !(cap is number) || !(count is number) || count < cap + slots + recurring;
     }
 
     // =====================================================================

@@ -45,10 +45,19 @@ describe("plan checkout takes a mandate, not a single payment", () => {
     });
   }
 
-  it("extra project SLOTS stay one-off, by design", () => {
-    // Slots are not part of the subscription; paySlots must keep using orders.
+  it("extra project slots are a recurring subscription too, separate from the plan's", () => {
     const body = HOOK.slice(HOOK.indexOf("const paySlots"));
-    expect(body).toMatch(/callCreateSlotOrder/);
+    expect(body).toMatch(/callCreateSlotSubscription/);
+    expect(body).toMatch(/subscription_id: sub\.subscriptionId/);
+    expect(body, "a one-off order would lapse after a month").not.toMatch(/order_id/);
+  });
+
+  it("waits for the server to record the payment before the caller creates the project", () => {
+    // The database refuses a project over the cap, and the cap only rises when
+    // the webhook lands. Calling onSuccess as the modal closes raced it.
+    const body = HOOK.slice(HOOK.indexOf("const paySlots"));
+    expect(body.indexOf("waitForSlotSub")).toBeGreaterThan(-1);
+    expect(body.indexOf("waitForSlotSub")).toBeLessThan(body.indexOf("onSuccess?.()"));
   });
 });
 

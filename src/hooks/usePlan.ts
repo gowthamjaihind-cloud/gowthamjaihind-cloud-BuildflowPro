@@ -37,6 +37,8 @@ export interface OrgPlan {
    */
   purchasedSlots?: number;
   slotsExpireAt?: number;
+  /** Recurring slot subscriptions, keyed by Razorpay subscription id. */
+  slotSubs?: Record<string, { qty: number; until: number; status: string }>;
 }
 
 // Realtime plan/capacity for the signed-in user's current org. Absent
@@ -76,6 +78,7 @@ export function usePlan(): OrgPlan {
           cancelAtPeriodEnd: d.cancelAtPeriodEnd === true,
           purchasedSlots: Number(d.purchasedSlots) || 0,
           slotsExpireAt: Number(d.slotsExpireAt) || 0,
+          slotSubs: d.slotSubs && typeof d.slotSubs === "object" ? d.slotSubs : undefined,
         });
       },
       () => {

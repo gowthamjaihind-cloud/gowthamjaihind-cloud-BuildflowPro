@@ -283,6 +283,23 @@ export const callCreateSlotOrder = async (args: { quantity: number; orgId?: stri
   return res.data;
 };
 
+// Extra project slots as a RECURRING subscription (₹99 each a month), separate
+// from the plan's. See functions/src/slotSubs.ts for why it is separate.
+export const callCreateSlotSubscription = async (args: { quantity: number; orgId?: string }) => {
+  const fn = httpsCallable<typeof args, { subscriptionId: string; keyId: string; quantity: number; amount: number }>(
+    getFunctionsInstance(), 'createSlotSubscription');
+  const res = await fn(args);
+  return res.data;
+};
+
+// Stop one slot subscription at the end of the month already paid for.
+export const callCancelSlotSubscription = async (args: { subscriptionId: string }) => {
+  const fn = httpsCallable<typeof args, { canceled: boolean; effectiveAt: number | null }>(
+    getFunctionsInstance(), 'cancelSlotSubscription');
+  const res = await fn(args);
+  return res.data;
+};
+
 // Verify a completed payment (backup to the webhook) — activates the plan.
 export const callVerifyRazorpayPayment = async (args: {
   razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string;

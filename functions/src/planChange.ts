@@ -1,11 +1,12 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { cancelRazorpaySubscription } from "./razorpay";
+import { cancelRazorpaySubscription, refreshSlotSummary } from "./razorpay";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./db";
 import { isPlanId, PlanId, planCapacityPatch } from "./plans";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
+import { cancellableSlotSubs } from "./slotSubs";
 
 // Self-serve plan changes for an org's Owner/Admin.
 //
@@ -169,6 +170,23 @@ export const cancelSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 
         "unavailable",
         "We couldn't reach the payment provider to stop your subscription. Nothing has changed — please try again in a moment.",
       );
+    }
+  }
+
+  // Extra-project subscriptions ride on the plan. Leaving them running after
+  // the plan is cancelled would keep debiting ₹99 a month for slots on a
+  // workspace nobody can open. Best effort per subscription: the plan's own
+  // cancellation above is the one that must not fail silently.
+  const slotIds = cancellableSlotSubs(org);
+  if (slotIds.length > 0) {
+    const patch: Record<string, unknown> = {};
+    for (const id of slotIds) {
+      if (await cancelRazorpaySubscription(id)) patch[id] = { ...(org.slotSubs || {})[id], status: "cancelling" };
+      else console.error("could not cancel slot subscription with the plan", orgId, id);
+    }
+    if (Object.keys(patch).length > 0) {
+      await db.doc(`organizations/${orgId}`).set({ slotSubs: patch }, { merge: true });
+      await refreshSlotSummary(orgId);
     }
   }
 

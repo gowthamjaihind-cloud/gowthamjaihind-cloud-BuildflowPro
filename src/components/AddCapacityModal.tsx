@@ -112,7 +112,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
               <p className="font-bold text-ink">{"Add project slots"}</p>
             </div>
             <p className="text-sm text-ink-muted mb-4">
-              {`₹${rate} per extra project / month. Added to this plan immediately.`}
+              {`₹${rate} per extra project, per month. Renews automatically until you cancel it in Settings.`}
             </p>
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="inline-flex items-center gap-3 bg-panel border border-divider rounded-full p-1">
@@ -205,7 +205,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
           )}
 
           <p className="text-center text-[11px] text-ink-muted mt-5">
-            {`Extra slots apply to your current billing cycle.${gstNote(taxRatePct)}`}
+            {`Billed as its own monthly subscription, separate from your plan. Cancel any time; you keep the slot until the end of the month you paid for.${gstNote(taxRatePct)}`}
           </p>
         </motion.div>
       </motion.div>

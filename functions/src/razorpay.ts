@@ -6,6 +6,7 @@ import { subscriptionPatch, planCacheKey, rzpPeriod, totalCycles } from "./rzpSu
 import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE, slotPurchasePatch, prorateUpgrade, addGst, GST_RATE_PCT } from "./plans";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
+import { slotSubAfterEvent, slotSummary } from "./slotSubs";
 
 // Razorpay integration (TEST MODE until KYC is completed and live keys are set).
 // Flow: the app creates an order (server-priced) -> Razorpay Checkout collects
@@ -301,6 +302,166 @@ export async function cancelRazorpaySubscription(subscriptionId: string): Promis
   }
 }
 
+/**
+ * The Razorpay plan one extra project slot is billed on: OVERAGE_RATE a month,
+ * GST inside the amount (a subscription charges one fixed figure). Cached per
+ * tax rate, because Razorpay plans are immutable -- see ensureRazorpayPlan.
+ */
+async function ensureSlotPlan(cfg: RzpConfig, ratePerSlot: number, tax: { gstin: string; ratePct: number }): Promise<string> {
+  const key = `slot_${ratePerSlot}_monthly_gst${tax.ratePct}`;
+  const ref = db.doc("app_config/razorpay_plans");
+  const snap = await ref.get();
+  const cached = (snap.exists ? (snap.data() as any) : {})?.[key];
+  if (typeof cached === "string" && cached) return cached;
+
+  const charge = addGst(ratePerSlot * 100, tax.ratePct);
+  const auth = Buffer.from(`${cfg.keyId}:${cfg.keySecret}`).toString("base64");
+  const res = await fetch("https://api.razorpay.com/v1/plans", {
+    method: "POST",
+    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      period: "monthly",
+      interval: 1,
+      item: {
+        name: "Sitetru extra project (monthly)",
+        amount: charge.totalPaise,
+        currency: "INR",
+        description: tax.ratePct > 0 ? `Per extra project. Includes ${tax.ratePct}% GST` : "Per extra project. No GST applied",
+      },
+      notes: { kind: "slots", gstRatePct: String(tax.ratePct) },
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new HttpsError("internal", `Razorpay plan failed: ${res.status} ${body.slice(0, 180)}`);
+  }
+  const created: any = await res.json();
+  const planId = String(created?.id || "");
+  if (!planId) throw new HttpsError("internal", "Razorpay returned a plan with no id.");
+  await ref.set({ [key]: planId, [`${key}_amountPaise`]: charge.totalPaise }, { merge: true });
+  return planId;
+}
+
+/** Write the two summary fields firestore.rules reads. See slotSubs.ts. */
+export async function refreshSlotSummary(orgId: string): Promise<void> {
+  const ref = db.doc(`organizations/${orgId}`);
+  const snap = await ref.get();
+  if (!snap.exists) return;
+  await ref.set(slotSummary(snap.data()), { merge: true });
+}
+
+/**
+ * Start a RECURRING subscription for extra project slots (slotSubs.ts says why
+ * it is separate from the plan's). The quantity is fixed here, at creation,
+ * which every payment method allows; it is never updated afterwards.
+ */
+export const createSlotSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+  const uid = request.auth.uid;
+  const quantity = Math.floor(Number(request.data?.quantity) || 0);
+  if (quantity < 1 || quantity > 50) {
+    throw new HttpsError("invalid-argument", "Choose between 1 and 50 extra projects.");
+  }
+
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const orgId = String(request.data?.orgId || "").trim() ||
+    (userSnap.exists ? (userSnap.data() as any).currentOrgId : undefined);
+  if (!orgId) throw new HttpsError("failed-precondition", "You're not part of an organization.");
+  const orgSnap = await db.doc(`organizations/${orgId}`).get();
+  if (!orgSnap.exists) throw new HttpsError("not-found", "Organization not found.");
+  const org: any = orgSnap.data();
+  if (!["Owner", "Admin"].includes((org.members || {})[uid])) {
+    throw new HttpsError("permission-denied", "Only an Owner or Admin can buy project slots.");
+  }
+  if (org.includedProjects == null) {
+    throw new HttpsError("failed-precondition", "Project slots apply to Starter and Business plans only.");
+  }
+  // A slot extends a plan. Selling a monthly mandate for extra projects to a
+  // workspace that has no paid plan would leave it paying for capacity it is
+  // locked out of the day the trial ends.
+  if (org.subscriptionStatus !== "active") {
+    throw new HttpsError("failed-precondition", "Subscribe to your plan first, then add extra projects.");
+  }
+
+  const cfg = await getRazorpayConfig();
+  if (!cfg) throw new HttpsError("failed-precondition", "Payments aren't configured yet.");
+  const tax = await getTaxConfig();
+  const rate = Number(org.overageRate) || OVERAGE_RATE;
+  const planId = await ensureSlotPlan(cfg, rate, tax);
+  const charge = addGst(quantity * rate * 100, tax.ratePct);
+
+  const auth = Buffer.from(`${cfg.keyId}:${cfg.keySecret}`).toString("base64");
+  const res = await fetch("https://api.razorpay.com/v1/subscriptions", {
+    method: "POST",
+    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      plan_id: planId,
+      total_count: totalCycles("monthly"),
+      quantity,
+      customer_notify: 1,
+      notes: { orgId, kind: "slots", quantity: String(quantity), uid },
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new HttpsError("internal", `Razorpay subscription failed: ${res.status} ${body.slice(0, 180)}`);
+  }
+  const sub: any = await res.json();
+  const subId = String(sub?.id || "");
+  if (!subId) throw new HttpsError("internal", "Razorpay returned a subscription with no id.");
+
+  // Recorded BEFORE the customer authorises, and with kind "slots": the
+  // webhook reads this to know these events must never touch the plan's status.
+  await db.doc(`razorpay_subscriptions/${subId}`).set({
+    subscriptionId: subId,
+    kind: "slots",
+    orgId,
+    quantity,
+    uid,
+    planId,
+    amount: charge.totalPaise,
+    netAmount: charge.netPaise,
+    taxAmount: charge.taxPaise,
+    taxRatePct: tax.ratePct,
+    status: "created",
+    createdAt: new Date().toISOString(),
+  });
+
+  return { subscriptionId: subId, shortUrl: sub?.short_url || null, keyId: cfg.keyId, quantity, amount: charge.totalPaise };
+});
+
+/**
+ * Stop one slot subscription at the end of the month already paid for. Like
+ * cancelSubscription, Razorpay is told FIRST and nothing is recorded if that
+ * fails: a slot shown as cancelled that still debits ₹99 a month is theft.
+ */
+export const cancelSlotSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+  const uid = request.auth.uid;
+  const subId = String(request.data?.subscriptionId || "").trim();
+  if (!subId) throw new HttpsError("invalid-argument", "Which extra-project subscription?");
+  const subSnap = await db.doc(`razorpay_subscriptions/${subId}`).get();
+  const rec: any = subSnap.exists ? subSnap.data() : null;
+  if (!rec || rec.kind !== "slots") throw new HttpsError("not-found", "That subscription was not found.");
+  const orgRef = db.doc(`organizations/${rec.orgId}`);
+  const orgSnap = await orgRef.get();
+  const org: any = orgSnap.exists ? orgSnap.data() : {};
+  if (!["Owner", "Admin"].includes((org.members || {})[uid])) {
+    throw new HttpsError("permission-denied", "Only an Owner or Admin can cancel project slots.");
+  }
+  const stopped = await cancelRazorpaySubscription(subId);
+  if (!stopped) {
+    throw new HttpsError("unavailable", "We couldn't reach the payment provider to stop this. Nothing has changed — please try again in a moment.");
+  }
+  const existing = (org.slotSubs || {})[subId];
+  if (existing) {
+    await orgRef.set({ slotSubs: { [subId]: { ...existing, status: "cancelling" } } }, { merge: true });
+    await refreshSlotSummary(rec.orgId);
+  }
+  await subSnap.ref.set({ cancelRequestedAt: Date.now(), cancelRequestedBy: uid }, { merge: true });
+  return { canceled: true, effectiveAt: Number(existing?.until) || null };
+});
+
 // ---- Checkout: create a server-priced order ----
 export const createRazorpayOrder = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
@@ -558,6 +719,34 @@ export const razorpayWebhook = onRequest({ region: "asia-southeast1" }, async (r
     if (name.startsWith("subscription.")) {
       const entity = event?.payload?.subscription?.entity;
       const subId = String(entity?.id || "");
+      // A slot subscription is NOT the plan. Its events go to the slot
+      // bookkeeping and stop there: letting "subscription.cancelled" for one
+      // extra project reach subscriptionPatch would mark a paid-up workspace
+      // cancelled and lock everyone out.
+      if (subId) {
+        const recSnap = await db.doc(`razorpay_subscriptions/${subId}`).get();
+        const rec: any = recSnap.exists ? recSnap.data() : null;
+        const kind = rec?.kind || String(entity?.notes?.kind || "");
+        if (kind === "slots") {
+          const slotOrg = rec?.orgId || String(entity?.notes?.orgId || "");
+          if (slotOrg) {
+            const orgRef = db.doc(`organizations/${slotOrg}`);
+            const orgSnap = await orgRef.get();
+            const existing = orgSnap.exists ? ((orgSnap.data() as any)?.slotSubs || {})[subId] : undefined;
+            const next = slotSubAfterEvent(name, entity, existing, Number(rec?.quantity) || Number(entity?.notes?.quantity) || 0);
+            if (next && orgSnap.exists) {
+              await orgRef.set({ slotSubs: { [subId]: next } }, { merge: true });
+              await refreshSlotSummary(slotOrg);
+            }
+            await recSnap.ref.set(
+              { subscriptionId: subId, kind: "slots", orgId: slotOrg, status: entity?.status || null, lastEvent: name, updatedAt: new Date().toISOString() },
+              { merge: true },
+            );
+          }
+          res.status(200).send("ok");
+          return;
+        }
+      }
       const patch = subscriptionPatch(name, entity);
       if (subId && patch) {
         const subRef = db.doc(`razorpay_subscriptions/${subId}`);

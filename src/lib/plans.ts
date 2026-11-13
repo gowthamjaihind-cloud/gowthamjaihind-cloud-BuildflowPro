@@ -39,10 +39,36 @@ export const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
  * permanent rather than vanishing from under a paying customer.
  */
 export function activeSlots(org: any, now = Date.now()): number {
+  // Recurring slot subscriptions plus any one-off slots bought before slots
+  // became recurring. Keep in step with functions/src/slotSubs.ts.
+  const recurring = liveSlotSubs(org, now).reduce((n, s) => n + s.qty, 0);
   const qty = Math.floor(Number(org?.purchasedSlots) || 0);
-  if (qty <= 0) return 0;
+  if (qty <= 0) return recurring;
   const until = Number(org?.slotsExpireAt) || 0;
-  return until > now ? qty : 0;
+  return recurring + (until > now ? qty : 0);
+}
+
+/** A late webhook or a card retry should not take a paid project away. */
+export const SLOT_GRACE_MS = 3 * 24 * 60 * 60 * 1000;
+
+export interface SlotSubView {
+  id: string;
+  qty: number;
+  /** Epoch ms: end of the month already paid for. */
+  until: number;
+  status: string;
+}
+
+/** Slot subscriptions whose capacity is in force (server copy: slotSubs.ts). */
+export function liveSlotSubs(org: any, now = Date.now()): SlotSubView[] {
+  const m = org?.slotSubs && typeof org.slotSubs === "object" ? org.slotSubs : {};
+  return Object.entries(m)
+    .map(([id, s]: [string, any]) => ({ id, qty: Math.floor(Number(s?.qty) || 0), until: Number(s?.until) || 0, status: String(s?.status || "") }))
+    .filter((s) => {
+      if (s.qty <= 0 || s.until <= 0) return false;
+      const grace = s.status === "cancelled" || s.status === "cancelling" ? 0 : SLOT_GRACE_MS;
+      return s.until + grace > now;
+    });
 }
 
 // Effective included-project cap for an org doc: the plan's own cap plus any
