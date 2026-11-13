@@ -39,6 +39,8 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const currentIdx = PLAN_ORDER.indexOf(current);
   const pending = plan.pendingPlanChange || null;
   const working = busy || payBusy;
+  // Only an active subscription is "paid"; a trial (or a lapsed plan) is not.
+  const paid = plan.subscriptionStatus === "active";
 
   const fmtDate = (ms?: number) =>
     ms ? new Date(ms).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : null;
@@ -182,7 +184,18 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     {`${p.includedProjects} projects · ${p.userLimit} users`}
                   </p>
 
-                  {isCurrent ? (
+                  {isCurrent && !paid ? (
+                    // On a trial the current plan is not paid for yet. This was
+                    // a dead "Your plan" button, so a trial customer had no way
+                    // to start paying until the trial ran out and locked them.
+                    <button
+                      onClick={() => doUpgrade(id)}
+                      disabled={working}
+                      className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-on-primary hover:bg-primary-deep apple-transition disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {payBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Subscribe now"}
+                    </button>
+                  ) : isCurrent ? (
                     <button disabled className="mt-auto w-full py-2.5 rounded-xl font-bold text-sm bg-panel border border-divider text-ink-muted cursor-default">
                       {"Your plan"}
                     </button>
