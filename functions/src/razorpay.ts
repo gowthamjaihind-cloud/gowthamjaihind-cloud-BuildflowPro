@@ -1,3 +1,4 @@
+import { refreshSlotSummary } from "./slotRefresh";
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import * as crypto from "crypto";
@@ -6,7 +7,7 @@ import { subscriptionPatch, planCacheKey, rzpPeriod, totalCycles } from "./rzpSu
 import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE, slotPurchasePatch, prorateUpgrade, addGst, GST_RATE_PCT } from "./plans";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
-import { slotSubAfterEvent, slotSummary } from "./slotSubs";
+import { slotSubAfterEvent } from "./slotSubs";
 
 // Razorpay integration (TEST MODE until KYC is completed and live keys are set).
 // Flow: the app creates an order (server-priced) -> Razorpay Checkout collects
@@ -231,6 +232,13 @@ async function applySubscriptionEvent(name: string, entity: any): Promise<void> 
   if (kind === "slots") {
     const next = slotSubAfterEvent(name, entity, (org?.slotSubs || {})[subId], Number(rec?.quantity) || Number(entity?.notes?.quantity) || 0);
     if (next && org) {
+      // Bought to re-open one particular locked project: it belongs to this
+      // subscription now, so assignProjectSlots must find it here (a live
+      // subscription's claim wins over the ended one's).
+      const forProjectId = String(rec?.forProjectId || entity?.notes?.projectId || "");
+      if (forProjectId && next.until > 0 && !(next.projectIds || []).includes(forProjectId)) {
+        next.projectIds = [...(next.projectIds || []), forProjectId].slice(0, Math.max(1, next.qty));
+      }
       await orgRef.set({ slotSubs: { [subId]: next } }, { merge: true });
       await refreshSlotSummary(orgId);
     }
@@ -462,13 +470,7 @@ async function ensureSlotPlan(cfg: RzpConfig, ratePerSlot: number, tax: { gstin:
   return planId;
 }
 
-/** Write the two summary fields firestore.rules reads. See slotSubs.ts. */
-export async function refreshSlotSummary(orgId: string): Promise<void> {
-  const ref = db.doc(`organizations/${orgId}`);
-  const snap = await ref.get();
-  if (!snap.exists) return;
-  await ref.set(slotSummary(snap.data()), { merge: true });
-}
+export { refreshSlotSummary };
 
 /**
  * Start a RECURRING subscription for extra project slots (slotSubs.ts says why
@@ -502,6 +504,11 @@ export const createSlotSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds:
   if (org.subscriptionStatus !== "active") {
     throw new HttpsError("failed-precondition", "Subscribe to your plan first, then add extra projects.");
   }
+  // Re-subscribing a locked project: the new subscription is for THAT project.
+  const forProjectId = String(request.data?.projectId || "").trim();
+  if (forProjectId && !(await db.doc(`organizations/${orgId}/projects/${forProjectId}`).get()).exists) {
+    throw new HttpsError("not-found", "That project no longer exists.");
+  }
 
   const cfg = await getRazorpayConfig();
   if (!cfg) throw new HttpsError("failed-precondition", "Payments aren't configured yet.");
@@ -519,7 +526,7 @@ export const createSlotSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds:
       total_count: totalCycles("monthly"),
       quantity,
       customer_notify: 1,
-      notes: { orgId, kind: "slots", quantity: String(quantity), uid },
+      notes: { orgId, kind: "slots", quantity: String(quantity), uid, ...(forProjectId ? { projectId: forProjectId } : {}) },
     }),
   });
   if (!res.ok) {
@@ -537,6 +544,7 @@ export const createSlotSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds:
     kind: "slots",
     orgId,
     quantity,
+    ...(forProjectId ? { forProjectId } : {}),
     uid,
     planId,
     amount: charge.totalPaise,

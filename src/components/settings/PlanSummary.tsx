@@ -3,7 +3,7 @@ import { Stack, Copy, Check, Plus, SlidersHorizontal, CalendarCheck, WarningCirc
 import { usePlan } from "../../hooks/usePlan";
 import { useProjectsQuery } from "../../hooks/queries";
 import { useAuthStore } from "../../store";
-import { projectCapState, planAdvice, liveSlotSubs, PLANS, PlanId } from "../../lib/plans";
+import { projectCapState, planAdvice, liveSlotSubs, billableProjectCount, PLANS, PlanId } from "../../lib/plans";
 import { AddCapacityModal } from "../AddCapacityModal";
 import { ManagePlanModal } from "../ManagePlanModal";
 import { Tooltip } from "../Tooltip";
@@ -16,6 +16,9 @@ import {
   type BillingHistoryRow,
 } from "../../services/firebaseFunctions";
 import { confirmDialog, toast } from "../../lib/feedback";
+import { useRazorpayCheckout } from "../../hooks/useRazorpayCheckout";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../../lib/react-query";
 
 // Plans an Owner/Admin can self-serve manage (upgrade/downgrade).
 // No free tier any more; Enterprise is not self-serve.
@@ -32,6 +35,12 @@ export const PlanSummary: React.FC = () => {
   // Declared with the other state, above the early returns: hooks must run in
   // the same order on every render.
   const [slotBusy, setSlotBusy] = useState<string | null>(null);
+  const { paySlots, busy: payBusy, error: payError } = useRazorpayCheckout();
+  const qc = useQueryClient();
+  // The unlock is written by the server a moment after the payment lands.
+  const refreshProjects = () => {
+    for (const ms of [500, 3000, 8000]) setTimeout(() => qc.invalidateQueries({ queryKey: queryKeys.projects }), ms);
+  };
   // A payment whose webhook was late or lost leaves a paid workspace reading
   // "not subscribed". Opening Settings asks the server to check with Razorpay.
   // Owners and Admins only; it is a no-op for a workspace with nothing pending.
@@ -71,7 +80,7 @@ export const PlanSummary: React.FC = () => {
 
   const planName =
     plan.plan && PLANS[plan.plan as PlanId] ? PLANS[plan.plan as PlanId].name : plan.plan || "—";
-  const cap = projectCapState(plan, projects.length);
+  const cap = projectCapState(plan, billableProjectCount(projects));
   const isOwnerAdmin = role === "Owner" || role === "Admin";
   // "Add projects" applies to paid, capped plans (not Free, not the uncapped
   // Enterprise/grandfathered orgs) and only for Owners/Admins.
@@ -87,7 +96,7 @@ export const PlanSummary: React.FC = () => {
   // a customer past the crossover quietly paying more than Business would cost
   // them. At 16 projects that is ₹1,584 against ₹1,499. Saying nothing is
   // charging someone for not reading a pricing table.
-  const advice = planAdvice(plan.plan, projects.length);
+  const advice = planAdvice(plan.plan, billableProjectCount(projects));
 
   // Leaving. Takes effect at the end of the period already paid for -- nothing
   // is cut off early and nothing is deleted -- and it is reversible right up
@@ -108,14 +117,19 @@ export const PlanSummary: React.FC = () => {
   };
 
   const slotSubs = liveSlotSubs(plan);
-  const cancelSlots = async (id: string, qty: number, until: number) => {
+  const projectName = (id: string) => projects.find((p) => p.id === id)?.name || "a deleted project";
+  const namesOf = (ids: string[]) => ids.map(projectName).join(", ");
+
+  const cancelSlots = async (id: string, qty: number, until: number, projectIds: string[]) => {
+    const names = namesOf(projectIds);
+    const when = fmtDate(until) || "the end of the month you've paid for";
     const ok = await confirmDialog({
-      title: qty === 1 ? "Cancel this extra project?" : `Cancel these ${qty} extra projects?`,
-      body:
-        `You keep ${qty === 1 ? "it" : "them"} until ${fmtDate(until) || "the end of the month you've paid for"}, and no further payment is taken. ` +
-        "Your projects are not deleted. After that date you won't be able to add new projects beyond your plan's limit until you buy capacity again.",
-      confirmLabel: "Cancel extra projects",
-      cancelLabel: "Keep them",
+      title: names ? `Cancel the subscription for ${names}?` : "Cancel this unused extra project?",
+      body: names
+        ? `No further payment is taken. ${names} ${projectIds.length === 1 ? "stays" : "stay"} fully usable until ${when}, then ${projectIds.length === 1 ? "becomes" : "become"} read-only: everyone can still open and export ${projectIds.length === 1 ? "it" : "them"}, but nothing can be added or changed until you subscribe again. Nothing is deleted.`
+        : `No further payment is taken. You can still create a project with it until ${when}.`,
+      confirmLabel: "Cancel subscription",
+      cancelLabel: "Keep it",
       destructive: true,
     });
     if (!ok) return;
@@ -128,6 +142,10 @@ export const PlanSummary: React.FC = () => {
       setSlotBusy(null);
     }
   };
+
+  // A locked project is re-opened by subscribing again FOR THAT PROJECT.
+  const lockedProjects = projects.filter((p) => p.billingLocked);
+  const resubscribe = (projectId: string) => paySlots(1, refreshProjects, undefined, projectId);
 
   const cancelPlan = async () => {
     const until = fmtDate(plan.currentPeriodEnd);
@@ -200,7 +218,7 @@ export const PlanSummary: React.FC = () => {
       {advice.cheaper && isOwnerAdmin && !plan.cancelAtPeriodEnd && (
         <div className="mb-4 p-3 rounded-xl border border-success/30 bg-success/8 flex items-center justify-between gap-3 flex-wrap">
           <p className="text-sm text-ink">
-            You have <b>{projects.length} projects</b>. {PLANS[advice.cheaper as PlanId]?.name ?? advice.cheaper} would cost{" "}
+            You have <b>{billableProjectCount(projects)} projects</b>. {PLANS[advice.cheaper as PlanId]?.name ?? advice.cheaper} would cost{" "}
             <b>₹{advice.cheaperCost}</b> a month instead of <b>₹{advice.currentCost}</b> — <b>₹{advice.savings} less</b>.
           </p>
           <button
@@ -224,7 +242,7 @@ export const PlanSummary: React.FC = () => {
         <div className="text-sm text-ink-muted">
           {"Projects"}:{" "}
           <b className="text-ink">
-            {projects.length}
+            {billableProjectCount(projects)}
             {cap.capped && cap.included !== null ? ` / ${cap.included}` : ""}
           </b>
           {cap.overage > 0 && (
@@ -276,20 +294,24 @@ export const PlanSummary: React.FC = () => {
       {/* Extra projects are their own monthly subscriptions. They have to be
           visible and cancellable here: a recurring charge with no way to see or
           stop it is the thing customers rightly complain about. */}
-      {slotSubs.length > 0 && (
+      {(slotSubs.length > 0 || lockedProjects.length > 0) && (
         <div className="mt-3 p-3 rounded-xl border border-divider bg-panel/50 text-xs text-ink space-y-2">
           <p className="font-bold">{"Extra projects"}</p>
           {slotSubs.map((s) => {
             const ending = s.status === "cancelling" || s.status === "cancelled";
+            const names = namesOf(s.projectIds);
+            const spare = s.qty - s.projectIds.length;
             return (
               <div key={s.id} className="flex flex-wrap items-center justify-between gap-2">
                 <span>
-                  <b>{s.qty}</b> {s.qty === 1 ? "extra project" : "extra projects"} {"·"} ₹{(s.qty * plan.overageRate).toLocaleString("en-IN")}{" / month · "}
-                  {ending ? `ends ${fmtDate(s.until)}` : s.status === "halted" ? `payment failed, ends ${fmtDate(s.until)}` : `renews ${fmtDate(s.until)}`}
+                  <b>{names || "Not used yet"}</b>
+                  {names && spare > 0 ? ` (+${spare} not used yet)` : ""}
+                  {" · "}₹{(s.qty * plan.overageRate).toLocaleString("en-IN")}{" / month · "}
+                  {ending ? `ends ${fmtDate(s.until)}, then read-only` : s.status === "halted" ? `payment failed, ends ${fmtDate(s.until)}` : `renews ${fmtDate(s.until)}`}
                 </span>
                 {isOwnerAdmin && !ending && (
                   <button
-                    onClick={() => cancelSlots(s.id, s.qty, s.until)}
+                    onClick={() => cancelSlots(s.id, s.qty, s.until, s.projectIds)}
                     disabled={slotBusy === s.id}
                     className="font-bold px-2 py-1 rounded-lg text-ink-muted hover:text-danger apple-transition disabled:opacity-50"
                   >
@@ -299,6 +321,23 @@ export const PlanSummary: React.FC = () => {
               </div>
             );
           })}
+          {lockedProjects.map((p) => (
+            <div key={p.id} className="flex flex-wrap items-center justify-between gap-2">
+              <span>
+                <b>{p.name}</b>{" · read-only: its subscription has ended"}
+              </span>
+              {isOwnerAdmin && (
+                <button
+                  onClick={() => resubscribe(p.id)}
+                  disabled={payBusy}
+                  className="font-bold px-2 py-1 rounded-lg text-primary hover:text-primary-deep apple-transition disabled:opacity-50"
+                >
+                  {`Subscribe again · ₹${plan.overageRate} / month`}
+                </button>
+              )}
+            </div>
+          ))}
+          {payError && <p className="text-danger">{payError}</p>}
         </div>
       )}
 

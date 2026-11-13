@@ -135,8 +135,12 @@ project created once the charge is confirmed.
 - Settings → Your plan lists it under **Extra projects** with a renewal date.
 - A third project is refused until another slot is bought.
 
-**Also try:** buying 2 slots in one go (one subscription, quantity 2, ₹198),
-and buying a slot on a workspace that is still on trial (must be refused: a
+**One project per subscription.** The dialog sells one extra project at a
+time. Once the project is created, Settings names it: "<project name> · ₹99 /
+month · renews <date>". The org's `slotSubs.<sub id>.projectIds` holds that
+project's id.
+
+**Also try:** buying a slot on a workspace that is still on trial (must be refused: a
 plan has to be active first).
 
 ## 5. Slot renewal, cancel, failure — the parts that touch money
@@ -156,6 +160,15 @@ Razorpay must show that subscription cancelled; the org shows it as "ends
 <date>"; the slot keeps working until that date; **the plan stays active** and
 nobody is locked out. After the date, a new project is refused but existing
 projects stay editable.
+
+**The project locks when its subscription ends.** After the "ends" date (the
+nightly job applies it, so allow up to a day):
+
+- the project shows a **Read-only** badge in the portfolio and a banner when
+  opened; it can be read and exported, but saving anything is refused
+- the project document has `billingLocked: true`; other projects are untouched
+- it no longer counts toward the limit (`projectCount` drops by one)
+- Settings lists it with **Subscribe again**; paying unlocks that same project
 
 **Failed slot payment.** With a card that fails on renewal: while Razorpay
 retries (`pending`) nothing changes. On `halted` the slot stops extending and

@@ -156,6 +156,16 @@ await expect("Owner forges the recurring slot count", false, write(carol, `organ
 await write("owner", `organizations/${CAP}`, { projectCount: 3, recurringSlotsUntil: Date.now() - 1000 });
 await expect("...and not once that subscription has lapsed", false, write(carol, `organizations/${CAP}/projects/extra3`, { name: "Extra 3", ownerId: "carol" }, { create: true }));
 await expect("Existing projects stay editable over the limit", true, write(carol, `organizations/${CAP}/projects/extra`, { name: "Renamed" }));
+// --- a project whose own subscription has ended is read-only ------------------
+await write("owner", `organizations/${CAP}/projects/extra`, { billingLocked: true });
+await write("owner", `organizations/${CAP}/projects/extra/tasks/t1`, { name: "Old task" });
+console.log("\nLocked project:");
+await expect("Owner writes a task in a locked project", false, write(carol, `organizations/${CAP}/projects/extra/tasks/t2`, { name: "New" }, { create: true }));
+await expect("Owner renames a locked project", false, write(carol, `organizations/${CAP}/projects/extra`, { name: "Renamed again" }));
+await expect("Owner unlocks it from the browser", false, write(carol, `organizations/${CAP}/projects/extra`, { billingLocked: false }));
+await expect("Owner locks another project from the browser", false, write(carol, `organizations/${CAP}/projects/extra2`, { billingLocked: true }));
+await expect("Owner still reads a locked project's data", true, read(carol, `organizations/${CAP}/projects/extra/tasks/t1`));
+await expect("An unlocked project is unaffected", true, write(carol, `organizations/${CAP}/projects/extra2/tasks/t1`, { name: "Fine" }, { create: true }));
 await write("owner", `organizations/org-unl`, { plan: "enterprise", includedProjects: null, projectCount: 99, members: { carol: "Owner" } });
 await expect("Uncapped plan creates freely", true, write(carol, `organizations/org-unl/projects/p100`, { name: "P100", ownerId: "carol" }, { create: true }));
 

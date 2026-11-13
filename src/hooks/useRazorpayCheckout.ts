@@ -188,11 +188,11 @@ export function useRazorpayCheckout() {
    * the caller's next step is usually to create the project, and the database
    * would refuse that until the server has recorded the payment.
    */
-  const paySlots = async (quantity: number, onSuccess?: () => void, orgId?: string) => {
+  const paySlots = async (quantity: number, onSuccess?: () => void, orgId?: string, projectId?: string) => {
     setBusy(true);
     setError(null);
     try {
-      const sub = await callCreateSlotSubscription({ quantity, orgId });
+      const sub = await callCreateSlotSubscription({ quantity, orgId, ...(projectId ? { projectId } : {}) });
       const ok = await loadScript(CHECKOUT_SRC);
       if (!ok || !window.Razorpay) {
         throw new Error("Couldn't load the payment window. Check your connection and try again.");

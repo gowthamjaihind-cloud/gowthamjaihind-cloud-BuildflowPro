@@ -8,7 +8,7 @@ import {
 import { projectService } from "../../../services/projectService";
 import { useProjectsQuery } from "../../../hooks/queries";
 import { usePlan } from "../../../hooks/usePlan";
-import { projectCapState } from "../../../lib/plans";
+import { projectCapState, billableProjectCount } from "../../../lib/plans";
 import { UserProfile } from "../../../types";
 import { AddCapacityModal } from "../../../components/AddCapacityModal";
 import { useTranslation } from "../../../i18n";
@@ -241,7 +241,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     // Plan project-cap enforcement. Free is a hard cap (upgrade to add more);
     // a paid plan at its cap opens the Add-capacity modal (buy ₹99 slots or
     // upgrade) and creates the project once capacity is added.
-    const cap = projectCapState(plan, projects.length);
+    const cap = projectCapState(plan, billableProjectCount(projects));
     if (cap.capped && cap.atOrOver) {
       if (cap.isFree) {
         toast.info(`Your Free plan includes ${cap.included} project. Upgrade to a paid plan to add more projects.`,);

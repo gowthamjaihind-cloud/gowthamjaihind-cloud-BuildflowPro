@@ -102,8 +102,15 @@ service cloud.firestore {
         || ownsProject(orgId, projectId)
       );
     }
+    // A project paid for by its own monthly subscription is locked once that
+    // subscription has ended: still readable and exportable, not writable,
+    // until it is subscribed again. The flag is written only by the billing
+    // functions (functions/src/slotRefresh.ts).
+    function projectLocked(orgId, projectId) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)/projects/$(projectId)).data.get('billingLocked', false) == true;
+    }
     function canWriteProject(orgId, projectId) {
-      return isOrgMember(orgId) && (
+      return isOrgMember(orgId) && !projectLocked(orgId, projectId) && (
         hasAnyRole(['Admin', 'Owner'])
         || myProjectAccess(projectId) == 'write'
         || ownsProject(orgId, projectId)
@@ -226,8 +233,14 @@ service cloud.firestore {
         // Creating or editing the project itself is a role decision, not a
         // per-project grant (a project being created has no grants yet).
         // Creating is also limited by the plan: see underProjectCap.
-        allow create: if isOrgMember(orgId) && isAdminOrManager() && underProjectCap(orgId);
-        allow update, delete: if isOrgMember(orgId) && isAdminOrManager();
+        allow create: if isOrgMember(orgId) && isAdminOrManager() && underProjectCap(orgId)
+          && request.resource.data.get('billingLocked', false) != true;
+        // A locked project cannot be edited, and nobody can lock or unlock one
+        // from the browser. It can still be deleted.
+        allow update: if isOrgMember(orgId) && isAdminOrManager()
+          && resource.data.get('billingLocked', false) != true
+          && request.resource.data.get('billingLocked', false) != true;
+        allow delete: if isOrgMember(orgId) && isAdminOrManager();
 
         // Generic project sub-collections (tasks, inventory, suppliers, costs,
         // materials, equipment, dailyPlans, vendor_bills, …). The financial /

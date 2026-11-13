@@ -35,6 +35,13 @@ export interface SlotSub {
   /** Epoch ms: end of the cycle already paid for. 0 until the first charge. */
   until: number;
   status: SlotSubStatus;
+  /**
+   * The projects this subscription pays for (at most `qty`). Set by
+   * assignProjectSlots when a project is created past the plan's own cap, so
+   * the customer can see WHICH project a ₹99 line is for, cancel that one, and
+   * so the project -- not just "capacity" -- stops when the money does.
+   */
+  projectIds?: string[];
 }
 
 /** A late webhook or a card retry should not take a paid project away. */
@@ -98,7 +105,7 @@ export function slotSubAfterEvent(event: string, entity: any, existing: SlotSub 
 
   if (event === "subscription.charged" || event === "subscription.activated") {
     // Never move `until` backwards: events can arrive out of order.
-    return { qty, until: Math.max(prior, end), status: existing?.status === "cancelling" ? "cancelling" : "active" };
+    return { ...(existing || {}), qty, until: Math.max(prior, end), status: existing?.status === "cancelling" ? "cancelling" : "active" };
   }
   if (event === "subscription.halted" || event === "subscription.paused") {
     return existing ? { ...existing, qty, status: "halted" } : null;
@@ -112,4 +119,89 @@ export function slotSubAfterEvent(event: string, entity: any, existing: SlotSub 
 /** Subscriptions worth trying to cancel at Razorpay when the plan itself ends. */
 export function cancellableSlotSubs(org: any): string[] {
   return Object.entries(subsOf(org)).filter(([, s]) => s.status === "active" || s.status === "halted").map(([id]) => id);
+}
+
+
+export interface ProjectRef {
+  id: string;
+  /** Sortable creation key (ISO string or similar); older sorts first. */
+  created: string;
+}
+
+/**
+ * Decide which project each slot subscription pays for, and which projects are
+ * locked because theirs has ended.
+ *
+ *   - The plan's own projects are the OLDEST ones not tied to a subscription,
+ *     up to the plan's cap (plus any one-off slots still inside their window).
+ *   - A project created past that is tied to a live subscription with room.
+ *   - A project whose subscription is no longer live is LOCKED (read-only),
+ *     unless the plan itself has room for it again -- then it is released
+ *     back into the plan rather than held hostage.
+ *   - A project past the cap with no subscription at all (older data, a
+ *     downgrade) is left alone: unassigned and unlocked.
+ *
+ * Pure. An uncapped plan releases everything.
+ */
+export function assignProjectSlots(
+  org: any,
+  projects: ProjectRef[],
+  now = Date.now(),
+): { slotSubs: Record<string, SlotSub>; locked: string[] } {
+  const exists = new Set(projects.map((p) => p.id));
+  const order = [...projects].sort((a, b) => (a.created < b.created ? -1 : a.created > b.created ? 1 : a.id < b.id ? -1 : 1));
+  const rank = new Map(order.map((p, i) => [p.id, i]));
+  const subs: Record<string, SlotSub> = {};
+  const taken = new Set<string>();
+  // Live subscriptions claim first, so a project named by both a dead and a
+  // live one (a re-subscribe) belongs to the live one.
+  const ids = Object.keys(subsOf(org)).sort((a, b) => Number(slotSubLive(subsOf(org)[b], now)) - Number(slotSubLive(subsOf(org)[a], now)) || (a < b ? -1 : 1));
+  for (const id of ids) {
+    const src = subsOf(org)[id];
+    const qty = Math.max(0, Math.floor(num(src.qty)));
+    const mine: string[] = [];
+    for (const pid of Array.isArray(src.projectIds) ? src.projectIds : []) {
+      if (mine.length >= qty || !exists.has(pid) || taken.has(pid)) continue;
+      mine.push(pid);
+      taken.add(pid);
+    }
+    subs[id] = { ...src, projectIds: mine };
+  }
+
+  const cap = org?.includedProjects;
+  if (typeof cap !== "number") {
+    for (const id of Object.keys(subs)) subs[id].projectIds = [];
+    return { slotSubs: subs, locked: [] };
+  }
+  const oneOff = num(org?.slotsExpireAt) > now ? Math.max(0, Math.floor(num(org?.purchasedSlots))) : 0;
+  const base = cap + oneOff;
+
+  let free = order.filter((p) => !taken.has(p.id)).map((p) => p.id);
+  // Room in the plan itself: release locked projects into it, oldest first.
+  let room = base - free.length;
+  if (room > 0) {
+    const dead = Object.keys(subs)
+      .filter((id) => !slotSubLive(subs[id], now))
+      .flatMap((id) => (subs[id].projectIds || []).map((pid) => ({ id, pid })))
+      .sort((a, b) => (rank.get(a.pid) ?? 0) - (rank.get(b.pid) ?? 0));
+    for (const d of dead) {
+      if (room <= 0) break;
+      subs[d.id].projectIds = (subs[d.id].projectIds || []).filter((x) => x !== d.pid);
+      taken.delete(d.pid);
+      room--;
+    }
+    free = order.filter((p) => !taken.has(p.id)).map((p) => p.id);
+  }
+  // Past the plan's cap: tie each to a live subscription that has room.
+  const overflow = free.slice(base);
+  const liveIds = Object.keys(subs).filter((id) => slotSubLive(subs[id], now)).sort();
+  for (const pid of overflow) {
+    const home = liveIds.find((id) => (subs[id].projectIds || []).length < Math.floor(num(subs[id].qty)));
+    if (!home) break;
+    subs[home].projectIds = [...(subs[home].projectIds || []), pid];
+  }
+  const locked = Object.keys(subs)
+    .filter((id) => !slotSubLive(subs[id], now))
+    .flatMap((id) => subs[id].projectIds || []);
+  return { slotSubs: subs, locked };
 }

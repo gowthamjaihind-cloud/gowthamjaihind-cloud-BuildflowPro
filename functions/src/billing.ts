@@ -29,7 +29,7 @@ import { captureError } from "./sentry";
 import { seatState } from "./seats";
 import { aiQuotaFor } from "./ai/quota";
 import { CALLABLE_OPTS } from "./callable";
-import { slotSummary } from "./slotSubs";
+import { refreshSlotSummary } from "./slotRefresh";
 
 // App operators who may provision orgs and manage subscriptions. Keep in sync
 // with the client-side check in the super-admin panel. (Later this can move to
@@ -327,12 +327,8 @@ export const runSubscriptionLifecycle = onSchedule(
         // Keep the slot summary firestore.rules reads honest: a slot
         // subscription that lapsed sends no further webhook, so without this
         // nightly recompute its capacity would be counted indefinitely.
-        if (data.slotSubs) {
-          const sum = slotSummary(data, now);
-          if (sum.recurringSlots !== data.recurringSlots || sum.recurringSlotsUntil !== data.recurringSlotsUntil) {
-            await orgDoc.ref.set(sum, { merge: true });
-          }
-        }
+        // It also locks a project whose subscription has ended.
+        if (data.slotSubs) await refreshSlotSummary(orgDoc.id);
         const move = nextLifecycleState(data, now);
         if (move) {
           const patch: any = { subscriptionStatus: move.to };

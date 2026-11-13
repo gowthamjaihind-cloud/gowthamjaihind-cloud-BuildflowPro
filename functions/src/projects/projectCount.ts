@@ -1,5 +1,6 @@
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
+import { refreshSlotSummary } from "../slotRefresh";
 
 /**
  * Keeps organizations/{orgId}.projectCount equal to the number of projects.
@@ -26,5 +27,9 @@ export const onOrgProjectWritten = onDocumentWritten(
     const orgRef = db.doc(`organizations/${event.params.orgId}`);
     const count = (await orgRef.collection("projects").count().get()).data().count;
     await orgRef.update({ projectCount: count }).catch((e) => console.error("projectCount update failed", event.params.orgId, e));
+    // A new project past the plan's cap is tied to the slot subscription that
+    // pays for it; a deleted one frees its subscription for the next project.
+    // This also rewrites projectCount without locked projects.
+    await refreshSlotSummary(event.params.orgId).catch((e) => console.error("slot refresh failed", event.params.orgId, e));
   },
 );

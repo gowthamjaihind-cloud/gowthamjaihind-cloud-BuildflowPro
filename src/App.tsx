@@ -63,6 +63,7 @@ import { PortfolioPage } from "./pages/PortfolioPage";
 import { ProjectDashboard } from "./pages/ProjectDashboard";
 import { Onboarding } from "./components/Onboarding";
 import { Paywall, TrialBanner } from "./components/Paywall";
+import { LockedProjectBanner } from "./components/LockedProjectBanner";
 import { useOrgAccess } from "./hooks/useOrgAccess";
 
 export const AuthContext = React.createContext<{ user: UserProfile | null }>({
@@ -226,6 +227,12 @@ function AppContent() {
     return <Paywall access={access} user={user} />;
   }
 
+  // The store's copy of the open project can predate a lock or an unlock; the
+  // project list is the live one.
+  const lockedActive = activeProject
+    ? projects.find((p) => p.id === activeProject.id && p.billingLocked) || null
+    : null;
+
   let page: React.ReactNode;
   if (!activeProject) {
     page = viewingSettings ? (
@@ -252,6 +259,7 @@ function AppContent() {
   return (
     <>
       {page}
+      {lockedActive && <LockedProjectBanner projectId={lockedActive.id} projectName={lockedActive.name} />}
       {access.isTrial && access.allowed && <TrialBanner daysLeft={access.daysLeft} />}
       {/* Folds away entirely in the production bundle. */}
       <Feedback />

@@ -1,14 +1,13 @@
 import { useTaxRate, gstNote } from "../hooks/useTaxRate";
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Stack, Check, CircleNotch as Loader2, Plus, Minus } from "@phosphor-icons/react";
+import { X, Stack, Check, CircleNotch as Loader2 } from "@phosphor-icons/react";
 import { useRazorpayCheckout } from "../hooks/useRazorpayCheckout";
 import { usePlan } from "../hooks/usePlan";
 import { useProjectsQuery } from "../hooks/queries";
 import { PLANS, PLAN_ORDER, PlanId } from "../lib/plans";
-import { Tooltip } from "./Tooltip";
 import { DialogBehaviour } from "../lib/useDialog";
-import { projectCapState } from "../lib/plans";
+import { projectCapState, billableProjectCount } from "../lib/plans";
 
 interface AddCapacityModalProps {
   isOpen: boolean;
@@ -31,16 +30,12 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
   const [period, setPeriod] = useState<"monthly" | "annual">("monthly");
 
   // The EFFECTIVE cap: the plan's own plus any slots still inside their 30 days.
-  const included = projectCapState(plan, projects.length).included ?? 0;
+  const used = billableProjectCount(projects);
+  const included = projectCapState(plan, used).included ?? 0;
   const rate = plan.overageRate;
-  // Slots needed to create one more project past the cap (at least 1).
-  const minSlots = Math.max(1, projects.length + 1 - included);
-  // null until the customer presses + or -. The dialog is mounted before the
-  // plan has loaded, when `included` still reads 0, so seeding the state with
-  // minSlots froze it one too high: needing ONE more project offered two slots
-  // and a ₹198 button.
-  const [qty, setQty] = useState<number | null>(null);
-  const slots = Math.max(minSlots, qty ?? minSlots);
+  // One extra project per purchase. Each is its own monthly subscription, tied
+  // to the project created with it, so it can be seen and cancelled by name.
+  const slots = 1;
 
   // Upgrade options: paid plans with a larger included cap than the current one.
   const currentIdx = plan.plan ? PLAN_ORDER.indexOf(plan.plan as PlanId) : -1;
@@ -87,7 +82,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
             <div>
               <h2 className="text-2xl font-bold text-ink tracking-tight">{"Add project capacity"}</h2>
               <p className="text-[15px] text-ink-muted font-medium mt-1">
-                {"You've used"} {projects.length} / {included} {"included projects."}
+                {"You've used"} {used} / {included} {"included projects."}
               </p>
             </div>
             <button aria-label={"Close"}
@@ -109,35 +104,12 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
           <div className="rounded-2xl border border-primary/30 ring-1 ring-primary/20 p-5 mb-5">
             <div className="flex items-center gap-2 mb-1">
               <Stack weight="duotone" className="w-5 h-5 text-primary" />
-              <p className="font-bold text-ink">{"Add project slots"}</p>
+              <p className="font-bold text-ink">{"Add one more project"}</p>
             </div>
             <p className="text-sm text-ink-muted mb-4">
-              {`₹${rate} per extra project, per month. Renews automatically until you cancel it in Settings.`}
+              {`₹${rate} per month for this project. Renews automatically. You can cancel it by name in Settings; the project then becomes read-only at the end of the paid month, and nothing is deleted.`}
             </p>
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="inline-flex items-center gap-3 bg-panel border border-divider rounded-full p-1">
-                <Tooltip label={"Decrease quantity"}>
-                  <button aria-label="Decrease quantity"
-                    type="button"
-                    onClick={() => setQty(Math.max(minSlots, slots - 1))}
-                    disabled={slots <= minSlots || busy}
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface disabled:opacity-40 apple-transition"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                </Tooltip>
-                <span className="font-bold text-lg text-ink w-8 text-center">{slots}</span>
-                <Tooltip label={"Increase quantity"}>
-                  <button aria-label="Increase quantity"
-                    type="button"
-                    onClick={() => setQty(Math.min(50, slots + 1))}
-                    disabled={slots >= 50 || busy}
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface disabled:opacity-40 apple-transition"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </Tooltip>
-              </div>
               <button
                 type="button"
                 onClick={handleBuySlots}
