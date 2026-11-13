@@ -774,7 +774,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                             {docItem.name}
                           </span>
                           <span className="text-[10px] text-ink-muted font-bold uppercase tracking-wider">
-                            {new Date(docItem.uploadedAt).toLocaleDateString()}
+                            {new Date(docItem.uploadedAt).toLocaleDateString("en-IN")}
                           </span>
                         </div>
                       </div>

@@ -29,6 +29,14 @@ export interface OrgPlan {
   pendingPlanChange?: PendingPlanChange | null; // scheduled end-of-cycle downgrade
   /** True once the customer has asked to cancel; takes effect at period end. */
   cancelAtPeriodEnd?: boolean;
+  /**
+   * Extra project slots bought for 30 days, and when they lapse. These MUST be
+   * carried: projectCapState adds live slots to includedProjects, and without
+   * them here the cap never moved -- a customer paid ₹99 for a slot and was
+   * shown the same "add capacity" dialog again.
+   */
+  purchasedSlots?: number;
+  slotsExpireAt?: number;
 }
 
 // Realtime plan/capacity for the signed-in user's current org. Absent
@@ -66,6 +74,8 @@ export function usePlan(): OrgPlan {
           currentPeriodEnd: typeof d.currentPeriodEnd === "number" ? d.currentPeriodEnd : undefined,
           pendingPlanChange: d.pendingPlanChange || null,
           cancelAtPeriodEnd: d.cancelAtPeriodEnd === true,
+          purchasedSlots: Number(d.purchasedSlots) || 0,
+          slotsExpireAt: Number(d.slotsExpireAt) || 0,
         });
       },
       () => {

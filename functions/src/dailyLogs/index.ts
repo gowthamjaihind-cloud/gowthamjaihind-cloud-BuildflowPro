@@ -1,6 +1,8 @@
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
+import { FieldValue } from "firebase-admin/firestore";
+import { summaryProgress, summaryStatus } from "./rollup";
 
 
 async function deletePhotos(photoUrls: string[]) {
@@ -46,8 +48,8 @@ async function handleDailyLogRollup(
 
       await taskRef.update({
         progress: 0,
-        actualStartDate: admin.firestore.FieldValue.delete(),
-        actualEndDate: admin.firestore.FieldValue.delete(),
+        actualStartDate: FieldValue.delete(),
+        actualEndDate: FieldValue.delete(),
         status: nextStatus,
       });
     }
@@ -105,10 +107,31 @@ async function handleDailyLogRollup(
   if (actualEnd) {
     updates.actualEndDate = actualEnd;
   } else {
-    updates.actualEndDate = admin.firestore.FieldValue.delete();
+    updates.actualEndDate = FieldValue.delete();
   }
 
   await taskRef.update(updates);
+  await rollUpAncestors(taskRef);
+}
+
+/**
+ * Carry a task's new progress up to its summary tasks (see rollup.ts). Walks
+ * the parent chain, bounded so a malformed cycle cannot loop.
+ */
+async function rollUpAncestors(taskRef: admin.firestore.DocumentReference) {
+  const tasks = taskRef.parent;
+  let snap = await taskRef.get();
+  for (let depth = 0; depth < 12; depth++) {
+    const parentId = snap.exists ? (snap.data() as any)?.parentId : null;
+    if (!parentId) return;
+    const parentRef = tasks.doc(parentId);
+    const [parentSnap, kids] = await Promise.all([parentRef.get(), tasks.where("parentId", "==", parentId).get()]);
+    if (!parentSnap.exists) return;
+    const progress = summaryProgress(kids.docs.map((d) => d.data() as any));
+    const current = parentSnap.data() as any;
+    await parentRef.update({ progress, status: summaryStatus(progress, current.status) });
+    snap = await parentRef.get();
+  }
 }
 
 async function handleInventoryRollup(

@@ -1,6 +1,7 @@
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
+import { FieldValue } from "firebase-admin/firestore";
 
 // Example of a background trigger function for notifications
 // Bound to the app's NAMED Firestore database; without `database` a v2
@@ -49,7 +50,7 @@ export const onApprovalCreated = onDocumentCreated(
     title: "New Approval Required",
     message: `You have a new pending approval.`,
     isRead: false,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     linkId: event.params.approvalId,
     type: "APPROVAL_REQUEST"
   });

@@ -303,6 +303,10 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     const path = `${basePath}/tasks`;
+    if (newTask.startDate && newTask.endDate && newTask.endDate < newTask.startDate) {
+      toast.error("Plan finish is before plan start.");
+      return;
+    }
     try {
       const start = newTask.startDate
         ? safeParseDate(newTask.startDate)
@@ -327,7 +331,10 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
       const taskData = {
         ...newTask,
         projectId,
-        parentId: isAdding === "root" ? null : isAdding,
+        // "Add Task" opens at the root, but the form has its own Parent Task
+        // dropdown; its choice used to be thrown away here, so every task
+        // added that way landed at the top level.
+        parentId: isAdding === "root" ? newTask.parentId || null : isAdding,
         duration,
         budgetedCost,
         plannedLaborCost: laborCost,
@@ -372,6 +379,10 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
   const handleUpdateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTask) return;
+    if (editingTask.startDate && editingTask.endDate && editingTask.endDate < editingTask.startDate) {
+      toast.error("Plan finish is before plan start.");
+      return;
+    }
     const path = `${basePath}/tasks/${editingTask.id}`;
     try {
       const originalTask = tasks.find((t) => t.id === editingTask.id);
@@ -1052,7 +1063,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
     if (!d) return "";
     const date = new Date(d);
     if (isNaN(date.getTime())) return "";
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString("en-IN", {
       month: "short",
       day: "numeric",
     });

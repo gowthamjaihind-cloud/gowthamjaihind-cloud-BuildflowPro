@@ -174,6 +174,10 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
   const handleAddRate = async (e: React.FormEvent) => {
     e.preventDefault();
     const path = `${basePath}/labor_rate_cards`;
+    if (!(Number(newRate.rate) > 0)) {
+      toast.error("Enter a rate above zero.");
+      return;
+    }
     try {
       if (editingRateId) {
         await updateDoc(doc(db, path, editingRateId), { ...newRate });

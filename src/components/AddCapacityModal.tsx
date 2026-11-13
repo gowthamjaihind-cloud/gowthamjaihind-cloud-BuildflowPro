@@ -8,6 +8,7 @@ import { useProjectsQuery } from "../hooks/queries";
 import { PLANS, PLAN_ORDER, PlanId } from "../lib/plans";
 import { Tooltip } from "./Tooltip";
 import { DialogBehaviour } from "../lib/useDialog";
+import { projectCapState } from "../lib/plans";
 
 interface AddCapacityModalProps {
   isOpen: boolean;
@@ -29,12 +30,17 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
   const { pay, paySlots, busy, error } = useRazorpayCheckout();
   const [period, setPeriod] = useState<"monthly" | "annual">("monthly");
 
-  const included = typeof plan.includedProjects === "number" ? plan.includedProjects : 0;
+  // The EFFECTIVE cap: the plan's own plus any slots still inside their 30 days.
+  const included = projectCapState(plan, projects.length).included ?? 0;
   const rate = plan.overageRate;
   // Slots needed to create one more project past the cap (at least 1).
   const minSlots = Math.max(1, projects.length + 1 - included);
-  const [qty, setQty] = useState(minSlots);
-  const slots = Math.max(minSlots, qty);
+  // null until the customer presses + or -. The dialog is mounted before the
+  // plan has loaded, when `included` still reads 0, so seeding the state with
+  // minSlots froze it one too high: needing ONE more project offered two slots
+  // and a ₹198 button.
+  const [qty, setQty] = useState<number | null>(null);
+  const slots = Math.max(minSlots, qty ?? minSlots);
 
   // Upgrade options: paid plans with a larger included cap than the current one.
   const currentIdx = plan.plan ? PLAN_ORDER.indexOf(plan.plan as PlanId) : -1;
@@ -113,7 +119,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
                 <Tooltip label={"Decrease quantity"}>
                   <button aria-label="Decrease quantity"
                     type="button"
-                    onClick={() => setQty((q) => Math.max(minSlots, q - 1))}
+                    onClick={() => setQty(Math.max(minSlots, slots - 1))}
                     disabled={slots <= minSlots || busy}
                     className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface disabled:opacity-40 apple-transition"
                   >
@@ -124,7 +130,7 @@ export const AddCapacityModal: React.FC<AddCapacityModalProps> = ({ isOpen, onCl
                 <Tooltip label={"Increase quantity"}>
                   <button aria-label="Increase quantity"
                     type="button"
-                    onClick={() => setQty((q) => Math.min(50, Math.max(minSlots, q) + 1))}
+                    onClick={() => setQty(Math.min(50, slots + 1))}
                     disabled={slots >= 50 || busy}
                     className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface disabled:opacity-40 apple-transition"
                   >

@@ -21,7 +21,10 @@ export function exportToCSV(
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.setAttribute("href", url);
-  link.setAttribute("download", fileName.endsWith(".csv") ? fileName : `${fileName}.csv`);
+  // Project names carry dashes and other characters some browsers refuse in a
+  // filename, which left the file called just "download".
+  const safe = fileName.replace(/[^A-Za-z0-9._ -]+/g, "-");
+  link.setAttribute("download", safe.endsWith(".csv") ? safe : `${safe}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

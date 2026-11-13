@@ -125,7 +125,7 @@ export const PrivacyPanel: React.FC<{ currentUser: UserProfile }> = ({ currentUs
           <p className="text-[11px] text-ink-muted mt-4 flex items-center gap-1.5">
             <ShieldCheck weight="fill" className="w-4 h-4 text-success" />
             {"You accepted version"} {currentUser.legal.termsVersion} {"on"}{" "}
-            {new Date(currentUser.legal.acceptedAt).toLocaleDateString()}.
+            {new Date(currentUser.legal.acceptedAt).toLocaleDateString("en-IN")}.
           </p>
         )}
       </section>

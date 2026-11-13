@@ -58,6 +58,9 @@ import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
 import { DialogBehaviour } from "../lib/useDialog";
 
+/** Units Indian sites buy and issue in. Editable under Configuration. */
+const DEFAULT_UNITS = ["bag", "kg", "MT", "nos", "cum", "cft", "sqft", "sqm", "rmt", "litre", "load", "box"];
+
 interface InventoryViewProps {
   projectId: string;
 }
@@ -166,7 +169,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       if (snapshot.exists()) {
         setConfig(snapshot.data() as any);
       } else {
-        setConfig({ materialCodes: [], groupCodes: [], units: [] });
+        // A new project used to start with no units at all, so the first
+        // item could not be added without typing one in by hand.
+        setConfig({ materialCodes: [], groupCodes: [], units: [...DEFAULT_UNITS] });
       }
     });
   }, [projectId]);
@@ -408,9 +413,20 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
     const finalMaterialId =
       newItem.materialId ||
       `MAT-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    if ((Number(newItem.quantity) || 0) < 0 || (Number(newItem.unitCost) || 0) < 0 || (Number(newItem.minThreshold) || 0) < 0) {
+      toast.error("Quantity, unit cost and low-stock threshold can't be negative.");
+      return;
+    }
+    if (newItem.materialId && (rawItems || []).some((i: any) => String(i.materialId || "").toLowerCase() === newItem.materialId.toLowerCase())) {
+      toast.error(`Item code "${newItem.materialId}" is already used on this project.`);
+      return;
+    }
     try {
       await addDoc(collection(db, path), {
         ...newItem,
+        // Kept separately so goods receipts add to it instead of replacing it
+        // (functions/src/goodsReceipt/stock.ts).
+        openingQty: Number(newItem.quantity) || 0,
         materialId: finalMaterialId,
         projectId,
       });
@@ -567,8 +583,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
     const path = `${basePath}/inventory/${item.id}`;
     try {
+      // A physical count corrects total intake. Move the opening figure by
+      // the same amount, or the next goods receipt (which recomputes intake as
+      // opening + receipts) would undo the correction.
+      const newQuantity = count + (item.consumed || 0);
+      const openingNow = typeof (item as any).openingQty === "number" ? (item as any).openingQty : 0;
       await updateDoc(doc(db, `${basePath}/inventory`, item.id), {
-        quantity: count + (item.consumed || 0),
+        quantity: newQuantity,
+        openingQty: openingNow + (newQuantity - item.quantity),
       });
       const newCounts = { ...physicalCounts };
       delete newCounts[item.id];

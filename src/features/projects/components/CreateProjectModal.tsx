@@ -30,6 +30,8 @@ import { getProjectSubCollectionPath } from "../../../utils/projectPath";
 import { confirmDialog, toast } from "../../../lib/feedback";
 import { Tooltip } from "../../../components/Tooltip";
 import { DialogBehaviour } from "../../../lib/useDialog";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../../../lib/react-query";
 
 // Order the built-in groups the way a contractor would scan them.
 const CATEGORY_ORDER = [
@@ -141,6 +143,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   };
 
   const { data: projects = [] } = useProjectsQuery();
+  const queryClient = useQueryClient();
   const plan = usePlan();
   const [showCapacity, setShowCapacity] = useState(false);
 
@@ -193,6 +196,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       },
       user.uid
     );
+    // Show the new project straight away rather than after a reload.
+    queryClient.invalidateQueries({ queryKey: queryKeys.projects });
     if (newId && templateId) {
       try {
         await seedWbs(newId);
@@ -220,6 +225,11 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     e.preventDefault();
     if (!newProject.name.trim()) {
       toast.error("Please enter a workspace name.");
+      return;
+    }
+
+    if (newProject.startDate && newProject.endDate && newProject.endDate < newProject.startDate) {
+      toast.error("The end date is before the start date.");
       return;
     }
 

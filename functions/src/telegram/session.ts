@@ -1,9 +1,9 @@
-import * as admin from "firebase-admin";
 import { db } from "../db";
 // The pure half lives in bot/channel.ts so it can be tested without an
 // initialised admin app; re-exported here because callers expect it.
 export { WA_PREFIX, channelOf, linkFields, type ChatId, type Channel } from "../bot/channel";
 import type { ChatId } from "../bot/channel";
+import { FieldValue } from "firebase-admin/firestore";
 
 /**
  * Who a session belongs to.
@@ -44,9 +44,9 @@ export const setSession = async (chatId: ChatId, data: Partial<BotSession>) => {
 export const clearStep = async (chatId: ChatId) => {
   await db.collection("bot_sessions").doc(String(chatId)).set(
     {
-      step: admin.firestore.FieldValue.delete(),
-      draft: admin.firestore.FieldValue.delete(),
-      saving: admin.firestore.FieldValue.delete(),
+      step: FieldValue.delete(),
+      draft: FieldValue.delete(),
+      saving: FieldValue.delete(),
     } as any,
     { merge: true }
   );

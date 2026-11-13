@@ -278,7 +278,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
         const dateSuffix =
           reportType === "daily" ? selectedDate : `${startDate}_to_${endDate}`;
         pdf.save(
-          `${project?.name || "Project"}_${reportType}_report_${dateSuffix}.pdf`,
+          `${project?.name || "Project"}_${reportType}_report_${dateSuffix}.pdf`.replace(/[^A-Za-z0-9._ -]+/g, "-"),
         );
       } catch (err) {
         console.error("PDF generation error", err);

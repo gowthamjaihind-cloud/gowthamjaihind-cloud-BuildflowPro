@@ -575,6 +575,21 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     e.preventDefault();
     if (!isAdminOrOwner) return;
     if (!newPayment.supplierId || newPayment.amount <= 0) return;
+    // An advance is legitimate, a slipped zero is not: ₹50,00,000 against
+    // ₹60,925 due posted without a word.
+    if (!editingPaymentId) {
+      const due = Number(vendors.find((v) => v.id === newPayment.supplierId)?.outstandingBalance) || 0;
+      if (newPayment.amount > Math.max(0, due)) {
+        const fmt = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+        const ok = await confirmDialog({
+          title: "This is more than you owe",
+          body: `You are paying ${fmt(newPayment.amount)}; the outstanding balance is ${fmt(Math.max(0, due))}. The extra ${fmt(newPayment.amount - Math.max(0, due))} will be recorded as an advance.`,
+          confirmLabel: "Post as advance",
+          cancelLabel: "Go back",
+        });
+        if (!ok) return;
+      }
+    }
     try {
       if (editingPaymentId) {
         await runTransaction(db, async (transaction) => {
@@ -850,6 +865,11 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
 
   const handleAddVendor = async (e: React.FormEvent) => {
     e.preventDefault();
+    const phone = String(newVendor.phone || "").trim();
+    if (phone && (!/^[+()\d\s-]+$/.test(phone) || phone.replace(/\D/g, "").length < 10)) {
+      toast.error("Enter a valid phone number (at least 10 digits).");
+      return;
+    }
     try {
       if (isEditingVendor && selectedVendor) {
         // Store opening balance + what the ledger already accounts for, so the
@@ -1636,7 +1656,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       className="group hover:bg-panel/50 apple-transition"
                     >
                       <td className="px-6 md:px-10 py-5 md:py-8 font-mono text-[10px] md:text-[10px] font-bold text-ink-muted group-hover:text-ink apple-transition">
-                        {new Date(entry.date).toLocaleDateString()}
+                        {new Date(entry.date).toLocaleDateString("en-IN")}
                       </td>
                       <td className="px-6 md:px-10 py-5 md:py-8">
                         <div className="font-bold text-ink text-sm md:text-base tracking-tight leading-none mb-1 truncate max-w-[150px]">
@@ -1833,7 +1853,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       </div>
                     </div>
                     <div className="font-mono text-[10px] font-bold text-ink-muted">
-                      {new Date(entry.date).toLocaleDateString()}
+                      {new Date(entry.date).toLocaleDateString("en-IN")}
                     </div>
                   </div>
 
@@ -1959,8 +1979,10 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
 
   return (
     <div className="space-y-6 md:space-y-12 pb-24 md:pb-32">
-      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 md:gap-8 bg-panel p-4 md:p-6 rounded-2xl border border-divider shadow-sm">
-        <div className="flex gap-2 bg-panel/50 p-1 md:p-1.5 rounded-xl md:rounded-2xl w-full md:w-auto md:min-w-0 md:flex-1 overflow-x-auto ring-1 ring-slate-200/50">
+      <div className="flex flex-col 2xl:flex-row justify-between items-stretch 2xl:items-center gap-4 2xl:gap-8 bg-panel p-4 md:p-6 rounded-2xl border border-divider shadow-sm">
+        {/* Wraps instead of scrolling: a scrolling strip hid Bills, Receipts,
+            Ledger and Vendors off the edge with nothing to say they were there. */}
+        <div className="flex flex-wrap gap-2 bg-panel/50 p-1 md:p-1.5 rounded-xl md:rounded-2xl w-full md:w-auto md:min-w-0 md:flex-1 ring-1 ring-slate-200/50">
           {(
             [
               "purchase_orders",
