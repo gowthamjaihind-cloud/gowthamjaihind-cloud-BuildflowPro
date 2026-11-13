@@ -137,5 +137,21 @@ await expect("Owner reads and writes any project", true, (async () => (await rea
 await expect("Project Manager creates a project", true, write(sam, `${P}/p3`, { name: "Project Three", ownerId: "sam" }, { create: true }));
 await expect("...and works in the project they own", true, write(sam, `${P}/p3/tasks/t1`, { name: "First task" }, { create: true }));
 
+// --- plan project limit -------------------------------------------------------
+const CAP = "org-capped";
+await write("owner", `organizations/${CAP}`, { plan: "starter", includedProjects: 1, projectCount: 1, members: { carol: "Owner" } });
+await write("owner", "users/carol", { email: "c@example.com", role: "Owner", currentOrgId: CAP });
+const carol = tok("carol");
+console.log("\nProject limit:");
+await expect("Owner at the plan's limit creates another project", false, write(carol, `organizations/${CAP}/projects/extra`, { name: "Extra", ownerId: "carol" }, { create: true }));
+await expect("Owner forges the project counter", false, write(carol, `organizations/${CAP}`, { projectCount: 0 }));
+await write("owner", `organizations/${CAP}`, { purchasedSlots: 1, slotsExpireAt: Date.now() + 86400000 });
+await expect("...and can once a slot is bought", true, write(carol, `organizations/${CAP}/projects/extra`, { name: "Extra", ownerId: "carol" }, { create: true }));
+await write("owner", `organizations/${CAP}`, { projectCount: 2, slotsExpireAt: Date.now() - 1000 });
+await expect("...but not after the slot lapses", false, write(carol, `organizations/${CAP}/projects/extra2`, { name: "Extra 2", ownerId: "carol" }, { create: true }));
+await expect("Existing projects stay editable over the limit", true, write(carol, `organizations/${CAP}/projects/extra`, { name: "Renamed" }));
+await write("owner", `organizations/org-unl`, { plan: "enterprise", includedProjects: null, projectCount: 99, members: { carol: "Owner" } });
+await expect("Uncapped plan creates freely", true, write(carol, `organizations/org-unl/projects/p100`, { name: "P100", ownerId: "carol" }, { create: true }));
+
 console.log(failed ? `\n${failed} FAILED` : "\nall passed");
 process.exit(failed ? 1 : 0);

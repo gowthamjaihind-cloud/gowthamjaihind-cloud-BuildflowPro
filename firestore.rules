@@ -120,6 +120,34 @@ service cloud.firestore {
         && collection != 'audit_logs';
     }
 
+    // ---------------------------------------------------------------------
+    // Plan project limit.
+    //
+    // The app checks the limit before creating a project, but nothing here
+    // did, so an Owner or Admin could create unlimited projects on a
+    // one-project plan by writing directly. Rules cannot count documents;
+    // organizations/{orgId}.projectCount is maintained by a Cloud Function
+    // (functions/src/projects/projectCount.ts) and is not client-writable.
+    //
+    //   no numeric includedProjects  -> uncapped (Enterprise, grandfathered)
+    //   no projectCount yet          -> allowed (orgs from before the counter;
+    //                                   it appears on their next project write)
+    //   otherwise                    -> count must be below the plan's cap plus
+    //                                   any purchased slots still inside their
+    //                                   30 days
+    //
+    // The counter lags a create by a moment, so several creates fired in one
+    // burst can slip past. That is a narrow gap, and nothing like the open
+    // door this closes.
+    // ---------------------------------------------------------------------
+    function underProjectCap(orgId) {
+      let o = get(/databases/$(database)/documents/organizations/$(orgId)).data;
+      let cap = o.get('includedProjects', null);
+      let count = o.get('projectCount', null);
+      let slots = o.get('slotsExpireAt', 0) > request.time.toMillis() ? o.get('purchasedSlots', 0) : 0;
+      return !(cap is number) || !(count is number) || count < cap + slots;
+    }
+
     // =====================================================================
     // Organizations (multi-tenant tree)
     // =====================================================================
@@ -194,7 +222,9 @@ service cloud.firestore {
         allow read: if isOrgMember(orgId);
         // Creating or editing the project itself is a role decision, not a
         // per-project grant (a project being created has no grants yet).
-        allow write: if isOrgMember(orgId) && isAdminOrManager();
+        // Creating is also limited by the plan: see underProjectCap.
+        allow create: if isOrgMember(orgId) && isAdminOrManager() && underProjectCap(orgId);
+        allow update, delete: if isOrgMember(orgId) && isAdminOrManager();
 
         // Generic project sub-collections (tasks, inventory, suppliers, costs,
         // materials, equipment, dailyPlans, vendor_bills, …). The financial /
