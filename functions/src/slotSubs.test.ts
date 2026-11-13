@@ -60,12 +60,19 @@ describe("recurring slot subscriptions", () => {
 
 describe("the webhook", () => {
   const src = readFileSync(join(__dirname, "razorpay.ts"), "utf8");
-  const hook = src.slice(src.indexOf("export const razorpayWebhook"));
+  // The webhook and confirmSubscription share one handler.
+  const hook = src.slice(src.indexOf("async function applySubscriptionEvent"));
 
   it("routes a slot subscription's events to the slot bookkeeping, never to the plan's status", () => {
     // A slot subscription being cancelled must not mark the whole workspace
     // cancelled -- that would lock out a customer whose plan is paid up.
     expect(hook).toMatch(/kind === "slots"/);
     expect(hook.indexOf('kind === "slots"')).toBeLessThan(hook.indexOf("subscriptionPatch(name, entity)"));
+  });
+
+  it("ignores bad news about a subscription the workspace is not running on", () => {
+    // Cancelling a duplicate must not cancel the workspace's real plan.
+    expect(hook).toMatch(/org\.razorpaySubscriptionId !== subId/);
+    expect(src.slice(src.indexOf("export const razorpayWebhook"))).toMatch(/applySubscriptionEvent\(name,/);
   });
 });

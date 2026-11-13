@@ -205,6 +205,116 @@ async function ensureRazorpayPlan(
 }
 
 /**
+ * Apply one Razorpay subscription event to this app's records.
+ *
+ * Shared by the webhook and by confirmSubscription, so a payment confirmed by
+ * asking Razorpay directly lands exactly as one confirmed by webhook.
+ */
+async function applySubscriptionEvent(name: string, entity: any): Promise<void> {
+  const subId = String(entity?.id || "");
+  if (!subId) return;
+  const subRef = db.doc(`razorpay_subscriptions/${subId}`);
+  const subSnap = await subRef.get();
+  const rec: any = subSnap.exists ? subSnap.data() : null;
+  const kind = rec?.kind || String(entity?.notes?.kind || "");
+  // notes is the fallback: a webhook can beat createSubscription's write.
+  const orgId = rec?.orgId || String(entity?.notes?.orgId || "");
+  if (!orgId) return;
+  const orgRef = db.doc(`organizations/${orgId}`);
+  const orgSnap = await orgRef.get();
+  const org: any = orgSnap.exists ? orgSnap.data() : null;
+
+  // A slot subscription is NOT the plan. Its events go to the slot bookkeeping
+  // and stop there: letting "subscription.cancelled" for one extra project
+  // reach subscriptionPatch would mark a paid-up workspace cancelled and lock
+  // everyone out.
+  if (kind === "slots") {
+    const next = slotSubAfterEvent(name, entity, (org?.slotSubs || {})[subId], Number(rec?.quantity) || Number(entity?.notes?.quantity) || 0);
+    if (next && org) {
+      await orgRef.set({ slotSubs: { [subId]: next } }, { merge: true });
+      await refreshSlotSummary(orgId);
+    }
+    await subRef.set(
+      { subscriptionId: subId, kind: "slots", orgId, status: entity?.status || null, lastEvent: name, updatedAt: new Date().toISOString() },
+      { merge: true },
+    );
+    return;
+  }
+
+  const patch = subscriptionPatch(name, entity);
+  if (!patch) return;
+  const { reason, ...fields } = patch;
+  // Bad news about a subscription that is not the one the workspace runs on
+  // (a duplicate being cancelled, an abandoned earlier attempt) must not take
+  // the workspace down with it.
+  const other = org?.razorpaySubscriptionId && org.razorpaySubscriptionId !== subId;
+  if (fields.subscriptionStatus === "active" || !other) {
+    await orgRef.set(
+      {
+        ...fields,
+        // A charge that lands clears any pending cancellation: the customer
+        // paid, so they plainly did not mean to leave.
+        ...(fields.subscriptionStatus === "active" ? { cancelAtPeriodEnd: FieldValue.delete() } : {}),
+      },
+      { merge: true },
+    );
+  }
+  await subRef.set(
+    { subscriptionId: subId, orgId, status: entity?.status || null, lastEvent: name, lastReason: other && fields.subscriptionStatus !== "active" ? `${reason} (not the workspace's subscription; ignored)` : reason, updatedAt: new Date().toISOString() },
+    { merge: true },
+  );
+}
+
+/**
+ * Ask Razorpay what state the org's subscriptions are really in, and apply it.
+ *
+ * The webhook is the normal route, but it is one HTTP call that can be late,
+ * misconfigured or lost -- and until it lands a customer who has PAID sees
+ * nothing change, and can pay again. This asks instead of waiting.
+ * Returns true when the plan's subscription is active afterwards.
+ */
+async function reconcileOrgSubscriptions(orgId: string, onlySubId?: string): Promise<boolean> {
+  const cfg = await getRazorpayConfig();
+  if (!cfg) return false;
+  const auth = Buffer.from(`${cfg.keyId}:${cfg.keySecret}`).toString("base64");
+  let ids: string[];
+  if (onlySubId) {
+    const rec = await db.doc(`razorpay_subscriptions/${onlySubId}`).get();
+    if (!rec.exists || (rec.data() as any)?.orgId !== orgId) return false;
+    ids = [onlySubId];
+  } else {
+    const q = await db.collection("razorpay_subscriptions").where("orgId", "==", orgId).limit(20).get();
+    // Only ones we have not already seen reach a paid or final state.
+    ids = q.docs.filter((d) => !["active", "cancelled", "completed", "expired"].includes(String((d.data() as any)?.status))).map((d) => d.id);
+  }
+  for (const id of ids) {
+    const res = await fetch(`https://api.razorpay.com/v1/subscriptions/${encodeURIComponent(id)}`, { headers: { Authorization: `Basic ${auth}` } });
+    if (!res.ok) continue;
+    const entity: any = await res.json();
+    if (entity?.status === "active") await applySubscriptionEvent("subscription.activated", entity);
+  }
+  const org: any = (await db.doc(`organizations/${orgId}`).get()).data();
+  return org?.subscriptionStatus === "active" && !!org?.razorpaySubscriptionId;
+}
+
+/** Owner/Admin: confirm a payment with Razorpay directly, without waiting for the webhook. */
+export const confirmSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+  const uid = request.auth.uid;
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const orgId = String(request.data?.orgId || "").trim() ||
+    (userSnap.exists ? (userSnap.data() as any).currentOrgId : undefined);
+  if (!orgId) throw new HttpsError("failed-precondition", "You're not part of an organization.");
+  const orgSnap = await db.doc(`organizations/${orgId}`).get();
+  if (!orgSnap.exists) throw new HttpsError("not-found", "Organization not found.");
+  if (!["Owner", "Admin"].includes(((orgSnap.data() as any).members || {})[uid])) {
+    throw new HttpsError("permission-denied", "Only an Owner or Admin can do this.");
+  }
+  const subId = String(request.data?.subscriptionId || "").trim() || undefined;
+  return { active: await reconcileOrgSubscriptions(orgId, subId) };
+});
+
+/**
  * Start a recurring subscription for the org's plan fee.
  *
  * The client opens Razorpay checkout with the returned subscription id; the
@@ -231,8 +341,10 @@ export const createSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 
     throw new HttpsError("permission-denied", "Only an Owner or Admin can start a subscription.");
   }
   // Two live mandates would charge the customer twice a month, and the second
-  // would look exactly like the first on their statement.
-  if (org.razorpaySubscriptionId && org.subscriptionStatus === "active") {
+  // would look exactly like the first on their statement. Ask Razorpay first:
+  // an earlier payment whose webhook never arrived is still a live mandate.
+  const alreadyPaid = await reconcileOrgSubscriptions(orgId).catch(() => false);
+  if (alreadyPaid || (org.razorpaySubscriptionId && org.subscriptionStatus === "active")) {
     throw new HttpsError("failed-precondition", "This workspace already has an active subscription.");
   }
 
@@ -725,63 +837,7 @@ export const razorpayWebhook = onRequest({ region: "asia-southeast1" }, async (r
     // rather than guessed at.
     const name = String(event?.event || "");
     if (name.startsWith("subscription.")) {
-      const entity = event?.payload?.subscription?.entity;
-      const subId = String(entity?.id || "");
-      // A slot subscription is NOT the plan. Its events go to the slot
-      // bookkeeping and stop there: letting "subscription.cancelled" for one
-      // extra project reach subscriptionPatch would mark a paid-up workspace
-      // cancelled and lock everyone out.
-      if (subId) {
-        const recSnap = await db.doc(`razorpay_subscriptions/${subId}`).get();
-        const rec: any = recSnap.exists ? recSnap.data() : null;
-        const kind = rec?.kind || String(entity?.notes?.kind || "");
-        if (kind === "slots") {
-          const slotOrg = rec?.orgId || String(entity?.notes?.orgId || "");
-          if (slotOrg) {
-            const orgRef = db.doc(`organizations/${slotOrg}`);
-            const orgSnap = await orgRef.get();
-            const existing = orgSnap.exists ? ((orgSnap.data() as any)?.slotSubs || {})[subId] : undefined;
-            const next = slotSubAfterEvent(name, entity, existing, Number(rec?.quantity) || Number(entity?.notes?.quantity) || 0);
-            if (next && orgSnap.exists) {
-              await orgRef.set({ slotSubs: { [subId]: next } }, { merge: true });
-              await refreshSlotSummary(slotOrg);
-            }
-            await recSnap.ref.set(
-              { subscriptionId: subId, kind: "slots", orgId: slotOrg, status: entity?.status || null, lastEvent: name, updatedAt: new Date().toISOString() },
-              { merge: true },
-            );
-          }
-          res.status(200).send("ok");
-          return;
-        }
-      }
-      const patch = subscriptionPatch(name, entity);
-      if (subId && patch) {
-        const subRef = db.doc(`razorpay_subscriptions/${subId}`);
-        const subSnap = await subRef.get();
-        // notes is the fallback: a webhook can beat createSubscription's write.
-        const orgId =
-          (subSnap.exists ? (subSnap.data() as any)?.orgId : "") ||
-          String(entity?.notes?.orgId || "");
-        if (orgId) {
-          const { reason, ...fields } = patch;
-          await db.doc(`organizations/${orgId}`).set(
-            {
-              ...fields,
-              // A charge that lands clears any pending cancellation: the
-              // customer paid, so they plainly did not mean to leave.
-              ...(fields.subscriptionStatus === "active"
-                ? { cancelAtPeriodEnd: FieldValue.delete() }
-                : {}),
-            },
-            { merge: true },
-          );
-          await subRef.set(
-            { subscriptionId: subId, orgId, status: entity?.status || null, lastEvent: name, lastReason: reason, updatedAt: new Date().toISOString() },
-            { merge: true },
-          );
-        }
-      }
+      await applySubscriptionEvent(name, event?.payload?.subscription?.entity);
       res.status(200).send("ok");
       return;
     }
