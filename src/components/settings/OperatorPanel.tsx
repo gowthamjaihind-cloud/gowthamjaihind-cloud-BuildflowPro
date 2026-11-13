@@ -91,7 +91,7 @@ export const OperatorPanel: React.FC = () => {
     setSBusy(true); setSErr(null); setSOk(null);
     try {
       const res = await callSetSubscription({ orgId: orgId.trim(), action, months });
-      setSOk(`Updated: ${res.subscriptionStatus}${res.currentPeriodEnd ? ` (until ${new Date(res.currentPeriodEnd).toLocaleDateString()})` : ""}`);
+      setSOk(`Updated: ${res.subscriptionStatus}${res.currentPeriodEnd ? ` (until ${new Date(res.currentPeriodEnd).toLocaleDateString("en-IN")})` : ""}`);
     } catch (e: any) {
       setSErr(e?.message || "Couldn't update the subscription.");
     } finally { setSBusy(false); }
@@ -352,7 +352,7 @@ export const OperatorPanel: React.FC = () => {
             <p className="font-bold">{usage.lifecycle.label}</p>
             <p className="text-[11px] opacity-80 mt-0.5">
               status <span className="font-mono">{usage.lifecycle.status ?? "none"}</span>
-              {usage.lifecycle.endsAt ? ` · ${new Date(usage.lifecycle.endsAt).toLocaleDateString()}` : ""}
+              {usage.lifecycle.endsAt ? ` · ${new Date(usage.lifecycle.endsAt).toLocaleDateString("en-IN")}` : ""}
               {usage.renewalNoticeSent?.days
                 ? ` · renewal notice sent (${usage.renewalNoticeSent.days}d)`
                 : usage.lifecycle.status === "active" || usage.lifecycle.status === "past_due"
@@ -423,7 +423,7 @@ export const OperatorPanel: React.FC = () => {
               {usage.slotsExpireAt && (
                 <p className="text-[10px] text-ink-muted mt-0.5">
                   {usage.activeSlots > 0 ? "until " : "ended "}
-                  {new Date(usage.slotsExpireAt).toLocaleDateString()}
+                  {new Date(usage.slotsExpireAt).toLocaleDateString("en-IN")}
                   {usage.slotNoticeSent?.kind ? ` · ${usage.slotNoticeSent.kind} notice sent` : " · no notice sent"}
                 </p>
               )}

@@ -58,6 +58,9 @@ import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
 import { DialogBehaviour } from "../lib/useDialog";
 
+/** Units Indian sites buy and issue in. Editable under Configuration. */
+const DEFAULT_UNITS = ["bag", "kg", "MT", "nos", "cum", "cft", "sqft", "sqm", "rmt", "litre", "load", "box"];
+
 interface InventoryViewProps {
   projectId: string;
 }
@@ -166,7 +169,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       if (snapshot.exists()) {
         setConfig(snapshot.data() as any);
       } else {
-        setConfig({ materialCodes: [], groupCodes: [], units: [] });
+        // A new project used to start with no units at all, so the first
+        // item could not be added without typing one in by hand.
+        setConfig({ materialCodes: [], groupCodes: [], units: [...DEFAULT_UNITS] });
       }
     });
   }, [projectId]);

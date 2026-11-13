@@ -312,6 +312,10 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       toast.info("Material costs are tracked automatically from daily logs — log consumption via the Daily Log screen instead",);
       return;
     }
+    if (!(Number(newEntry.amount) > 0)) {
+      toast.error("Enter an amount above zero.");
+      return;
+    }
     const path = `${basePath}/costs`;
     try {
       if (newEntry.id) {
@@ -970,7 +974,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         .filter((e) => (e.taskId === task.id || (!e.taskId && task.isSystemGenerated && task.name === "Project Overhead")) && e.category === "Labor" && e.type === "Actual" && !e.isAccrual)
                         .map((entry, idx) => (
                           <tr key={`ce-${entry.id}`} className="border-t border-warning/25 hover:bg-warning/12/50">
-                            <td className="p-2 font-medium">{new Date(entry.date).toLocaleDateString()}</td>
+                            <td className="p-2 font-medium">{new Date(entry.date).toLocaleDateString("en-IN")}</td>
                             <td className="p-2 text-ink-muted font-bold">Direct Entry</td>
                             <td className="p-2 italic">{entry.description || "-"}</td>
                             <td className="p-2 text-right">-</td>
@@ -1068,7 +1072,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         .filter((e) => (e.taskId === task.id || (!e.taskId && task.isSystemGenerated && task.name === "Project Overhead")) && e.category === "Material" && e.type === "Actual" && !e.isAccrual)
                         .map((entry, idx) => (
                           <tr key={`ce-${entry.id}`} className="border-t border-divider hover:bg-panel">
-                            <td className="p-2 font-medium">{new Date(entry.date).toLocaleDateString()}</td>
+                            <td className="p-2 font-medium">{new Date(entry.date).toLocaleDateString("en-IN")}</td>
                             <td className="p-2 font-bold text-ink/80">Direct Cost: {entry.description}</td>
                             <td className="p-2 text-right">-</td>
                             <td className="p-2 text-right">-</td>
@@ -1794,7 +1798,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         className="border-b last:border-0 hover:bg-panel/50 transition-colors"
                       >
                         <td className="p-4 font-medium">
-                          {new Date(entry.date).toLocaleDateString()}
+                          {new Date(entry.date).toLocaleDateString("en-IN")}
                         </td>
                         <td className="p-4">{entry.description || "-"}</td>
                         <td className="p-4">
@@ -1856,7 +1860,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 {t("views.costAnalysisReport")}
               </h1>
               <p className="text-ink-muted">
-                Generated on {new Date().toLocaleDateString()} • Detailed WBS
+                Generated on {new Date().toLocaleDateString("en-IN")} • Detailed WBS
                 Breakdown
               </p>
             </div>

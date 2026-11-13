@@ -110,5 +110,32 @@ await expect("New user creates own profile as Viewer", true,
 await expect("Claim of an unclaimed org", true,
   (async () => { await write("owner", "organizations/org-free", { companyName: "Unclaimed" }); return write(newbie, "organizations/org-free", { members: { newbie: "Owner" } }); })());
 
+// --- per-project access ------------------------------------------------------
+// vic is a Viewer with no grant; sam (now Project Manager) is granted read on
+// p1 and write on p2; alice is the Owner.
+const P = `organizations/${ORG}/projects`;
+await write("owner", `${P}/p1`, { name: "Project One", ownerId: "alice" });
+await write("owner", `${P}/p2`, { name: "Project Two", ownerId: "alice" });
+await write("owner", `${P}/p1/tasks/t1`, { name: "Task" });
+await write("owner", `${P}/p1/costs/c1`, { amount: 100 });
+await write("owner", `${P}/p2/tasks/t1`, { name: "Task" });
+await write("owner", "users/vic", { email: "v@example.com", role: "Viewer", currentOrgId: ORG });
+await write("owner", "users/sam", { projectAccess: { p1: "read", p2: "write" } });
+const vic = tok("vic");
+
+console.log("\nProject access (must be denied):");
+await expect("Member with no grant reads a project's costs", false, read(vic, `${P}/p1/costs/c1`));
+await expect("Member with no grant writes a task", false, write(vic, `${P}/p1/tasks/t1`, { name: "x" }));
+await expect("Read-only member writes a task", false, write(sam, `${P}/p1/tasks/t1`, { name: "x" }));
+await expect("Member grants themselves access", false, write(vic, "users/vic", { projectAccess: { p1: "write" } }));
+
+console.log("\nProject access (must stay allowed):");
+await expect("Any member reads the project's name (portfolio list)", true, read(vic, `${P}/p1`));
+await expect("Read-only member reads a task", true, read(sam, `${P}/p1/tasks/t1`));
+await expect("Write member writes a task", true, write(sam, `${P}/p2/tasks/t1`, { name: "Renamed" }));
+await expect("Owner reads and writes any project", true, (async () => (await read(alice, `${P}/p1/costs/c1`)) && (await write(alice, `${P}/p2/tasks/t1`, { name: "Owner edit" })))());
+await expect("Project Manager creates a project", true, write(sam, `${P}/p3`, { name: "Project Three", ownerId: "sam" }, { create: true }));
+await expect("...and works in the project they own", true, write(sam, `${P}/p3/tasks/t1`, { name: "First task" }, { create: true }));
+
 console.log(failed ? `\n${failed} FAILED` : "\nall passed");
 process.exit(failed ? 1 : 0);

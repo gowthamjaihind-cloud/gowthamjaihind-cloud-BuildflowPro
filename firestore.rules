@@ -70,6 +70,56 @@ service cloud.firestore {
         && request.resource.data.members[request.auth.uid] == 'Owner';
     }
 
+    // ---------------------------------------------------------------------
+    // Per-project access.
+    //
+    // An Owner or Admin grants each other member "read", "write" or "none" on
+    // a project (Settings -> Identity & Authorization), stored on the member's
+    // profile as projectAccess[projectId]. The app hid projects accordingly,
+    // but nothing here enforced it: any member of the org could read or write
+    // every project's costs, bills and logs straight through the API. These
+    // helpers make the database agree with the screen.
+    //
+    //   Owner / Admin        every project
+    //   the project's owner  their own project
+    //   everyone else        only as granted
+    //
+    // projectAccess and role cannot be changed by the user themselves (see
+    // /users below), so neither can be self-granted. The project DOCUMENT stays
+    // readable by any member: the list query cannot be filtered by a rule, and
+    // it holds only the name, code and dates.
+    // ---------------------------------------------------------------------
+    function myProjectAccess(projectId) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('projectAccess', {}).get(projectId, 'none');
+    }
+    function ownsProject(orgId, projectId) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)/projects/$(projectId)).data.get('ownerId', '') == request.auth.uid;
+    }
+    function canReadProject(orgId, projectId) {
+      return isOrgMember(orgId) && (
+        hasAnyRole(['Admin', 'Owner'])
+        || myProjectAccess(projectId) in ['read', 'write']
+        || ownsProject(orgId, projectId)
+      );
+    }
+    function canWriteProject(orgId, projectId) {
+      return isOrgMember(orgId) && (
+        hasAnyRole(['Admin', 'Owner'])
+        || myProjectAccess(projectId) == 'write'
+        || ownsProject(orgId, projectId)
+      );
+    }
+    // The collections handled by the generic project rule (the audited ones
+    // are matched explicitly below).
+    function isGenericCollection(collection) {
+      return collection != 'dailyLogs' && collection != 'purchase_orders'
+        && collection != 'goodsReceiptNotes' && collection != 'system'
+        && collection != 'ledger' && collection != 'ra_bills'
+        && collection != 'labor_rate_cards' && collection != 'client_payments'
+        && collection != 'documents' && collection != 'estimates'
+        && collection != 'audit_logs';
+    }
+
     // =====================================================================
     // Organizations (multi-tenant tree)
     // =====================================================================
@@ -142,88 +192,88 @@ service cloud.firestore {
 
       match /projects/{projectId} {
         allow read: if isOrgMember(orgId);
+        // Creating or editing the project itself is a role decision, not a
+        // per-project grant (a project being created has no grants yet).
         allow write: if isOrgMember(orgId) && isAdminOrManager();
 
         // Generic project sub-collections (tasks, inventory, suppliers, costs,
         // materials, equipment, dailyPlans, vendor_bills, …). The financial /
         // audited collections below are matched explicitly and excluded here.
         match /{collection}/{docId} {
-          allow read, write: if isOrgMember(orgId)
-            && collection != 'dailyLogs' && collection != 'purchase_orders'
-            && collection != 'goodsReceiptNotes' && collection != 'system'
-            && collection != 'ledger' && collection != 'ra_bills'
-            && collection != 'labor_rate_cards' && collection != 'client_payments'
-            && collection != 'documents' && collection != 'estimates'
-            && collection != 'audit_logs';
+          allow read: if canReadProject(orgId, projectId) && isGenericCollection(collection);
+          allow write: if canWriteProject(orgId, projectId) && isGenericCollection(collection);
         }
         match /estimates/{estimateId} {
-          allow read, create: if isOrgMember(orgId);
-          allow update: if isOrgMember(orgId) && (
+          allow read: if canReadProject(orgId, projectId);
+          allow create: if canWriteProject(orgId, projectId);
+          allow update: if canWriteProject(orgId, projectId) && (
             request.resource.data.status == resource.data.status || isAdminOrManager()
           );
-          allow delete: if isOrgMember(orgId) && isAdminOrManager();
+          allow delete: if canWriteProject(orgId, projectId) && isAdminOrManager();
         }
         match /audit_logs/{auditId} {
-          allow read: if isOrgMember(orgId) && isAdminOrManager();
-          allow create: if isOrgMember(orgId);
+          allow read: if canReadProject(orgId, projectId) && isAdminOrManager();
+          allow create: if canWriteProject(orgId, projectId);
           allow update, delete: if false;
         }
         match /documents/{docId} {
-          allow read, create: if isOrgMember(orgId);
-          allow update, delete: if isOrgMember(orgId) && isAdminOrManager();
+          allow read: if canReadProject(orgId, projectId);
+          allow create: if canWriteProject(orgId, projectId);
+          allow update, delete: if canWriteProject(orgId, projectId) && isAdminOrManager();
         }
         match /client_payments/{paymentId} {
-          allow read: if isOrgMember(orgId);
-          allow write: if isOrgMember(orgId) && isAdminOrManager();
+          allow read: if canReadProject(orgId, projectId);
+          allow write: if canWriteProject(orgId, projectId) && isAdminOrManager();
         }
         match /ra_bills/{billId} {
-          allow read: if isOrgMember(orgId);
-          allow write: if isOrgMember(orgId) && isAdminOrManager();
+          allow read: if canReadProject(orgId, projectId);
+          allow write: if canWriteProject(orgId, projectId) && isAdminOrManager();
         }
         match /labor_rate_cards/{cardId} {
-          allow read: if isOrgMember(orgId);
-          allow write: if isOrgMember(orgId) && isAdminOrManager();
+          allow read: if canReadProject(orgId, projectId);
+          allow write: if canWriteProject(orgId, projectId) && isAdminOrManager();
         }
         match /ledger/{ledgerId} {
-          allow read: if isOrgMember(orgId);
-          allow create: if isOrgMember(orgId) && (
+          allow read: if canReadProject(orgId, projectId);
+          allow create: if canWriteProject(orgId, projectId) && (
             request.resource.data.referenceType != 'PAYMENT' || isAdminOrManager()
           );
-          allow update, delete: if isOrgMember(orgId) && isAdminOrManager();
+          allow update, delete: if canWriteProject(orgId, projectId) && isAdminOrManager();
         }
         match /system/{docId} {
-          allow read, write: if isOrgMember(orgId);
+          allow read: if canReadProject(orgId, projectId);
+          allow write: if canWriteProject(orgId, projectId);
         }
         match /goodsReceiptNotes/{grnId} {
-          allow read: if isOrgMember(orgId);
-          allow create: if isOrgMember(orgId);
-          allow update, delete: if isOrgMember(orgId) && (
+          allow read: if canReadProject(orgId, projectId);
+          allow create: if canWriteProject(orgId, projectId);
+          allow update, delete: if canWriteProject(orgId, projectId) && (
             isAdminOrManager() || isSiteEngineer() ||
             resource.data.createdByUid == request.auth.uid
           );
         }
         match /purchase_orders/{poId} {
-          allow read: if isOrgMember(orgId);
-          allow create: if isOrgMember(orgId)
+          allow read: if canReadProject(orgId, projectId);
+          allow create: if canWriteProject(orgId, projectId)
             && request.resource.data.status == 'Draft'
             && request.resource.data.createdByUid == request.auth.uid;
-          allow update: if isOrgMember(orgId) && (
+          allow update: if canWriteProject(orgId, projectId) && (
             isAdminOrManager() || isSiteEngineer() ||
             resource.data.createdByUid == request.auth.uid
           );
-          allow delete: if isOrgMember(orgId) && (
+          allow delete: if canWriteProject(orgId, projectId) && (
             isAdminOrManager() ||
             (resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft')
           );
         }
         match /dailyLogs/{logId} {
-          allow read: if isOrgMember(orgId);
-          allow create: if isOrgMember(orgId) && (isSiteEngineer() || isAdminOrManager());
-          allow update: if isOrgMember(orgId) && (
+          allow read: if canReadProject(orgId, projectId);
+          allow create: if canWriteProject(orgId, projectId) && (isSiteEngineer() || isAdminOrManager());
+          allow update: if canWriteProject(orgId, projectId) && (
             isAdminOrManager() ||
             (isSiteEngineer() && resource.data.createdByUid == request.auth.uid)
           );
-          allow delete: if isOrgMember(orgId) && (
+          allow delete: if canWriteProject(orgId, projectId) && (
             isAdminOrManager() ||
             (isSiteEngineer() && resource.data.createdByUid == request.auth.uid)
           );

@@ -33,7 +33,7 @@ import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import { compressImage } from "../utils/imageCompressor";
 import { useTranslation } from "../i18n";
-import { toast } from "../lib/feedback";
+import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { newestLogFirst } from "../lib/timeKey";
 
@@ -320,6 +320,30 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTaskId) return;
+
+    // Consuming more than the stock on hand was accepted silently: 500 bags
+    // against 45 in stock booked the cost of all 500. It can be legitimate
+    // (stock not yet entered), so ask rather than block. An edit only counts
+    // the increase over what this log already consumed.
+    const short = materials
+      .filter((m) => m.materialId && m.quantity > 0)
+      .map((m) => {
+        const item = globalInventory.find((i) => i.id === m.materialId) as any;
+        if (!item) return null;
+        const already = (editLog?.materials || []).find((x) => x.materialId === m.materialId)?.quantity || 0;
+        const available = (Number(item.quantity) || 0) - (Number(item.consumed) || 0) + already;
+        return m.quantity > available ? `${item.name}: using ${m.quantity} ${item.unit || ""}, only ${Math.max(0, available)} in stock` : null;
+      })
+      .filter(Boolean) as string[];
+    if (short.length > 0) {
+      const ok = await confirmDialog({
+        title: "More than you have in stock",
+        body: `${short.join("\n")}\n\nSave anyway? Stock will show as negative until a goods receipt or a stock count corrects it.`,
+        confirmLabel: "Save anyway",
+        cancelLabel: "Go back",
+      });
+      if (!ok) return;
+    }
 
     try {
       const payload = {

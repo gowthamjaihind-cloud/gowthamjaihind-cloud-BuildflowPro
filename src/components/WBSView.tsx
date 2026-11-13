@@ -1063,7 +1063,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
     if (!d) return "";
     const date = new Date(d);
     if (isNaN(date.getTime())) return "";
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString("en-IN", {
       month: "short",
       day: "numeric",
     });

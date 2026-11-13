@@ -476,7 +476,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
       ]);
       exportToPDF(
         `CLIENT ESTIMATE: ${selectedEstimate.estimateNumber}`,
-        `Client: ${selectedEstimate.clientName || "N/A"} | Date: ${new Date(selectedEstimate.dateCreated).toLocaleDateString()} | Total: ₹${money(selectedEstimate.totalAmount)}`,
+        `Client: ${selectedEstimate.clientName || "N/A"} | Date: ${new Date(selectedEstimate.dateCreated).toLocaleDateString("en-IN")} | Total: ₹${money(selectedEstimate.totalAmount)}`,
         headers,
         rows,
         `Estimate_${selectedEstimate.estimateNumber}`
@@ -549,9 +549,9 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
               </div>
               <p className="text-ink-muted text-sm mt-1">
                 Created on{" "}
-                {new Date(selectedEstimate.dateCreated).toLocaleDateString()} •
+                {new Date(selectedEstimate.dateCreated).toLocaleDateString("en-IN")} •
                 Valid until{" "}
-                {new Date(selectedEstimate.dateValidUntil).toLocaleDateString()}
+                {new Date(selectedEstimate.dateValidUntil).toLocaleDateString("en-IN")}
               </p>
             </div>
           </div>
@@ -720,7 +720,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                           Total (₹)
                         </label>
                         <div className="w-full bg-surface/50 border border-transparent rounded-lg px-3 py-1.5 text-sm text-ink font-bold font-mono">
-                          {item.totalAmount.toLocaleString()}
+                          {item.totalAmount.toLocaleString("en-IN")}
                         </div>
                       </div>
                     </div>
@@ -754,7 +754,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                           Base Contract Items ({baseContractItems.length})
                         </span>
                         <span className="text-sm font-black text-ink font-mono">
-                          Subtotal: ₹{baseSubTotal.toLocaleString()}
+                          Subtotal: ₹{baseSubTotal.toLocaleString("en-IN")}
                         </span>
                       </div>
                       {baseContractItems.length === 0 ? (
@@ -773,7 +773,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                           Change Order Items ({changeOrderItems.length})
                         </span>
                         <span className="text-sm font-black text-primary font-mono">
-                          Subtotal: ₹{coSubTotal.toLocaleString()}
+                          Subtotal: ₹{coSubTotal.toLocaleString("en-IN")}
                         </span>
                       </div>
                       {changeOrderItems.length === 0 ? (
@@ -799,13 +799,13 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                 <div className="flex justify-between items-center">
                   <span className="text-ink-muted">Contract Value (ex-GST)</span>
                   <span className="text-ink font-medium">
-                    ₹{selectedEstimate.subTotal.toLocaleString()}
+                    ₹{selectedEstimate.subTotal.toLocaleString("en-IN")}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-ink-muted">Cost to Date</span>
                   <span className="text-ink font-medium">
-                    ₹{scopedCost.actual.toLocaleString()}
+                    ₹{scopedCost.actual.toLocaleString("en-IN")}
                   </span>
                 </div>
                 <div className="border-t border-white/10 my-3"></div>
@@ -826,7 +826,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                           : "text-danger"
                       }`}
                     >
-                      ₹{(selectedEstimate.subTotal - scopedCost.actual).toLocaleString()}
+                      ₹{(selectedEstimate.subTotal - scopedCost.actual).toLocaleString("en-IN")}
                     </div>
                     <div
                       className={`text-sm font-medium ${
@@ -843,7 +843,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                 </div>
                 {selectedEstimate.subTotal - scopedCost.actual < 0 && (
                   <div className="text-danger text-xs font-medium text-right mt-1">
-                    Cost has exceeded the contract value by ₹{(scopedCost.actual - selectedEstimate.subTotal).toLocaleString()}
+                    Cost has exceeded the contract value by ₹{(scopedCost.actual - selectedEstimate.subTotal).toLocaleString("en-IN")}
                   </div>
                 )}
                 {scopedCost.unlinkedCount > 0 && (
@@ -857,7 +857,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
             {uncoveredCost > 0 && (
               <div className="p-4 rounded-xl border border-primary/40 bg-warning/12">
                 <div className="text-primary text-sm font-bold mb-1">
-                  ₹{uncoveredCost.toLocaleString()} of cost isn't included in this margin
+                  ₹{uncoveredCost.toLocaleString("en-IN")} of cost isn't included in this margin
                 </div>
                 <div className="text-ink-muted text-xs leading-relaxed">
                   This cost sits on project tasks that aren't linked to this estimate. Since this
@@ -892,7 +892,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     <div className="flex justify-between items-center">
                       <span className="text-ink-muted">Forecast Final Cost</span>
                       <span className="text-ink font-medium">
-                        ₹{forecast.forecastFinalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        ₹{forecast.forecastFinalCost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                       </span>
                     </div>
                     <div className="border-t border-white/10 my-3"></div>
@@ -908,7 +908,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                               : "text-danger"
                           }`}
                         >
-                          ₹{forecast.forecastMargin.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          ₹{forecast.forecastMargin.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                         </div>
                         <div
                           className={`text-sm font-medium ${
@@ -925,7 +925,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     </div>
                     {forecast.forecastMargin < 0 && (
                       <div className="text-danger text-xs font-medium text-right mt-1">
-                        At the current spend rate this job finishes at a LOSS of ₹{Math.abs(forecast.forecastMargin).toLocaleString(undefined, { maximumFractionDigits: 0 })}.
+                        At the current spend rate this job finishes at a LOSS of ₹{Math.abs(forecast.forecastMargin).toLocaleString("en-IN", { maximumFractionDigits: 0 })}.
                       </div>
                     )}
                   </>
@@ -950,15 +950,15 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
               <h3 className="font-bold text-ink text-left">Open Commitments</h3>
               <div className="space-y-3 pt-2 text-sm">
                 <div className="text-ink font-medium">
-                  ₹{committed.total.toLocaleString()} committed across {committed.count} open PO(s)
+                  ₹{committed.total.toLocaleString("en-IN")} committed across {committed.count} open PO(s)
                 </div>
                 <div className="text-ink-muted text-xs leading-relaxed">
                   Material ordered but not yet received. Becomes job cost when consumed.
                 </div>
                 {committed.total > remainingMaterialBudget && remainingMaterialBudget > 0 && (
                   <div className="text-primary text-xs font-medium mt-2">
-                    You've committed ₹{committed.total.toLocaleString()} but only
-                    ₹{remainingMaterialBudget.toLocaleString()} of material budget remains.
+                    You've committed ₹{committed.total.toLocaleString("en-IN")} but only
+                    ₹{remainingMaterialBudget.toLocaleString("en-IN")} of material budget remains.
                     Possible over-ordering.
                   </div>
                 )}
@@ -971,20 +971,20 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-ink-muted font-medium">Base Contract Subtotal</span>
                   <span className="text-ink font-bold">
-                    ₹{baseSubTotal.toLocaleString()}
+                    ₹{baseSubTotal.toLocaleString("en-IN")}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-primary font-medium">Change Order Subtotal</span>
                   <span className="text-primary font-bold">
-                    ₹{coSubTotal.toLocaleString()}
+                    ₹{coSubTotal.toLocaleString("en-IN")}
                   </span>
                 </div>
                 <div className="border-t border-white/10 my-1"></div>
                 <div className="flex justify-between items-center text-sm font-bold">
                   <span className="text-ink">Combined Subtotal</span>
                   <span className="text-ink font-bold">
-                    ₹{selectedEstimate.subTotal.toLocaleString()}
+                    ₹{selectedEstimate.subTotal.toLocaleString("en-IN")}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
@@ -1007,13 +1007,13 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                     />
                   </span>
                   <span className="text-ink font-bold">
-                    ₹{selectedEstimate.taxAmount.toLocaleString()}
+                    ₹{selectedEstimate.taxAmount.toLocaleString("en-IN")}
                   </span>
                 </div>
                 <div className="border-t border-white/10 pt-3 flex justify-between items-center">
                   <span className="text-ink font-bold">Total Quote</span>
                   <span className="text-xl text-primary font-bold">
-                    ₹{selectedEstimate.totalAmount.toLocaleString()}
+                    ₹{selectedEstimate.totalAmount.toLocaleString("en-IN")}
                   </span>
                 </div>
               </div>
@@ -1248,7 +1248,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                       {estimate.estimateNumber}
                     </td>
                     <td className="py-4 px-4 text-ink font-medium">
-                      {new Date(estimate.dateCreated).toLocaleDateString()}
+                      {new Date(estimate.dateCreated).toLocaleDateString("en-IN")}
                     </td>
                     <td className="py-4 px-4">
                       <span
@@ -1259,7 +1259,7 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                       </span>
                     </td>
                     <td className="py-4 px-4 text-right text-ink font-medium">
-                      ₹{estimate.subTotal.toLocaleString()}
+                      ₹{estimate.subTotal.toLocaleString("en-IN")}
                     </td>
                     <td className="py-4 px-4 text-right text-ink font-medium">
                       <div className="flex items-center justify-end gap-1.5">
@@ -1273,19 +1273,19 @@ export const EstimateTrackerView: React.FC<EstimateTrackerViewProps> = ({
                             </span>
                           </Tooltip>
                         )}
-                        <span>₹{estScopedCost.actual.toLocaleString()}</span>
+                        <span>₹{estScopedCost.actual.toLocaleString("en-IN")}</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right">
                       <div className={`font-bold ${marginValue >= 0 ? "text-success" : "text-danger"}`}>
-                        ₹{marginValue.toLocaleString()}
+                        ₹{marginValue.toLocaleString("en-IN")}
                       </div>
                       <div className={`text-[10px] font-medium ${marginValue >= 0 ? "text-success/80" : "text-danger/80"}`}>
                         {marginPercent !== "—" ? `${marginPercent}%` : "—"}
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right text-ink font-bold">
-                      ₹{estimate.totalAmount.toLocaleString()}
+                      ₹{estimate.totalAmount.toLocaleString("en-IN")}
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center gap-2">
