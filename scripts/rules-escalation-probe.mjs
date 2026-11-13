@@ -149,6 +149,12 @@ await write("owner", `organizations/${CAP}`, { purchasedSlots: 1, slotsExpireAt:
 await expect("...and can once a slot is bought", true, write(carol, `organizations/${CAP}/projects/extra`, { name: "Extra", ownerId: "carol" }, { create: true }));
 await write("owner", `organizations/${CAP}`, { projectCount: 2, slotsExpireAt: Date.now() - 1000 });
 await expect("...but not after the slot lapses", false, write(carol, `organizations/${CAP}/projects/extra2`, { name: "Extra 2", ownerId: "carol" }, { create: true }));
+// Two projects exist against a plan cap of 1, so it takes 2 recurring slots to add a third.
+await write("owner", `organizations/${CAP}`, { recurringSlots: 2, recurringSlotsUntil: Date.now() + 86400000 });
+await expect("A recurring slot subscription allows one more", true, write(carol, `organizations/${CAP}/projects/extra2`, { name: "Extra 2", ownerId: "carol" }, { create: true }));
+await expect("Owner forges the recurring slot count", false, write(carol, `organizations/${CAP}`, { recurringSlots: 50 }));
+await write("owner", `organizations/${CAP}`, { projectCount: 3, recurringSlotsUntil: Date.now() - 1000 });
+await expect("...and not once that subscription has lapsed", false, write(carol, `organizations/${CAP}/projects/extra3`, { name: "Extra 3", ownerId: "carol" }, { create: true }));
 await expect("Existing projects stay editable over the limit", true, write(carol, `organizations/${CAP}/projects/extra`, { name: "Renamed" }));
 await write("owner", `organizations/org-unl`, { plan: "enterprise", includedProjects: null, projectCount: 99, members: { carol: "Owner" } });
 await expect("Uncapped plan creates freely", true, write(carol, `organizations/org-unl/projects/p100`, { name: "P100", ownerId: "carol" }, { create: true }));

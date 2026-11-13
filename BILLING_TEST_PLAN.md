@@ -33,7 +33,7 @@ subscription.pending
 subscription.halted
 subscription.cancelled
 subscription.completed
-payment.captured          (already used by one-off slot purchases)
+payment.captured          (older one-off slot purchases)
 order.paid                (same)
 ```
 
@@ -113,34 +113,62 @@ billing. This test is to know what to *tell customers*, not to find a bug.
 
 ---
 
-## 4. Adding a project — the one-off slot path
+## 4. Adding a project — the recurring slot subscription
 
-Extra projects are **not** part of the subscription. They are bought one at a
-time for ₹99 and expire 30 days from purchase. This is the same on Starter and
-on Business, deliberately — see "Why extra projects are not metered" below.
+Extra projects are **not** part of the plan's subscription. Each purchase of
+extra projects is its **own Razorpay subscription**: ₹99 per project per month,
+quantity fixed when it is created, renewing by itself until cancelled. This is
+the same on Starter and on Business — see "Why extra projects are a separate
+subscription" below.
 
-**Do:** on the Starter workspace, add a second project.
+**Do:** on the Starter workspace (plan already active), add a second project.
 
-**Expect:** the add-capacity modal, a one-off ₹99 payment, and the project
-created once it succeeds.
+**Expect:** the add-capacity modal, a ₹99 mandate + first charge, and the
+project created once the charge is confirmed.
 
-**Check:** `purchasedSlots` becomes `1` and `slotsExpireAt` is about 30 days
-out. The **subscription is untouched** — still quantity 1, still ₹99 a month,
-in Razorpay.
+**Check:**
 
-> Note the consequence, because customers will hit it: the plan fee renews on
-> its own date and the slot expires on a different one. Two dates, and only one
-> of them collects itself.
+- Razorpay shows **two** subscriptions for the customer: the plan (untouched,
+  still ₹99) and a new one on the "extra project" plan with quantity 1.
+- On the org: `slotSubs.<sub id>` = `{ qty: 1, status: "active", until: … }`,
+  `recurringSlots` = 1, `recurringSlotsUntil` a few days after `until`.
+- Settings → Your plan lists it under **Extra projects** with a renewal date.
+- A third project is refused until another slot is bought.
 
-## 5. Two clocks — confirm it, so you can explain it
+**Also try:** buying 2 slots in one go (one subscription, quantity 2, ₹198),
+and buying a slot on a workspace that is still on trial (must be refused: a
+plan has to be active first).
 
-**Do:** note both dates for that workspace.
+## 5. Slot renewal, cancel, failure — the parts that touch money
 
-- Subscription renews: `________` (from `currentPeriodEnd`)
-- Slot expires: `________` (from `slotsExpireAt`)
+**Renewal.** Let the slot subscription charge again (or use a daily test plan).
+`until` must move forward one cycle; `recurringSlots` unchanged; the plan's own
+`currentPeriodEnd` must **not** change.
 
-They will not match unless you bought the slot on your renewal day. That is
-the known cost of keeping billing identical across plans; see below.
+- Plan renews: `________` (from `currentPeriodEnd`)
+- Slot renews: `________` (from `slotSubs.<id>.until`)
+
+The two dates differ unless both were bought the same day. Both collect
+themselves.
+
+**Cancel one slot.** Settings → Extra projects → Cancel.
+Razorpay must show that subscription cancelled; the org shows it as "ends
+<date>"; the slot keeps working until that date; **the plan stays active** and
+nobody is locked out. After the date, a new project is refused but existing
+projects stay editable.
+
+**Failed slot payment.** With a card that fails on renewal: while Razorpay
+retries (`pending`) nothing changes. On `halted` the slot stops extending and
+lapses 3 days after `until`. The plan must stay `active` throughout.
+
+**Cancel the plan.** Cancel plan must also cancel every live slot subscription
+at Razorpay. Check the Razorpay dashboard: **no** subscription for that
+customer is left active.
+
+**Delete the workspace.** Deleting the organisation must cancel the plan and
+all slot mandates first. With Razorpay unreachable (wrong key) the delete must
+be refused rather than leave a mandate charging an account that no longer
+exists.
 
 ## 6. Cancelling — does it actually stop the money?
 
@@ -200,8 +228,13 @@ someone's mandate without their consent. They move when they next change plan.
 | 1 | First subscription activates | | |
 | 2 | Renews on the anniversary date | | |
 | 3 | 31 Jan → Feb / Mar dates | | Feb: ____ Mar: ____ |
-| 4 | Extra project = one-off ₹99 slot | | |
-| 5 | Two separate dates, noted | | Renews: ____ Slot: ____ |
+| 4 | Extra project = its own ₹99/month subscription | | |
+| 4b | Slot refused while on trial | | |
+| 5a | Slot renews by itself; plan date untouched | | Plan: ____ Slot: ____ |
+| 5b | Cancelling a slot leaves the plan active | | |
+| 5c | Failed slot payment: pending no change, halted lapses | | |
+| 5d | Cancel plan stops every slot mandate | | |
+| 5e | Delete workspace stops every mandate | | |
 | 6 | Cancel stops the money at Razorpay | | |
 | 7 | pending ≠ past_due; halted = past_due | | |
 | 8 | GST creates a new plan | | |
@@ -234,7 +267,7 @@ is wrong.
 
 ---
 
-## Why extra projects are not metered
+## Why extra projects are a separate subscription
 
 The obvious design is to put the project count into the subscription's
 `quantity`, so Starter at ₹99 a project charges ₹297 for three and collects
@@ -249,14 +282,13 @@ subscription in India, UPI AutoPay is likely the common choice, so metering
 would have worked for a minority of customers and silently failed for the rest
 -- their project created, their bill never raised.
 
-The alternative was a hybrid: metered for cards, slots for UPI. That was
-rejected deliberately. Two customers on the same plan would get different
-experiences depending on how they happened to pay, and neither they nor support
-could tell which they were on without checking Razorpay.
-
-So extra projects are one-off purchases for everyone, on both plans. The cost
-is the two dates in Test 5. The benefit is that billing behaves identically for
-every customer and every payment method.
+So the plan's subscription is never updated. Instead each purchase of extra
+projects CREATES a new subscription with its quantity fixed at creation --
+creating has no UPI restriction, only updating does. It renews by itself, works
+the same for cards and UPI, and can be cancelled on its own without touching
+the plan. The cost is more than one mandate per customer and two renewal dates
+(Test 5). Slots bought before this change were one-off 30-day purchases; they
+are still honoured until they expire.
 
 **If this is revisited**, the thing to check first is whether Razorpay has since
 allowed updates on UPI AutoPay mandates. The restriction is theirs, not ours,

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { callCreateRazorpayOrder, callCreateSlotOrder, callVerifyRazorpayPayment, callCreateSubscription } from "../services/firebaseFunctions";
+import { callCreateRazorpayOrder, callCreateSlotSubscription, callVerifyRazorpayPayment, callCreateSubscription } from "../services/firebaseFunctions";
+import { db, doc, getDocFromServer } from "../firebase";
 import { useAuthStore } from "../store";
 
 declare global {
@@ -24,6 +25,22 @@ function loadScript(src: string): Promise<boolean> {
 // Drives a Razorpay Checkout: creates a server-priced order, opens the payment
 // window, and verifies the result (which auto-activates the plan). The webhook
 // is the authoritative activation; this verify is the immediate/backup path.
+/** Poll the org until the webhook has recorded this slot subscription's first charge. */
+async function waitForSlotSub(orgId: string, subscriptionId: string, timeoutMs = 45000): Promise<boolean> {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const snap = await getDocFromServer(doc(db, "organizations", orgId));
+      const s = (snap.data() as any)?.slotSubs?.[subscriptionId];
+      if (s && Number(s.until) > Date.now()) return true;
+    } catch {
+      /* keep waiting */
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  return false;
+}
+
 export function useRazorpayCheckout() {
   const user = useAuthStore((s) => s.user);
   const [busy, setBusy] = useState(false);
@@ -137,16 +154,44 @@ export function useRazorpayCheckout() {
   };
 
   // Buy N extra project slots (₹99 each) for a paid org. Payment raises the cap.
+  /**
+   * Buy extra project slots as a RECURRING subscription (₹99 each a month).
+   *
+   * Like `subscribe`, checkout authorises a mandate and nothing is verified
+   * here: the first charge is confirmed by webhook, which is what raises the
+   * project cap. So this WAITS for the cap to rise before calling onSuccess --
+   * the caller's next step is usually to create the project, and the database
+   * would refuse that until the server has recorded the payment.
+   */
   const paySlots = async (quantity: number, onSuccess?: () => void, orgId?: string) => {
     setBusy(true);
     setError(null);
     try {
-      const order = await callCreateSlotOrder({ quantity, orgId });
-      await runCheckout(
-        order,
-        `${quantity} extra project slot${quantity === 1 ? "" : "s"}`,
-        onSuccess,
-      );
+      const sub = await callCreateSlotSubscription({ quantity, orgId });
+      const ok = await loadScript(CHECKOUT_SRC);
+      if (!ok || !window.Razorpay) {
+        throw new Error("Couldn't load the payment window. Check your connection and try again.");
+      }
+      await new Promise<void>((resolve, reject) => {
+        const rzp = new window.Razorpay({
+          key: sub.keyId,
+          name: "Sitetru",
+          description: `${quantity} extra project${quantity === 1 ? "" : "s"} · billed monthly`,
+          subscription_id: sub.subscriptionId,
+          prefill: { email: user?.email || "", name: user?.displayName || "" },
+          theme: { color: "#1D4ED8" },
+          handler: () => resolve(),
+          modal: { ondismiss: () => reject(new Error("Payment cancelled.")) },
+        });
+        rzp.open();
+      });
+      const target = orgId || user?.currentOrgId;
+      const granted = target ? await waitForSlotSub(target, sub.subscriptionId) : false;
+      if (!granted) {
+        setError("Payment received. Your extra project capacity is being added and will appear within a minute — then try again.");
+        return;
+      }
+      onSuccess?.();
     } catch (e: any) {
       setError(e?.message || "Payment failed. Please try again.");
     } finally {

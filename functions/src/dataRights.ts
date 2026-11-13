@@ -3,6 +3,8 @@ import { FieldValue } from "firebase-admin/firestore";
 import * as admin from "firebase-admin";
 import { db } from "./db";
 import { CALLABLE_OPTS } from "./callable";
+import { cancelRazorpaySubscription } from "./razorpay";
+import { cancellableSlotSubs } from "./slotSubs";
 
 // ---------------------------------------------------------------------------
 // Data-subject rights (DPDP / GDPR): export and erasure, built into the app so
@@ -129,6 +131,26 @@ export const deleteOrganization = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 300
   }
 
   const memberUids = Object.keys(members);
+
+  // Stop every live mandate BEFORE deleting. Deleting only our records left
+  // Razorpay charging the plan (and any extra-project subscriptions) every
+  // month for a workspace that no longer existed, with nothing left on our
+  // side to show it. If one cannot be stopped, refuse: the Owner can retry,
+  // whereas after the delete there is no button left to press.
+  const mandates = [
+    ...(data.razorpaySubscriptionId && ["active", "past_due"].includes(data.subscriptionStatus) && !data.cancelAtPeriodEnd
+      ? [String(data.razorpaySubscriptionId)]
+      : []),
+    ...cancellableSlotSubs(data),
+  ];
+  for (const id of mandates) {
+    if (!(await cancelRazorpaySubscription(id))) {
+      throw new HttpsError(
+        "unavailable",
+        "We couldn't stop this workspace's subscription with the payment provider, so nothing was deleted. Please try again in a moment.",
+      );
+    }
+  }
 
   // recursiveDelete removes the org document and every descendant (projects and
   // all their sub-collections, usage meters, etc.).

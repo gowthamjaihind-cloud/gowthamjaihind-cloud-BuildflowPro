@@ -1,3 +1,4 @@
+import { recurringSlots } from "./slotSubs";
 // Project-based plan catalog (server copy — keep in sync with src/lib/plans.ts).
 // includedProjects / userLimit / aiQuota use null to mean "unlimited".
 // monthly / annual are INR prices (null = free or custom).
@@ -73,10 +74,13 @@ export function slotPurchasePatch(org: any, qty: number, now = Date.now()) {
  * permanent. Nobody loses capacity they paid for.
  */
 export function activeSlots(org: any, now = Date.now()): number {
+  // Recurring slot subscriptions (slotSubs.ts) plus any one-off slots bought
+  // before slots became recurring and still inside their 30 days.
+  const recurring = recurringSlots(org, now);
   const qty = Math.floor(Number(org?.purchasedSlots) || 0);
-  if (qty <= 0) return 0;
+  if (qty <= 0) return recurring;
   const until = Number(org?.slotsExpireAt) || 0;
-  return until > now ? qty : 0;
+  return recurring + (until > now ? qty : 0);
 }
 
 /**

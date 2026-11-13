@@ -3,11 +3,12 @@ import { Stack, Copy, Check, Plus, SlidersHorizontal, CalendarCheck, WarningCirc
 import { usePlan } from "../../hooks/usePlan";
 import { useProjectsQuery } from "../../hooks/queries";
 import { useAuthStore } from "../../store";
-import { projectCapState, planAdvice, PLANS, PlanId } from "../../lib/plans";
+import { projectCapState, planAdvice, liveSlotSubs, PLANS, PlanId } from "../../lib/plans";
 import { AddCapacityModal } from "../AddCapacityModal";
 import { ManagePlanModal } from "../ManagePlanModal";
 import { Tooltip } from "../Tooltip";
 import {
+  callCancelSlotSubscription,
   callCancelSubscription,
   callResumeSubscription,
   callGetBillingHistory,
@@ -27,6 +28,9 @@ export const PlanSummary: React.FC = () => {
   const { data: projects = [] } = useProjectsQuery();
   const orgId = useAuthStore((s) => s.user?.currentOrgId);
   const role = useAuthStore((s) => s.user?.role);
+  // Declared with the other state, above the early returns: hooks must run in
+  // the same order on every render.
+  const [slotBusy, setSlotBusy] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showCapacity, setShowCapacity] = useState(false);
   const [showManage, setShowManage] = useState(false);
@@ -91,6 +95,28 @@ export const PlanSummary: React.FC = () => {
       toast.error(e?.message || "Couldn't load billing history.");
     } finally {
       setHistoryBusy(false);
+    }
+  };
+
+  const slotSubs = liveSlotSubs(plan);
+  const cancelSlots = async (id: string, qty: number, until: number) => {
+    const ok = await confirmDialog({
+      title: qty === 1 ? "Cancel this extra project?" : `Cancel these ${qty} extra projects?`,
+      body:
+        `You keep ${qty === 1 ? "it" : "them"} until ${fmtDate(until) || "the end of the month you've paid for"}, and no further payment is taken. ` +
+        "Your projects are not deleted. After that date you won't be able to add new projects beyond your plan's limit until you buy capacity again.",
+      confirmLabel: "Cancel extra projects",
+      cancelLabel: "Keep them",
+      destructive: true,
+    });
+    if (!ok) return;
+    setSlotBusy(id); setCancelErr(null);
+    try {
+      await callCancelSlotSubscription({ subscriptionId: id });
+    } catch (e: any) {
+      setCancelErr(e?.message || "Couldn't cancel that. Please try again.");
+    } finally {
+      setSlotBusy(null);
     }
   };
 
@@ -237,6 +263,35 @@ export const PlanSummary: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Extra projects are their own monthly subscriptions. They have to be
+          visible and cancellable here: a recurring charge with no way to see or
+          stop it is the thing customers rightly complain about. */}
+      {slotSubs.length > 0 && (
+        <div className="mt-3 p-3 rounded-xl border border-divider bg-panel/50 text-xs text-ink space-y-2">
+          <p className="font-bold">{"Extra projects"}</p>
+          {slotSubs.map((s) => {
+            const ending = s.status === "cancelling" || s.status === "cancelled";
+            return (
+              <div key={s.id} className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  <b>{s.qty}</b> {s.qty === 1 ? "extra project" : "extra projects"} {"·"} ₹{(s.qty * plan.overageRate).toLocaleString("en-IN")}{" / month · "}
+                  {ending ? `ends ${fmtDate(s.until)}` : s.status === "halted" ? `payment failed, ends ${fmtDate(s.until)}` : `renews ${fmtDate(s.until)}`}
+                </span>
+                {isOwnerAdmin && !ending && (
+                  <button
+                    onClick={() => cancelSlots(s.id, s.qty, s.until)}
+                    disabled={slotBusy === s.id}
+                    className="font-bold px-2 py-1 rounded-lg text-ink-muted hover:text-danger apple-transition disabled:opacity-50"
+                  >
+                    {slotBusy === s.id ? "Cancelling…" : "Cancel"}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {pending && (
         <div className="mt-3 p-3 rounded-xl border border-primary/25 bg-primary/5 flex items-center gap-2 text-xs text-ink">
