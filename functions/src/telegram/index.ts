@@ -1,7 +1,7 @@
 import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
 import { CALLABLE_OPTS } from "../callable";
 import { assertSuperAdmin } from "../razorpay";
-import { onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { onDocumentUpdated, onDocumentCreated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
 import { TelegramApi } from "./api";
@@ -14,6 +14,7 @@ import * as agent from "./handlers/agent";
 import * as invoice from "./handlers/invoice";
 import * as aiLog from "./handlers/aiLog";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
+import { looksLikeLogText } from "../bot/aiLog";
 const BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = defineSecret("TELEGRAM_WEBHOOK_SECRET");
 // Used by the invoice-photo reader (Gemini vision) in the webhook.
@@ -127,14 +128,34 @@ export const telegramWebhook = onRequest({
         res.status(401).send("Unauthorized");
         return;
     }
-    // IMPORTANT: do the work BEFORE responding. On Cloud Run (Functions v2) the
-    // CPU is throttled the instant the response is sent, so anything awaited
-    // after res.send() runs at a crawl — that was the ~2-minute delay before the
-    // bot replied. Telegram's webhook timeout is ~60s and this handler finishes
-    // in ~1-2s, so awaiting first is both correct and fast. If it ever throws we
-    // still 200 back so Telegram doesn't retry the same update forever.
+    // The work is done BEFORE responding: on Cloud Run the CPU is throttled
+    // the instant the response is sent, so anything awaited after res.send()
+    // crawls. That is only safe for work that takes a second or two. Anything
+    // that waits on the AI (a typed work report, an invoice photo) is handed
+    // to a queue instead -- see enqueueBotJob below. Waiting on it here made
+    // Telegram time out ("Read timeout expired"), re-send the same message,
+    // and hold every later message behind it.
     const tg = new TelegramApi(BOT_TOKEN.value());
     const update = req.body;
+    // Telegram re-sends an update it did not see answered in time. Remember
+    // each one so a re-send is acknowledged and dropped, never run twice: a
+    // second run would charge the AI allowance again and reply twice.
+    if (update?.update_id !== undefined) {
+        try {
+            await db.collection("bot_updates_seen").doc(String(update.update_id)).create({
+                at: Date.now(),
+                expireAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+            });
+        }
+        catch (e: any) {
+            if (e?.code === 6 || /ALREADY_EXISTS/i.test(String(e?.message))) {
+                res.status(200).send("OK");
+                return;
+            }
+            // Any other failure: better to handle the message than to drop it.
+            console.error("Update de-duplication failed:", e);
+        }
+    }
     try {
         await handleUpdate(tg, update, GEMINI_API_KEY.value());
     }
@@ -284,7 +305,8 @@ async function handleUpdate(tg, update, geminiKey) {
             await log.handlePhoto(tg, chatId, session, msg.photo);
         } else {
             // Any other photo is treated as a vendor invoice to read + stage.
-            await invoice.handleInvoicePhoto(tg, chatId, session, msg.photo, geminiKey);
+            // Reading it takes the AI several seconds, so it is queued.
+            await enqueueBotJob({ kind: "invoice", chatId, photo: msg.photo });
         }
         return;
     }
@@ -400,9 +422,65 @@ async function handleUpdate(tg, update, geminiKey) {
     if (await log.handleStepText(tg, chatId, session, text)) return;
     // A sentence with no command and no step in progress: read it as a work
     // report. Returns false when it is not one, so the reply below still fires.
-    if (await aiLog.handleFreeText(tg, chatId, session, text, geminiKey)) return;
+    if (looksLikeLogText(text) && geminiKey) {
+        // Say something at once: the reading takes a few seconds and silence
+        // reads as a bot that is not working.
+        await tg.sendMessage(chatId, tt(lang, "aiReading"));
+        await enqueueBotJob({ kind: "aiText", chatId, text });
+        return;
+    }
     await tg.sendMessage(chatId, tt(lang, "didntUnderstand"));
 }
+/** Hand slow, AI-backed work to the queue worker below. */
+async function enqueueBotJob(job: { kind: "aiText"; chatId: any; text: string } | { kind: "invoice"; chatId: any; photo: any }) {
+    await db.collection("bot_jobs").add({ ...job, createdAt: Date.now() });
+}
+
+/**
+ * Does the slow half of a bot message: reading a typed work report or an
+ * invoice photo with the AI. A Firestore trigger rather than more work in the
+ * webhook, because the webhook must answer Telegram within seconds and a
+ * trigger runs with full CPU for as long as the AI takes. Not retried on
+ * failure, so a failed read is reported once rather than charged twice.
+ */
+export const onBotJobCreated = onDocumentCreated({
+    document: "bot_jobs/{jobId}",
+    database: FIRESTORE_DATABASE_ID,
+    secrets: [BOT_TOKEN, GEMINI_API_KEY],
+    timeoutSeconds: 120,
+    maxInstances: 10,
+}, async (event: any) => {
+    const job: any = event.data?.data();
+    if (!job?.chatId) return;
+    const tg = new TelegramApi(BOT_TOKEN.value());
+    const chatId = job.chatId;
+    try {
+        const session = await getSession(chatId);
+        if (!(await validateSession(chatId, session))) {
+            await tg.sendMessage(chatId, tt(session?.lang, "notLinkedShort"));
+            return;
+        }
+        const lang: BotLang = normalizeLang(session?.lang);
+        if (job.kind === "invoice") {
+            await invoice.handleInvoicePhoto(tg, chatId, session, job.photo, GEMINI_API_KEY.value());
+        } else if (job.kind === "aiText") {
+            const handled = await aiLog.handleFreeText(tg, chatId, session, String(job.text || ""), GEMINI_API_KEY.value());
+            if (!handled) await tg.sendMessage(chatId, tt(lang, "didntUnderstand"));
+        }
+    }
+    catch (err) {
+        console.error("Bot job failed:", job.kind, err);
+        try {
+            const s = await getSession(chatId);
+            await tg.sendMessage(chatId, tt(normalizeLang(s?.lang), "aiBusy"), [[{ text: tt(normalizeLang(s?.lang), "aiBtnLogWithButtons"), callback_data: "log" }]]);
+        }
+        catch { /* the user may have blocked the bot */ }
+    }
+    finally {
+        await event.data?.ref?.delete().catch(() => {});
+    }
+});
+
 export const onUserUnlinked = onDocumentUpdated({
     document: "users/{userId}",
     // Without this the trigger listens on "(default)" and never fires.

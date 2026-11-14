@@ -31,7 +31,12 @@ export async function geminiText(
       }
       let res: Response;
       try {
-        res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        // Each request is bounded by what is left of the budget. The budget
+        // used to be checked only BETWEEN attempts, so a single request that
+        // hung could run far past it -- long enough for Telegram to give up on
+        // the bot's webhook and start re-sending the message.
+        const remaining = Math.max(5_000, budgetMs - (Date.now() - started));
+        res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(remaining) });
       } catch (e) {
         sawTransient = true;
         lastReason = `network: ${e}`;
