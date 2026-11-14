@@ -59,7 +59,7 @@ export async function handleFreeText(api: any, chatId: ChatId, session: any, tex
     return true;
   }
   const base = projPath(session.orgId, session.activeProjectId);
-  const ctx = await loadContext(base);
+  const ctx = { ...(await loadContext(base)), today: todayISO() };
   if (!ctx.tasks.length) {
     await api.sendMessage(chatId, tt(lang, "aiNoTasks"));
     return true;
@@ -80,11 +80,24 @@ export async function handleFreeText(api: any, chatId: ChatId, session: any, tex
   let raw: any;
   try {
     const { text: out } = await geminiText(
-      { contents: [{ role: "user", parts: [{ text: buildAiLogPrompt(text, ctx) }] }], generationConfig: { temperature: 0, responseMimeType: "application/json" } },
+      { contents: [{ role: "user", parts: [{ text: buildAiLogPrompt(text, ctx) }] }], generationConfig: { temperature: 0.2, responseMimeType: "application/json" } },
       geminiKey,
-      // This runs in the queue worker (120s), not the webhook, so the model
-      // can take its time. 20s was too short for a large project's lists.
-      60_000,
+      // Runs in the queue worker (120s), not the webhook.
+      90_000,
+      {
+        // A stuck request now gives way to the next model instead of using
+        // the whole budget: every live failure so far was one request timing
+        // out at 60s.
+        perAttemptMs: 35_000,
+        // 2.5 Flash "thinks" before answering unless told not to, and with an
+        // exact JSON answer at temperature 0 it could think or repeat itself
+        // until it ran out of time. This is a lookup, not a puzzle: no
+        // thinking, and a short answer. Only for 2.5 models, which accept it.
+        forModel: (model, b) =>
+          model.startsWith("gemini-2.5")
+            ? { ...b, generationConfig: { ...b.generationConfig, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } }
+            : b,
+      },
     );
     raw = parseModelJson(out);
   } catch (e: any) {
@@ -114,7 +127,7 @@ export async function handleFreeText(api: any, chatId: ChatId, session: any, tex
       logId,
       taskId: d.taskId,
       taskName: d.taskName,
-      workDate: todayISO(),
+      workDate: d.workDate || todayISO(),
       currentProgress: d.currentProgress,
       progressPercent: d.progressPercent,
       materials: d.materials,
@@ -129,6 +142,7 @@ export async function handleFreeText(api: any, chatId: ChatId, session: any, tex
   // Spell out every item: the standard menu only shows counts, and the engineer
   // has to be able to check what was understood before pressing Save.
   const lines: string[] = [tt(lang, "aiUnderstood")];
+  if (d.workDate && d.workDate !== todayISO()) lines.push(tt(lang, "aiForDate", { date: d.workDate }));
   for (const m of d.materials) lines.push(`• ${esc(m.name)}: <b>${m.quantity}</b> ${esc(m.unit)}`);
   for (const l of d.labour) lines.push(`• ${esc(l.roleName)}: <b>${l.headcount}</b>`);
   for (const e of d.equipment) lines.push(`• ${esc(e.name)}: <b>${e.quantity}</b> ${e.unit}`);
