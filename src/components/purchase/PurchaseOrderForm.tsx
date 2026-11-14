@@ -18,6 +18,8 @@ import { money } from "../../utils/num";
 import { toast } from "../../lib/feedback";
 import { Tooltip } from "../Tooltip";
 import { DialogBehaviour } from "../../lib/useDialog";
+import { useOrgSettings } from "../../hooks/useOrgSettings";
+import { computePoTotals, supplyKind, stateCodeOf, isValidHsn, GST_RATES, GST_STATES } from "../../lib/poTax";
 
 import { useTranslation } from "../../i18n";
 interface PurchaseOrderFormProps {
@@ -48,9 +50,13 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
           unit: i.unit,
           rate: i.rate,
           receivedQty: i.receivedQty,
+          hsn: i.hsn || "",
+          gstRate: i.gstRate || 0,
         }))
-      : [{ itemId: "", materialId: "", name: "", orderedQty: 0, unit: "", rate: 0 }],
+      : [{ itemId: "", materialId: "", name: "", orderedQty: 0, unit: "", rate: 0, hsn: "", gstRate: 0 }],
   );
+  const [chargesGstRate, setChargesGstRate] = useState<number>(existingPO?.chargesGstRate || 0);
+  const { settings: org } = useOrgSettings();
   const [charges, setCharges] = useState({
     loading: existingPO?.charges?.loading || 0,
     transport: existingPO?.charges?.transport || 0,
@@ -76,7 +82,10 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
         materialId: invItem.materialId || "",
         name: invItem.name,
         unit: invItem.unit,
-        rate: invItem.avgUnitCost || invItem.unitCost || 0
+        rate: invItem.avgUnitCost || invItem.unitCost || 0,
+        // Remembered from the last purchase order that used this material.
+        hsn: invItem.hsn || "",
+        gstRate: invItem.gstRate || 0,
       };
     }
     setItems(newItems);
@@ -98,7 +107,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
      setItems(newItems);
   };
 
-  const addItem = () => setItems([...items, { itemId: "", materialId: "", name: "", orderedQty: 0, unit: "", rate: 0 }]);
+  const addItem = () => setItems([...items, { itemId: "", materialId: "", name: "", orderedQty: 0, unit: "", rate: 0, hsn: "", gstRate: 0 }]);
   const removeItem = (i: number) => setItems(items.filter((_, idx) => idx !== i));
   const updateItem = (index: number, field: keyof typeof items[0], value: any) => {
     const newItems = [...items];
@@ -111,13 +120,22 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
     (Number(charges.loading) || 0) +
     (Number(charges.transport) || 0) +
     (Number(charges.other) || 0);
-  const totalAmount = materialTotal + chargesTotal;
+  // GST. Rates are entered WITHOUT tax; the tax is added per line and split
+  // as CGST+SGST or IGST by comparing the vendor's state with the company's.
+  const supply = supplyKind(org.gstin, selectedVendor?.gstin);
+  const totals = computePoTotals(items, charges, chargesGstRate, supply.interState);
+  const totalAmount = totals.grandTotal;
+  const vendorState = GST_STATES[stateCodeOf(selectedVendor?.gstin)] || "";
+  const buyerState = GST_STATES[stateCodeOf(org.gstin)] || "";
 
   // What this PO does to the project budget: how much headroom is left, and a
   // hard warning if committing it would push actual spend past the budget.
   const budgetInsight = useMemo(() => {
     const budget = stats?.totalBudgeted || 0;
     const actual = stats?.totalActual || 0;
+    // The project is costed WITHOUT GST (the tax is input credit), so the
+    // budget is compared with the taxable value, not the tax-inclusive total.
+    const totalAmount = totals.subtotalTaxable + totals.chargesTaxable;
     if (budget <= 0 || totalAmount <= 0) return null;
     const remaining = budget - actual;
     const inr = (n: number) => `₹${Math.abs(Math.round(n)).toLocaleString("en-IN")}`;
@@ -132,7 +150,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
       tone: "info" as const,
       text: `Uses ${pctOfBudget.toFixed(1)}% of the project budget · ${inr(remaining - totalAmount)} would remain of ${inr(budget)}.`,
     };
-  }, [stats, totalAmount]);
+  }, [stats, totals.subtotalTaxable, totals.chargesTaxable]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,6 +160,17 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
     const invalidItem = items.find(i => i.orderedQty > 0 && i.rate === 0 && i.itemId);
     if (invalidItem) {
         setError(`Line item '${invalidItem.name}' has a rate of ₹0. Enter a valid rate — a zero rate will produce zero costs across the vendor ledger, inventory valuation, and task costs.`);
+        return;
+    }
+
+    const badHsn = items.find(i => i.itemId && !isValidHsn(i.hsn));
+    if (badHsn) {
+        setError(`'${badHsn.name}': an HSN code is 4, 6 or 8 digits. Check it or leave it empty.`);
+        return;
+    }
+    const noHsn = items.find(i => i.itemId && (i.gstRate || 0) > 0 && !String(i.hsn || "").trim());
+    if (noHsn) {
+        setError(`'${noHsn.name}' has GST of ${noHsn.gstRate}% but no HSN code. Enter the HSN code so the vendor can match it on their tax invoice.`);
         return;
     }
 
@@ -160,14 +189,43 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
              rate: i.rate,
              amount: i.orderedQty * i.rate,
              receivedQty: (i as any).receivedQty || 0,
+             // Carried here, before the tax is computed: computing from lines
+             // without their rate saved a PO whose screen showed GST and whose
+             // record had none.
+             gstRate: Number(i.gstRate) || 0,
+             ...(String(i.hsn || "").trim() ? { hsn: String(i.hsn).trim() } : {}),
           }));
+       // Tax per saved line, from the same function the screen used.
+       const saved = computePoTotals(validItems, charges, chargesGstRate, supply.interState);
+       validItems.forEach((line, idx) => {
+          const t = saved.lines[idx];
+          line.gstRate = t.gstRate;
+          line.cgst = t.cgst;
+          line.sgst = t.sgst;
+          line.igst = t.igst;
+          line.lineTotal = t.total;
+       });
+       // Present on every PO saved from now on, so an edit that removes the
+       // tax also clears it. taxMode marks a PO whose goods receipts must be
+       // costed ex-GST with the tax tracked separately.
+       const taxFields = {
+          taxMode: saved.hasGst ? "gst-itemized" : null,
+          vendorGSTIN: selectedVendor.gstin || null,
+          buyerGSTIN: org.gstin || null,
+          interState: supply.interState,
+          chargesGstRate: Number(chargesGstRate) || 0,
+          subtotalTaxable: saved.subtotalTaxable,
+          totalCGST: saved.totalCGST,
+          totalSGST: saved.totalSGST,
+          totalIGST: saved.totalIGST,
+          totalTax: saved.totalTax,
+       };
        const chargesObj = {
           loading: Number(charges.loading) || 0,
           transport: Number(charges.transport) || 0,
           other: Number(charges.other) || 0,
        };
-       const computedTotal =
-          validItems.reduce((sum, item) => sum + item.amount, 0) + chargesTotal;
+       const computedTotal = saved.grandTotal;
 
        if (isEditing && existingPO) {
           // Edit an existing Draft PO in place — keep its number/status/history.
@@ -179,6 +237,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
              lineItems: validItems,
              charges: chargesObj,
              totalAmount: computedTotal,
+             ...taxFields,
              notes,
           });
        } else {
@@ -208,6 +267,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                 lineItems: validItems,
                 charges: chargesObj,
                 totalAmount: computedTotal,
+                ...taxFields,
                 notes,
                 createdByUid: user.uid,
                 createdByName: user.displayName || user.email || "Unknown",
@@ -216,6 +276,16 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
 
              t.set(counterRef, { count: nextCount }, { merge: true });
           });
+       }
+       // Remember each material's HSN code and GST rate for the next order.
+       // Best effort: a PO that saved must not fail because this did.
+       if (selectedVendor.type !== "Labor") {
+          await Promise.all(validItems.map((line) => {
+             const inv = inventory.find(i => i.id === line.itemId);
+             if (!inv || ((inv.hsn || "") === (line.hsn || "") && (inv.gstRate || 0) === (line.gstRate || 0))) return null;
+             return updateDoc(doc(db, `${tenantPath}/inventory/${line.itemId}`), { hsn: line.hsn || "", gstRate: line.gstRate || 0 }).catch(() => null);
+          }));
+          queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'inventory'] });
        }
        queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'purchase_orders'] });
        onClose();
@@ -335,7 +405,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                     />
                   </div>
                   <div className="w-full sm:w-32 space-y-1.5">
-                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest ml-1">Rate (₹)</label>
+                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest ml-1">Rate before tax (₹)</label>
                     <input
                       required
                       type="number"
@@ -357,6 +427,38 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                         <Trash2 className="w-4 h-4 cursor-pointer" />
                       </button>
                     </Tooltip>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-3 items-end px-4 pb-2">
+                  <div className="w-32 space-y-1">
+                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest ml-1">HSN / SAC code</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={8}
+                      placeholder="e.g. 2523"
+                      value={item.hsn || ""}
+                      onChange={e => updateItem(idx, "hsn", e.target.value.replace(/[^0-9]/g, ""))}
+                      className="w-full px-3 py-2 bg-panel rounded-lg text-sm font-mono"
+                    />
+                  </div>
+                  <div className="w-24 space-y-1">
+                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest ml-1">GST %</label>
+                    <select
+                      value={item.gstRate || 0}
+                      onChange={e => updateItem(idx, "gstRate", parseFloat(e.target.value))}
+                      className="w-full px-3 py-2 bg-panel rounded-lg text-sm font-mono"
+                    >
+                      {GST_RATES.map(r => <option key={r} value={r}>{r === 0 ? "None" : `${r}%`}</option>)}
+                    </select>
+                  </div>
+                  {totals.lines[idx]?.tax > 0 && (
+                    <p className="text-[11px] font-semibold text-ink-muted pb-2">
+                      {supply.interState
+                        ? `IGST ₹${money(totals.lines[idx].igst)}`
+                        : `CGST ₹${money(totals.lines[idx].cgst)} + SGST ₹${money(totals.lines[idx].sgst)}`}
+                      {` · line total ₹${money(totals.lines[idx].total)}`}
+                    </p>
                   )}
                 </div>
                 {showDelta && (
@@ -419,6 +521,31 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                ))}
             </div>
 
+            {chargesTotal > 0 && (
+               <div className="w-48">
+                  <label className="block text-[10px] font-black text-ink-muted uppercase tracking-widest mb-1.5">
+                     GST on these charges
+                  </label>
+                  <select
+                     value={chargesGstRate}
+                     onChange={(e) => setChargesGstRate(parseFloat(e.target.value))}
+                     className="w-full px-4 py-3 bg-panel border-none rounded-xl text-sm font-medium text-ink"
+                  >
+                     {GST_RATES.map(r => <option key={r} value={r}>{r === 0 ? "None" : `${r}%`}</option>)}
+                  </select>
+               </div>
+            )}
+
+            {totals.hasGst && (
+               <p className="text-[11px] font-semibold text-ink-muted -mb-2">
+                  {!supply.stateKnown
+                     ? `${!org.gstin ? "Your company's GSTIN is not set (Settings → Organisation)" : "This vendor has no GSTIN saved"}, so the tax is shown as CGST + SGST, as for a vendor in your own state. Add the GSTIN if the vendor is in another state.`
+                     : supply.interState
+                        ? `Vendor is in ${vendorState || "another state"} and your company is in ${buyerState || "a different state"}: the tax is IGST.`
+                        : `Vendor and your company are both in ${buyerState || "the same state"}: the tax is CGST + SGST.`}
+               </p>
+            )}
+
             <div className="mt-4 mb-4 p-6 bg-warning/12 border border-warning/25/50 rounded-[20px] space-y-2">
                <div className="flex justify-between text-xs font-bold text-warning/80">
                   <span>{t("dlh.materials")}</span>
@@ -430,8 +557,25 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                      <span className="font-mono">₹{chargesTotal.toLocaleString("en-IN")}</span>
                   </div>
                )}
+               {totals.hasGst && (supply.interState ? (
+                  <div className="flex justify-between text-xs font-bold text-warning/80">
+                     <span>IGST</span>
+                     <span className="font-mono">₹{money(totals.totalIGST)}</span>
+                  </div>
+               ) : (
+                  <>
+                     <div className="flex justify-between text-xs font-bold text-warning/80">
+                        <span>CGST</span>
+                        <span className="font-mono">₹{money(totals.totalCGST)}</span>
+                     </div>
+                     <div className="flex justify-between text-xs font-bold text-warning/80">
+                        <span>SGST</span>
+                        <span className="font-mono">₹{money(totals.totalSGST)}</span>
+                     </div>
+                  </>
+               ))}
                <div className="flex justify-between items-center pt-2 border-t border-primary/20">
-                  <span className="text-xs font-black text-primary uppercase tracking-widest">Total Amount</span>
+                  <span className="text-xs font-black text-primary uppercase tracking-widest">{totals.hasGst ? "Total including GST" : "Total Amount"}</span>
                   <span className="text-2xl font-black text-primary tracking-tight font-mono">
                      ₹{totalAmount.toLocaleString("en-IN")}
                   </span>

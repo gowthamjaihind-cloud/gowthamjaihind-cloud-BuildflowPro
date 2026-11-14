@@ -197,6 +197,17 @@ service cloud.firestore {
 
       // AI usage meters — written only by Cloud Functions (Admin SDK); members
       // may read their own org's usage for display.
+      // What the company prints on its own documents (address, logo, PAN,
+      // standard PO terms). Any member reads it -- a site engineer raising a
+      // PO needs the letterhead -- and only an Owner or Admin changes it. The
+      // size cap keeps a mis-sized logo from bloating every PO render.
+      match /profile/{docId} {
+        allow read: if isOrgMember(orgId);
+        allow write: if isOrgMember(orgId) && hasAnyRole(['Admin', 'Owner'])
+          && docId == 'company'
+          && request.resource.data.get('logo', '').size() < 300000;
+      }
+
       match /usage/{month} {
         allow read: if isOrgMember(orgId);
         allow write: if false;

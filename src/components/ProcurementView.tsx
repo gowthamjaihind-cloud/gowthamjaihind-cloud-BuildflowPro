@@ -1,3 +1,4 @@
+import { isValidGstin, stateCodeOf, GST_STATES } from "../lib/poTax";
 import React, { useState, useEffect, useMemo } from "react";
 import { useProjectLabel } from "../hooks/useProjectLabel";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
@@ -237,6 +238,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     email: "",
     phone: "",
     address: "",
+    gstin: "",
     outstandingBalance: 0,
   });
 
@@ -870,6 +872,14 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       toast.error("Enter a valid phone number (at least 10 digits).");
       return;
     }
+    // The GSTIN decides CGST+SGST versus IGST on every purchase order raised
+    // on this vendor, so a mistyped one must not be saved.
+    const gstin = String(newVendor.gstin || "").trim().toUpperCase();
+    if (gstin && !isValidGstin(gstin)) {
+      toast.error("That GSTIN isn't valid. It is 15 characters, like 29ABCDE1234F1Z5. Leave it empty if the vendor is not registered.");
+      return;
+    }
+    newVendor.gstin = gstin;
     try {
       if (isEditingVendor && selectedVendor) {
         // Store opening balance + what the ledger already accounts for, so the
@@ -901,6 +911,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         email: "",
         phone: "",
         address: "",
+        gstin: "",
         outstandingBalance: 0,
       });
     } catch (error) {
@@ -930,10 +941,14 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     const posted = bills.filter((b) => b.status !== "pending_review");
     const pending = bills.filter((b) => b.status === "pending_review");
     const inr = (n: number) => `₹${(Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+    // GST on goods received against a purchase order raised with GST, where no
+    // vendor bill was scanned (a scanned bill carries its own tax, and its GRN
+    // has a billId, so nothing is counted twice).
+    const receiptGST = grns.reduce((a, g) => a + (!g.billId && g.taxMode === "gst-itemized" ? g.gstAmount || 0 : 0), 0);
     const inputGST = posted.reduce(
       (a, b) => a + (b.totalCGST || 0) + (b.totalSGST || 0) + (b.totalIGST || 0),
       0,
-    );
+    ) + receiptGST;
     const totalPayable = posted.reduce((a, b) => a + (b.grandTotal || 0), 0);
     const sorted = [...bills].sort((a, b) => (a.status === "pending_review" ? -1 : 1) - (b.status === "pending_review" ? -1 : 1));
 
@@ -957,7 +972,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           <div className="soft-card p-5 squircle-24">
             <div className="text-[10px] font-black uppercase tracking-widest text-ink-muted mb-1">Input GST (ITC)</div>
             <div className="text-2xl font-black text-ink">{inr(inputGST)}</div>
-            <div className="text-[10px] text-ink-muted mt-1">Claimable credit across posted bills</div>
+            <div className="text-[10px] text-ink-muted mt-1">{receiptGST > 0 ? `Posted bills, plus ${inr(receiptGST)} on goods received against GST purchase orders. Claim it against the vendor's tax invoice.` : "Claimable credit across posted bills"}</div>
           </div>
           <div className="soft-card p-5 squircle-24">
             <div className="text-[10px] font-black uppercase tracking-widest text-ink-muted mb-1">Billed (incl-GST)</div>
@@ -1149,6 +1164,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                               email: vendor.email || "",
                               phone: vendor.phone || "",
                               address: vendor.address || "",
+                              gstin: vendor.gstin || "",
                               outstandingBalance: vendor.outstandingBalance,
                             });
                             setOpeningBalanceInput(
@@ -2263,6 +2279,27 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                         setNewVendor({ ...newVendor, phone: e.target.value })
                       }
                     />
+                  </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-ink-muted ml-1">
+                      GSTIN (optional)
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={15}
+                      placeholder="e.g. 29ABCDE1234F1Z5"
+                      className="w-full bg-panel p-4 rounded-xl font-bold font-mono border-2 border-transparent focus:border-primary outline-none"
+                      value={newVendor.gstin || ""}
+                      onChange={(e) =>
+                        setNewVendor({ ...newVendor, gstin: e.target.value.toUpperCase() })
+                      }
+                    />
+                    <p className="text-[10px] text-ink-muted ml-1">
+                      {stateCodeOf(newVendor.gstin) && GST_STATES[stateCodeOf(newVendor.gstin)]
+                        ? `Registered in ${GST_STATES[stateCodeOf(newVendor.gstin)]}. `
+                        : ""}
+                      {"Decides whether a purchase order to this vendor shows CGST + SGST or IGST."}
+                    </p>
                   </div>
                   <div className="col-span-2 space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-ink-muted ml-1">

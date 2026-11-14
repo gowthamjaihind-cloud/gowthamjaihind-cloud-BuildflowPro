@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { money } from "../../utils/num";
 import React, { useState } from "react";
-import { exportToCSV, exportToPDF } from "../../utils/exportUtils";
+import { exportToCSV } from "../../utils/exportUtils";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X,
@@ -22,6 +22,13 @@ import { GoodsReceiptDetails } from "./GoodsReceiptDetails";
 import { confirmDialog, toast } from "../../lib/feedback";
 import { Tooltip } from "../Tooltip";
 import { DialogBehaviour } from "../../lib/useDialog";
+import { PurchaseOrderPreview } from "./PurchaseOrderDocument";
+import { useProjectData } from "../../hooks/useProjectData";
+import { useOrgSettings } from "../../hooks/useOrgSettings";
+import { useCompanyProfile } from "../../hooks/useCompanyProfile";
+import { useProjectStore } from "../../store/projectStore";
+import { computePoTotals } from "../../lib/poTax";
+import type { Vendor } from "../../types";
 
 interface PurchaseOrderDetailsProps {
   po: PurchaseOrder;
@@ -42,6 +49,16 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
   const [isApproving, setIsApproving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showGRNForm, setShowGRNForm] = useState(false);
+  const [showDocument, setShowDocument] = useState(false);
+  // What the printed purchase order needs beyond the order itself.
+  const { data: vendors = [] } = useProjectData<Vendor>(projectId, "suppliers");
+  const vendor = vendors.find((v) => v.id === po.vendorId);
+  const { settings: org } = useOrgSettings();
+  const { profile } = useCompanyProfile();
+  const projectName = useProjectStore((st) => st.activeProject?.name);
+  const inter = po.interState === true;
+  const totals = computePoTotals(po.lineItems || [], po.charges, po.chargesGstRate, inter);
+  const hasGst = totals.hasGst;
 
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
   const canEditOrDelete = isAdminOrOwner || (po.status === "Draft" && po.createdByUid === user?.uid);
@@ -85,34 +102,17 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
     }
   };
 
-  const getPOExportData = () => {
-    const headers = ["Item Name", "Ordered Qty", "Unit", "Rate (₹)", "Amount (₹)"];
-    const items = po.lineItems || [];
-    const rows = items.map(item => [
-      item.name || "",
-      item.orderedQty || 0,
-      item.unit || "",
-      item.rate || 0,
-      item.amount || 0
-    ]);
-    return { headers, rows };
-  };
-
   const handleExportCSV = () => {
-    const { headers, rows } = getPOExportData();
+    const headers = hasGst
+      ? ["Item Name", "HSN/SAC", "Ordered Qty", "Unit", "Rate before tax (₹)", "Taxable value (₹)", "GST %", "CGST (₹)", "SGST (₹)", "IGST (₹)", "Line total (₹)"]
+      : ["Item Name", "Ordered Qty", "Unit", "Rate (₹)", "Amount (₹)"];
+    const rows = (po.lineItems || []).map((item, i) => {
+      const t = totals.lines[i];
+      return hasGst
+        ? [item.name || "", item.hsn || "", item.orderedQty || 0, item.unit || "", item.rate || 0, t.taxableValue, t.gstRate, t.cgst, t.sgst, t.igst, t.total]
+        : [item.name || "", item.orderedQty || 0, item.unit || "", item.rate || 0, item.amount || 0];
+    });
     exportToCSV(`PO_${po.poNumber}`, headers, rows);
-  };
-
-  const handleExportPDF = () => {
-    const { headers, rows } = getPOExportData();
-    const formattedRows = rows.map(r => [
-      r[0],
-      r[1],
-      r[2],
-      `₹${Number(r[3]).toLocaleString("en-IN")}`,
-      `₹${Number(r[4]).toLocaleString("en-IN")}`
-    ]);
-    exportToPDF(`PURCHASE ORDER: ${po.poNumber}`, `Vendor: ${po.vendorName} | Date: ${po.orderDate} | Total: ₹${money(po.totalAmount)}`, headers, formattedRows, `PO_${po.poNumber}`);
   };
 
   return (
@@ -151,13 +151,13 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                  <Download className="w-3.5 h-3.5 text-ink/80" /> CSV
                </button>
              </Tooltip>
-             <Tooltip label={"Export PDF"}>
+             <Tooltip label={"View the purchase order as it will be sent, then download or print it"}>
                <button
-                 onClick={handleExportPDF}
+                 onClick={() => setShowDocument(true)}
                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-deep text-on-primary rounded-lg transition text-[10px] font-bold uppercase tracking-wider shadow-sm cursor-pointer"
                 
                >
-                 <Download className="w-3.5 h-3.5" /> PDF
+                 <Download className="w-3.5 h-3.5" /> View / PDF
                </button>
              </Tooltip>
              <button aria-label={"Close"} type="button" onClick={onClose} className="p-2 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer ml-1">
@@ -197,25 +197,37 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
 
             <div>
                <h3 className="text-xs font-black text-ink uppercase tracking-widest mb-4 border-b border-divider pb-2">{"Line Items"}</h3>
-               <div className="bg-panel rounded-2xl border border-divider overflow-hidden">
+               <div className="bg-panel rounded-2xl border border-divider overflow-x-auto">
                   <table className="w-full text-left">
                      <thead>
                         <tr className="bg-divider/30 text-[10px] font-bold text-ink-muted uppercase tracking-widest border-b border-divider">
                            <th className="p-4">{"Item"}</th>
                            <th className="p-4 text-right">{"Qty"}</th>
                            <th className="p-4 text-right">{"Received"}</th>
-                           <th className="p-4 text-right">{"Rate"}</th>
-                           <th className="p-4 text-right">{"Amount"}</th>
+                           <th className="p-4 text-right">{hasGst ? "Rate before tax" : "Rate"}</th>
+                           <th className="p-4 text-right">{hasGst ? "Taxable value" : "Amount"}</th>
+                           {hasGst && <th className="p-4 text-right">{"GST"}</th>}
+                           {hasGst && <th className="p-4 text-right">{"Total"}</th>}
                         </tr>
                      </thead>
                      <tbody className="text-sm font-medium">
                         {po.lineItems.map((item, i) => (
                            <tr key={i} className="border-b border-divider/50 last:border-none">
-                              <td className="p-4">{item.name}</td>
+                              <td className="p-4">
+                                 {item.name}
+                                 {hasGst && <span className="block text-[10px] font-mono text-ink-muted">{item.hsn ? `HSN ${item.hsn}` : "No HSN code"}</span>}
+                              </td>
                               <td className="p-4 text-right font-mono">{item.orderedQty} {item.unit}</td>
                               <td className="p-4 text-right font-mono text-success font-bold">{item.receivedQty || 0} {item.unit}</td>
                               <td className="p-4 text-right font-mono">₹{money(item.rate)}</td>
                               <td className="p-4 text-right font-mono text-ink">₹{money(item.amount)}</td>
+                              {hasGst && (
+                                 <td className="p-4 text-right font-mono text-ink-muted">
+                                    {totals.lines[i].gstRate ? `${totals.lines[i].gstRate}%` : "—"}
+                                    {totals.lines[i].tax > 0 && <span className="block text-[10px]">₹{money(totals.lines[i].tax)}</span>}
+                                 </td>
+                              )}
+                              {hasGst && <td className="p-4 text-right font-mono text-ink font-bold">₹{money(totals.lines[i].total)}</td>}
                            </tr>
                         ))}
                      </tbody>
@@ -223,13 +235,21 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                         {([["loading", "Loading charges"], ["transport", "Transport charges"], ["other", "Other charges"]] as const).map(([key, label]) =>
                            po.charges?.[key] ? (
                               <tr key={key}>
-                                 <td colSpan={4} className="px-4 py-1.5 text-right text-[10px] font-bold text-warning/80 uppercase tracking-widest">{label}</td>
+                                 <td colSpan={hasGst ? 6 : 4} className="px-4 py-1.5 text-right text-[10px] font-bold text-warning/80 uppercase tracking-widest">{label}</td>
                                  <td className="px-4 py-1.5 text-right font-mono text-warning">₹{po.charges[key]!.toLocaleString("en-IN")}</td>
                               </tr>
                            ) : null,
                         )}
+                        {hasGst && ((inter
+                           ? [["IGST", totals.totalIGST]]
+                           : [["CGST", totals.totalCGST], ["SGST", totals.totalSGST]]) as Array<[string, number]>).map(([label, value]) => (
+                           <tr key={label}>
+                              <td colSpan={6} className="px-4 py-1.5 text-right text-[10px] font-bold text-warning/80 uppercase tracking-widest">{label}</td>
+                              <td className="px-4 py-1.5 text-right font-mono text-warning">₹{money(value)}</td>
+                           </tr>
+                        ))}
                         <tr>
-                           <td colSpan={4} className="p-4 text-right text-[10px] font-black text-primary uppercase tracking-widest">{"Total Amount"}</td>
+                           <td colSpan={hasGst ? 6 : 4} className="p-4 text-right text-[10px] font-black text-primary uppercase tracking-widest">{hasGst ? "Total including GST" : "Total Amount"}</td>
                            <td className="p-4 text-right text-lg font-black font-mono text-primary tracking-tight">₹{po.totalAmount.toLocaleString("en-IN")}</td>
                         </tr>
                      </tfoot>
@@ -275,6 +295,9 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
             />
          )}
       </AnimatePresence>
+      {showDocument && (
+        <PurchaseOrderPreview po={po} vendor={vendor} org={org} profile={profile} projectName={projectName} onClose={() => setShowDocument(false)} />
+      )}
     </div>
   );
 };

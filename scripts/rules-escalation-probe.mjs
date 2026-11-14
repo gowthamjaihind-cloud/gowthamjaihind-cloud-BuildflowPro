@@ -110,6 +110,14 @@ await expect("New user creates own profile as Viewer", true,
 await expect("Claim of an unclaimed org", true,
   (async () => { await write("owner", "organizations/org-free", { companyName: "Unclaimed" }); return write(newbie, "organizations/org-free", { members: { newbie: "Owner" } }); })());
 
+// --- company profile (letterhead) ---------------------------------------------
+console.log("\nCompany profile:");
+await expect("Owner saves the company address and logo", true, write(alice, `organizations/${ORG}/profile/company`, { addressLine1: "12 Sample Road", city: "Sample City", logo: "data:image/png;base64,AAAA" }));
+await expect("A member reads it for a purchase order", true, read(sam, `organizations/${ORG}/profile/company`));
+await expect("A non-admin member edits it", false, write(sam, `organizations/${ORG}/profile/company`, { city: "Elsewhere" }));
+await expect("An outsider reads it", false, read(mallory, `organizations/${ORG}/profile/company`));
+await expect("An oversized logo is refused", false, write(alice, `organizations/${ORG}/profile/company`, { logo: "x".repeat(300001) }));
+
 // --- per-project access ------------------------------------------------------
 // vic is a Viewer with no grant; sam (now Project Manager) is granted read on
 // p1 and write on p2; alice is the Owner.
