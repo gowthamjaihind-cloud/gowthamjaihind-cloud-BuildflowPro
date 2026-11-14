@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { acceptWorkDate, buildAiLogPrompt, looksLikeLogText, parseModelJson, sanitizeAiLog, type AiLogContext } from "./aiLog";
+import { acceptWorkDate, buildAiLogPrompt, looksLikeLogText, parseModelJson, sanitizeAiLog, sanitizeAiLogs, MAX_LOGS_PER_MESSAGE, type AiLogContext } from "./aiLog";
 
 const ctx: AiLogContext = {
   tasks: [{ id: "t1", name: "Footing concrete", progress: 30 }, { id: "t2", name: "Plinth beam", progress: 0 }],
@@ -97,5 +97,58 @@ describe("plain-language daily log", () => {
     const r = sanitizeAiLog({ intent: "daily_log", taskId: "t1", workDate: "2026-11-12" }, { ...ctx, today: "2026-11-15" });
     if (r.kind !== "log") throw new Error("expected a log");
     expect(r.draft.workDate).toBe("2026-11-12");
+  });
+
+  it("splits one message into one log per task, each with its own labour", () => {
+    const r = sanitizeAiLogs({ intent: "daily_log", workDate: "2026-11-12", logs: [
+      { taskId: "t1", labour: [{ roleId: "r1", headcount: 1 }] },
+      { taskId: "t2", progressPercent: 20, labour: [{ roleId: "r2", headcount: 2 }] },
+    ] }, { ...ctx, today: "2026-11-15" });
+    if (r.kind !== "logs") throw new Error("expected logs");
+    expect(r.drafts.map((d) => d.taskName)).toEqual(["Footing concrete", "Plinth beam"]);
+    expect(r.drafts[0].labour).toEqual([{ roleId: "r1", roleName: "Mason", headcount: 1 }]);
+    expect(r.drafts[1].labour).toEqual([{ roleId: "r2", roleName: "Helper", headcount: 2 }]);
+    expect(r.drafts.every((d) => d.workDate === "2026-11-12")).toBe(true);
+  });
+
+  it("drops an entry for a task that does not exist, keeping the rest", () => {
+    const r = sanitizeAiLogs({ intent: "daily_log", logs: [{ taskId: "ghost" }, { taskId: "t2" }] }, ctx);
+    if (r.kind !== "logs") throw new Error("expected logs");
+    expect(r.drafts.map((d) => d.taskId)).toEqual(["t2"]);
+  });
+
+  it("merges two entries for the same task into one log", () => {
+    const r = sanitizeAiLogs({ intent: "daily_log", logs: [
+      { taskId: "t1", progressPercent: 40, materials: [{ materialId: "m1", quantity: 5 }], note: "south side" },
+      { taskId: "t1", progressPercent: 45, materials: [{ materialId: "m1", quantity: 3 }], note: "north side" },
+    ] }, ctx);
+    if (r.kind !== "logs") throw new Error("expected logs");
+    expect(r.drafts).toHaveLength(1);
+    expect(r.drafts[0]).toMatchObject({ progressPercent: 45, note: "south side; north side" });
+    expect(r.drafts[0].materials[0].quantity).toBe(8);
+  });
+
+  it("still accepts the single-task answer shape", () => {
+    const r = sanitizeAiLogs({ intent: "daily_log", taskId: "t1", labour: [{ roleId: "r1", headcount: 2 }] }, ctx);
+    if (r.kind !== "logs") throw new Error("expected logs");
+    expect(r.drafts).toHaveLength(1);
+  });
+
+  it("asks which task when no entry matches a task, and ignores non-reports", () => {
+    expect(sanitizeAiLogs({ intent: "daily_log", logs: [{ taskId: "x" }], unmatched: ["painting"] }, ctx)).toEqual({ kind: "no_task", unmatched: ["painting"] });
+    expect(sanitizeAiLogs({ intent: "other" }, ctx).kind).toBe("other");
+  });
+
+  it("caps how many logs one message can create", () => {
+    const many = { ...ctx, tasks: Array.from({ length: 9 }, (_, i) => ({ id: `k${i}`, name: `Task ${i}`, progress: 0 })) };
+    const r = sanitizeAiLogs({ intent: "daily_log", logs: many.tasks.map((t) => ({ taskId: t.id })) }, many);
+    if (r.kind !== "logs") throw new Error("expected logs");
+    expect(r.drafts).toHaveLength(MAX_LOGS_PER_MESSAGE);
+  });
+
+  it("asks the model for one entry per task", () => {
+    const p = buildAiLogPrompt("excavation and bar bending", ctx);
+    expect(p).toMatch(/one entry in "logs" per task/);
+    expect(p).toMatch(/"logs":\[/);
   });
 });

@@ -23,6 +23,8 @@ export interface BotSession {
   activeProjectId?: string;
   step?: string | null;
   draft?: Record<string, any>;
+  /** Further logs from the same typed message, shown one at a time after this draft. */
+  pendingDrafts?: Record<string, any>[];
   planDraft?: Record<string, any> | null; // morning plan being assembled
   recentTaskIds?: string[];
   saving?: boolean;          // idempotency guard against double-tap on Save
@@ -46,6 +48,7 @@ export const clearStep = async (chatId: ChatId) => {
     {
       step: FieldValue.delete(),
       draft: FieldValue.delete(),
+      pendingDrafts: FieldValue.delete(),
       saving: FieldValue.delete(),
     } as any,
     { merge: true }

@@ -276,6 +276,13 @@ async function handleUpdate(tg, update, geminiKey) {
         }
         if (data === "xx") {
             await clearStep(chatId);
+            // Cancel on one log of several from the same message skips just
+            // that one; /cancel drops them all.
+            if (Array.isArray(session?.pendingDrafts) && session.pendingDrafts.length) {
+                await tg.editMessage(chatId, messageId, tt(lang, "aiSkipped"));
+                await log.showNextPendingDraft(tg, chatId, session, "");
+                return;
+            }
             await tg.editMessage(chatId, messageId, tt(lang, "cancelled"));
             return;
         }

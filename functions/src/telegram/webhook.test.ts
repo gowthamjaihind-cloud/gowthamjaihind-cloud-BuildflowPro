@@ -32,4 +32,16 @@ describe("the Telegram webhook", () => {
   it("never logs the secret it receives", () => {
     expect(webhook).not.toMatch(/console\.\w+\([^)]*received/);
   });
+
+  it("moves to the next log from the same message after Save, and Cancel skips only one", () => {
+    const logSrc = readFileSync(join(__dirname, "handlers/log.ts"), "utf8");
+    const save = logSrc.slice(logSrc.indexOf("export async function saveLog"));
+    expect(save).toMatch(/showNextPendingDraft\(/);
+    const cancel = src.slice(src.indexOf('if (data === "xx")'), src.indexOf('if (data === "bk")'));
+    expect(cancel).toMatch(/pendingDrafts/);
+    expect(cancel).toMatch(/showNextPendingDraft\(/);
+    const sessionSrc = readFileSync(join(__dirname, "session.ts"), "utf8");
+    // /cancel goes through clearStep, which must drop the queued logs too.
+    expect(sessionSrc.slice(sessionSrc.indexOf("export const clearStep"))).toMatch(/pendingDrafts: FieldValue\.delete\(\)/);
+  });
 });
