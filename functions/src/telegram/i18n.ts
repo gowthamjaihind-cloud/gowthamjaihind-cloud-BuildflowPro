@@ -33,6 +33,7 @@ const en: Dict = {
     "<b>Sitetru Bot</b>\n\n" +
     "/plan — plan today's tasks (morning)\n" +
     "/log — log today's site progress\n" +
+    "…or just type what was done, for example:\n<i>Footing concrete 45% done, 20 bags cement, 4 masons, 6 helpers</i>\n" +
     "/today — see what's already logged today\n" +
     "/projects — switch active project\n" +
     "/language — change language (English / தமிழ்)\n" +
@@ -43,7 +44,19 @@ const en: Dict = {
   "enter0to100": "Enter a number between 0 and 100.",
   "enterQtyGt0": "Enter a quantity greater than 0.",
   "enterHeadcountGt0": "Enter a headcount greater than 0.",
-  "didntUnderstand": "I didn't understand that. Send /help.",
+  "didntUnderstand": "I didn't understand that. Send /help, or just describe today's work in a sentence.",
+  // ---- Plain-language log (handlers/aiLog.ts) ----
+  "aiUnderstood": "<b>Here is what I understood:</b>",
+  "aiNoItems": "• No materials, labour or equipment mentioned",
+  "aiNoProgress": "⚠️ You didn't mention progress, so I kept it at {pct}%. Tap Cancel and use /log if it changed.",
+  "aiUnmatched": "⚠️ I couldn't match these to this project's lists, so they are <b>not</b> included: {items}. Add them with the buttons below.",
+  "aiCheckThenSave": "Check it, add anything missing, then press Save. Nothing is saved until you do.",
+  "aiWhichTask": "I couldn't tell which task that was for. Pick the task and I'll take it from there.",
+  "aiBtnPickTask": "Pick the task",
+  "aiBtnLogWithButtons": "Log with buttons instead",
+  "aiBusy": "I couldn't read that just now. Please try again in a minute, or log it with the buttons.",
+  "aiNoTasks": "This project has no tasks yet. Add tasks in the app first, then tell me about today's work.",
+  "aiQuotaReached": "Your company has used this month's AI allowance. You can still log with /log.",
   "unlinkedNotify": "Your Telegram account has been unlinked from Sitetru.",
   "endOfDayNoProject":
     "🌇 <b>End-of-day check-in</b>\n\nReply /projects to set your active project, then I'll help you log today's work.",

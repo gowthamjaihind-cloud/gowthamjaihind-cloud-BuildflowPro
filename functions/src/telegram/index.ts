@@ -1,4 +1,6 @@
-import { onRequest } from "firebase-functions/v2/https";
+import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
+import { CALLABLE_OPTS } from "../callable";
+import { assertSuperAdmin } from "../razorpay";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
@@ -10,6 +12,7 @@ import * as log from "./handlers/log";
 import * as projects from "./handlers/projects";
 import * as agent from "./handlers/agent";
 import * as invoice from "./handlers/invoice";
+import * as aiLog from "./handlers/aiLog";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
 const BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = defineSecret("TELEGRAM_WEBHOOK_SECRET");
@@ -46,6 +49,61 @@ export const telegramStatus = onRequest({
         res.json({ online: false });
     }
 });
+/**
+ * Why is the bot silent? Operator-only.
+ *
+ * The bot only hears a message if Telegram has been told to send it to OUR
+ * webhook, with OUR secret. Both live on Telegram's side and nothing in the
+ * app showed them, so a bot that stopped replying gave no clue why: a webhook
+ * never registered, one pointing at an old address, or one registered before
+ * the secret was set or changed (every call then gets 401 and is dropped) all
+ * look identical from a phone. This reports what Telegram itself says.
+ */
+const expectedWebhookUrl = () =>
+    `https://asia-southeast1-${process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT}.cloudfunctions.net/telegramWebhook`;
+
+async function botDiagnostics(tg: TelegramApi, secret: string) {
+    const [me, info] = await Promise.all([tg.getMe(), tg.getWebhookInfo()]);
+    const w = info?.result || {};
+    const expectedUrl = expectedWebhookUrl();
+    const problems: string[] = [];
+    if (!me?.ok) problems.push("Telegram does not accept the bot token. Check the TELEGRAM_BOT_TOKEN secret.");
+    if (me?.ok && !w.url) problems.push("Telegram has no webhook set for this bot, so messages are not being sent to Sitetru at all.");
+    if (w.url && w.url !== expectedUrl) problems.push("Telegram is sending messages to a different address than this app's webhook.");
+    if (!secret) problems.push("No webhook secret is configured (TELEGRAM_WEBHOOK_SECRET).");
+    if (secret && !/^[A-Za-z0-9_-]{1,256}$/.test(secret)) problems.push("The webhook secret contains characters Telegram does not allow (only letters, digits, _ and -).");
+    if (w.last_error_message) problems.push(`Telegram's last delivery failed: ${String(w.last_error_message).slice(0, 200)}`);
+    return {
+        tokenOk: !!me?.ok,
+        botUsername: me?.result?.username || null,
+        webhookUrl: w.url || null,
+        expectedUrl,
+        urlMatches: !!w.url && w.url === expectedUrl,
+        pendingUpdates: Number(w.pending_update_count) || 0,
+        lastErrorAt: w.last_error_date ? Number(w.last_error_date) * 1000 : null,
+        lastErrorMessage: w.last_error_message ? String(w.last_error_message).slice(0, 300) : null,
+        secretConfigured: !!secret,
+        problems,
+    };
+}
+
+export const telegramDiagnostics = onCall({ ...CALLABLE_OPTS, secrets: [BOT_TOKEN, WEBHOOK_SECRET], timeoutSeconds: 30 }, async (request) => {
+    assertSuperAdmin(request);
+    return botDiagnostics(new TelegramApi(BOT_TOKEN.value()), WEBHOOK_SECRET.value() || "");
+});
+
+/** Operator-only: (re)register this app's webhook with Telegram, using the current secret. */
+export const telegramReconnect = onCall({ ...CALLABLE_OPTS, secrets: [BOT_TOKEN, WEBHOOK_SECRET], timeoutSeconds: 30 }, async (request) => {
+    assertSuperAdmin(request);
+    const tg = new TelegramApi(BOT_TOKEN.value());
+    const secret = WEBHOOK_SECRET.value() || "";
+    const res = await tg.setWebhook(expectedWebhookUrl(), secret);
+    if (!res?.ok) {
+        throw new HttpsError("failed-precondition", `Telegram refused the connection: ${String(res?.description || "unknown reason").slice(0, 200)}`);
+    }
+    return botDiagnostics(tg, secret);
+});
+
 export const telegramWebhook = onRequest({
     region: "asia-southeast1",
     secrets: [BOT_TOKEN, WEBHOOK_SECRET, GEMINI_API_KEY],
@@ -62,7 +120,8 @@ export const telegramWebhook = onRequest({
     // ---- AUTH: verify this really came from Telegram, before anything else ----
     const expected = WEBHOOK_SECRET.value();
     const received = req.get("X-Telegram-Bot-Api-Secret-Token");
-    console.log("Webhook received! expected secret length:", expected?.length, "received secret:", received);
+    // Never log the secret itself: this line used to print whatever arrived,
+    // which put the real webhook secret into the function logs on every call.
     if (expected && received !== expected) {
         console.warn("Rejected unauthenticated webhook request");
         res.status(401).send("Unauthorized");
@@ -339,6 +398,9 @@ async function handleUpdate(tg, update, geminiKey) {
     // through the same function. It returns false when the text belongs to
     // no step, so the fallback below still fires.
     if (await log.handleStepText(tg, chatId, session, text)) return;
+    // A sentence with no command and no step in progress: read it as a work
+    // report. Returns false when it is not one, so the reply below still fires.
+    if (await aiLog.handleFreeText(tg, chatId, session, text, geminiKey)) return;
     await tg.sendMessage(chatId, tt(lang, "didntUnderstand"));
 }
 export const onUserUnlinked = onDocumentUpdated({

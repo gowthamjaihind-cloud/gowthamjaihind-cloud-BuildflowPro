@@ -72,6 +72,20 @@ export class TelegramApi {
     return this.call("getMe", {});
   }
 
+  /** Where Telegram is currently sending this bot's messages, and its last error. */
+  getWebhookInfo(): Promise<any> {
+    return this.call("getWebhookInfo", {});
+  }
+
+  /** Point Telegram at our webhook, with the secret it must send on every call. */
+  setWebhook(url: string, secretToken: string): Promise<any> {
+    return this.call("setWebhook", {
+      url,
+      ...(secretToken ? { secret_token: secretToken } : {}),
+      allowed_updates: ["message", "callback_query"],
+    });
+  }
+
   get botToken(): string {
     return this.token;
   }

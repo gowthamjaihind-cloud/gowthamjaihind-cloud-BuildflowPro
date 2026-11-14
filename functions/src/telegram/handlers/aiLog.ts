@@ -1,0 +1,138 @@
+import type { ChatId } from "../session";
+import { setSession, getSession } from "../session";
+import { db } from "../../db";
+import { tt, normalizeLang } from "../i18n";
+import { geminiText } from "../../ai/gemini";
+import { chargeAiUsage, refundAiUsage, isQuotaError } from "../../ai/usage";
+import { buildAiLogPrompt, looksLikeLogText, sanitizeAiLog, type AiLogContext } from "../../bot/aiLog";
+import { showMenu } from "./log";
+
+/**
+ * "Footing concrete 45% done, 20 bags cement, 4 masons and 6 helpers" typed as
+ * an ordinary message becomes a filled-in daily-log draft.
+ *
+ * Nothing is saved from the sentence alone. The engineer is shown what was
+ * understood, with the same Save / Add / Cancel buttons as the tap-through
+ * flow, and the log is written only when they press Save. Channel-neutral:
+ * `api` is the Telegram wrapper today and a WhatsApp one later.
+ */
+
+const projPath = (orgId: any, projectId: any) =>
+  orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
+
+const todayISO = () => new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+const esc = (s: unknown) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+async function loadContext(base: string): Promise<AiLogContext> {
+  const [tasks, inv, roles, equip] = await Promise.all([
+    db.collection(`${base}/tasks`).get(),
+    db.collection(`${base}/inventory`).get(),
+    db.collection(`${base}/labor_rate_cards`).get(),
+    db.collection(`${base}/equipment`).get(),
+  ]);
+  // A task with children is a heading in the schedule: its progress is rolled
+  // up from them, so it is never logged against directly.
+  const parents = new Set(tasks.docs.map((d) => String((d.data() as any).parentId || "")).filter(Boolean));
+  return {
+    tasks: tasks.docs
+      .filter((d) => !parents.has(d.id))
+      .map((d) => ({ id: d.id, name: String((d.data() as any).name || ""), progress: Number((d.data() as any).progress) || 0 }))
+      .filter((t) => t.name)
+      .slice(0, 250),
+    materials: inv.docs.map((d) => ({ id: d.id, name: String((d.data() as any).name || ""), unit: String((d.data() as any).unit || "") })).filter((m) => m.name).slice(0, 250),
+    roles: roles.docs.map((d) => ({ id: d.id, name: String((d.data() as any).roleName || (d.data() as any).role || (d.data() as any).name || "") })).filter((r) => r.name).slice(0, 80),
+    equipment: equip.docs.map((d) => ({ id: d.id, name: String((d.data() as any).name || "") })).filter((e) => e.name).slice(0, 80),
+  };
+}
+
+/**
+ * Returns true when the message was handled here (whatever the outcome), and
+ * false when it should fall through to "I didn't understand that".
+ */
+export async function handleFreeText(api: any, chatId: ChatId, session: any, text: string, geminiKey: string): Promise<boolean> {
+  if (!looksLikeLogText(text) || !geminiKey) return false;
+  const lang = normalizeLang(session?.lang);
+  if (!session?.activeProjectId) {
+    await api.sendMessage(chatId, tt(lang, "noActiveProject"));
+    return true;
+  }
+  const base = projPath(session.orgId, session.activeProjectId);
+  const ctx = await loadContext(base);
+  if (!ctx.tasks.length) {
+    await api.sendMessage(chatId, tt(lang, "aiNoTasks"));
+    return true;
+  }
+
+  // Charged before the call so two messages at once cannot slip past the
+  // monthly allowance; given back if the model gives no answer.
+  try {
+    await chargeAiUsage(session.orgId, "botLog");
+  } catch (e: any) {
+    if (isQuotaError(e)) {
+      await api.sendMessage(chatId, tt(lang, "aiQuotaReached"));
+      return true;
+    }
+    throw e;
+  }
+
+  let raw: any;
+  try {
+    const { text: out } = await geminiText(
+      { contents: [{ role: "user", parts: [{ text: buildAiLogPrompt(text, ctx) }] }], generationConfig: { temperature: 0, responseMimeType: "application/json" } },
+      geminiKey,
+      20_000,
+    );
+    raw = JSON.parse(out);
+  } catch (e) {
+    console.error("AI log read failed:", e);
+    await refundAiUsage(session.orgId, "botLog");
+    await api.sendMessage(chatId, tt(lang, "aiBusy"), [[{ text: tt(lang, "aiBtnLogWithButtons"), callback_data: "log" }]]);
+    return true;
+  }
+
+  const result = sanitizeAiLog(raw, ctx);
+  if (result.kind === "other") {
+    // Not a work report: the allowance is for logs, so this one is not counted.
+    await refundAiUsage(session.orgId, "botLog");
+    return false;
+  }
+  if (result.kind === "no_task") {
+    await api.sendMessage(chatId, tt(lang, "aiWhichTask"), [[{ text: tt(lang, "aiBtnPickTask"), callback_data: "log" }]]);
+    return true;
+  }
+
+  const d = result.draft;
+  const logId = db.collection(`${base}/dailyLogs`).doc().id;
+  await setSession(chatId, {
+    step: "log:menu",
+    draft: {
+      logId,
+      taskId: d.taskId,
+      taskName: d.taskName,
+      workDate: todayISO(),
+      currentProgress: d.currentProgress,
+      progressPercent: d.progressPercent,
+      materials: d.materials,
+      labour: d.labour,
+      equipment: d.equipment,
+      photoUrls: [],
+      ...(d.note ? { note: d.note } : {}),
+      viaAi: true,
+    },
+  });
+
+  // Spell out every item: the standard menu only shows counts, and the engineer
+  // has to be able to check what was understood before pressing Save.
+  const lines: string[] = [tt(lang, "aiUnderstood")];
+  for (const m of d.materials) lines.push(`• ${esc(m.name)}: <b>${m.quantity}</b> ${esc(m.unit)}`);
+  for (const l of d.labour) lines.push(`• ${esc(l.roleName)}: <b>${l.headcount}</b>`);
+  for (const e of d.equipment) lines.push(`• ${esc(e.name)}: <b>${e.quantity}</b> ${e.unit}`);
+  if (!d.materials.length && !d.labour.length && !d.equipment.length) lines.push(tt(lang, "aiNoItems"));
+  if (!d.progressGiven) lines.push("", tt(lang, "aiNoProgress", { pct: d.currentProgress }));
+  if (d.unmatched.length) lines.push("", tt(lang, "aiUnmatched", { items: d.unmatched.map(esc).join(", ") }));
+  lines.push("", tt(lang, "aiCheckThenSave"));
+  await api.sendMessage(chatId, lines.join("\n"));
+  await showMenu(api, chatId, null, await getSession(chatId));
+  return true;
+}

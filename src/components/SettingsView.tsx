@@ -30,6 +30,7 @@ import { TeamPanel } from "./settings/TeamPanel";
 import { MastersPanel } from "./settings/MastersPanel";
 import { OperatorPanel } from "./settings/OperatorPanel";
 import { BillingPanel } from "./settings/BillingPanel";
+import { BotDiagnostics } from "./settings/BotDiagnostics";
 import { CompanyProfilePanel } from "./settings/CompanyProfilePanel";
 import { Receipt } from "@phosphor-icons/react";
 import { PrivacyPanel } from "./settings/PrivacyPanel";
@@ -173,6 +174,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <TelegramIntegration currentUser={currentUser} />
               </section>
             )}
+            {activeTab === "telegram" && SUPER_ADMIN_EMAILS.includes((currentUser?.email || "").toLowerCase()) && <BotDiagnostics />}
 
             {activeTab === "operator" &&
               SUPER_ADMIN_EMAILS.includes((currentUser?.email || "").toLowerCase()) && (

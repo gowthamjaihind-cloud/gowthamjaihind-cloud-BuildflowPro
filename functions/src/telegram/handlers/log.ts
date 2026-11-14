@@ -337,6 +337,9 @@ export async function saveLog(tg: any, chatId: ChatId, messageId, session) {
         note: d.note || "",
         photoUrls: d.photoUrls || [],
         createdVia: "telegram",
+        // How it was entered: typed as a sentence and read by AI, or tapped
+        // through the buttons. Lets the office tell the two apart later.
+        entryMethod: d.viaAi ? "ai-text" : "buttons",
         createdByUid: session.userId,
         createdByName: session.email || "Telegram Bot",
         createdAt: new Date().toISOString(),
