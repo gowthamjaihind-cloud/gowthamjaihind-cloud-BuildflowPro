@@ -1,12 +1,25 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { geminiText } from "./gemini";
+import { createRequire } from "node:module";
 import { MODELS } from "./geminiPolicy";
+
+// gemini.ts imports firebase-functions, which is installed only under
+// functions/. The website deploy runs every test from the repo root without
+// it, so there this suite is skipped; it runs with the functions tests.
+const hasFunctionsDeps = (() => {
+  try {
+    createRequire(__filename).resolve("firebase-functions/v2/https");
+    return true;
+  } catch {
+    return false;
+  }
+})();
+const load = async () => (await import("./gemini")).geminiText;
 
 afterEach(() => vi.unstubAllGlobals());
 
 const ok = (text: string) => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text }] } }] }), { status: 200 });
 
-describe("a Gemini request that stalls", () => {
+describe.skipIf(!hasFunctionsDeps)("a Gemini request that stalls", () => {
   it("moves straight to the next model instead of retrying the stuck one", async () => {
     const calls: string[] = [];
     vi.stubGlobal("fetch", vi.fn(async (url: string) => {
@@ -18,6 +31,7 @@ describe("a Gemini request that stalls", () => {
       }
       return ok('{"intent":"other"}');
     }));
+    const geminiText = await load();
     const r = await geminiText({ contents: [] }, "k", 60_000, { perAttemptMs: 1_000 });
     expect(r.model).toBe(MODELS[1]);
     expect(calls).toEqual([MODELS[0], MODELS[1]]);
@@ -29,6 +43,7 @@ describe("a Gemini request that stalls", () => {
       bodies.push(JSON.parse(init.body));
       return ok("{}");
     }));
+    const geminiText = await load();
     await geminiText({ generationConfig: { temperature: 0.2 } }, "k", 10_000, {
       forModel: (m, b) => (m.startsWith("gemini-2.5") ? { ...b, generationConfig: { ...b.generationConfig, thinkingConfig: { thinkingBudget: 0 } } } : b),
     });
