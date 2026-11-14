@@ -118,6 +118,8 @@ export const telegramAiSelfTest = onCall({ ...CALLABLE_OPTS, secrets: [GEMINI_AP
     const sample = String(request.data?.text || "Block work south side. Mason 2 no, MC 1 no, FC 1 no").slice(0, 600);
     const tiny = { contents: [{ role: "user", parts: [{ text: 'Reply with this JSON exactly: {"ok":true}' }] }], generationConfig: { responseMimeType: "application/json" } };
     const real = ctx ? aiLog.botLogRequest(sample, ctx) : null;
+    // Nothing returned may carry the key, whatever the service echoes back.
+    const scrub = (v: string) => v.split(key).join("[key]");
     const once = async (model: string, body: any) => {
         const t0 = Date.now();
         try {
@@ -127,9 +129,9 @@ export const telegramAiSelfTest = onCall({ ...CALLABLE_OPTS, secrets: [GEMINI_AP
             const raw = await res.text();
             let out = raw;
             try { out = JSON.parse(raw)?.candidates?.[0]?.content?.parts?.[0]?.text ?? raw; } catch { /* keep raw */ }
-            return { status: res.status, seconds: Math.round((Date.now() - t0) / 100) / 10, sample: String(out).replace(/\s+/g, " ").slice(0, 160) };
+            return { status: res.status, seconds: Math.round((Date.now() - t0) / 100) / 10, sample: scrub(String(out).replace(/\s+/g, " ").slice(0, 160)) };
         } catch (e: any) {
-            return { status: e?.name === "TimeoutError" ? "timed out" : `error: ${String(e?.message || e).slice(0, 80)}`, seconds: Math.round((Date.now() - t0) / 100) / 10, sample: "" };
+            return { status: e?.name === "TimeoutError" ? "timed out" : scrub(`error: ${String(e?.message || e).slice(0, 80)}`), seconds: Math.round((Date.now() - t0) / 100) / 10, sample: "" };
         }
     };
     const models = [...new Set([...aiLog.BOT_LOG_MODELS, "gemini-2.0-flash", "gemini-2.0-flash-lite"])];
