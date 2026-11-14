@@ -16,6 +16,7 @@ import {
   type BillingHistoryRow,
 } from "../../services/firebaseFunctions";
 import { confirmDialog, toast } from "../../lib/feedback";
+import { timeKey } from "../../lib/timeKey";
 import { useRazorpayCheckout } from "../../hooks/useRazorpayCheckout";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../lib/react-query";
@@ -146,7 +147,24 @@ export const PlanSummary: React.FC = () => {
   };
 
   // A locked project is re-opened by subscribing again FOR THAT PROJECT.
-  const lockedProjects = projects.filter((p) => p.billingLocked);
+  // One row per project, oldest first: which subscription (if any) pays for it,
+  // and whether a scheduled downgrade will make it read-only. The server keeps
+  // the OLDEST projects open after a downgrade (functions/src/slotSubs.ts).
+  const subByProject = new Map<string, (typeof slotSubs)[number]>();
+  for (const sub of slotSubs) for (const pid of sub.projectIds) subByProject.set(pid, sub);
+  const ordered = [...projects].sort((a, b) => {
+    const ka = timeKey((a as any).createdAt), kb = timeKey((b as any).createdAt);
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
+  const pendingCap = plan.pendingPlanChange ? PLANS[plan.pendingPlanChange.plan as PlanId]?.includedProjects : undefined;
+  let planSeat = 0;
+  const billingRows = ordered.map((p) => {
+    const sub = subByProject.get(p.id);
+    const inPlan = !sub && !p.billingLocked;
+    const seat = inPlan ? planSeat++ : -1;
+    return { p, sub, willLock: inPlan && typeof pendingCap === "number" && seat >= pendingCap };
+  });
+  const unusedSubs = slotSubs.filter((sub) => sub.projectIds.length < sub.qty);
   const resubscribe = (projectId: string) => paySlots(1, refreshProjects, undefined, projectId);
 
   const cancelPlan = async () => {
@@ -293,31 +311,71 @@ export const PlanSummary: React.FC = () => {
         </div>
       </div>
 
-      {/* Extra projects are their own monthly subscriptions. They have to be
-          visible and cancellable here: a recurring charge with no way to see or
-          stop it is the thing customers rightly complain about. */}
-      {(slotSubs.length > 0 || lockedProjects.length > 0) && (
+      {/* Every project, and how it is paid for. A customer has to be able to
+          see WHICH project a ₹99 line is for, which one renews or ends next,
+          and which will go read-only after a downgrade -- not just a count of
+          "extra projects". Unused subscriptions are listed after, as such: a
+          recurring charge that pays for nothing must be visible and stoppable. */}
+      {cap.capped && !cap.isFree && projects.length > 0 && (
         <div className="mt-3 p-3 rounded-xl border border-divider bg-panel/50 text-xs text-ink space-y-2">
-          <p className="font-bold">{"Extra projects"}</p>
-          {slotSubs.map((s) => {
+          <p className="font-bold">{"Projects and billing"}</p>
+          {billingRows.map(({ p, sub, willLock }) => {
+            const ending = sub && (sub.status === "cancelling" || sub.status === "cancelled");
+            return (
+              <div key={p.id} className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  <b>{p.name}</b>{" · "}
+                  {p.billingLocked
+                    ? "read-only: its subscription has ended"
+                    : sub
+                      ? `₹${plan.overageRate} / month · ` +
+                        (ending
+                          ? `ends ${fmtDate(sub.until)}, then read-only`
+                          : sub.status === "halted"
+                            ? `payment failed, read-only after ${fmtDate(sub.until)} unless paid`
+                            : `renews ${fmtDate(sub.until)}`)
+                      : willLock
+                        ? `included in your ${planName} plan · becomes read-only on ${fmtDate(pending?.effectiveAt)} when you switch to ${pendingName}`
+                        : `included in your ${planName} plan`}
+                </span>
+                {isOwnerAdmin && p.billingLocked && (
+                  <button
+                    onClick={() => resubscribe(p.id)}
+                    disabled={payBusy}
+                    className="font-bold px-2 py-1 rounded-lg text-primary hover:text-primary-deep apple-transition disabled:opacity-50"
+                  >
+                    {`Subscribe again · ₹${plan.overageRate} / month`}
+                  </button>
+                )}
+                {isOwnerAdmin && !p.billingLocked && sub && !ending && (
+                  <button
+                    onClick={() => cancelSlots(sub.id, sub.qty, sub.until, [p.id])}
+                    disabled={slotBusy === sub.id}
+                    className="font-bold px-2 py-1 rounded-lg text-ink-muted hover:text-danger apple-transition disabled:opacity-50"
+                  >
+                    {slotBusy === sub.id ? "Cancelling…" : "Cancel"}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {unusedSubs.length > 0 && (
+            <p className="font-bold pt-2 border-t border-divider">{"Extra-project subscriptions not paying for any project"}</p>
+          )}
+          {unusedSubs.map((s) => {
             const ending = s.status === "cancelling" || s.status === "cancelled";
-            const names = namesOf(s.projectIds);
             const spare = s.qty - s.projectIds.length;
             return (
               <div key={s.id} className="flex flex-wrap items-center justify-between gap-2">
                 <span>
-                  <b>{names || "Not used yet"}</b>
-                  {names && spare > 0 ? ` (+${spare} not used yet)` : ""}
-                  {" · "}₹{(s.qty * plan.overageRate).toLocaleString("en-IN")}{" / month · "}
+                  {`${spare} unused · ₹${(spare * plan.overageRate).toLocaleString("en-IN")} / month · `}
                   {ending
                     ? s.autoCancelled
                       ? `not needed on your plan · stopped, no more payments after ${fmtDate(s.until)}`
-                      : names
-                        ? `ends ${fmtDate(s.until)}, then read-only`
-                        : `cancelled · no more payments after ${fmtDate(s.until)}`
+                      : `cancelled · no more payments after ${fmtDate(s.until)}`
                     : s.status === "halted"
                       ? `payment failed, ends ${fmtDate(s.until)}`
-                      : `renews ${fmtDate(s.until)}`}
+                      : `renews ${fmtDate(s.until)} · your plan has room, so you can cancel this`}
                 </span>
                 {isOwnerAdmin && !ending && (
                   <button
@@ -331,22 +389,6 @@ export const PlanSummary: React.FC = () => {
               </div>
             );
           })}
-          {lockedProjects.map((p) => (
-            <div key={p.id} className="flex flex-wrap items-center justify-between gap-2">
-              <span>
-                <b>{p.name}</b>{" · read-only: its subscription has ended"}
-              </span>
-              {isOwnerAdmin && (
-                <button
-                  onClick={() => resubscribe(p.id)}
-                  disabled={payBusy}
-                  className="font-bold px-2 py-1 rounded-lg text-primary hover:text-primary-deep apple-transition disabled:opacity-50"
-                >
-                  {`Subscribe again · ₹${plan.overageRate} / month`}
-                </button>
-              )}
-            </div>
-          ))}
           {payError && <p className="text-danger">{payError}</p>}
         </div>
       )}
