@@ -480,3 +480,15 @@ export const callTelegramDiagnostics = async () =>
 // Registers this app's webhook with Telegram again, using the current secret.
 export const callTelegramReconnect = async () =>
   (await httpsCallable<{}, TelegramDiagnostics>(getFunctionsInstance(), 'telegramReconnect')({})).data;
+
+/** One model's answer to the operator's AI self-test. */
+export interface AiProbe { status: number | string; seconds: number; sample: string }
+export interface AiSelfTest {
+  keySet: boolean;
+  project?: { tasks: number; materials: number; roles: number; equipment: number } | null;
+  promptChars?: number;
+  results: Array<{ model: string; tiny: AiProbe; real: AiProbe | null }>;
+}
+
+export const callTelegramAiSelfTest = async (text?: string) =>
+  (await httpsCallable<{ text?: string }, AiSelfTest>(getFunctionsInstance(), 'telegramAiSelfTest', { timeout: 200_000 })({ text })).data;

@@ -96,6 +96,56 @@ export const telegramDiagnostics = onCall({ ...CALLABLE_OPTS, secrets: [BOT_TOKE
     return botDiagnostics(new TelegramApi(BOT_TOKEN.value()), WEBHOOK_SECRET.value() || "");
 });
 
+/**
+ * Operator-only: why does the AI read fail? Sends the bot's real request (the
+ * operator's own active project, a sample sentence) to every model, one try
+ * each, and reports how long each took and what came back. One press shows
+ * whether the problem is the key, the network, a retired model, or a request
+ * that is too heavy -- the live failure log only ever shows the last attempt.
+ */
+export const telegramAiSelfTest = onCall({ ...CALLABLE_OPTS, secrets: [GEMINI_API_KEY], timeoutSeconds: 180 }, async (request) => {
+    assertSuperAdmin(request);
+    const key = GEMINI_API_KEY.value();
+    if (!key) return { keySet: false, results: [] };
+    const userSnap = await db.doc(`users/${request.auth!.uid}`).get();
+    const chatId = (userSnap.data() as any)?.telegramChatId;
+    const session: any = chatId ? await getSession(chatId) : null;
+    let ctx: any = null;
+    if (session?.activeProjectId) {
+        const base = session.orgId ? `organizations/${session.orgId}/projects/${session.activeProjectId}` : `projects/${session.activeProjectId}`;
+        ctx = { ...(await aiLog.loadContext(base)), today: new Date(Date.now() + 5.5 * 3600_000).toISOString().split("T")[0] };
+    }
+    const sample = String(request.data?.text || "Block work south side. Mason 2 no, MC 1 no, FC 1 no").slice(0, 600);
+    const tiny = { contents: [{ role: "user", parts: [{ text: 'Reply with this JSON exactly: {"ok":true}' }] }], generationConfig: { responseMimeType: "application/json" } };
+    const real = ctx ? aiLog.botLogRequest(sample, ctx) : null;
+    const once = async (model: string, body: any) => {
+        const t0 = Date.now();
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(30_000),
+            });
+            const raw = await res.text();
+            let out = raw;
+            try { out = JSON.parse(raw)?.candidates?.[0]?.content?.parts?.[0]?.text ?? raw; } catch { /* keep raw */ }
+            return { status: res.status, seconds: Math.round((Date.now() - t0) / 100) / 10, sample: String(out).replace(/\s+/g, " ").slice(0, 160) };
+        } catch (e: any) {
+            return { status: e?.name === "TimeoutError" ? "timed out" : `error: ${String(e?.message || e).slice(0, 80)}`, seconds: Math.round((Date.now() - t0) / 100) / 10, sample: "" };
+        }
+    };
+    const models = [...new Set([...aiLog.BOT_LOG_MODELS, "gemini-2.0-flash", "gemini-2.0-flash-lite"])];
+    const results = await Promise.all(models.map(async (model) => ({
+        model,
+        tiny: await once(model, tiny),
+        real: real ? await once(model, real.forModel(model, real.body)) : null,
+    })));
+    return {
+        keySet: true,
+        project: ctx ? { tasks: ctx.tasks.length, materials: ctx.materials.length, roles: ctx.roles.length, equipment: ctx.equipment.length } : null,
+        promptChars: real ? JSON.stringify(real.body).length : 0,
+        results,
+    };
+});
+
 /** Operator-only: (re)register this app's webhook with Telegram, using the current secret. */
 export const telegramReconnect = onCall({ ...CALLABLE_OPTS, secrets: [BOT_TOKEN, WEBHOOK_SECRET], timeoutSeconds: 30 }, async (request) => {
     assertSuperAdmin(request);

@@ -8,7 +8,7 @@ import { db } from "../db";
  */
 export async function recordBotError(kind: string, err: any): Promise<void> {
   try {
-    const reason = String(err?.diag || err?.message || err || "unknown").slice(0, 400);
+    const reason = String(err?.diag || err?.message || err || "unknown").slice(0, 600);
     await db.collection("bot_errors").add({ at: Date.now(), kind, code: String(err?.code || ""), reason });
   } catch (e) {
     console.error("Could not record bot error:", e);
