@@ -15,6 +15,7 @@ import * as invoice from "./handlers/invoice";
 import * as aiLog from "./handlers/aiLog";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
 import { looksLikeLogText } from "../bot/aiLog";
+import { recordBotError, recentBotErrors } from "./botErrors";
 const BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = defineSecret("TELEGRAM_WEBHOOK_SECRET");
 // Used by the invoice-photo reader (Gemini vision) in the webhook.
@@ -85,6 +86,8 @@ async function botDiagnostics(tg: TelegramApi, secret: string) {
         lastErrorMessage: w.last_error_message ? String(w.last_error_message).slice(0, 300) : null,
         secretConfigured: !!secret,
         problems,
+        // Why AI reads failed recently: the engineer only sees "couldn't read that".
+        recentErrors: await recentBotErrors(5).catch(() => []),
     };
 }
 
@@ -470,6 +473,7 @@ export const onBotJobCreated = onDocumentCreated({
     }
     catch (err) {
         console.error("Bot job failed:", job.kind, err);
+        await recordBotError(job.kind || "job", err);
         try {
             const s = await getSession(chatId);
             await tg.sendMessage(chatId, tt(normalizeLang(s?.lang), "aiBusy"), [[{ text: tt(normalizeLang(s?.lang), "aiBtnLogWithButtons"), callback_data: "log" }]]);

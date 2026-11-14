@@ -154,3 +154,21 @@ export function looksLikeLogText(text: string): boolean {
   // A bare number or a one-word reply belongs to a button flow, not to this.
   return t.length >= 8 && /\s/.test(t) && /[A-Za-zऀ-ॿ஀-௿]/.test(t);
 }
+
+
+/**
+ * The model's answer as an object. Asked for bare JSON, it still sometimes
+ * wraps it in a code fence or adds a sentence; take the outermost {...}.
+ * Throws when there is no object to be found.
+ */
+export function parseModelJson(text: string): any {
+  const t = String(text || "").trim();
+  try {
+    return JSON.parse(t);
+  } catch {
+    const start = t.indexOf("{");
+    const end = t.lastIndexOf("}");
+    if (start < 0 || end <= start) throw new Error(`model answer had no JSON object: ${t.slice(0, 120)}`);
+    return JSON.parse(t.slice(start, end + 1));
+  }
+}
