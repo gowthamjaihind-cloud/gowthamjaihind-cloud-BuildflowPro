@@ -457,3 +457,24 @@ export const callGetBillingHistory = async () => {
     getFunctionsInstance(), 'getBillingHistory');
   return (await fn({})).data;
 };
+
+/** What Telegram reports about the bot's connection (operator only). */
+export interface TelegramDiagnostics {
+  tokenOk: boolean;
+  botUsername: string | null;
+  webhookUrl: string | null;
+  expectedUrl: string;
+  urlMatches: boolean;
+  pendingUpdates: number;
+  lastErrorAt: number | null;
+  lastErrorMessage: string | null;
+  secretConfigured: boolean;
+  problems: string[];
+}
+
+export const callTelegramDiagnostics = async () =>
+  (await httpsCallable<{}, TelegramDiagnostics>(getFunctionsInstance(), 'telegramDiagnostics')({})).data;
+
+// Registers this app's webhook with Telegram again, using the current secret.
+export const callTelegramReconnect = async () =>
+  (await httpsCallable<{}, TelegramDiagnostics>(getFunctionsInstance(), 'telegramReconnect')({})).data;

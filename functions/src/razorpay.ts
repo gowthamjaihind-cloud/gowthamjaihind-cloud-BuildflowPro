@@ -15,7 +15,7 @@ import { slotSubAfterEvent } from "./slotSubs";
 // org's plan. Keys live in an Admin-only config doc, set via the operator panel.
 
 const SUPER_ADMINS = ["gowtham.jaihind@gmail.com"];
-function assertSuperAdmin(request: any) {
+export function assertSuperAdmin(request: any) {
   const email = String(request.auth?.token?.email || "").toLowerCase();
   // email_verified too: the operator panel holds the live Razorpay keys, and
   // an address alone is only as strong as the weakest sign-in provider that
