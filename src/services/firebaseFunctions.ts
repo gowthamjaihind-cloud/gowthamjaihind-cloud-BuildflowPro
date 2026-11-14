@@ -470,6 +470,8 @@ export interface TelegramDiagnostics {
   lastErrorMessage: string | null;
   secretConfigured: boolean;
   problems: string[];
+  /** Why the bot's AI work failed recently, newest first. */
+  recentErrors?: Array<{ at: number; kind: string; code: string; reason: string }>;
 }
 
 export const callTelegramDiagnostics = async () =>

@@ -6,6 +6,16 @@ export { BUSY_MESSAGE, MODELS };
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
+ * Attach the real reason to an error for the operator. A plain property, not
+ * HttpsError `details`: callables send `details` to the browser, and the
+ * service's own response must never reach a customer's screen.
+ */
+function withDiag<T extends Error>(err: T, diag: string): T {
+  (err as any).diag = diag;
+  return err;
+}
+
+/**
  * One generateContent call with retry and model fallback; returns the text of
  * the first candidate. Shared by invoice scanning and Project Insights so both
  * survive a Gemini overload the same way.
@@ -58,7 +68,10 @@ export async function geminiText(
         // A bad key, a disabled API or a request Gemini rejects: retrying will
         // not help and the details are for us, not the customer.
         console.error("Gemini rejected the request", res.status, detail.slice(0, 500));
-        throw new HttpsError("internal", "The AI service could not process this request. Please contact support if it keeps happening.");
+        throw withDiag(
+          new HttpsError("internal", "The AI service could not process this request. Please contact support if it keeps happening."),
+          `${model} rejected the request (${res.status}): ${detail.slice(0, 300)}`,
+        );
       }
       sawTransient = true;
     }
@@ -66,6 +79,6 @@ export async function geminiText(
   }
 
   console.error("Gemini gave no answer:", lastReason);
-  if (sawTransient) throw new HttpsError("unavailable", BUSY_MESSAGE);
-  throw new HttpsError("internal", "The AI service did not return a result. Please try again.");
+  if (sawTransient) throw withDiag(new HttpsError("unavailable", BUSY_MESSAGE), `no answer within ${Math.round(budgetMs / 1000)}s; last: ${lastReason}`.slice(0, 400));
+  throw withDiag(new HttpsError("internal", "The AI service did not return a result. Please try again."), `no result; last: ${lastReason}`.slice(0, 400));
 }

@@ -4,7 +4,8 @@ import { db } from "../../db";
 import { tt, normalizeLang } from "../i18n";
 import { geminiText } from "../../ai/gemini";
 import { chargeAiUsage, refundAiUsage, isQuotaError } from "../../ai/usage";
-import { buildAiLogPrompt, looksLikeLogText, sanitizeAiLog, type AiLogContext } from "../../bot/aiLog";
+import { buildAiLogPrompt, looksLikeLogText, parseModelJson, sanitizeAiLog, type AiLogContext } from "../../bot/aiLog";
+import { recordBotError } from "../botErrors";
 import { showMenu } from "./log";
 
 /**
@@ -81,11 +82,14 @@ export async function handleFreeText(api: any, chatId: ChatId, session: any, tex
     const { text: out } = await geminiText(
       { contents: [{ role: "user", parts: [{ text: buildAiLogPrompt(text, ctx) }] }], generationConfig: { temperature: 0, responseMimeType: "application/json" } },
       geminiKey,
-      20_000,
+      // This runs in the queue worker (120s), not the webhook, so the model
+      // can take its time. 20s was too short for a large project's lists.
+      60_000,
     );
-    raw = JSON.parse(out);
-  } catch (e) {
+    raw = parseModelJson(out);
+  } catch (e: any) {
     console.error("AI log read failed:", e);
+    await recordBotError("aiText", e);
     await refundAiUsage(session.orgId, "botLog");
     await api.sendMessage(chatId, tt(lang, "aiBusy"), [[{ text: tt(lang, "aiBtnLogWithButtons"), callback_data: "log" }]]);
     return true;

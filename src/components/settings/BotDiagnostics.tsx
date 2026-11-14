@@ -59,6 +59,16 @@ export const BotDiagnostics: React.FC = () => {
             {d.lastErrorMessage ? `Last delivery failed${d.lastErrorAt ? ` on ${when(d.lastErrorAt)}` : ""}: ${d.lastErrorMessage}` : "No delivery errors reported"}
           </Row>
           <Row ok={d.pendingUpdates === 0}>{d.pendingUpdates === 0 ? "No messages waiting" : `${d.pendingUpdates} message${d.pendingUpdates === 1 ? "" : "s"} waiting to be delivered`}</Row>
+          {(d.recentErrors || []).length > 0 && (
+            <div className="pt-3 mt-2 border-t border-divider">
+              <p className="text-sm font-bold text-ink mb-1">{"Recent AI read failures"}</p>
+              {(d.recentErrors || []).map((e, i) => (
+                <p key={i} className="text-xs text-ink-muted font-mono break-words">
+                  {`${when(e.at)} · ${e.kind === "aiText" ? "typed report" : e.kind === "invoice" ? "invoice photo" : e.kind}${e.code ? ` · ${e.code}` : ""}: ${e.reason}`}
+                </p>
+              ))}
+            </div>
+          )}
           {d.problems.length === 0 ? (
             <p className="text-sm text-success font-semibold pt-2">{"Everything looks connected. Send the bot /help to confirm."}</p>
           ) : (

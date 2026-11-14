@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildAiLogPrompt, looksLikeLogText, sanitizeAiLog, type AiLogContext } from "./aiLog";
+import { buildAiLogPrompt, looksLikeLogText, parseModelJson, sanitizeAiLog, type AiLogContext } from "./aiLog";
 
 const ctx: AiLogContext = {
   tasks: [{ id: "t1", name: "Footing concrete", progress: 30 }, { id: "t2", name: "Plinth beam", progress: 0 }],
@@ -78,5 +78,12 @@ describe("plain-language daily log", () => {
     expect(p).toMatch(/"MC" = male coolie/);
     expect(p).toMatch(/"FC" = female coolie/);
     expect(p).toMatch(/"no\.", "nos"/);
+  });
+
+  it("reads the model's answer even when it is wrapped in a code fence or a sentence", () => {
+    expect(parseModelJson('{"intent":"other"}')).toEqual({ intent: "other" });
+    expect(parseModelJson('```json\n{"intent":"daily_log","taskId":"t1"}\n```')).toEqual({ intent: "daily_log", taskId: "t1" });
+    expect(parseModelJson('Here you go: {"intent":"other"} hope that helps')).toEqual({ intent: "other" });
+    expect(() => parseModelJson("sorry, I cannot")).toThrow();
   });
 });

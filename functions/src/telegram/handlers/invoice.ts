@@ -4,6 +4,7 @@ import * as crypto from "crypto";
 import { db } from "../../db";
 import { readAndMatchInvoice } from "../../ai/invoiceReader";
 import { tt, normalizeLang } from "../i18n";
+import { recordBotError } from "../botErrors";
 
 const projPath = (orgId: any, projectId: any) =>
   orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -46,6 +47,7 @@ export async function handleInvoicePhoto(
     result = await readAndMatchInvoice(base64, got.mimeType, session.orgId, session.activeProjectId, key);
   } catch (e: any) {
     console.error("Invoice read failed:", e);
+    await recordBotError("invoice", e);
     // Surface the friendly quota message; otherwise a generic read failure.
     const msg = e?.code === "resource-exhausted" && e?.message
       ? `🚫 ${e.message}`
