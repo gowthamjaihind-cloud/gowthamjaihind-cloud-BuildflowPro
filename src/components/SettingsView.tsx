@@ -30,6 +30,7 @@ import { TeamPanel } from "./settings/TeamPanel";
 import { MastersPanel } from "./settings/MastersPanel";
 import { OperatorPanel } from "./settings/OperatorPanel";
 import { BillingPanel } from "./settings/BillingPanel";
+import { CompanyProfilePanel } from "./settings/CompanyProfilePanel";
 import { Receipt } from "@phosphor-icons/react";
 import { PrivacyPanel } from "./settings/PrivacyPanel";
 import { PlanSummary } from "./settings/PlanSummary";
@@ -377,6 +378,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </section>
             )}
+
+            {activeTab === "organization" && orgId && <CompanyProfilePanel />}
 
             {activeTab === "appearance" && (
               <section className="soft-card p-8 squircle-24">

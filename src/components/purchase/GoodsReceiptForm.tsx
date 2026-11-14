@@ -1,3 +1,4 @@
+import { taxOn } from "../../lib/poTax";
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import {
@@ -157,11 +158,24 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
         // Calculate Total Cost of this GRN
         let totalAmount = 0;
         let appliedCharges: any = undefined;
+        // A PO raised with GST has rates WITHOUT tax. The project is costed at
+        // that taxable value; the GST on what was accepted is tracked on its
+        // own (it is input credit, not a cost) and the vendor is credited with
+        // both. Same convention as a scanned vendor bill (gst-itemized).
+        const gstPo = poData?.taxMode === "gst-itemized";
+        const tax = { cgst: 0, sgst: 0, igst: 0 };
+        const addTax = (taxable: number, rate: number) => {
+            const t = taxOn(taxable, rate, poData?.interState === true);
+            tax.cgst = round2(tax.cgst + t.cgst);
+            tax.sgst = round2(tax.sgst + t.sgst);
+            tax.igst = round2(tax.igst + t.igst);
+        };
         if (poData) {
             validLineItems.forEach(grnItem => {
                 const poItem = poData.lineItems?.find((i: any) => i.itemId === grnItem.poLineRef);
                 if (poItem) {
                     totalAmount += grnItem.acceptedQty * poItem.rate;
+                    if (gstPo) addTax(grnItem.acceptedQty * poItem.rate, Number(poItem.gstRate) || 0);
                 }
             });
             // Loading/transport/other are one-time PO charges — bill them on the
@@ -180,9 +194,14 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                 if (chargesTotal > 0) {
                     totalAmount += chargesTotal;
                     appliedCharges = c;
+                    if (gstPo) addTax(chargesTotal, Number(poData.chargesGstRate) || 0);
                 }
             }
         }
+        // totalAmount stays the value WITHOUT tax (the cost). The vendor is owed
+        // that plus the GST.
+        const gstAmount = round2(tax.cgst + tax.sgst + tax.igst);
+        const payable = round2(totalAmount + gstAmount);
 
         const ledgerRef = doc(collection(db, `${tenantPath}/ledger`));
         const costRef = doc(collection(db, `${tenantPath}/costs`));
@@ -205,7 +224,16 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
           createdByName: user.displayName || user.email || "Unknown",
           createdAt: new Date().toISOString(),
           ledgerId: ledgerRef.id,
-          costEntryId: costRef.id
+          costEntryId: costRef.id,
+          ...(gstPo ? {
+            taxMode: "gst-itemized" as const,
+            taxableAmount: round2(totalAmount),
+            gstAmount,
+            cgst: tax.cgst,
+            sgst: tax.sgst,
+            igst: tax.igst,
+            payableAmount: payable,
+          } : {}),
         };
 
         // WRITES
@@ -228,7 +256,7 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
            // Update vendor balance
            if (vendorDoc && vendorDoc.exists()) {
                transaction.update(vendorDoc.ref, {
-                   outstandingBalance: (vendorDoc.data().outstandingBalance || 0) + totalAmount
+                   outstandingBalance: (vendorDoc.data().outstandingBalance || 0) + payable
                });
            }
            
@@ -238,10 +266,11 @@ export const GoodsReceiptForm: React.FC<GoodsReceiptFormProps> = ({ po, projectI
                vendorId: poData.vendorId,
                date: receiptDate,
                type: "CREDIT",
-               amount: totalAmount,
+               amount: payable,
                referenceType: "GRN",
                referenceId: actualId,
-               description: `Goods Receipt - ${generatedNumber} (PO: ${poData.poNumber})${appliedCharges ? " incl. loading/transport charges" : ""}`
+               description: `Goods Receipt - ${generatedNumber} (PO: ${poData.poNumber})${appliedCharges ? " incl. loading/transport charges" : ""}${gstAmount > 0 ? ` incl. GST ₹${gstAmount.toLocaleString("en-IN")}` : ""}`,
+               ...(gstAmount > 0 ? { taxableAmount: round2(totalAmount), gstAmount } : {}),
            });
            
            // Create Cost Entry

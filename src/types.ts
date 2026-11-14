@@ -149,6 +149,9 @@ export interface InventoryItem {
   unitCost: number;
   minThreshold: number;
   avgUnitCost?: number;
+  /** HSN code and GST rate, remembered so a purchase order can prefill them. */
+  hsn?: string;
+  gstRate?: number;
 }
 
 export interface Vendor {
@@ -160,6 +163,8 @@ export interface Vendor {
   email?: string;
   phone?: string;
   address?: string;
+  /** The vendor's GSTIN. Its first two digits decide CGST+SGST versus IGST. */
+  gstin?: string;
   outstandingBalance: number;
 }
 
@@ -182,9 +187,16 @@ export interface POLineItem {
   name: string;
   orderedQty: number;    // quantity ordered
   unit: string;
-  rate: number;          // agreed unit rate (prefilled, editable)
-  amount: number;        // orderedQty * rate
+  rate: number;          // agreed unit rate, WITHOUT tax (prefilled, editable)
+  amount: number;        // orderedQty * rate = the taxable value
   receivedQty?: number;  // filled by GRN in Step 2; default 0
+  // GST (see src/lib/poTax.ts). Absent on POs raised before GST was captured.
+  hsn?: string;          // HSN (goods) or SAC (services) code
+  gstRate?: number;      // percent, e.g. 18
+  cgst?: number;
+  sgst?: number;
+  igst?: number;
+  lineTotal?: number;    // amount + tax
 }
 
 /** Flat extra charges on a PO beyond material line items (freight etc.). */
@@ -207,7 +219,24 @@ export interface PurchaseOrder {
   // Loading / transport / other charges. Added on top of the material lines;
   // billed to the vendor ledger on the first goods receipt against this PO.
   charges?: POCharges;
-  totalAmount: number;       // material line amounts + charges
+  // What the vendor is owed for the whole order: material + charges + GST.
+  // (On a PO with no GST this is material + charges, as it always was.)
+  totalAmount: number;
+  // ---- GST. Set when any line or the charges carry tax. ----
+  // "gst-itemized": rates are ex-GST; goods receipts cost material at the
+  // taxable value, track the GST as input credit, and credit the vendor with
+  // the tax-inclusive amount -- the same convention as a scanned vendor bill.
+  taxMode?: TaxMode;
+  vendorGSTIN?: string;
+  buyerGSTIN?: string;
+  /** True when vendor and buyer are in different states: IGST, not CGST+SGST. */
+  interState?: boolean;
+  chargesGstRate?: number;
+  subtotalTaxable?: number;
+  totalCGST?: number;
+  totalSGST?: number;
+  totalIGST?: number;
+  totalTax?: number;
   notes?: string;
   createdByUid: string;
   createdByName: string;
@@ -243,6 +272,15 @@ export interface GoodsReceiptNote {
   // "legacy-inclusive" = pre-GST-switchover rows whose rates already include tax
   // (never re-valued). "gst-itemized" = new rows costed ex-GST with input credit.
   taxMode?: TaxMode;
+  // Set on a receipt against a PO raised with GST (and no scanned bill): the
+  // value accepted without tax, the GST on it, and what the vendor was
+  // credited with (the two together).
+  taxableAmount?: number;
+  gstAmount?: number;
+  cgst?: number;
+  sgst?: number;
+  igst?: number;
+  payableAmount?: number;
   createdByUid: string;
   createdByName: string;
   createdAt: string;
@@ -363,6 +401,27 @@ export type SubscriptionStatus =
   | "canceled"
   | "expired"
   | "internal"; // operator/grandfathered orgs — never gated
+
+/**
+ * What a company prints on its own documents (purchase orders first):
+ * organizations/{orgId}/profile/company. Kept off the organization document
+ * itself because that is read on every page load and the logo is an image.
+ */
+export interface CompanyProfile {
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  pan?: string;
+  /** A small PNG/JPEG as a data URL, resized in the browser before saving. */
+  logo?: string;
+  /** Standard terms printed at the foot of every purchase order. */
+  poTerms?: string;
+}
 
 export interface OrgSettings {
   companyName?: string;

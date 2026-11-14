@@ -95,6 +95,10 @@ describe("the palette lives in index.css", () => {
       "Razorpay renders its own iframe; checked against --primary below",
     "src/components/ProgressReportsView.tsx":
       "html2canvas capture background — a printed page, always white",
+    "src/components/purchase/PurchaseOrderDocument.tsx":
+      "the printed purchase order — a document, black on white in either theme",
+    "src/lib/logoImage.ts":
+      "white behind a transparent logo when it has to become a JPEG",
   };
 
   it("keeps literal colours to the places that cannot use a variable", () => {
