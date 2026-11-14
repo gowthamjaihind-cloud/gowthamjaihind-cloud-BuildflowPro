@@ -4,7 +4,7 @@ import { db } from "../../db";
 import { tt, normalizeLang } from "../i18n";
 import { geminiText } from "../../ai/gemini";
 import { chargeAiUsage, refundAiUsage, isQuotaError } from "../../ai/usage";
-import { buildAiLogPrompt, looksLikeLogText, parseModelJson, sanitizeAiLog, type AiLogContext } from "../../bot/aiLog";
+import { buildAiLogPrompt, looksLikeLogText, parseModelJson, sanitizeAiLogs, type AiLogContext, type AiLogDraft } from "../../bot/aiLog";
 import { recordBotError } from "../botErrors";
 import { showMenu } from "./log";
 
@@ -115,7 +115,7 @@ export async function handleFreeText(api: any, chatId: ChatId, session: any, tex
     return true;
   }
 
-  const result = sanitizeAiLog(raw, ctx);
+  const result = sanitizeAiLogs(raw, ctx);
   if (result.kind === "other") {
     // Not a work report: the allowance is for logs, so this one is not counted.
     await refundAiUsage(session.orgId, "botLog");
@@ -126,37 +126,45 @@ export async function handleFreeText(api: any, chatId: ChatId, session: any, tex
     return true;
   }
 
-  const d = result.draft;
-  const logId = db.collection(`${base}/dailyLogs`).doc().id;
+  const total = result.drafts.length;
+  const asDraft = (d: AiLogDraft, i: number) => ({
+    taskId: d.taskId,
+    taskName: d.taskName,
+    workDate: d.workDate || todayISO(),
+    currentProgress: d.currentProgress,
+    progressPercent: d.progressPercent,
+    materials: d.materials,
+    labour: d.labour,
+    equipment: d.equipment,
+    photoUrls: [],
+    ...(d.note ? { note: d.note } : {}),
+    viaAi: true,
+    batchIndex: i + 1,
+    batchTotal: total,
+  });
+  const [first, ...rest] = result.drafts.map(asDraft);
   await setSession(chatId, {
     step: "log:menu",
-    draft: {
-      logId,
-      taskId: d.taskId,
-      taskName: d.taskName,
-      workDate: d.workDate || todayISO(),
-      currentProgress: d.currentProgress,
-      progressPercent: d.progressPercent,
-      materials: d.materials,
-      labour: d.labour,
-      equipment: d.equipment,
-      photoUrls: [],
-      ...(d.note ? { note: d.note } : {}),
-      viaAi: true,
-    },
+    draft: { ...first, logId: db.collection(`${base}/dailyLogs`).doc().id },
+    // Each further log gets its id when it becomes current (log.showNextPendingDraft).
+    pendingDrafts: rest,
   });
 
-  // Spell out every item: the standard menu only shows counts, and the engineer
-  // has to be able to check what was understood before pressing Save.
-  const lines: string[] = [tt(lang, "aiUnderstood")];
-  if (d.workDate && d.workDate !== todayISO()) lines.push(tt(lang, "aiForDate", { date: d.workDate }));
-  for (const m of d.materials) lines.push(`• ${esc(m.name)}: <b>${m.quantity}</b> ${esc(m.unit)}`);
-  for (const l of d.labour) lines.push(`• ${esc(l.roleName)}: <b>${l.headcount}</b>`);
-  for (const e of d.equipment) lines.push(`• ${esc(e.name)}: <b>${e.quantity}</b> ${e.unit}`);
-  if (!d.materials.length && !d.labour.length && !d.equipment.length) lines.push(tt(lang, "aiNoItems"));
-  if (!d.progressGiven) lines.push("", tt(lang, "aiNoProgress", { pct: d.currentProgress }));
-  if (d.unmatched.length) lines.push("", tt(lang, "aiUnmatched", { items: d.unmatched.map(esc).join(", ") }));
-  lines.push("", tt(lang, "aiCheckThenSave"));
+  // Spell out every item of every log: the standard menu only shows counts,
+  // and the engineer has to be able to check what was understood before Save.
+  const lines: string[] = [total > 1 ? tt(lang, "aiLogsUnderstood", { n: total }) : tt(lang, "aiUnderstood")];
+  const date = result.drafts[0].workDate;
+  if (date && date !== todayISO()) lines.push(tt(lang, "aiForDate", { date }));
+  result.drafts.forEach((d, i) => {
+    if (total > 1) lines.push("", `<b>${i + 1}. ${esc(d.taskName)}</b>`);
+    for (const m of d.materials) lines.push(`• ${esc(m.name)}: <b>${m.quantity}</b> ${esc(m.unit)}`);
+    for (const l of d.labour) lines.push(`• ${esc(l.roleName)}: <b>${l.headcount}</b>`);
+    for (const e of d.equipment) lines.push(`• ${esc(e.name)}: <b>${e.quantity}</b> ${e.unit}`);
+    if (!d.materials.length && !d.labour.length && !d.equipment.length) lines.push(tt(lang, "aiNoItems"));
+    if (!d.progressGiven) lines.push(tt(lang, "aiNoProgress", { pct: d.currentProgress }));
+  });
+  if (result.unmatched.length) lines.push("", tt(lang, "aiUnmatched", { items: result.unmatched.map(esc).join(", ") }));
+  lines.push("", tt(lang, total > 1 ? "aiCheckThenSaveEach" : "aiCheckThenSave"));
   await api.sendMessage(chatId, lines.join("\n"));
   await showMenu(api, chatId, null, await getSession(chatId));
   return true;

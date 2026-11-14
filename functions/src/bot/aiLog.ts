@@ -74,15 +74,17 @@ Site shorthand engineers use (match by MEANING, not exact spelling):
 
 Rules:
 - "intent" is "daily_log" when the message reports work done, materials used, labour or equipment on site. Otherwise "other".
-- "taskId" is the single task the message is about, or null if you cannot tell which one.
-- "progressPercent" is the task's TOTAL progress after today (0-100). If the message gives an increase ("10% more", "another 10 percent"), add it to the current progress. If it says the task is finished, use 100. If progress is not mentioned, use null.
+- A message can report work on SEVERAL tasks. Return one entry in "logs" per task, at most 5. Never put two tasks in one entry.
+- Each entry's "taskId" is that task's id. Leave out work you cannot match to a task, and name it in "unmatched".
+- Labour, materials and equipment listed once for the whole day: give each item to the task it plainly belongs to (bar benders to bar bending, masons to block or brick work, excavator hours to excavation). An item you cannot place goes on the first task.
+- Each entry's "progressPercent" is that task's TOTAL progress after today (0-100). If the message gives an increase ("10% more", "another 10 percent"), add it to the current progress. If it says the task is finished, use 100. If progress is not mentioned, use null.
 - Quantities are numbers in the material's own unit as listed. Do not convert units; if the unit in the message differs from the listed unit, put the item in "unmatched" instead.
 - "equipment[].unit" is "hours" or "days".
 - "workDate" is the date the work was done if the message states one, as "YYYY-MM-DD". Dates are written day first in India: "12/11/26" is 12 November 2026. Use null if no date is given. Today is ${ctx.today || "unknown"}.
-- "note" is anything worth recording that is not captured above (weather, delays, instructions), in English, at most 200 characters. Empty string if nothing.
+- Each entry's "note" is anything worth recording about that task that is not captured above (weather, delays, instructions), in English, at most 200 characters. Empty string if nothing.
 
 Answer with JSON only, in exactly this shape:
-{"intent":"daily_log","taskId":"...","workDate":null,"progressPercent":40,"materials":[{"materialId":"...","quantity":1}],"labour":[{"roleId":"...","headcount":1}],"equipment":[{"equipmentId":"...","quantity":1,"unit":"hours"}],"note":"","unmatched":[]}
+{"intent":"daily_log","workDate":null,"logs":[{"taskId":"...","progressPercent":40,"materials":[{"materialId":"...","quantity":1}],"labour":[{"roleId":"...","headcount":1}],"equipment":[{"equipmentId":"...","quantity":1,"unit":"hours"}],"note":""}],"unmatched":[]}
 
 MESSAGE:
 ${clip(message, 1200)}`;
@@ -194,4 +196,59 @@ export function acceptWorkDate(v: unknown, today: string | undefined): string | 
   if (!Number.isFinite(d) || new Date(d).toISOString().slice(0, 10) !== s) return undefined;
   if (d > t || t - d > 7 * 86400000) return undefined;
   return s;
+}
+
+
+export type AiLogsResult =
+  | { kind: "logs"; drafts: AiLogDraft[]; unmatched: string[] }
+  | { kind: "no_task"; unmatched: string[] }
+  | { kind: "other" };
+
+/** The most separate logs one message may produce. */
+export const MAX_LOGS_PER_MESSAGE = 5;
+
+/**
+ * One message, one log per task it mentions. Each entry is checked exactly as
+ * a single log is (sanitizeAiLog): unknown ids dropped, quantities positive,
+ * progress never backwards. An entry for a task that does not exist is
+ * dropped rather than guessed. Two entries for the same task are merged. An
+ * answer in the older single-task shape is still accepted.
+ */
+export function sanitizeAiLogs(raw: any, ctx: AiLogContext): AiLogsResult {
+  if (!raw || typeof raw !== "object" || raw.intent !== "daily_log") return { kind: "other" };
+  const unmatched: string[] = (Array.isArray(raw.unmatched) ? raw.unmatched : []).map((u: unknown) => clip(u, 80)).filter(Boolean).slice(0, 8);
+  const entries: any[] = Array.isArray(raw.logs) ? raw.logs : raw.taskId !== undefined ? [raw] : [];
+  const byTask = new Map<string, AiLogDraft>();
+  for (const e of entries.slice(0, 20)) {
+    const r = sanitizeAiLog({ ...e, intent: "daily_log", workDate: e?.workDate ?? raw.workDate, unmatched: [] }, ctx);
+    if (r.kind !== "log") continue;
+    const d = r.draft;
+    const prev = byTask.get(d.taskId);
+    if (!prev) {
+      byTask.set(d.taskId, d);
+      continue;
+    }
+    // Same task twice: one log, items added together, the higher progress.
+    const add = <T>(a: T[], b: T[], key: (x: T) => string, field: string) => {
+      const out = a.map((x) => ({ ...x }));
+      for (const x of b) {
+        const hit: any = out.find((y) => key(y) === key(x));
+        if (hit) hit[field] = Number(hit[field]) + Number((x as any)[field]);
+        else out.push({ ...x });
+      }
+      return out;
+    };
+    byTask.set(d.taskId, {
+      ...prev,
+      progressPercent: Math.max(prev.progressPercent, d.progressPercent),
+      progressGiven: prev.progressGiven || d.progressGiven,
+      materials: add(prev.materials, d.materials, (x) => x.materialId, "quantity"),
+      labour: add(prev.labour, d.labour, (x) => x.roleId, "headcount"),
+      equipment: add(prev.equipment, d.equipment, (x) => `${x.equipmentId}|${x.unit}`, "quantity"),
+      note: clip([prev.note, d.note].filter(Boolean).join("; "), 200),
+    });
+  }
+  const drafts = [...byTask.values()].slice(0, MAX_LOGS_PER_MESSAGE);
+  if (!drafts.length) return { kind: "no_task", unmatched };
+  return { kind: "logs", drafts, unmatched };
 }

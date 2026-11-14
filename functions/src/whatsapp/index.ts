@@ -167,6 +167,11 @@ async function handleTap(wa: WhatsAppApi, chatId: ChatId, data: string) {
   if (data.startsWith("ct:")) return void (await log.pickTask(wa, chatId, null, session, data.substring(3)));
   if (data === "xx") {
     await clearStep(chatId);
+    if (Array.isArray(session?.pendingDrafts) && session.pendingDrafts.length) {
+      await wa.sendMessage(chatId, tt(lang, "aiSkipped"));
+      await log.showNextPendingDraft(wa, chatId, session, "");
+      return;
+    }
     await wa.sendMessage(chatId, tt(lang, "cancelled"));
     return;
   }

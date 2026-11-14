@@ -142,7 +142,8 @@ export async function showMenu(tg: any, chatId: ChatId, messageId, session) {
     const lab = (d.labour || []).length;
     const equip = (d.equipment || []).length;
     const photos = (d.photoUrls || []).length;
-    let text = `<b>${d.taskName}</b>\n${fmtDate(d.workDate)} · ${d.currentProgress}% → <b>${d.progressPercent}%</b>\n`;
+    const batch = d.batchTotal > 1 ? ` · ${tt(lang, "aiBatchOf", { i: d.batchIndex, n: d.batchTotal })}` : "";
+    let text = `<b>${d.taskName}</b>${batch}\n${fmtDate(d.workDate)} · ${d.currentProgress}% → <b>${d.progressPercent}%</b>\n`;
     if (mats)
         text += "\n" + tt(lang, "menuMaterials", { n: mats });
     if (lab)
@@ -319,6 +320,27 @@ export async function handlePhoto(api: any, chatId: ChatId, session, photoRef: a
     const s = await getSession(chatId);
     await showMenu(api, chatId, null, s);
 }
+/**
+ * One typed message can carry several logs (handlers/aiLog.ts). They are shown
+ * one at a time; after the current one is saved or skipped this brings up the
+ * next. Returns false when there is no next one. Each log gets its own id
+ * only when it becomes current, so a skipped one leaves nothing behind.
+ */
+export async function showNextPendingDraft(api: any, chatId: ChatId, session: any, lead: string): Promise<boolean> {
+    const pending: any[] = Array.isArray(session?.pendingDrafts) ? session.pendingDrafts : [];
+    if (!pending.length) return false;
+    const [next, ...rest] = pending;
+    const base = projPath(session.orgId, session.activeProjectId);
+    await setSession(chatId, {
+        step: "log:menu",
+        draft: { ...next, logId: db.collection(`${base}/dailyLogs`).doc().id },
+        pendingDrafts: rest,
+    });
+    if (lead) await api.sendMessage(chatId, lead);
+    await showMenu(api, chatId, null, await getSession(chatId));
+    return true;
+}
+
 export async function saveLog(tg: any, chatId: ChatId, messageId, session) {
     const lang = normalizeLang(session?.lang);
     const d = session.draft || {};
@@ -355,7 +377,11 @@ export async function saveLog(tg: any, chatId: ChatId, messageId, session) {
         summary += tt(lang, "loggedMaterials", { n: d.materials.length });
     if ((d.labour || []).length)
         summary += tt(lang, "loggedLabour", { n: d.labour.length });
-    await tg.editMessage(chatId, messageId, summary);
+    // clearStep above removed the queue from Firestore; the copy read with
+    // this session is what carries on to the next log from the same message.
+    if (messageId) await tg.editMessage(chatId, messageId, summary);
+    else await tg.sendMessage(chatId, summary);
+    await showNextPendingDraft(tg, chatId, session, "");
 }
 
 export async function showToday(tg: any, chatId: ChatId, session: any) {
