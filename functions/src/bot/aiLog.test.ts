@@ -72,4 +72,11 @@ describe("plain-language daily log", () => {
     expect(p).toContain("m1 | OPC 53 Cement | bag");
     expect(p).toContain("poured footing, 20 bags");
   });
+
+  it("tells the model the site shorthand engineers actually type", () => {
+    const p = buildAiLogPrompt("Mason - 2 no. MC - 1 no. FC - 1 no", ctx);
+    expect(p).toMatch(/"MC" = male coolie/);
+    expect(p).toMatch(/"FC" = female coolie/);
+    expect(p).toMatch(/"no\.", "nos"/);
+  });
 });

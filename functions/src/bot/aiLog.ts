@@ -61,6 +61,13 @@ ${list(ctx.roles.map((r) => `${r.id} | ${r.name}`))}
 EQUIPMENT (id | name):
 ${list(ctx.equipment.map((e) => `${e.id} | ${e.name}`))}
 
+Site shorthand engineers use (match by MEANING, not exact spelling):
+- "MC" = male coolie / male helper / mazdoor; "FC" = female coolie / female helper. Match them to the labour role that means the same, e.g. a role named "Male Coolie", "Male Helper", "MC", "Mazdoor".
+- "mestri" / "maistry" = mason or head mason; "bar bender" = steel fixer; "carpenter" = shuttering carpenter.
+- "no.", "nos", "nos." after a number = that many people or pieces.
+- Units: "bags", "kg", "MT"/"ton", "cft", "cum"/"m3", "sqft", "rmt". Spelling mistakes are common ("lentel" = lintel, "cement bag" = bags of cement).
+- Location words ("first floor", "south side", "above lintel") help you choose the task; also keep them in "note".
+
 Rules:
 - "intent" is "daily_log" when the message reports work done, materials used, labour or equipment on site. Otherwise "other".
 - "taskId" is the single task the message is about, or null if you cannot tell which one.
