@@ -46,6 +46,7 @@ const en: Dict = {
   "enterHeadcountGt0": "Enter a headcount greater than 0.",
   "didntUnderstand": "I didn't understand that. Send /help, or just describe today's work in a sentence.",
   // ---- Plain-language log (handlers/aiLog.ts) ----
+  "aiReading": "⏳ Reading your message…",
   "aiUnderstood": "<b>Here is what I understood:</b>",
   "aiNoItems": "• No materials, labour or equipment mentioned",
   "aiNoProgress": "⚠️ You didn't mention progress, so I kept it at {pct}%. Tap Cancel and use /log if it changed.",
