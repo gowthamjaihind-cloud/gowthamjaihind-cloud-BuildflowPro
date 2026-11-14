@@ -25,7 +25,28 @@ const todayISO = () => new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString()
 
 const esc = (s: unknown) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-async function loadContext(base: string): Promise<AiLogContext> {
+/**
+ * Models for the typed-report read, fastest first. A lookup against the
+ * project's own lists does not need the larger models, and the "lite" ones
+ * answer in a second or two. Retired names answer 404 and are skipped.
+ */
+export const BOT_LOG_MODELS = ["gemini-2.5-flash-lite", "gemini-flash-lite-latest", "gemini-2.5-flash", "gemini-flash-latest"];
+
+/** The exact request the bot sends for a typed report. Shared with the operator's AI self-test. */
+export function botLogRequest(text: string, ctx: AiLogContext) {
+  return {
+    body: { contents: [{ role: "user", parts: [{ text: buildAiLogPrompt(text, ctx) }] }], generationConfig: { temperature: 0.2, responseMimeType: "application/json" } },
+    // 2.5 models "think" before answering unless told not to. This is a
+    // lookup, not a puzzle: no thinking, and a short answer. Only 2.5 models
+    // accept the setting, so nothing else is sent it.
+    forModel: (model: string, b: any) =>
+      model.startsWith("gemini-2.5")
+        ? { ...b, generationConfig: { ...b.generationConfig, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } }
+        : b,
+  };
+}
+
+export async function loadContext(base: string): Promise<AiLogContext> {
   const [tasks, inv, roles, equip] = await Promise.all([
     db.collection(`${base}/tasks`).get(),
     db.collection(`${base}/inventory`).get(),
@@ -36,12 +57,14 @@ async function loadContext(base: string): Promise<AiLogContext> {
   // up from them, so it is never logged against directly.
   const parents = new Set(tasks.docs.map((d) => String((d.data() as any).parentId || "")).filter(Boolean));
   return {
+    // Unfinished tasks only: nobody reports today's work on a finished one,
+    // and a shorter list is a faster, surer answer.
     tasks: tasks.docs
       .filter((d) => !parents.has(d.id))
-      .map((d) => ({ id: d.id, name: String((d.data() as any).name || ""), progress: Number((d.data() as any).progress) || 0 }))
-      .filter((t) => t.name)
-      .slice(0, 250),
-    materials: inv.docs.map((d) => ({ id: d.id, name: String((d.data() as any).name || ""), unit: String((d.data() as any).unit || "") })).filter((m) => m.name).slice(0, 250),
+      .map((d) => ({ id: d.id, name: String((d.data() as any).name || "").slice(0, 80), progress: Number((d.data() as any).progress) || 0 }))
+      .filter((t) => t.name && t.progress < 100)
+      .slice(0, 150),
+    materials: inv.docs.map((d) => ({ id: d.id, name: String((d.data() as any).name || "").slice(0, 60), unit: String((d.data() as any).unit || "") })).filter((m) => m.name).slice(0, 150),
     roles: roles.docs.map((d) => ({ id: d.id, name: String((d.data() as any).roleName || (d.data() as any).role || (d.data() as any).name || "") })).filter((r) => r.name).slice(0, 80),
     equipment: equip.docs.map((d) => ({ id: d.id, name: String((d.data() as any).name || "") })).filter((e) => e.name).slice(0, 80),
   };
@@ -79,26 +102,10 @@ export async function handleFreeText(api: any, chatId: ChatId, session: any, tex
 
   let raw: any;
   try {
-    const { text: out } = await geminiText(
-      { contents: [{ role: "user", parts: [{ text: buildAiLogPrompt(text, ctx) }] }], generationConfig: { temperature: 0.2, responseMimeType: "application/json" } },
-      geminiKey,
-      // Runs in the queue worker (120s), not the webhook.
-      90_000,
-      {
-        // A stuck request now gives way to the next model instead of using
-        // the whole budget: every live failure so far was one request timing
-        // out at 60s.
-        perAttemptMs: 35_000,
-        // 2.5 Flash "thinks" before answering unless told not to, and with an
-        // exact JSON answer at temperature 0 it could think or repeat itself
-        // until it ran out of time. This is a lookup, not a puzzle: no
-        // thinking, and a short answer. Only for 2.5 models, which accept it.
-        forModel: (model, b) =>
-          model.startsWith("gemini-2.5")
-            ? { ...b, generationConfig: { ...b.generationConfig, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } }
-            : b,
-      },
-    );
+    const req = botLogRequest(text, ctx);
+    // Runs in the queue worker (120s), not the webhook. A stuck request gives
+    // way to the next model instead of using the whole budget.
+    const { text: out } = await geminiText(req.body, geminiKey, 90_000, { perAttemptMs: 25_000, forModel: req.forModel, models: BOT_LOG_MODELS });
     raw = parseModelJson(out);
   } catch (e: any) {
     console.error("AI log read failed:", e);

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { CheckCircle, WarningCircle, ArrowsClockwise, PlugsConnected } from "@phosphor-icons/react";
-import { callTelegramDiagnostics, callTelegramReconnect, type TelegramDiagnostics } from "../../services/firebaseFunctions";
+import { callTelegramDiagnostics, callTelegramReconnect, callTelegramAiSelfTest, type TelegramDiagnostics, type AiSelfTest } from "../../services/firebaseFunctions";
 
 /**
  * Operator-only: what Telegram itself says about the bot's connection.
@@ -14,6 +14,19 @@ export const BotDiagnostics: React.FC = () => {
   const [d, setD] = useState<TelegramDiagnostics | null>(null);
   const [busy, setBusy] = useState<"check" | "fix" | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [ai, setAi] = useState<AiSelfTest | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const testAi = async () => {
+    setAiBusy(true);
+    setErr(null);
+    try {
+      setAi(await callTelegramAiSelfTest());
+    } catch (e: any) {
+      setErr(e?.message || "The AI test could not run.");
+    } finally {
+      setAiBusy(false);
+    }
+  };
 
   const run = async (mode: "check" | "fix") => {
     setBusy(mode);
@@ -48,8 +61,34 @@ export const BotDiagnostics: React.FC = () => {
         <button onClick={() => run("fix")} disabled={!!busy} className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-primary text-on-primary hover:bg-primary-deep apple-transition disabled:opacity-50">
           <PlugsConnected className="w-4 h-4" /> {busy === "fix" ? "Reconnecting…" : "Reconnect bot"}
         </button>
+        <button onClick={testAi} disabled={aiBusy || !!busy} className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-panel border border-divider text-ink hover:bg-surface apple-transition disabled:opacity-50">
+          {aiBusy ? "Testing AI… (up to a minute)" : "Test AI"}
+        </button>
       </div>
       {err && <p className="text-sm text-danger mb-3">{err}</p>}
+      {ai && (
+        <div className="mb-5 space-y-2">
+          <p className="text-sm font-bold text-ink">{"AI test"}</p>
+          {!ai.keySet ? (
+            <p className="text-sm text-danger">{"No AI key is configured (GEMINI_API_KEY)."}</p>
+          ) : (
+            <>
+              <p className="text-xs text-ink-muted">
+                {ai.project
+                  ? `Your active project in the bot: ${ai.project.tasks} unfinished tasks, ${ai.project.materials} materials, ${ai.project.roles} labour roles, ${ai.project.equipment} equipment · request ${Math.round((ai.promptChars || 0) / 1000)}k characters`
+                  : "No active project in your bot session, so only the small test ran. Send /projects to the bot to pick one."}
+              </p>
+              {ai.results.map((r) => (
+                <div key={r.model} className="text-xs font-mono break-words border-t border-divider pt-1.5">
+                  <b className="text-ink">{r.model}</b>
+                  <div className="text-ink-muted">{`small: ${r.tiny.status} in ${r.tiny.seconds}s ${r.tiny.sample ? `· ${r.tiny.sample}` : ""}`}</div>
+                  {r.real && <div className="text-ink-muted">{`real: ${r.real.status} in ${r.real.seconds}s ${r.real.sample ? `· ${r.real.sample}` : ""}`}</div>}
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      )}
       {d && (
         <div className="space-y-2">
           <Row ok={d.tokenOk}>{d.tokenOk ? `Bot token accepted${d.botUsername ? ` (@${d.botUsername})` : ""}` : "Telegram does not accept the bot token"}</Row>
