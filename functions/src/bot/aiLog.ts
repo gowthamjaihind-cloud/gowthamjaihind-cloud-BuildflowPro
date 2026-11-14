@@ -76,7 +76,9 @@ Rules:
 - "intent" is "daily_log" when the message reports work done, materials used, labour or equipment on site. Otherwise "other".
 - A message can report work on SEVERAL tasks. Return one entry in "logs" per task, at most 5. Never put two tasks in one entry.
 - Each entry's "taskId" is that task's id. Leave out work you cannot match to a task, and name it in "unmatched".
-- Labour, materials and equipment listed once for the whole day: give each item to the task it plainly belongs to (bar benders to bar bending, masons to block or brick work, excavator hours to excavation). An item you cannot place goes on the first task.
+- A message is often written as sections: a work heading ("Earth work excavation", "Barbending work") followed by its labour, materials and equipment. Everything under a heading belongs to THAT heading's task only. If a heading matches no task in the list, put the heading in "unmatched" and leave out its items: never move them to another task.
+- Labour, materials and equipment listed once for the whole day, under no heading: give each item to the task it plainly belongs to (bar benders to bar bending, masons to block or brick work, excavator hours to excavation). An item you cannot place goes on the first task.
+- A finished task (progress 100) can still be reported on; match it like any other.
 - Each entry's "progressPercent" is that task's TOTAL progress after today (0-100). If the message gives an increase ("10% more", "another 10 percent"), add it to the current progress. If it says the task is finished, use 100. If progress is not mentioned, use null.
 - Quantities are numbers in the material's own unit as listed. Do not convert units; if the unit in the message differs from the listed unit, put the item in "unmatched" instead.
 - "equipment[].unit" is "hours" or "days".
@@ -149,7 +151,10 @@ export function sanitizeAiLog(raw: any, ctx: AiLogContext): AiLogResult {
   return {
     kind: "log",
     draft: {
-      taskId: task.id, taskName: task.name, currentProgress: current, progressPercent, progressGiven: given,
+      // "Given" means the message moved the task on. A model that echoes the
+      // current figure back (or answers 0 for "not mentioned") did not, and
+      // the engineer is told progress was kept as it was.
+      taskId: task.id, taskName: task.name, currentProgress: current, progressPercent, progressGiven: given && progressPercent > current,
       materials, labour, equipment, note: clip(raw.note, 200), unmatched,
       ...(workDate ? { workDate } : {}),
     },

@@ -152,3 +152,21 @@ describe("plain-language daily log", () => {
     expect(p).toMatch(/"logs":\[/);
   });
 });
+
+describe("progress the message did not move", () => {
+  it("is reported as not given when the model echoes the current figure or answers 0", () => {
+    for (const p of [0, 30]) {
+      const r = sanitizeAiLog({ intent: "daily_log", taskId: "t1", progressPercent: p, labour: [{ roleId: "r1", headcount: 1 }] }, ctx);
+      expect(r.kind === "log" && r.draft).toMatchObject({ progressPercent: 30, progressGiven: false });
+    }
+  });
+});
+
+describe("sectioned messages", () => {
+  it("tells the model to keep a heading's items with that heading, and not move them", () => {
+    const prompt = buildAiLogPrompt("Earth work excavation\nMason 1\nBarbending work\nBarbender 2 no", ctx);
+    expect(prompt).toMatch(/Everything under a heading belongs to THAT heading's task only/);
+    expect(prompt).toMatch(/never move them to another task/);
+  });
+});
+

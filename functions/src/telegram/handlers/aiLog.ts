@@ -57,12 +57,14 @@ export async function loadContext(base: string): Promise<AiLogContext> {
   // up from them, so it is never logged against directly.
   const parents = new Set(tasks.docs.map((d) => String((d.data() as any).parentId || "")).filter(Boolean));
   return {
-    // Unfinished tasks only: nobody reports today's work on a finished one,
-    // and a shorter list is a faster, surer answer.
+    // Unfinished tasks first, then finished ones: a task marked 100% can
+    // still get a day's work (snagging, a second pass), and a task missing
+    // from the list sends its work to the wrong task.
     tasks: tasks.docs
       .filter((d) => !parents.has(d.id))
       .map((d) => ({ id: d.id, name: String((d.data() as any).name || "").slice(0, 80), progress: Number((d.data() as any).progress) || 0 }))
-      .filter((t) => t.name && t.progress < 100)
+      .filter((t) => t.name)
+      .sort((a, b) => Number(a.progress >= 100) - Number(b.progress >= 100))
       .slice(0, 150),
     materials: inv.docs.map((d) => ({ id: d.id, name: String((d.data() as any).name || "").slice(0, 60), unit: String((d.data() as any).unit || "") })).filter((m) => m.name).slice(0, 150),
     roles: roles.docs.map((d) => ({ id: d.id, name: String((d.data() as any).roleName || (d.data() as any).role || (d.data() as any).name || "") })).filter((r) => r.name).slice(0, 80),
@@ -154,7 +156,10 @@ export async function handleFreeText(api: any, chatId: ChatId, session: any, tex
   // and the engineer has to be able to check what was understood before Save.
   const lines: string[] = [total > 1 ? tt(lang, "aiLogsUnderstood", { n: total }) : tt(lang, "aiUnderstood")];
   const date = result.drafts[0].workDate;
-  if (date && date !== todayISO()) lines.push(tt(lang, "aiForDate", { date }));
+  if (date && date !== todayISO()) {
+    const shown = new Date(`${date}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+    lines.push(tt(lang, "aiForDate", { date: shown }));
+  }
   result.drafts.forEach((d, i) => {
     if (total > 1) lines.push("", `<b>${i + 1}. ${esc(d.taskName)}</b>`);
     for (const m of d.materials) lines.push(`• ${esc(m.name)}: <b>${m.quantity}</b> ${esc(m.unit)}`);
