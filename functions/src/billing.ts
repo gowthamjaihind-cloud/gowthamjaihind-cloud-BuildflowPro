@@ -29,7 +29,7 @@ import { captureError } from "./sentry";
 import { seatState } from "./seats";
 import { aiQuotaFor } from "./ai/quota";
 import { CALLABLE_OPTS } from "./callable";
-import { refreshSlotSummary } from "./slotRefresh";
+import { cancelUnneededSlots } from "./razorpay";
 
 // App operators who may provision orgs and manage subscriptions. Keep in sync
 // with the client-side check in the super-admin panel. (Later this can move to
@@ -328,7 +328,9 @@ export const runSubscriptionLifecycle = onSchedule(
         // subscription that lapsed sends no further webhook, so without this
         // nightly recompute its capacity would be counted indefinitely.
         // It also locks a project whose subscription has ended.
-        if (data.slotSubs) await refreshSlotSummary(orgDoc.id);
+        // Also applies a downgrade's project limit, and stops extra-project
+        // subscriptions an upgrade has made unnecessary.
+        if (data.slotSubs || typeof data.includedProjects === "number") await cancelUnneededSlots(orgDoc.id);
         const move = nextLifecycleState(data, now);
         if (move) {
           const patch: any = { subscriptionStatus: move.to };

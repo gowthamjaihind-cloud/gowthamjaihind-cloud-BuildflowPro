@@ -42,6 +42,8 @@ export interface SlotSub {
    * so the project -- not just "capacity" -- stops when the money does.
    */
   projectIds?: string[];
+  /** Cancelled by us because a plan upgrade made it unnecessary. */
+  autoCancelled?: boolean;
 }
 
 /** A late webhook or a card retry should not take a paid project away. */
@@ -138,8 +140,17 @@ export interface ProjectRef {
  *   - A project whose subscription is no longer live is LOCKED (read-only),
  *     unless the plan itself has room for it again -- then it is released
  *     back into the plan rather than held hostage.
- *   - A project past the cap with no subscription at all (older data, a
- *     downgrade) is left alone: unassigned and unlocked.
+ *   - A project past the cap with no subscription at all is LOCKED too, newest
+ *     first. This is what a downgrade does: Business to Starter with eight
+ *     projects keeps the oldest one open and makes the other seven read-only
+ *     until each is subscribed. Without it a customer could build twenty
+ *     projects on Business for a month and keep them all on Starter.
+ *     Only for a workspace that is on a billed plan: one with no subscription
+ *     status, or an internal/free one, is never locked.
+ *
+ * `unneeded` lists active subscriptions that pay for nothing while the plan
+ * itself still has room -- what an upgrade leaves behind. The caller cancels
+ * them so the customer is not charged for capacity the plan already includes.
  *
  * Pure. An uncapped plan releases everything.
  */
@@ -147,7 +158,7 @@ export function assignProjectSlots(
   org: any,
   projects: ProjectRef[],
   now = Date.now(),
-): { slotSubs: Record<string, SlotSub>; locked: string[] } {
+): { slotSubs: Record<string, SlotSub>; locked: string[]; unneeded: string[] } {
   const exists = new Set(projects.map((p) => p.id));
   const order = [...projects].sort((a, b) => (a.created < b.created ? -1 : a.created > b.created ? 1 : a.id < b.id ? -1 : 1));
   const rank = new Map(order.map((p, i) => [p.id, i]));
@@ -171,19 +182,21 @@ export function assignProjectSlots(
   const cap = org?.includedProjects;
   if (typeof cap !== "number") {
     for (const id of Object.keys(subs)) subs[id].projectIds = [];
-    return { slotSubs: subs, locked: [] };
+    return { slotSubs: subs, locked: [], unneeded: Object.keys(subs).filter((id) => subs[id].status === "active" && slotSubLive(subs[id], now)) };
   }
   const oneOff = num(org?.slotsExpireAt) > now ? Math.max(0, Math.floor(num(org?.purchasedSlots))) : 0;
   const base = cap + oneOff;
 
   let free = order.filter((p) => !taken.has(p.id)).map((p) => p.id);
-  // Room in the plan itself: release locked projects into it, oldest first.
+  // Room in the plan itself: move subscription-paid projects into it, locked
+  // ones first (they are the ones suffering), then the rest, oldest first. A
+  // plan with room should hold the projects; a ₹99 subscription for a project
+  // the plan already covers is money for nothing.
   let room = base - free.length;
   if (room > 0) {
     const dead = Object.keys(subs)
-      .filter((id) => !slotSubLive(subs[id], now))
-      .flatMap((id) => (subs[id].projectIds || []).map((pid) => ({ id, pid })))
-      .sort((a, b) => (rank.get(a.pid) ?? 0) - (rank.get(b.pid) ?? 0));
+      .flatMap((id) => (subs[id].projectIds || []).map((pid) => ({ id, pid, live: slotSubLive(subs[id], now) })))
+      .sort((a, b) => Number(a.live) - Number(b.live) || (rank.get(a.pid) ?? 0) - (rank.get(b.pid) ?? 0));
     for (const d of dead) {
       if (room <= 0) break;
       subs[d.id].projectIds = (subs[d.id].projectIds || []).filter((x) => x !== d.pid);
@@ -195,13 +208,23 @@ export function assignProjectSlots(
   // Past the plan's cap: tie each to a live subscription that has room.
   const overflow = free.slice(base);
   const liveIds = Object.keys(subs).filter((id) => slotSubLive(subs[id], now)).sort();
+  const unpaid: string[] = [];
   for (const pid of overflow) {
     const home = liveIds.find((id) => (subs[id].projectIds || []).length < Math.floor(num(subs[id].qty)));
-    if (!home) break;
+    if (!home) {
+      unpaid.push(pid);
+      continue;
+    }
     subs[home].projectIds = [...(subs[home].projectIds || []), pid];
   }
-  const locked = Object.keys(subs)
-    .filter((id) => !slotSubLive(subs[id], now))
-    .flatMap((id) => subs[id].projectIds || []);
-  return { slotSubs: subs, locked };
+  const billed = ["active", "trialing", "past_due", "canceled", "expired"].includes(String(org?.subscriptionStatus || ""));
+  const locked = [
+    ...Object.keys(subs).filter((id) => !slotSubLive(subs[id], now)).flatMap((id) => subs[id].projectIds || []),
+    ...(billed ? unpaid : []),
+  ];
+  // The plan has room to spare and this subscription pays for nothing.
+  const unneeded = free.length < base
+    ? liveIds.filter((id) => subs[id].status === "active" && (subs[id].projectIds || []).length === 0)
+    : [];
+  return { slotSubs: subs, locked, unneeded };
 }

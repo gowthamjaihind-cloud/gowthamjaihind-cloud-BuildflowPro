@@ -170,6 +170,20 @@ nightly job applies it, so allow up to a day):
 - it no longer counts toward the limit (`projectCount` drops by one)
 - Settings lists it with **Subscribe again**; paying unlocks that same project
 
+**Downgrade with more projects than the smaller plan includes.** Business to
+Starter with several projects: the confirmation must say which stay open and
+that the newest become read-only. Once the downgrade applies, the oldest
+project(s) up to the new limit stay open, the rest are locked (same badge and
+banner), and each can be re-opened with **Subscribe again**.
+
+**Upgrade makes extra-project subscriptions unnecessary.** With one or more ₹99
+subscriptions running, upgrade to Business. Their projects move into the plan,
+and those subscriptions must show as cancelled in Razorpay with "not needed on
+your plan" in Settings. No further ₹99 charge may follow.
+
+**No selling capacity the plan already has.** With room left in the plan,
+"Add projects" is not offered, and the server refuses a slot purchase.
+
 **Failed slot payment.** With a card that fails on renewal: while Razorpay
 retries (`pending`) nothing changes. On `halted` the slot stops extending and
 lapses 3 days after `until`. The plan must stay `active` throughout.

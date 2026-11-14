@@ -124,9 +124,37 @@ describe("which project each subscription pays for", () => {
     expect(r.slotSubs.s1.projectIds).toEqual(["n"]);
   });
 
-  it("never locks a project that has no subscription at all (older data, a downgrade)", () => {
-    const r = assignProjectSlots({ includedProjects: 1 }, [P("a", 1), P("b", 2), P("c", 3)], now);
+  it("after a downgrade, keeps the oldest projects and locks the newest", () => {
+    const r = assignProjectSlots({ includedProjects: 1, subscriptionStatus: "active" }, [P("c", 3), P("a", 1), P("b", 2)], now);
+    expect(r.locked).toEqual(["b", "c"]);
+  });
+
+  it("a subscription the customer still holds keeps one of those open", () => {
+    const org = { includedProjects: 1, subscriptionStatus: "active", slotSubs: { s1: live() } };
+    const r = assignProjectSlots(org, [P("a", 1), P("b", 2), P("c", 3)], now);
+    expect(r.slotSubs.s1.projectIds).toEqual(["b"]);
+    expect(r.locked).toEqual(["c"]);
+  });
+
+  it("never locks in a workspace that is not on a billed plan", () => {
+    const three = [P("a", 1), P("b", 2), P("c", 3)];
+    expect(assignProjectSlots({ includedProjects: 1 }, three, now).locked).toEqual([]);
+    expect(assignProjectSlots({ includedProjects: 1, subscriptionStatus: "internal" }, three, now).locked).toEqual([]);
+    expect(assignProjectSlots({ includedProjects: 1, subscriptionStatus: "free" }, three, now).locked).toEqual([]);
+  });
+
+  it("after an upgrade, flags subscriptions the bigger plan has made unnecessary", () => {
+    const org = { includedProjects: 20, subscriptionStatus: "active", slotSubs: { s1: live({ projectIds: ["b"] }), s2: { ...live(), status: "cancelling" } } };
+    const r = assignProjectSlots(org, [P("a", 1), P("b", 2)], now);
+    // b moves into the plan, which now has room; s1 pays for nothing.
+    expect(r.slotSubs.s1.projectIds).toEqual([]);
+    expect(r.unneeded).toEqual(["s1"]);
     expect(r.locked).toEqual([]);
+  });
+
+  it("does not flag a slot just bought on a full plan and not used yet", () => {
+    const org = { includedProjects: 1, subscriptionStatus: "active", slotSubs: { s1: live() } };
+    expect(assignProjectSlots(org, [P("a", 1)], now).unneeded).toEqual([]);
   });
 
   it("an uncapped plan locks nothing", () => {

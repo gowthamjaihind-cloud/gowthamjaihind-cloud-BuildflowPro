@@ -84,7 +84,9 @@ export const PlanSummary: React.FC = () => {
   const isOwnerAdmin = role === "Owner" || role === "Admin";
   // "Add projects" applies to paid, capped plans (not Free, not the uncapped
   // Enterprise/grandfathered orgs) and only for Owners/Admins.
-  const canManageCapacity = isOwnerAdmin && cap.capped && !cap.isFree;
+  // ...and only once the plan is full: selling another ₹99 subscription while
+  // the plan still has room is charging for nothing.
+  const canManageCapacity = isOwnerAdmin && cap.capped && !cap.isFree && cap.atOrOver;
   // "Manage plan" (upgrade/downgrade) applies to any self-serve tier — including
   // Free (upgrade only) — but not internal/enterprise/grandfathered orgs.
   const canManagePlan = isOwnerAdmin && SELF_SERVE_PLANS.includes(plan.plan as string);
@@ -307,7 +309,15 @@ export const PlanSummary: React.FC = () => {
                   <b>{names || "Not used yet"}</b>
                   {names && spare > 0 ? ` (+${spare} not used yet)` : ""}
                   {" · "}₹{(s.qty * plan.overageRate).toLocaleString("en-IN")}{" / month · "}
-                  {ending ? `ends ${fmtDate(s.until)}, then read-only` : s.status === "halted" ? `payment failed, ends ${fmtDate(s.until)}` : `renews ${fmtDate(s.until)}`}
+                  {ending
+                    ? s.autoCancelled
+                      ? `not needed on your plan · stopped, no more payments after ${fmtDate(s.until)}`
+                      : names
+                        ? `ends ${fmtDate(s.until)}, then read-only`
+                        : `cancelled · no more payments after ${fmtDate(s.until)}`
+                    : s.status === "halted"
+                      ? `payment failed, ends ${fmtDate(s.until)}`
+                      : `renews ${fmtDate(s.until)}`}
                 </span>
                 {isOwnerAdmin && !ending && (
                   <button
