@@ -492,3 +492,22 @@ export interface AiSelfTest {
 
 export const callTelegramAiSelfTest = async (text?: string) =>
   (await httpsCallable<{ text?: string }, AiSelfTest>(getFunctionsInstance(), 'telegramAiSelfTest', { timeout: 200_000 })({ text })).data;
+
+// ── Client share links (functions/src/clientShare) ───────────────────────────
+export interface ClientShareSections { progress: boolean; photos: boolean; updates: boolean; payments: boolean }
+export interface ClientShare {
+  token: string;
+  label: string;
+  sections: ClientShareSections;
+  showHeadcount: boolean;
+  revoked: boolean;
+  createdAt: string | null;
+  lastViewedAt: string | null;
+  views: number;
+}
+export const callCreateClientShare = async (args: { orgId?: string; projectId: string; label?: string; sections: ClientShareSections; showHeadcount: boolean }) =>
+  (await httpsCallable<typeof args, ClientShare>(getFunctionsInstance(), "createClientShare")(args)).data;
+export const callListClientShares = async (args: { orgId?: string; projectId: string }) =>
+  (await httpsCallable<typeof args, ClientShare[]>(getFunctionsInstance(), "listClientShares")(args)).data;
+export const callUpdateClientShare = async (args: { token: string; sections?: ClientShareSections; showHeadcount?: boolean; label?: string; revoked?: boolean }) =>
+  (await httpsCallable<typeof args, ClientShare>(getFunctionsInstance(), "updateClientShare")(args)).data;

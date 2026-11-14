@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
 import {
   Barricade as Construction,
@@ -6,13 +6,15 @@ import {
   CheckCircle as CheckCircle2,
   ChartLineUp,
   ArrowRight,
+  ShareNetwork,
 } from "@phosphor-icons/react";
+import { ClientShareModal } from "./ClientShareModal";
 import { CountUp, PageHero } from "./motion";
 import { useTasksQuery } from "../hooks/queries";
 import { globalProgress, tasksAtRisk as calcTasksAtRisk } from "../lib/projectMetrics";
 import { Task } from "../types";
 import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
-import { useUIStore } from "../store";
+import { useUIStore, useAuthStore, useProjectStore } from "../store";
 
 import { useScheduleData } from "../hooks/useScheduleData";
 import { ScheduleView } from "./schedule/ScheduleView";
@@ -34,6 +36,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const { t } = useTranslation();
   const setActiveTab = useUIStore((s) => s.setActiveTab);
+  const user = useAuthStore((s) => s.user);
+  const project = useProjectStore((s) => s.activeProject);
+  const canShare = !!user && ["Owner", "Admin", "Project Manager"].includes(String(user.role));
+  const [sharing, setSharing] = useState(false);
   const { data: legacyTasks = [] } = useTasksQuery(activeProjectId);
   const { stats } = useProjectCostTotals(activeProjectId);
   const {
@@ -85,7 +91,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         icon={<Construction weight="duotone" className="w-4 h-4 sm:w-5 sm:h-5 text-white" />}
         glyph={<Construction weight="duotone" className="w-40 h-40 sm:w-56 sm:h-56" />}
         className="mb-4 md:mb-8"
+        actions={
+          canShare ? (
+            <button
+              onClick={() => setSharing(true)}
+              className="flex items-center gap-2 bg-primary text-on-primary text-xs sm:text-sm font-bold rounded-xl px-3 py-2 cursor-pointer"
+            >
+              <ShareNetwork weight="bold" className="w-4 h-4" /> Share with client
+            </button>
+          ) : undefined
+        }
       />
+      {sharing && (
+        <ClientShareModal
+          projectId={activeProjectId}
+          orgId={user?.currentOrgId}
+          projectName={project?.name || "this project"}
+          onClose={() => setSharing(false)}
+        />
+      )}
 
       {/* KPI strip — one consistent row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">

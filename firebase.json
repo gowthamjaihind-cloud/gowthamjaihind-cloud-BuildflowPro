@@ -23,6 +23,13 @@
         }
       },
       {
+        "source": "/api/client-share",
+        "function": {
+          "functionId": "clientShareView",
+          "region": "asia-southeast1"
+        }
+      },
+      {
         "source": "/terms",
         "destination": "/terms.html"
       },
