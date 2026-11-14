@@ -29,6 +29,8 @@ import { callSetupOrganization } from "../services/firebaseFunctions";
 import { TeamPanel } from "./settings/TeamPanel";
 import { MastersPanel } from "./settings/MastersPanel";
 import { OperatorPanel } from "./settings/OperatorPanel";
+import { BillingPanel } from "./settings/BillingPanel";
+import { Receipt } from "@phosphor-icons/react";
 import { PrivacyPanel } from "./settings/PrivacyPanel";
 import { PlanSummary } from "./settings/PlanSummary";
 import { TelegramIntegration } from "./TelegramIntegration";
@@ -42,6 +44,7 @@ interface SettingsViewProps {
 }
 
 type SettingsSection =
+  | "billing"
   | "organization"
   | "enterprise"
   | "notifications"
@@ -101,7 +104,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </header>
 
         {/* Plan + usage, always visible above every settings tab. */}
-        <PlanSummary />
+        <PlanSummary onOpenBilling={() => setActiveTab("billing")} />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Navigation / Categories */}
@@ -112,6 +115,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 label: t("settings.tabOrganization"),
                 icon: LayoutDashboard,
               },
+              { id: "billing", label: "Projects & Billing", icon: Receipt },
               { id: "team", label: t("settings.tabTeam"), icon: Users },
               { id: "masters", label: "Master data", icon: Database },
               { id: "telegram", label: t("settings.tabTelegram"), icon: TelegramLogo },
@@ -150,6 +154,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 viewMode="enterprise"
               />
             )}
+
+            {activeTab === "billing" && <BillingPanel />}
 
             {activeTab === "team" && <TeamPanel />}
 

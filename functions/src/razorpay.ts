@@ -478,6 +478,32 @@ async function ensureSlotPlan(cfg: RzpConfig, ratePerSlot: number, tax: { gstin:
 export { refreshSlotSummary };
 
 /**
+ * What Razorpay holds for one subscription: its current state and the
+ * invoices it has raised. Sitetru records that a subscription exists, not each
+ * charge, so Razorpay is the only complete record of what was actually paid --
+ * and each paid invoice carries the receipt page the customer can open.
+ * Returns null when Razorpay cannot be reached or does not know the id.
+ */
+export async function fetchSubscriptionBilling(subscriptionId: string): Promise<{ subscription: any; invoices: any[] } | null> {
+  const cfg = await getRazorpayConfig();
+  if (!cfg) return null;
+  const headers = { Authorization: `Basic ${Buffer.from(`${cfg.keyId}:${cfg.keySecret}`).toString("base64")}` };
+  const id = encodeURIComponent(subscriptionId);
+  try {
+    const [subRes, invRes] = await Promise.all([
+      fetch(`https://api.razorpay.com/v1/subscriptions/${id}`, { headers }),
+      fetch(`https://api.razorpay.com/v1/invoices?subscription_id=${id}&count=100`, { headers }),
+    ]);
+    if (!subRes.ok) return null;
+    const subscription: any = await subRes.json();
+    const inv: any = invRes.ok ? await invRes.json() : null;
+    return { subscription, invoices: Array.isArray(inv?.items) ? inv.items : [] };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Stop slot subscriptions a bigger plan has made unnecessary.
  *
  * After an upgrade the plan itself has room for the projects those ₹99
