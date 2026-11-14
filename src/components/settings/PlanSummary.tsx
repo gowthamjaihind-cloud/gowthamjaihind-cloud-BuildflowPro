@@ -3,23 +3,16 @@ import { Stack, Copy, Check, Plus, SlidersHorizontal, CalendarCheck, WarningCirc
 import { usePlan } from "../../hooks/usePlan";
 import { useProjectsQuery } from "../../hooks/queries";
 import { useAuthStore } from "../../store";
-import { projectCapState, planAdvice, liveSlotSubs, billableProjectCount, PLANS, PlanId } from "../../lib/plans";
+import { projectCapState, planAdvice, billableProjectCount, PLANS, PlanId } from "../../lib/plans";
 import { AddCapacityModal } from "../AddCapacityModal";
 import { ManagePlanModal } from "../ManagePlanModal";
 import { Tooltip } from "../Tooltip";
 import {
-  callCancelSlotSubscription,
   callConfirmSubscription,
   callCancelSubscription,
   callResumeSubscription,
-  callGetBillingHistory,
-  type BillingHistoryRow,
 } from "../../services/firebaseFunctions";
 import { confirmDialog, toast } from "../../lib/feedback";
-import { timeKey } from "../../lib/timeKey";
-import { useRazorpayCheckout } from "../../hooks/useRazorpayCheckout";
-import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "../../lib/react-query";
 
 // Plans an Owner/Admin can self-serve manage (upgrade/downgrade).
 // No free tier any more; Enterprise is not self-serve.
@@ -28,20 +21,11 @@ const SELF_SERVE_PLANS = ["starter", "business"];
 // Compact "your plan + usage" summary for the org settings page: current plan,
 // projects used vs included, any per-project overage, and the (copyable) org ID
 // operators need for the Operator panel actions.
-export const PlanSummary: React.FC = () => {
+export const PlanSummary: React.FC<{ onOpenBilling?: () => void }> = ({ onOpenBilling }) => {
   const plan = usePlan();
   const { data: projects = [] } = useProjectsQuery();
   const orgId = useAuthStore((s) => s.user?.currentOrgId);
   const role = useAuthStore((s) => s.user?.role);
-  // Declared with the other state, above the early returns: hooks must run in
-  // the same order on every render.
-  const [slotBusy, setSlotBusy] = useState<string | null>(null);
-  const { paySlots, busy: payBusy, error: payError } = useRazorpayCheckout();
-  const qc = useQueryClient();
-  // The unlock is written by the server a moment after the payment lands.
-  const refreshProjects = () => {
-    for (const ms of [500, 3000, 8000]) setTimeout(() => qc.invalidateQueries({ queryKey: queryKeys.projects }), ms);
-  };
   // A payment whose webhook was late or lost leaves a paid workspace reading
   // "not subscribed". Opening Settings asks the server to check with Razorpay.
   // Owners and Admins only; it is a no-op for a workspace with nothing pending.
@@ -55,8 +39,6 @@ export const PlanSummary: React.FC = () => {
   const [showManage, setShowManage] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(false);
   const [cancelErr, setCancelErr] = useState<string | null>(null);
-  const [history, setHistory] = useState<BillingHistoryRow[] | null>(null);
-  const [historyBusy, setHistoryBusy] = useState(false);
   if (plan.loading) return null;
 
   // The panel used to render nothing here too, because `unavailable` did not
@@ -108,64 +90,6 @@ export const PlanSummary: React.FC = () => {
   // filing should not have to search their inbox for a payment their own
   // workspace made. Loaded on demand rather than on mount — most visits to this
   // screen are not about an invoice.
-  const loadHistory = async () => {
-    setHistoryBusy(true);
-    try {
-      setHistory((await callGetBillingHistory()).rows);
-    } catch (e: any) {
-      toast.error(e?.message || "Couldn't load billing history.");
-    } finally {
-      setHistoryBusy(false);
-    }
-  };
-
-  const slotSubs = liveSlotSubs(plan);
-  const projectName = (id: string) => projects.find((p) => p.id === id)?.name || "a deleted project";
-  const namesOf = (ids: string[]) => ids.map(projectName).join(", ");
-
-  const cancelSlots = async (id: string, qty: number, until: number, projectIds: string[]) => {
-    const names = namesOf(projectIds);
-    const when = fmtDate(until) || "the end of the month you've paid for";
-    const ok = await confirmDialog({
-      title: names ? `Cancel the subscription for ${names}?` : "Cancel this unused extra project?",
-      body: names
-        ? `No further payment is taken. ${names} ${projectIds.length === 1 ? "stays" : "stay"} fully usable until ${when}, then ${projectIds.length === 1 ? "becomes" : "become"} read-only: everyone can still open and export ${projectIds.length === 1 ? "it" : "them"}, but nothing can be added or changed until you subscribe again. Nothing is deleted.`
-        : `No further payment is taken. You can still create a project with it until ${when}.`,
-      confirmLabel: "Cancel subscription",
-      cancelLabel: "Keep it",
-      destructive: true,
-    });
-    if (!ok) return;
-    setSlotBusy(id); setCancelErr(null);
-    try {
-      await callCancelSlotSubscription({ subscriptionId: id });
-    } catch (e: any) {
-      setCancelErr(e?.message || "Couldn't cancel that. Please try again.");
-    } finally {
-      setSlotBusy(null);
-    }
-  };
-
-  // A locked project is re-opened by subscribing again FOR THAT PROJECT.
-  // One row per project, oldest first: which subscription (if any) pays for it,
-  // and whether a scheduled downgrade will make it read-only. The server keeps
-  // the OLDEST projects open after a downgrade (functions/src/slotSubs.ts).
-  const subByProject = new Map<string, (typeof slotSubs)[number]>();
-  for (const sub of slotSubs) for (const pid of sub.projectIds) subByProject.set(pid, sub);
-  const ordered = [...projects].sort((a, b) => {
-    const ka = timeKey((a as any).createdAt), kb = timeKey((b as any).createdAt);
-    return ka < kb ? -1 : ka > kb ? 1 : 0;
-  });
-  const pendingCap = plan.pendingPlanChange ? PLANS[plan.pendingPlanChange.plan as PlanId]?.includedProjects : undefined;
-  let planSeat = 0;
-  const billingRows = ordered.map((p) => {
-    const sub = subByProject.get(p.id);
-    const inPlan = !sub && !p.billingLocked;
-    const seat = inPlan ? planSeat++ : -1;
-    return { p, sub, willLock: inPlan && typeof pendingCap === "number" && seat >= pendingCap };
-  });
-  const unusedSubs = slotSubs.filter((sub) => sub.projectIds.length < sub.qty);
-  const resubscribe = (projectId: string) => paySlots(1, refreshProjects, undefined, projectId);
 
   const cancelPlan = async () => {
     const until = fmtDate(plan.currentPeriodEnd);
@@ -286,13 +210,12 @@ export const PlanSummary: React.FC = () => {
               <SlidersHorizontal weight="bold" className="w-3.5 h-3.5" /> {"Manage plan"}
             </button>
           )}
-          {isOwnerAdmin && (
+          {onOpenBilling && (
             <button
-              onClick={() => (history === null ? loadHistory() : setHistory(null))}
-              disabled={historyBusy}
-              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-panel border border-divider text-ink hover:bg-surface apple-transition disabled:opacity-50"
+              onClick={onOpenBilling}
+              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-panel border border-divider text-ink hover:bg-surface apple-transition"
             >
-              {historyBusy ? "Loading…" : history === null ? "Billing history" : "Hide history"}
+              {"Projects & billing"}
             </button>
           )}
           {/* Leaving has to be findable. Until this existed the only way off a
@@ -310,88 +233,6 @@ export const PlanSummary: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Every project, and how it is paid for. A customer has to be able to
-          see WHICH project a ₹99 line is for, which one renews or ends next,
-          and which will go read-only after a downgrade -- not just a count of
-          "extra projects". Unused subscriptions are listed after, as such: a
-          recurring charge that pays for nothing must be visible and stoppable. */}
-      {cap.capped && !cap.isFree && projects.length > 0 && (
-        <div className="mt-3 p-3 rounded-xl border border-divider bg-panel/50 text-xs text-ink space-y-2">
-          <p className="font-bold">{"Projects and billing"}</p>
-          {billingRows.map(({ p, sub, willLock }) => {
-            const ending = sub && (sub.status === "cancelling" || sub.status === "cancelled");
-            return (
-              <div key={p.id} className="flex flex-wrap items-center justify-between gap-2">
-                <span>
-                  <b>{p.name}</b>{" · "}
-                  {p.billingLocked
-                    ? "read-only: its subscription has ended"
-                    : sub
-                      ? `₹${plan.overageRate} / month · ` +
-                        (ending
-                          ? `ends ${fmtDate(sub.until)}, then read-only`
-                          : sub.status === "halted"
-                            ? `payment failed, read-only after ${fmtDate(sub.until)} unless paid`
-                            : `renews ${fmtDate(sub.until)}`)
-                      : willLock
-                        ? `included in your ${planName} plan · becomes read-only on ${fmtDate(pending?.effectiveAt)} when you switch to ${pendingName}`
-                        : `included in your ${planName} plan`}
-                </span>
-                {isOwnerAdmin && p.billingLocked && (
-                  <button
-                    onClick={() => resubscribe(p.id)}
-                    disabled={payBusy}
-                    className="font-bold px-2 py-1 rounded-lg text-primary hover:text-primary-deep apple-transition disabled:opacity-50"
-                  >
-                    {`Subscribe again · ₹${plan.overageRate} / month`}
-                  </button>
-                )}
-                {isOwnerAdmin && !p.billingLocked && sub && !ending && (
-                  <button
-                    onClick={() => cancelSlots(sub.id, sub.qty, sub.until, [p.id])}
-                    disabled={slotBusy === sub.id}
-                    className="font-bold px-2 py-1 rounded-lg text-ink-muted hover:text-danger apple-transition disabled:opacity-50"
-                  >
-                    {slotBusy === sub.id ? "Cancelling…" : "Cancel"}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-          {unusedSubs.length > 0 && (
-            <p className="font-bold pt-2 border-t border-divider">{"Extra-project subscriptions not paying for any project"}</p>
-          )}
-          {unusedSubs.map((s) => {
-            const ending = s.status === "cancelling" || s.status === "cancelled";
-            const spare = s.qty - s.projectIds.length;
-            return (
-              <div key={s.id} className="flex flex-wrap items-center justify-between gap-2">
-                <span>
-                  {`${spare} unused · ₹${(spare * plan.overageRate).toLocaleString("en-IN")} / month · `}
-                  {ending
-                    ? s.autoCancelled
-                      ? `not needed on your plan · stopped, no more payments after ${fmtDate(s.until)}`
-                      : `cancelled · no more payments after ${fmtDate(s.until)}`
-                    : s.status === "halted"
-                      ? `payment failed, ends ${fmtDate(s.until)}`
-                      : `renews ${fmtDate(s.until)} · your plan has room, so you can cancel this`}
-                </span>
-                {isOwnerAdmin && !ending && (
-                  <button
-                    onClick={() => cancelSlots(s.id, s.qty, s.until, s.projectIds)}
-                    disabled={slotBusy === s.id}
-                    className="font-bold px-2 py-1 rounded-lg text-ink-muted hover:text-danger apple-transition disabled:opacity-50"
-                  >
-                    {slotBusy === s.id ? "Cancelling…" : "Cancel"}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-          {payError && <p className="text-danger">{payError}</p>}
-        </div>
-      )}
 
       {pending && (
         <div className="mt-3 p-3 rounded-xl border border-primary/25 bg-primary/5 flex items-center gap-2 text-xs text-ink">
@@ -421,38 +262,6 @@ export const PlanSummary: React.FC = () => {
         </div>
       )}
 
-      {history !== null && (
-        <div className="mt-4 pt-4 border-t border-divider">
-          <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted mb-2">{"Billing history"}</p>
-          {history.length === 0 ? (
-            <p className="text-sm text-ink-muted">{"No payments yet."}</p>
-          ) : (
-            <div className="space-y-1.5">
-              {history.map((h) => (
-                <div key={h.orderId} className="flex items-baseline justify-between gap-3 text-sm flex-wrap">
-                  <span className="text-ink">
-                    {h.kind === "slots"
-                      ? `${h.quantity ?? 1} extra project${(h.quantity ?? 1) === 1 ? "" : "s"}`
-                      : `${PLANS[h.plan as PlanId]?.name ?? h.plan ?? "Plan"}${h.period === "annual" ? " · annual" : ""}`}
-                    {h.paidAt && <span className="text-ink-muted"> · {fmtDate(Date.parse(h.paidAt))}</span>}
-                  </span>
-                  <span className="font-bold text-ink">
-                    ₹{h.amount}
-                    {/* Say so when proration made it cheaper than the sticker —
-                        an unexplained smaller number reads as a billing error. */}
-                    {h.credit ? (
-                      <span className="font-normal text-ink-muted"> {`(₹${h.listAmount} less ₹${h.credit} credit)`}</span>
-                    ) : null}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-          <p className="text-[11px] text-ink-muted mt-3">
-            {"Payments are collected by Razorpay, who email a receipt for each one. Prices exclude GST."}
-          </p>
-        </div>
-      )}
     </div>
   );
 };

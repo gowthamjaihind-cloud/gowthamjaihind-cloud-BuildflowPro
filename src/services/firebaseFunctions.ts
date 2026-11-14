@@ -403,9 +403,57 @@ export interface BillingHistoryRow {
   paidAt: string | null;
 }
 
+/** One payment actually taken: a subscription charge or an older one-off order. */
+export interface BillingPayment {
+  id: string;
+  source: "order" | "subscription";
+  kind: "plan" | "slots";
+  plan: string | null;
+  period: string | null;
+  quantity: number | null;
+  /** Projects an extra-project payment was for (as they stand today). */
+  projectIds: string[];
+  /** Rupees charged, tax included. */
+  amount: number;
+  tax: number | null;
+  paidAt: number | null;
+  periodStart: number | null;
+  periodEnd: number | null;
+  paymentId: string | null;
+  /** Razorpay's receipt page for this payment. */
+  receiptUrl: string | null;
+  listAmount: number | null;
+  credit: number | null;
+  subscriptionId?: string;
+}
+
+/** A subscription as Razorpay holds it right now. */
+export interface BillingSubscription {
+  id: string;
+  kind: "plan" | "slots";
+  plan: string | null;
+  period: string | null;
+  quantity: number;
+  projectIds: string[];
+  status: string;
+  currentStart: number | null;
+  currentEnd: number | null;
+  nextChargeAt: number | null;
+  paidCount: number;
+}
+
+export interface BillingHistory {
+  orgId: string;
+  rows: BillingHistoryRow[];
+  payments: BillingPayment[];
+  subscriptions: BillingSubscription[];
+  /** False when the payment provider could not be reached for everything. */
+  complete: boolean;
+}
+
 // Owner/Admin: what this workspace has actually been charged.
 export const callGetBillingHistory = async () => {
-  const fn = httpsCallable<{}, { orgId: string; rows: BillingHistoryRow[] }>(
+  const fn = httpsCallable<{}, BillingHistory>(
     getFunctionsInstance(), 'getBillingHistory');
   return (await fn({})).data;
 };

@@ -29,7 +29,7 @@ import { captureError } from "./sentry";
 import { seatState } from "./seats";
 import { aiQuotaFor } from "./ai/quota";
 import { CALLABLE_OPTS } from "./callable";
-import { cancelUnneededSlots } from "./razorpay";
+import { cancelUnneededSlots, fetchSubscriptionBilling } from "./razorpay";
 
 // App operators who may provision orgs and manage subscriptions. Keep in sync
 // with the client-side check in the super-admin panel. (Later this can move to
@@ -479,5 +479,94 @@ export const getBillingHistory = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }
     // is needed for what is a short list per org.
     .sort((a, b) => String(b.paidAt || "").localeCompare(String(a.paidAt || "")));
 
-  return { orgId, rows };
+  // ---- Subscription payments, from Razorpay -------------------------------
+  // `rows` above are one-off orders. The plan and every extra project are
+  // SUBSCRIPTIONS now, and nothing here records their individual charges, so
+  // a subscriber's history used to be empty. Razorpay's invoices are the
+  // record, and each paid one links to a receipt.
+  const org: any = orgSnap.data();
+  const subSnap = await db.collection("razorpay_subscriptions").where("orgId", "==", orgId).limit(40).get();
+  let complete = true;
+  const fetched = await Promise.all(
+    subSnap.docs.map(async (d) => {
+      const rec: any = d.data();
+      const got = await fetchSubscriptionBilling(d.id);
+      if (!got) complete = false;
+      return { id: d.id, rec, got };
+    }),
+  );
+  const ms = (unix: unknown) => (Number(unix) > 0 ? Math.round(Number(unix) * 1000) : null);
+  const rupees = (paise: unknown) => Math.round(Number(paise) || 0) / 100;
+  const subscriptions: any[] = [];
+  const payments: any[] = rows.map((r) => ({
+    id: r.orderId,
+    source: "order",
+    kind: r.kind,
+    plan: r.plan,
+    period: r.period,
+    quantity: r.quantity,
+    projectIds: [] as string[],
+    amount: r.amount,
+    tax: null as number | null,
+    paidAt: r.paidAt ? Date.parse(r.paidAt) || null : null,
+    periodStart: null as number | null,
+    periodEnd: null as number | null,
+    paymentId: null as string | null,
+    receiptUrl: null as string | null,
+    listAmount: r.listAmount,
+    credit: r.credit,
+  }));
+  for (const { id, rec, got } of fetched) {
+    const kind = rec.kind === "slots" ? "slots" : "plan";
+    const projectIds: string[] = kind === "slots"
+      ? ((org?.slotSubs || {})[id]?.projectIds || (rec.forProjectId ? [rec.forProjectId] : []))
+      : [];
+    if (!got) continue;
+    const sub = got.subscription;
+    // A checkout that was opened and never paid is not a subscription the
+    // customer has; listing it would only confuse.
+    if (!got.invoices.some((i) => i?.status === "paid") && !["active", "authenticated", "pending", "halted"].includes(String(sub?.status))) continue;
+    subscriptions.push({
+      id,
+      kind,
+      plan: rec.plan || null,
+      period: rec.period || (kind === "slots" ? "monthly" : null),
+      quantity: Number(sub?.quantity) || Number(rec.quantity) || 1,
+      projectIds,
+      status: String(sub?.status || ""),
+      currentStart: ms(sub?.current_start),
+      currentEnd: ms(sub?.current_end),
+      // Razorpay's own next charge date; absent once cancelled or completed.
+      nextChargeAt: ["active", "authenticated", "pending"].includes(String(sub?.status)) && !sub?.ended_at ? ms(sub?.charge_at) : null,
+      paidCount: Number(sub?.paid_count) || 0,
+    });
+    for (const inv of got.invoices) {
+      if (inv?.status !== "paid") continue;
+      payments.push({
+        id: String(inv.id),
+        source: "subscription",
+        kind,
+        plan: rec.plan || null,
+        period: rec.period || (kind === "slots" ? "monthly" : null),
+        quantity: Number(sub?.quantity) || Number(rec.quantity) || 1,
+        projectIds,
+        amount: rupees(inv.amount_paid ?? inv.amount),
+        tax: Number(inv.tax_amount) > 0 ? rupees(inv.tax_amount) : null,
+        paidAt: ms(inv.paid_at) ?? ms(inv.date),
+        periodStart: ms(inv.billing_start),
+        periodEnd: ms(inv.billing_end),
+        paymentId: inv.payment_id ? String(inv.payment_id) : null,
+        receiptUrl: typeof inv.short_url === "string" && inv.short_url.startsWith("https://") ? inv.short_url : null,
+        listAmount: null,
+        credit: null,
+        subscriptionId: id,
+      });
+    }
+  }
+  payments.sort((a, b) => (b.paidAt || 0) - (a.paidAt || 0));
+
+  // `complete: false` means Razorpay could not be reached for at least one
+  // subscription, so the list may be missing payments: the screen says so
+  // rather than presenting a partial history as the whole of it.
+  return { orgId, rows, payments, subscriptions, complete };
 });

@@ -25,6 +25,8 @@ export interface OrgPlan {
   aiQuota?: number | null;
   overageRate: number;
   subscriptionStatus?: string;
+  /** Epoch ms the free trial ends (trialing workspaces only). */
+  trialEndsAt?: number;
   currentPeriodEnd?: number;         // epoch ms; end of the paid cycle
   pendingPlanChange?: PendingPlanChange | null; // scheduled end-of-cycle downgrade
   /** True once the customer has asked to cancel; takes effect at period end. */
@@ -73,6 +75,7 @@ export function usePlan(): OrgPlan {
           aiQuota: d.aiQuota,
           overageRate: Number(d.overageRate) || OVERAGE_RATE,
           subscriptionStatus: d.subscriptionStatus,
+          trialEndsAt: typeof d.trialEndsAt === "number" ? d.trialEndsAt : undefined,
           currentPeriodEnd: typeof d.currentPeriodEnd === "number" ? d.currentPeriodEnd : undefined,
           pendingPlanChange: d.pendingPlanChange || null,
           cancelAtPeriodEnd: d.cancelAtPeriodEnd === true,
