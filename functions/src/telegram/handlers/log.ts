@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import { sameDayLogs, whoSaved } from "../../bot/duplicateLog";
 import * as crypto from "crypto";
 import { getSession, setSession, clearStep, type ChatId } from "../session";
 import { db } from "../../db";
@@ -135,6 +136,22 @@ export async function pickTask(tg: any, chatId: ChatId, messageId, session, task
         current,
     }), rows);
 }
+const esc = (v: unknown) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** Logs already saved for the draft's task on the draft's day (not the draft itself). */
+async function sameDayLogsFor(session: any, d: any) {
+    if (!d.taskId || !d.workDate || !session.activeProjectId) return [];
+    try {
+        const base = projPath(session.orgId, session.activeProjectId);
+        const snap = await db.collection(`${base}/dailyLogs`).where("taskId", "==", d.taskId).where("workDate", "==", d.workDate).limit(10).get();
+        return sameDayLogs(snap.docs.map((x) => ({ id: x.id, ...(x.data() as any) })), d.taskId, d.workDate, d.logId);
+    } catch (e) {
+        // A warning is a courtesy: never let it stop the menu from showing.
+        console.error("same-day log check failed", e);
+        return [];
+    }
+}
+
 export async function showMenu(tg: any, chatId: ChatId, messageId, session) {
     const lang = normalizeLang(session?.lang);
     const d = session.draft || {};
@@ -154,8 +171,19 @@ export async function showMenu(tg: any, chatId: ChatId, messageId, session) {
         text += "\n" + tt(lang, "menuPhotos", { n: photos });
     if (d.note)
         text += "\n" + tt(lang, "menuNote", { note: d.note });
+    // Same task, same day, already logged: most often the same report sent
+    // twice. Saving is still allowed, but only after being told.
+    const dupes = await sameDayLogsFor(session, d);
+    if (dupes.length) {
+        text += "\n\n" + tt(lang, dupes.length > 1 ? "dupWarningMany" : "dupWarning", {
+            date: fmtDate(d.workDate),
+            pct: Number(dupes[0].progressPercent) || 0,
+            who: esc(whoSaved(dupes[0])),
+            n: dupes.length,
+        });
+    }
     const rows = [
-        [{ text: tt(lang, "btnSave"), callback_data: "sv" }],
+        [{ text: tt(lang, dupes.length ? "btnSaveAnyway" : "btnSave"), callback_data: "sv" }],
         [{ text: tt(lang, "btnAddMaterials"), callback_data: "m" }, { text: tt(lang, "btnAddLabour"), callback_data: "l" }],
         [{ text: tt(lang, "btnAddEquipment"), callback_data: "e" }, { text: tt(lang, "btnAddPhoto"), callback_data: "ph" }],
         [{ text: tt(lang, "btnAddNote"), callback_data: "nt" }],

@@ -82,6 +82,9 @@ const en: Dict = {
   "progressPrompt":
     "<b>{name}</b>\nToday, {date} · now at <b>{current}%</b>\n\n<b>Progress?</b>\n<i>Tap a number, or type one.</i>",
   "btnSave": "✅ Save",
+  "btnSaveAnyway": "✅ Save anyway",
+  "dupWarning": "⚠️ <b>Already logged</b> for this task on {date}: {pct}%, by {who}. Saving adds a second log for the same day. If it's the same work, tap Cancel.",
+  "dupWarningMany": "⚠️ <b>Already logged {n} times</b> for this task on {date}. The latest is {pct}%, by {who}. Saving adds another log for the same day. If it's the same work, tap Cancel.",
   "btnAddMaterials": "+ Materials",
   "btnAddLabour": "+ Labour",
   "btnAddEquipment": "+ Equipment",
