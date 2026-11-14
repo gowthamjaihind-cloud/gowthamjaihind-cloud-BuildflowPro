@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/react-query';
@@ -45,10 +45,21 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+// A client's shared project link (sitetru.com/p/<token>) is a page of its
+// own: no sign-in and nothing of the app is rendered for it.
+const isClientLink = window.location.pathname.startsWith("/p/");
+const ClientDashboardPage = lazy(() => import("./pages/client/ClientDashboardPage"));
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
+    {isClientLink ? (
+      <Suspense fallback={null}>
+        <ClientDashboardPage />
+      </Suspense>
+    ) : (
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    )}
   </StrictMode>,
 );

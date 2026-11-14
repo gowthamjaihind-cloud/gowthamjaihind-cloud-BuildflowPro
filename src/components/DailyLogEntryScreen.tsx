@@ -36,6 +36,7 @@ import { useTranslation } from "../i18n";
 import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { newestLogFirst } from "../lib/timeKey";
+import { sameDayLogs, whoSaved } from "../lib/duplicateLog";
 
 interface DailyLogEntryScreenProps {
   projectId: string;
@@ -134,6 +135,11 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
   const latestLog = [...existingLogs].sort((a, b) => {
     return newestLogFirst(a, b);
   })[0];
+
+  // Already logged for this task on this day: usually the same report sent
+  // twice (by two people, or once from the bot and once here).
+  const sameDay = sameDayLogs(existingLogs, selectedTaskId, workDate, editLog?.id);
+  const fmtDay = (d: string) => new Date(`${d}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -335,6 +341,17 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
         return m.quantity > available ? `${item.name}: using ${m.quantity} ${item.unit || ""}, only ${Math.max(0, available)} in stock` : null;
       })
       .filter(Boolean) as string[];
+    if (sameDay.length > 0) {
+      const last = sameDay[0];
+      const ok = await confirmDialog({
+        title: "Already logged for this day",
+        body: `${currentTask?.name || "This task"} already has ${sameDay.length === 1 ? "a log" : `${sameDay.length} logs`} for ${fmtDay(workDate)}: ${Number(last.progressPercent) || 0}%, by ${whoSaved(last)}.\n\nSaving adds another log for the same day. If it is the same work, go back and edit the earlier log instead.`,
+        confirmLabel: "Save anyway",
+        cancelLabel: "Go back",
+      });
+      if (!ok) return;
+    }
+
     if (short.length > 0) {
       const ok = await confirmDialog({
         title: "More than you have in stock",
@@ -533,6 +550,12 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
               <p className="text-[10px] text-ink-muted font-bold ml-1">
                 {t("dlog.workDateHint")}
               </p>
+              {sameDay.length > 0 && (
+                <p role="status" className="text-xs font-bold text-warning bg-warning/10 rounded-xl px-3 py-2">
+                  Already logged for this task on {fmtDay(workDate)}
+                  {sameDay.length > 1 ? ` (${sameDay.length} times)` : ""}: {Number(sameDay[0].progressPercent) || 0}%, by {whoSaved(sameDay[0])}. Saving adds another log for the same day.
+                </p>
+              )}
             </div>
 
             <div className="bg-panel rounded-2xl p-6 border border-divider space-y-6">
