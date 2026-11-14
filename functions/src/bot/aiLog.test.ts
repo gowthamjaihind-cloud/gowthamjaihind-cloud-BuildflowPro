@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildAiLogPrompt, looksLikeLogText, parseModelJson, sanitizeAiLog, type AiLogContext } from "./aiLog";
+import { acceptWorkDate, buildAiLogPrompt, looksLikeLogText, parseModelJson, sanitizeAiLog, type AiLogContext } from "./aiLog";
 
 const ctx: AiLogContext = {
   tasks: [{ id: "t1", name: "Footing concrete", progress: 30 }, { id: "t2", name: "Plinth beam", progress: 0 }],
@@ -85,5 +85,17 @@ describe("plain-language daily log", () => {
     expect(parseModelJson('```json\n{"intent":"daily_log","taskId":"t1"}\n```')).toEqual({ intent: "daily_log", taskId: "t1" });
     expect(parseModelJson('Here you go: {"intent":"other"} hope that helps')).toEqual({ intent: "other" });
     expect(() => parseModelJson("sorry, I cannot")).toThrow();
+  });
+
+  it("uses a date the engineer gives, within the last week and never in the future", () => {
+    expect(acceptWorkDate("2026-11-12", "2026-11-15")).toBe("2026-11-12");
+    expect(acceptWorkDate("2026-11-15", "2026-11-15")).toBe("2026-11-15");
+    expect(acceptWorkDate("2026-11-16", "2026-11-15")).toBeUndefined();
+    expect(acceptWorkDate("2026-10-01", "2026-11-15")).toBeUndefined();
+    expect(acceptWorkDate("2026-02-30", "2026-03-02")).toBeUndefined();
+    expect(acceptWorkDate(null, "2026-11-15")).toBeUndefined();
+    const r = sanitizeAiLog({ intent: "daily_log", taskId: "t1", workDate: "2026-11-12" }, { ...ctx, today: "2026-11-15" });
+    if (r.kind !== "log") throw new Error("expected a log");
+    expect(r.draft.workDate).toBe("2026-11-12");
   });
 });

@@ -23,10 +23,21 @@ function withDiag<T extends Error>(err: T, diag: string): T {
  * Errors the customer can see are plain sentences: the service's own body goes
  * to the function log for us, never into the UI.
  */
+export interface GeminiOptions {
+  /**
+   * Longest any single request may take. Without it one stuck request used
+   * the whole budget, and no other model was ever tried.
+   */
+  perAttemptMs?: number;
+  /** Adjust the request for a particular model (settings only some accept). */
+  forModel?: (model: string, body: any) => any;
+}
+
 export async function geminiText(
   body: unknown,
   key: string,
   budgetMs = RETRY_BUDGET_MS,
+  opts: GeminiOptions = {},
 ): Promise<{ text: string; model: string }> {
   const started = Date.now();
   let lastReason = "no models tried";
@@ -46,10 +57,15 @@ export async function geminiText(
         // hung could run far past it -- long enough for Telegram to give up on
         // the bot's webhook and start re-sending the message.
         const remaining = Math.max(5_000, budgetMs - (Date.now() - started));
-        res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(remaining) });
-      } catch (e) {
+        const limit = opts.perAttemptMs ? Math.min(remaining, opts.perAttemptMs) : remaining;
+        const payload = opts.forModel ? opts.forModel(model, body) : body;
+        res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: AbortSignal.timeout(limit) });
+      } catch (e: any) {
         sawTransient = true;
-        lastReason = `network: ${e}`;
+        lastReason = `${model} network: ${e}`;
+        // A request that ran out of time will not do better on a second try
+        // with the same model: move on to the next one.
+        if (e?.name === "TimeoutError" || e?.name === "AbortError") break;
         continue;
       }
       if (res.ok) {

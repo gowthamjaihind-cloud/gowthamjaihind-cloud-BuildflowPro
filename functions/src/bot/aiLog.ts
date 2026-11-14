@@ -17,6 +17,8 @@ export interface AiLogContext {
   materials: Array<{ id: string; name: string; unit: string }>;
   roles: Array<{ id: string; name: string }>;
   equipment: Array<{ id: string; name: string }>;
+  /** Today in India, YYYY-MM-DD: the latest date a log may carry. */
+  today?: string;
 }
 
 export interface AiLogDraft {
@@ -32,6 +34,8 @@ export interface AiLogDraft {
   note: string;
   /** Things the engineer mentioned that matched nothing on the project's lists. */
   unmatched: string[];
+  /** YYYY-MM-DD the work was done, when the message gave a usable date. */
+  workDate?: string;
 }
 
 const clip = (s: unknown, n: number) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
@@ -74,10 +78,11 @@ Rules:
 - "progressPercent" is the task's TOTAL progress after today (0-100). If the message gives an increase ("10% more", "another 10 percent"), add it to the current progress. If it says the task is finished, use 100. If progress is not mentioned, use null.
 - Quantities are numbers in the material's own unit as listed. Do not convert units; if the unit in the message differs from the listed unit, put the item in "unmatched" instead.
 - "equipment[].unit" is "hours" or "days".
+- "workDate" is the date the work was done if the message states one, as "YYYY-MM-DD". Dates are written day first in India: "12/11/26" is 12 November 2026. Use null if no date is given. Today is ${ctx.today || "unknown"}.
 - "note" is anything worth recording that is not captured above (weather, delays, instructions), in English, at most 200 characters. Empty string if nothing.
 
 Answer with JSON only, in exactly this shape:
-{"intent":"daily_log","taskId":"...","progressPercent":40,"materials":[{"materialId":"...","quantity":1}],"labour":[{"roleId":"...","headcount":1}],"equipment":[{"equipmentId":"...","quantity":1,"unit":"hours"}],"note":"","unmatched":[]}
+{"intent":"daily_log","taskId":"...","workDate":null,"progressPercent":40,"materials":[{"materialId":"...","quantity":1}],"labour":[{"roleId":"...","headcount":1}],"equipment":[{"equipmentId":"...","quantity":1,"unit":"hours"}],"note":"","unmatched":[]}
 
 MESSAGE:
 ${clip(message, 1200)}`;
@@ -138,11 +143,13 @@ export function sanitizeAiLog(raw: any, ctx: AiLogContext): AiLogResult {
     return item && quantity ? [{ equipmentId: item.id, name: item.name, unit, quantity }] : [];
   }) as AiLogDraft["equipment"];
 
+  const workDate = acceptWorkDate(raw.workDate, ctx.today);
   return {
     kind: "log",
     draft: {
       taskId: task.id, taskName: task.name, currentProgress: current, progressPercent, progressGiven: given,
       materials, labour, equipment, note: clip(raw.note, 200), unmatched,
+      ...(workDate ? { workDate } : {}),
     },
   };
 }
@@ -171,4 +178,20 @@ export function parseModelJson(text: string): any {
     if (start < 0 || end <= start) throw new Error(`model answer had no JSON object: ${t.slice(0, 120)}`);
     return JSON.parse(t.slice(start, end + 1));
   }
+}
+
+
+/**
+ * A date the engineer gave for the work, if it is one a daily log may carry:
+ * a real calendar date, not in the future, and at most 7 days back. Anything
+ * else is ignored and the log is dated today, as before.
+ */
+export function acceptWorkDate(v: unknown, today: string | undefined): string | undefined {
+  const s = String(v ?? "");
+  if (!today || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return undefined;
+  const d = Date.parse(`${s}T00:00:00Z`);
+  const t = Date.parse(`${today}T00:00:00Z`);
+  if (!Number.isFinite(d) || new Date(d).toISOString().slice(0, 10) !== s) return undefined;
+  if (d > t || t - d > 7 * 86400000) return undefined;
+  return s;
 }
