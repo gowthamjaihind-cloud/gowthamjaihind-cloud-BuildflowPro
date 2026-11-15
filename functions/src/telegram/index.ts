@@ -387,8 +387,11 @@ async function handleUpdate(tg, update, geminiKey) {
             await tg.sendMessage(chatId, tt(session?.lang, "notLinkedShort"));
             return;
         }
-        // A log is open (its menu or "send the photo now"): the photo is for it.
-        const draftOpen = !!session.draft?.logId && String(session.step || "").startsWith("log:");
+        // The bot asked for a photo ("send the photo now"): it is for that log.
+        // A log menu merely left open (perhaps hours ago) does not catch
+        // photos: they go through the site-photo question instead, so they
+        // are never parked on a draft nobody saves.
+        const draftOpen = !!session.draft?.logId && session.step === "log:photo";
         if (draftOpen) {
             if (msg.media_group_id) {
                 // An album: collected, then added in one go (one menu, not one per photo).

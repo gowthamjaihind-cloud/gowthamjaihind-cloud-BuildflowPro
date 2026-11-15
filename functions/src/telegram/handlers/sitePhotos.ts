@@ -293,10 +293,12 @@ export async function attachToTask(tg: any, chatId: ChatId, messageId: any, sess
       else failed++;
     } catch (e) {
       console.error("site photo upload failed", e);
+      await recordBotError("sitePhotoUpload", e);
       failed++;
     }
   }
   if (!urls.length) {
+    await recordBotError("sitePhotos", new Error(`none of ${inbox.photos.length} photo(s) could be fetched from Telegram`));
     await tg.sendMessage(chatId, tt(lang, "cantDownloadPhoto"));
     return;
   }
@@ -340,6 +342,7 @@ export async function attachAlbumToDraft(tg: any, chatId: ChatId) {
       if (up.ok) urls.push((up as any).url);
     } catch (e) {
       console.error("draft album upload failed", e);
+      await recordBotError("draftAlbumUpload", e);
     }
   }
   if (!urls.length) {

@@ -122,7 +122,7 @@ async function handleInbound(wa: WhatsAppApi, m: InboundMessage, geminiKey: stri
       return;
     }
     if (!m.mediaId) return;
-    const draftOpen = !!session.draft?.logId && String(session.step || "").startsWith("log:");
+    const draftOpen = !!session.draft?.logId && session.step === "log:photo";
     if (draftOpen && m.kind === "image") {
       await log.handlePhoto(wa, chatId, session, m.mediaId);
     } else if (m.kind === "image") {
