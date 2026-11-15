@@ -265,6 +265,11 @@ async function callGeminiJSON(prompt: string, key: string): Promise<any> {
 const sum = (a: number[]) => a.reduce((x, y) => x + (y || 0), 0);
 const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
 
+/** Models for reading a bill, most careful first. Retired names are left out. */
+export const INVOICE_MODELS = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-flash-lite-latest"];
+/** Leaves the bot's queue worker (120s) time to store the file and reply. */
+const INVOICE_BUDGET_MS = 95_000;
+
 async function callGeminiVision(fileBase64: string, mimeType: string, key: string): Promise<any> {
   const prompt = `You are reading an Indian GST vendor invoice (tax invoice). Extract its contents to JSON. Read only what is printed; if a value is absent leave it 0 or "". Return ONLY this JSON:
 {
@@ -289,7 +294,18 @@ async function callGeminiVision(fileBase64: string, mimeType: string, key: strin
     generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
   };
 
-  const { text } = await geminiText(body, key);
+  // The default model list stalled here the same way the bot's typed-report
+  // read did: 2.5 Flash "thinking" past the time limit, then two retired
+  // model names (404). A bill needs care, so the full Flash models go first,
+  // with thinking off and each attempt bounded, then the lite ones.
+  const { text } = await geminiText(body, key, INVOICE_BUDGET_MS, {
+    perAttemptMs: 40_000,
+    models: INVOICE_MODELS,
+    forModel: (model, b: any) =>
+      model.startsWith("gemini-2.5")
+        ? { ...b, generationConfig: { ...b.generationConfig, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } }
+        : b,
+  });
   try { return JSON.parse(text); }
   catch {
     const m = text.match(/\{[\s\S]*\}/);
