@@ -163,10 +163,19 @@ describe("progress the message did not move", () => {
 });
 
 describe("sectioned messages", () => {
-  it("tells the model to keep a heading's items with that heading, and not move them", () => {
+  it("tells the model to put a heading with no task under the task it supports", () => {
     const prompt = buildAiLogPrompt("Earth work excavation\nMason 1\nBarbending work\nBarbender 2 no", ctx);
-    expect(prompt).toMatch(/Everything under a heading belongs to THAT heading's task only/);
-    expect(prompt).toMatch(/never move them to another task/);
+    expect(prompt).toMatch(/Everything under a heading belongs to THAT heading's task/);
+    expect(prompt).toMatch(/bar bending for the reinforcement placed during excavation/);
+  });
+
+  it("reports where a heading with no task went, and only to a task in the answer", () => {
+    const r = sanitizeAiLogs({
+      intent: "daily_log",
+      logs: [{ taskId: "t1", labour: [{ roleId: "r1", headcount: 1 }, { roleId: "r2", headcount: 2 }] }],
+      placed: [{ heading: "Barbending work", taskId: "t1" }, { heading: "Ghost", taskId: "nope" }],
+    }, ctx);
+    expect(r.kind === "logs" && r.placed).toEqual([{ heading: "Barbending work", taskName: "Footing concrete" }]);
   });
 });
 

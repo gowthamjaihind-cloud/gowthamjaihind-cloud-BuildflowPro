@@ -168,6 +168,7 @@ export async function handleFreeText(api: any, chatId: ChatId, session: any, tex
     if (!d.materials.length && !d.labour.length && !d.equipment.length) lines.push(tt(lang, "aiNoItems"));
     if (!d.progressGiven) lines.push(tt(lang, "aiNoProgress", { pct: d.currentProgress }));
   });
+  for (const pl of result.placed) lines.push("", tt(lang, "aiPlacedUnder", { heading: esc(pl.heading), task: esc(pl.taskName) }));
   if (result.unmatched.length) lines.push("", tt(lang, "aiUnmatched", { items: result.unmatched.map(esc).join(", ") }));
   lines.push("", tt(lang, total > 1 ? "aiCheckThenSaveEach" : "aiCheckThenSave"));
   await api.sendMessage(chatId, lines.join("\n"));

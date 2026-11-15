@@ -54,6 +54,7 @@ const en: Dict = {
   "aiBatchOf": "log {i} of {n}",
   "aiSkipped": "Skipped. Here is the next one.",
   "aiNoItems": "• No materials, labour or equipment mentioned",
+  "aiPlacedUnder": "ℹ️ \"{heading}\" has no task of its own, so I counted it under <b>{task}</b>. If that's wrong, tap Cancel.",
   "aiNoProgress": "⚠️ You didn't mention progress, so I kept it at {pct}%. Tap Cancel and use /log if it changed.",
   "aiUnmatched": "⚠️ I couldn't match these to this project's lists, so they are <b>not</b> included: {items}. Add them with the buttons below.",
   "aiCheckThenSave": "Check it, add anything missing, then press Save. Nothing is saved until you do.",
