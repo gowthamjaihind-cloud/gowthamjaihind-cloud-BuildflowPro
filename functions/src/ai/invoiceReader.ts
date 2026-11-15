@@ -88,7 +88,7 @@ export async function readAndMatchInvoice(
     const vpos = openPOs.filter((p) => p.vendorId === vendor!.id);
     po = vpos.map((p) => ({ p, score: overlapScore(p, raw.lineItems || []) })).sort((a, b) => b.score - a.score)[0]?.p;
   }
-  if (!po) flags.push("No matching open PO found — this reader is PO-backed; pick a PO or enter manually.");
+  if (!po) flags.push("No open purchase order matches this bill. In the app, link it to a PO, or post it without one.");
 
   const sameState = !!(companyState && exGstin && companyState === exGstin.slice(0, 2));
 

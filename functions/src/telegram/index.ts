@@ -545,6 +545,12 @@ async function handleUpdate(tg, update, geminiKey) {
         await enqueueBotJob({ kind: "aiText", chatId, text });
         return;
     }
+    // "Yes", "ok", "thanks" after a bot message: nothing was asked, so say so
+    // kindly instead of "I didn't understand that".
+    if (/^(yes|yeah|yep|ok|okay|k|done|fine|thanks|thank you|thx|super|good|👍|🙏|ஆம்|சரி|நன்றி)[.!\s]*$/i.test(text)) {
+        await tg.sendMessage(chatId, tt(lang, "ackNoQuestion"));
+        return;
+    }
     await tg.sendMessage(chatId, tt(lang, "didntUnderstand"));
 }
 /** Hand slow, AI-backed work to the queue worker below. */
