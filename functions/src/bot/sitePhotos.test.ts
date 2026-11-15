@@ -24,6 +24,8 @@ describe("site photo captions", () => {
     expect(captionSaysInvoice("Steel bill from vendor")).toBe(true);
     expect(captionSaysInvoice("Save this in footing task")).toBe(false);
     expect(captionSaysInvoice("")).toBe(false);
+    expect(captionSaysInvoice("Tax Invoice_VTSALE 26-27 212_02_11_26_original.pdf")).toBe(true);
+    expect(captionSaysInvoice("Footing_drawing_rev2.pdf")).toBe(false);
   });
 });
 

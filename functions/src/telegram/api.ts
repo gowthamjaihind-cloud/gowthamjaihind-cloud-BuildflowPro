@@ -57,7 +57,7 @@ export class TelegramApi {
    * lets one set of handlers serve both channels.
    */
   async fetchPhotoBytes(
-    photoSizes: { file_id: string }[],
+    photoSizes: { file_id: string; mime_type?: string }[],
   ): Promise<{ ok: true; buffer: Buffer; mimeType: string } | { ok: false; reason: "fetch" | "download" }> {
     // Telegram sends several resolutions; the last is the largest.
     const largest = photoSizes[photoSizes.length - 1];
@@ -65,7 +65,8 @@ export class TelegramApi {
     if (!filePath) return { ok: false, reason: "fetch" };
     const res = await fetch(`https://api.telegram.org/file/bot${this.token}/${filePath}`);
     if (!res.ok) return { ok: false, reason: "download" };
-    return { ok: true, buffer: Buffer.from(await res.arrayBuffer()), mimeType: "image/jpeg" };
+    // A file sent as a document (a PDF bill) carries its own type; photos are jpeg.
+    return { ok: true, buffer: Buffer.from(await res.arrayBuffer()), mimeType: largest.mime_type || "image/jpeg" };
   }
 
   getMe(): Promise<any> {

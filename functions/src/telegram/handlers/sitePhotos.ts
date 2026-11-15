@@ -125,7 +125,7 @@ async function askTask(tg: any, chatId: ChatId, session: any, named: { id: strin
 }
 
 /** Ask the AI what one photo shows. A failure counts as a site photo, which asks before saving anything. */
-async function classifyOne(api: any, sizes: any, key: string): Promise<PhotoKind & { buffer?: Buffer }> {
+async function classifyOne(api: any, sizes: any, key: string): Promise<PhotoKind & { buffer?: Buffer; mimeType?: string }> {
   const got = await api.fetchPhotoBytes(sizes);
   if (!got.ok) return { kind: "site", category: "", title: "" };
   try {
@@ -136,22 +136,23 @@ async function classifyOne(api: any, sizes: any, key: string): Promise<PhotoKind
     const forModel = (model: string, b: any) =>
       model.startsWith("gemini-2.5") ? { ...b, generationConfig: { ...b.generationConfig, maxOutputTokens: 256, thinkingConfig: { thinkingBudget: 0 } } } : b;
     const { text } = await geminiText(body, key, 40_000, { perAttemptMs: 15_000, forModel, models: BOT_LOG_MODELS });
-    return { ...parsePhotoKind(parseModelJson(text)), buffer: got.buffer };
+    return { ...parsePhotoKind(parseModelJson(text)), buffer: got.buffer, mimeType: got.mimeType };
   } catch (e) {
     await recordBotError("photoKind", e);
-    return { kind: "site", category: "", title: "", buffer: got.buffer };
+    return { kind: "site", category: "", title: "", buffer: got.buffer, mimeType: got.mimeType };
   }
 }
 
 /** Store a photo in the project's Documents, as the web app's Document Vault does. */
-async function saveDocument(base: string, session: any, buffer: Buffer, category: string, title: string) {
-  const storagePath = `${base}/documents/${Date.now()}_${crypto.randomUUID().slice(0, 8)}.jpg`;
+async function saveDocument(base: string, session: any, buffer: Buffer, category: string, title: string, mimeType = "image/jpeg") {
+  const isPdf = mimeType === "application/pdf";
+  const storagePath = `${base}/documents/${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${isPdf ? "pdf" : "jpg"}`;
   const bucket = admin.storage().bucket();
   const token = crypto.randomUUID();
-  await bucket.file(storagePath).save(buffer, { metadata: { contentType: "image/jpeg", metadata: { firebaseStorageDownloadTokens: token } } });
+  await bucket.file(storagePath).save(buffer, { metadata: { contentType: mimeType, metadata: { firebaseStorageDownloadTokens: token } } });
   await db.collection(`${base}/documents`).add({
     name: title,
-    type: "Image",
+    type: isPdf ? "PDF" : "Image",
     category,
     accessLevel: "Internal",
     tags: ["telegram"],
@@ -178,7 +179,9 @@ export async function classifyBatch(api: any, chatId: ChatId, key: string, waitM
   if (!inbox?.photos?.length) return;
   const base = projPath(session.orgId, session.activeProjectId);
 
-  const kinds = await Promise.all(inbox.photos.map((p) => classifyOne(api, p.sizes, key)));
+  const kinds = (await Promise.all(inbox.photos.map((p) => classifyOne(api, p.sizes, key))))
+    // A PDF is never a site photo: if the AI says so, file it as a document.
+    .map((k) => (k.kind === "site" && k.mimeType === "application/pdf" ? { ...k, kind: "document" as const, category: "Others", title: "Document" } : k));
   const site = inbox.photos.filter((_, i) => kinds[i].kind === "site");
   const bills = inbox.photos.filter((_, i) => kinds[i].kind === "bill");
   const docs = kinds.filter((k) => k.kind === "document" && k.buffer);
@@ -191,7 +194,7 @@ export async function classifyBatch(api: any, chatId: ChatId, key: string, waitM
     const saved: string[] = [];
     for (const d of docs) {
       try {
-        await saveDocument(base, session, d.buffer!, d.category, d.title);
+        await saveDocument(base, session, d.buffer!, d.category, d.title, d.mimeType);
         saved.push(`• ${d.title} (${d.category})`);
       } catch (e) {
         await recordBotError("photoDoc", e);
@@ -219,7 +222,7 @@ export async function asDocuments(api: any, chatId: ChatId, messageId: any, sess
   for (const p of inbox.photos) {
     const got = await api.fetchPhotoBytes(p.sizes);
     if (!got.ok) continue;
-    await saveDocument(base, session, got.buffer, "Others", inbox.caption ? inbox.caption.slice(0, 60) : "Document from Telegram");
+    await saveDocument(base, session, got.buffer, "Others", inbox.caption ? inbox.caption.slice(0, 60) : "Document from Telegram", got.mimeType);
     n++;
   }
   await api.editMessage(chatId, messageId, tt(lang, "spDocsSaved", { n }));

@@ -379,6 +379,22 @@ async function handleUpdate(tg, update, geminiKey) {
         }
         return;
     }
+    // A file sent as a document: a PDF bill, or a photo sent "as file". It
+    // used to get no answer at all. Images and PDFs go the photo way below
+    // (the file name counts as a caption, so "Tax Invoice_....pdf" is read as
+    // a bill); anything else is politely refused.
+    if (msg?.document && !msg?.photo) {
+        const d = msg.document;
+        const mime = String(d.mime_type || "");
+        if (mime === "application/pdf" || mime.startsWith("image/")) {
+            msg.photo = [{ file_id: d.file_id, mime_type: mime }];
+            msg.caption = [msg.caption, String(d.file_name || "")].filter(Boolean).join(" ");
+        } else {
+            const s = await getSession(msg.chat.id);
+            await tg.sendMessage(msg.chat.id, tt(normalizeLang(s?.lang), "fileTypeUnsupported"));
+            return;
+        }
+    }
     // Photos arrive with msg.photo and no msg.text
     if (msg?.photo && Array.isArray(msg.photo) && msg.photo.length > 0) {
         const chatId = msg.chat.id;
@@ -391,7 +407,8 @@ async function handleUpdate(tg, update, geminiKey) {
         // A log menu merely left open (perhaps hours ago) does not catch
         // photos: they go through the site-photo question instead, so they
         // are never parked on a draft nobody saves.
-        const draftOpen = !!session.draft?.logId && session.step === "log:photo";
+        // (A PDF is never a log photo.)
+        const draftOpen = !!session.draft?.logId && session.step === "log:photo" && msg.photo[0]?.mime_type !== "application/pdf";
         if (draftOpen) {
             if (msg.media_group_id) {
                 // An album: collected, then added in one go (one menu, not one per photo).
