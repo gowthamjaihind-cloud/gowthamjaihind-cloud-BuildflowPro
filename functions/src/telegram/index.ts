@@ -327,6 +327,10 @@ async function handleUpdate(tg, update, geminiKey) {
             await projects.pickProject(tg, chatId, messageId, session, data.slice(4));
             return;
         }
+        if (data === "plc:y" || data === "plc:n") {
+            await log.confirmLowerProgress(tg, chatId, messageId, session, data === "plc:y");
+            return;
+        }
         if (data.startsWith("p:")) {
             await setSession(chatId, {
                 draft: { ...(session.draft || {}), progressPercent: Number(data.slice(2)) },

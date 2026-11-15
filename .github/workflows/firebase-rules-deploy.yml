@@ -40,3 +40,10 @@ jobs:
 
       - name: Deploy Firestore and Storage rules
         run: npx firebase-tools@latest deploy --only firestore:rules,storage --project jewel-ledger --non-interactive --force
+
+      # Indexes and TTL policies (firestore.indexes.json). No --force: with it
+      # the CLI deletes any index that exists in the project but not in the
+      # file, such as one made in the console. Runs after the rules, so a
+      # problem here never holds the rules back.
+      - name: Deploy Firestore indexes and TTL policies
+        run: npx firebase-tools@latest deploy --only firestore:indexes --project jewel-ledger --non-interactive

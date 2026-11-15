@@ -37,7 +37,8 @@ export const ManagePlanModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   const current = (plan.plan || "starter") as PlanId;
   const currentIdx = PLAN_ORDER.indexOf(current);
-  const pending = plan.pendingPlanChange || null;
+  // A cancellation wins over a scheduled downgrade (functions/src/planChange.ts).
+  const pending = plan.cancelAtPeriodEnd ? null : plan.pendingPlanChange || null;
   const working = busy || payBusy;
   // Only an active subscription is "paid"; a trial (or a lapsed plan) is not.
   const paid = plan.subscriptionStatus === "active";

@@ -1,5 +1,18 @@
 {
-  "//": "Version-controlled Firestore composite indexes for the named database. The app is written to avoid composite indexes (single-field filters + client-side sorting), so none are required today. When a query later triggers a 'needs index' error, add its index here and deploy with: firebase deploy --only firestore:indexes. To capture any indexes created via the console first, run: firebase firestore:indexes > firestore.indexes.json",
+  "//": "Version-controlled Firestore indexes for the named database. No composite indexes are needed: every query uses one sort field or equality filters only (checked Nov 2026). fieldOverrides hold TTL policies: documents are deleted after their expireAt passes (bot_updates_seen: Telegram message dedup, 3 days; bot_errors: the bot's failure log, 30 days). Deployed by the manual 'Deploy Firestore rules' workflow, without --force so an index made in the console is never deleted.",
   "indexes": [],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "bot_updates_seen",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "bot_errors",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    }
+  ]
 }

@@ -73,7 +73,8 @@ export const PlanSummary: React.FC<{ onOpenBilling?: () => void }> = ({ onOpenBi
   // "Manage plan" (upgrade/downgrade) applies to any self-serve tier — including
   // Free (upgrade only) — but not internal/enterprise/grandfathered orgs.
   const canManagePlan = isOwnerAdmin && SELF_SERVE_PLANS.includes(plan.plan as string);
-  const pending = plan.pendingPlanChange || null;
+  // A cancellation wins over a scheduled downgrade (functions/src/planChange.ts).
+  const pending = plan.cancelAtPeriodEnd ? null : plan.pendingPlanChange || null;
   const pendingName =
     pending && PLANS[pending.plan as PlanId] ? PLANS[pending.plan as PlanId].name : pending?.plan;
   // Is a different plan cheaper for the number of projects they actually run?

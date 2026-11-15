@@ -9,7 +9,8 @@ import { db } from "../db";
 export async function recordBotError(kind: string, err: any): Promise<void> {
   try {
     const reason = String(err?.diag || err?.message || err || "unknown").slice(0, 600);
-    await db.collection("bot_errors").add({ at: Date.now(), kind, code: String(err?.code || ""), reason });
+    // expireAt: removed after 30 days by the TTL policy in firestore.indexes.json.
+    await db.collection("bot_errors").add({ at: Date.now(), kind, code: String(err?.code || ""), reason, expireAt: new Date(Date.now() + 30 * 24 * 3600_000) });
   } catch (e) {
     console.error("Could not record bot error:", e);
   }
