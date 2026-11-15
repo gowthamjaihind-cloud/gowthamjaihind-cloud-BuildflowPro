@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { logPhotoDocs, isLogPhoto, LOG_PHOTO_PREFIX } from "../lib/logPhotoDocs";
 import { orderTasksByWbs, wbsOptionLabel } from "../lib/wbsOrder";
 import { demoRequested } from "../demo";
 import { demoCollections } from "@demo";
@@ -59,7 +60,11 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner";
 
-  const [docs, setDocs] = useState<ProjectDocument[]>([]);
+  const [uploadedDocs, setDocs] = useState<ProjectDocument[]>([]);
+  // Site photos live on daily logs (from the app's log form and the bot),
+  // not in documents. They are listed here too, read-only, so every photo of
+  // the project is in one place; they are managed from Daily Logs.
+  const [logs, setLogs] = useState<{ id: string; taskId?: string; workDate?: string; photoUrls?: string[]; createdVia?: string }[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -118,6 +123,13 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
       },
     );
 
+    const logsPath = `${basePath}/dailyLogs`;
+    const unsubLogs = onSnapshot(
+      query(collection(db, logsPath)),
+      (snapshot) => setLogs(snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as any) }))),
+      (error) => console.error("Daily log photos could not be listed", error),
+    );
+
     const tasksPath = `${basePath}/tasks`;
     const unsubTasks = onSnapshot(
       query(collection(db, tasksPath)),
@@ -132,6 +144,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
     );
 
     return () => {
+      unsubLogs();
       unsubDocs();
       unsubTasks();
     };
@@ -245,6 +258,9 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
     }
   };
 
+  const logPhotos = useMemo(() => logPhotoDocs(logs, tasks, projectId), [logs, tasks, projectId]);
+  const docs = useMemo(() => [...uploadedDocs, ...logPhotos], [uploadedDocs, logPhotos]);
+
   const filteredDocs = docs.filter((d) => {
     if (d.deleted === true) return false;
     const matchesSearch =
@@ -259,6 +275,8 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
   });
 
   const toggleSelect = (id: string) => {
+    // Daily-log photos are managed from Daily Logs, not selected for bulk edits here.
+    if (id.startsWith(LOG_PHOTO_PREFIX)) return;
     setSelectedDocIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
@@ -268,7 +286,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
     if (selectedDocIds.length === filteredDocs.length) {
       setSelectedDocIds([]);
     } else {
-      setSelectedDocIds(filteredDocs.map((d) => d.id));
+      setSelectedDocIds(filteredDocs.filter((d) => !isLogPhoto(d)).map((d) => d.id));
     }
   };
 
@@ -751,6 +769,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                     className={`hover:bg-panel transition-colors group ${isSelected ? "bg-warning/12/50" : ""}`}
                   >
                     <td className="px-4 lg:px-6 py-4 lg:py-6">
+                      {isLogPhoto(docItem) ? null : (
                       <Tooltip label={"Select document"}>
                         <button aria-label="Select document"
                           onClick={() => toggleSelect(docItem.id)}
@@ -763,6 +782,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                           )}
                         </button>
                       </Tooltip>
+                      )}
                     </td>
                     <td className="px-4 lg:px-6 py-4 lg:py-6">
                       <div className="flex items-center gap-4">
@@ -787,6 +807,9 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                         {/* WBS labels carry the full phase/location path, so an
                             unconstrained select sizes to its longest option and
                             pushed the Actions column off screen. */}
+                        {isLogPhoto(docItem) ? (
+                          <span className="text-xs font-bold text-ink">{task?.name || "Daily log"}</span>
+                        ) : (
                         <select
                           className="max-w-[150px] lg:max-w-[220px] truncate bg-transparent border-none text-xs font-bold text-ink focus:ring-0 cursor-pointer hover:text-primary"
                           value={docItem.taskId || ""}
@@ -801,6 +824,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({ projectId }) => {
                             </option>
                           ))}
                         </select>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4 lg:py-6">
