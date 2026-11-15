@@ -96,6 +96,7 @@ const en: Dict = {
   "spNothing": "Those photos are no longer waiting. Send them again.",
   "spAsInvoice": "🧾 Reading {n} photo(s) as bills...",
   "spLooking": "🔎 Looking at your photo(s)...",
+  "ackNoQuestion": "👍 Noted. Nothing is waiting for an answer. Send today's work, a photo or a bill whenever you're ready.",
   "fileTypeUnsupported": "I can read photos and PDF files. Please send this as a photo or a PDF.",
   "spBtnDocument": "📄 It's a document",
   "spDocsSaved": "📄 Saved {n} document(s) to the project's Documents:",
