@@ -76,7 +76,10 @@ Rules:
 - "intent" is "daily_log" when the message reports work done, materials used, labour or equipment on site. Otherwise "other".
 - A message can report work on SEVERAL tasks. Return one entry in "logs" per task, at most 5. Never put two tasks in one entry.
 - Each entry's "taskId" is that task's id. Leave out work you cannot match to a task, and name it in "unmatched".
-- Labour, materials and equipment listed once for the whole day: give each item to the task it plainly belongs to (bar benders to bar bending, masons to block or brick work, excavator hours to excavation). An item you cannot place goes on the first task.
+- A message is often written as sections: a work heading ("Earth work excavation", "Barbending work") followed by its labour, materials and equipment. Everything under a heading belongs to THAT heading's task.
+- A heading that matches no task is usually work done as PART of another task: bar bending for the reinforcement placed during excavation or footing, shuttering for a slab, curing for concrete. Put its items on the task it supports (normally one named in the same message; otherwise the first task), and record it in "placed" as {"heading": "<the heading as written>", "taskId": "<the task it went to>"}. Do not put such a heading in "unmatched".
+- Labour, materials and equipment listed once for the whole day, under no heading: give each item to the task it plainly belongs to (bar benders to bar bending, masons to block or brick work, excavator hours to excavation). An item you cannot place goes on the first task.
+- A finished task (progress 100) can still be reported on; match it like any other.
 - Each entry's "progressPercent" is that task's TOTAL progress after today (0-100). If the message gives an increase ("10% more", "another 10 percent"), add it to the current progress. If it says the task is finished, use 100. If progress is not mentioned, use null.
 - Quantities are numbers in the material's own unit as listed. Do not convert units; if the unit in the message differs from the listed unit, put the item in "unmatched" instead.
 - "equipment[].unit" is "hours" or "days".
@@ -84,7 +87,7 @@ Rules:
 - Each entry's "note" is anything worth recording about that task that is not captured above (weather, delays, instructions), in English, at most 200 characters. Empty string if nothing.
 
 Answer with JSON only, in exactly this shape:
-{"intent":"daily_log","workDate":null,"logs":[{"taskId":"...","progressPercent":40,"materials":[{"materialId":"...","quantity":1}],"labour":[{"roleId":"...","headcount":1}],"equipment":[{"equipmentId":"...","quantity":1,"unit":"hours"}],"note":""}],"unmatched":[]}
+{"intent":"daily_log","workDate":null,"logs":[{"taskId":"...","progressPercent":40,"materials":[{"materialId":"...","quantity":1}],"labour":[{"roleId":"...","headcount":1}],"equipment":[{"equipmentId":"...","quantity":1,"unit":"hours"}],"note":""}],"placed":[],"unmatched":[]}
 
 MESSAGE:
 ${clip(message, 1200)}`;
@@ -149,7 +152,10 @@ export function sanitizeAiLog(raw: any, ctx: AiLogContext): AiLogResult {
   return {
     kind: "log",
     draft: {
-      taskId: task.id, taskName: task.name, currentProgress: current, progressPercent, progressGiven: given,
+      // "Given" means the message moved the task on. A model that echoes the
+      // current figure back (or answers 0 for "not mentioned") did not, and
+      // the engineer is told progress was kept as it was.
+      taskId: task.id, taskName: task.name, currentProgress: current, progressPercent, progressGiven: given && progressPercent > current,
       materials, labour, equipment, note: clip(raw.note, 200), unmatched,
       ...(workDate ? { workDate } : {}),
     },
@@ -200,7 +206,7 @@ export function acceptWorkDate(v: unknown, today: string | undefined): string | 
 
 
 export type AiLogsResult =
-  | { kind: "logs"; drafts: AiLogDraft[]; unmatched: string[] }
+  | { kind: "logs"; drafts: AiLogDraft[]; unmatched: string[]; placed: { heading: string; taskName: string }[] }
   | { kind: "no_task"; unmatched: string[] }
   | { kind: "other" };
 
@@ -250,5 +256,12 @@ export function sanitizeAiLogs(raw: any, ctx: AiLogContext): AiLogsResult {
   }
   const drafts = [...byTask.values()].slice(0, MAX_LOGS_PER_MESSAGE);
   if (!drafts.length) return { kind: "no_task", unmatched };
-  return { kind: "logs", drafts, unmatched };
+  // Work under a heading with no task of its own, added to the task it
+  // supports. Shown to the engineer so a wrong guess is caught before Save.
+  const placed = (Array.isArray(raw.placed) ? raw.placed : [])
+    .map((x: any) => ({ heading: clip(x?.heading, 60), task: drafts.find((d) => d.taskId === String(x?.taskId ?? "")) }))
+    .filter((x: any) => x.heading && x.task)
+    .map((x: any) => ({ heading: x.heading, taskName: x.task.taskName }))
+    .slice(0, 5);
+  return { kind: "logs", drafts, unmatched, placed };
 }
