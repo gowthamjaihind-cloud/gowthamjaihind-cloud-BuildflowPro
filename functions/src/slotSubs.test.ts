@@ -167,3 +167,23 @@ describe("which project each subscription pays for", () => {
     expect(next?.projectIds).toEqual(["b"]);
   });
 });
+
+describe("a workspace whose plan size is missing", () => {
+  const now = Date.parse("2026-11-15T00:00:00Z");
+  const live = { qty: 1, status: "active", until: now + 20 * 86400000, projectIds: ["b"] };
+  const projects = [{ id: "a", created: "2026-01-01" }, { id: "b", created: "2026-02-01" }];
+  it("is not read as unlimited: nothing is cancelled or locked when the plan is unknown", () => {
+    const r = assignProjectSlots({ subscriptionStatus: "active", slotSubs: { s1: live } }, projects as any, now);
+    expect(r.unneeded).toEqual([]);
+    expect(r.locked).toEqual([]);
+  });
+  it("uses the plan's own limit when the field is missing", () => {
+    const r = assignProjectSlots({ plan: "starter", subscriptionStatus: "active", slotSubs: { s1: live } }, projects as any, now);
+    expect(r.unneeded).toEqual([]); // Starter holds one project; the subscription pays for the second
+  });
+  it("still releases everything on a truly unlimited plan", () => {
+    const r = assignProjectSlots({ includedProjects: null, subscriptionStatus: "active", slotSubs: { s1: live } }, projects as any, now);
+    expect(r.unneeded).toEqual(["s1"]);
+  });
+});
+

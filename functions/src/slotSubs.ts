@@ -1,3 +1,4 @@
+import { PLANS, isPlanId, type PlanId } from "./plans";
 /**
  * Recurring project slots: the bookkeeping, free of the Admin SDK.
  *
@@ -179,7 +180,13 @@ export function assignProjectSlots(
     subs[id] = { ...src, projectIds: mine };
   }
 
-  const cap = org?.includedProjects;
+  // null means unlimited. A MISSING field is not the same thing: it falls
+  // back to the plan's own limit, and when even that is unknown nothing is
+  // cancelled or locked -- read as "unlimited", it would cancel every ₹99
+  // subscription the workspace is paying for and using.
+  let cap = org?.includedProjects;
+  if (cap === undefined && isPlanId(org?.plan)) cap = PLANS[org.plan as PlanId].includedProjects;
+  if (cap === undefined) return { slotSubs: subs, locked: [], unneeded: [] };
   if (typeof cap !== "number") {
     for (const id of Object.keys(subs)) subs[id].projectIds = [];
     return { slotSubs: subs, locked: [], unneeded: Object.keys(subs).filter((id) => subs[id].status === "active" && slotSubLive(subs[id], now)) };
