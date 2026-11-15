@@ -404,7 +404,7 @@ export async function saveLog(tg: any, chatId: ChatId, messageId, session) {
     if ((d.materials || []).length)
         summary += tt(lang, "loggedMaterials", { n: d.materials.length });
     if ((d.labour || []).length)
-        summary += tt(lang, "loggedLabour", { n: d.labour.length });
+        summary += tt(lang, "loggedLabour", { n: d.labour.reduce((s: number, l: any) => s + (Number(l.headcount) || 0), 0) });
     // clearStep above removed the queue from Firestore; the copy read with
     // this session is what carries on to the next log from the same message.
     if (messageId) await tg.editMessage(chatId, messageId, summary);
