@@ -1,18 +1,29 @@
 import { db } from "../../db";
 import { getSession, setSession, type ChatId } from "../session";
 import { tt, normalizeLang } from "../i18n";
-import { captionSaysInvoice, taskFromCaption } from "../../bot/sitePhotos";
+import * as admin from "firebase-admin";
+import * as crypto from "crypto";
+import { captionSaysInvoice, taskFromCaption, parsePhotoKind, PHOTO_KIND_PROMPT, type PhotoKind } from "../../bot/sitePhotos";
+import { parseModelJson } from "../../bot/aiLog";
+import { geminiText } from "../../ai/gemini";
+import { recordBotError } from "../botErrors";
 import { uploadLogPhoto, showMenu } from "./log";
+import { BOT_LOG_MODELS } from "./aiLog";
+import { handleInvoicePhoto } from "./invoice";
 
 /**
  * Photos sent to the bot outside a log step.
  *
  * They used to be read as vendor invoices, every one of them: eight site
  * photos with the caption "Save this in footing task" came back as eight
- * "couldn't read that invoice". Now they are site photos unless the caption
- * says bill/invoice. The engineer picks the task (the caption's task is
- * offered first), and the photos are added to that task's log for the day,
- * or to a new log for it.
+ * "couldn't read that invoice". Now each batch is sorted first:
+ * - a caption that says bill/invoice: read as bills;
+ * - a caption that names a task: site photos for that task;
+ * - otherwise the AI looks at each photo: a site photo, a bill (read by the
+ *   invoice reader), or another document (a drawing, permit, report...),
+ *   which is filed in the project's Documents.
+ * For site photos the engineer picks the task (the caption's task first),
+ * and they go on that task's log for the day, or a new log for it.
  *
  * Telegram sends an album as one update per photo, close together, with the
  * caption on one of them. They are collected in bot_photo_inbox/{chatId}
@@ -74,7 +85,7 @@ async function leafTasks(base: string) {
  * photo now" step. Fast: no downloads, no AI.
  * Returns "invoice" when the caller should read it as a bill instead.
  */
-export async function receivePhoto(tg: any, chatId: ChatId, session: any, msg: any): Promise<"invoice" | "handled"> {
+export async function receivePhoto(tg: any, chatId: ChatId, session: any, msg: any): Promise<"invoice" | "classify" | "handled"> {
   const lang = normalizeLang(session?.lang);
   const caption = String(msg.caption || "");
   if (captionSaysInvoice(caption)) return "invoice";
@@ -86,10 +97,21 @@ export async function receivePhoto(tg: any, chatId: ChatId, session: any, msg: a
   if (!first) return "handled";
 
   // Asked once, on the first photo of the batch. The rest of an album lands
-  // while the engineer reads the question, and all of it is used on the tap.
-  const base = projPath(session.orgId, session.activeProjectId);
-  const tasks = await leafTasks(base);
+  // meanwhile, and all of it is used.
+  const tasks = await leafTasks(projPath(session.orgId, session.activeProjectId));
   const named = inbox.caption ? taskFromCaption(inbox.caption, tasks) : null;
+  if (named) {
+    // "Save this in footing task": plainly site photos, no need to look.
+    await askTask(tg, chatId, session, named, tasks);
+    return "handled";
+  }
+  await tg.sendMessage(chatId, tt(lang, "spLooking"));
+  return "classify";
+}
+
+async function askTask(tg: any, chatId: ChatId, session: any, named: { id: string; name: string } | null, tasksIn?: { id: string; name: string }[]) {
+  const lang = normalizeLang(session?.lang);
+  const tasks = tasksIn || (await leafTasks(projPath(session.orgId, session.activeProjectId)));
   const rows: any[] = [];
   if (named) rows.push([{ text: tt(lang, "spBtnAddTo", { name: named.name }), callback_data: `sp:t:${named.id}` }]);
   for (const tid of (session.recentTaskIds || []).slice(0, 3)) {
@@ -97,10 +119,110 @@ export async function receivePhoto(tg: any, chatId: ChatId, session: any, msg: a
     if (t && t.id !== named?.id) rows.push([{ text: t.name, callback_data: `sp:t:${t.id}` }]);
   }
   rows.push([{ text: tt(lang, "spBtnOtherTask"), callback_data: "sp:br:0" }]);
-  rows.push([{ text: tt(lang, "spBtnInvoice"), callback_data: "sp:inv" }]);
+  rows.push([{ text: tt(lang, "spBtnInvoice"), callback_data: "sp:inv" }, { text: tt(lang, "spBtnDocument"), callback_data: "sp:doc" }]);
   rows.push([{ text: tt(lang, "btnCancel"), callback_data: "sp:x" }]);
   await tg.sendMessage(chatId, tt(lang, named ? "spAskNamed" : "spAsk", { name: named?.name || "" }), rows);
-  return "handled";
+}
+
+/** Ask the AI what one photo shows. A failure counts as a site photo, which asks before saving anything. */
+async function classifyOne(api: any, sizes: any, key: string): Promise<PhotoKind & { buffer?: Buffer }> {
+  const got = await api.fetchPhotoBytes(sizes);
+  if (!got.ok) return { kind: "site", category: "", title: "" };
+  try {
+    const body = {
+      contents: [{ role: "user", parts: [{ text: PHOTO_KIND_PROMPT }, { inlineData: { mimeType: got.mimeType || "image/jpeg", data: got.buffer.toString("base64") } }] }],
+      generationConfig: { temperature: 0, responseMimeType: "application/json" },
+    };
+    const forModel = (model: string, b: any) =>
+      model.startsWith("gemini-2.5") ? { ...b, generationConfig: { ...b.generationConfig, maxOutputTokens: 256, thinkingConfig: { thinkingBudget: 0 } } } : b;
+    const { text } = await geminiText(body, key, 40_000, { perAttemptMs: 15_000, forModel, models: BOT_LOG_MODELS });
+    return { ...parsePhotoKind(parseModelJson(text)), buffer: got.buffer };
+  } catch (e) {
+    await recordBotError("photoKind", e);
+    return { kind: "site", category: "", title: "", buffer: got.buffer };
+  }
+}
+
+/** Store a photo in the project's Documents, as the web app's Document Vault does. */
+async function saveDocument(base: string, session: any, buffer: Buffer, category: string, title: string) {
+  const storagePath = `${base}/documents/${Date.now()}_${crypto.randomUUID().slice(0, 8)}.jpg`;
+  const bucket = admin.storage().bucket();
+  const token = crypto.randomUUID();
+  await bucket.file(storagePath).save(buffer, { metadata: { contentType: "image/jpeg", metadata: { firebaseStorageDownloadTokens: token } } });
+  await db.collection(`${base}/documents`).add({
+    name: title,
+    type: "Image",
+    category,
+    accessLevel: "Internal",
+    tags: ["telegram"],
+    url: `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media&token=${token}`,
+    storagePath,
+    projectId: session.activeProjectId,
+    uploadedBy: session.userId || "",
+    uploadedAt: new Date().toISOString(),
+    createdVia: "telegram",
+  });
+}
+
+/**
+ * Queue side: sort the batch. Bills go to the invoice reader, documents to
+ * Documents, and site photos stay in the inbox for the task question.
+ */
+export async function classifyBatch(api: any, chatId: ChatId, key: string, waitMs = 5000) {
+  // Let the rest of an album arrive first.
+  if (waitMs) await new Promise((r) => setTimeout(r, waitMs));
+  const session = await getSession(chatId);
+  const lang = normalizeLang(session?.lang);
+  const ref = db.doc(`bot_photo_inbox/${chatId}`);
+  const inbox = (await ref.get()).data() as Inbox | undefined;
+  if (!inbox?.photos?.length) return;
+  const base = projPath(session.orgId, session.activeProjectId);
+
+  const kinds = await Promise.all(inbox.photos.map((p) => classifyOne(api, p.sizes, key)));
+  const site = inbox.photos.filter((_, i) => kinds[i].kind === "site");
+  const bills = inbox.photos.filter((_, i) => kinds[i].kind === "bill");
+  const docs = kinds.filter((k) => k.kind === "document" && k.buffer);
+
+  // Only the site photos wait for the task question.
+  if (site.length) await ref.set({ ...inbox, photos: site });
+  else await ref.delete();
+
+  if (docs.length) {
+    const saved: string[] = [];
+    for (const d of docs) {
+      try {
+        await saveDocument(base, session, d.buffer!, d.category, d.title);
+        saved.push(`• ${d.title} (${d.category})`);
+      } catch (e) {
+        await recordBotError("photoDoc", e);
+      }
+    }
+    if (saved.length) await api.sendMessage(chatId, tt(lang, "spDocsSaved", { n: saved.length }) + "\n" + saved.join("\n"));
+  }
+  if (bills.length) {
+    await api.sendMessage(chatId, tt(lang, "spBillsFound", { n: bills.length }));
+    for (const b of bills) await handleInvoicePhoto(api, chatId, session, b.sizes, key);
+  }
+  if (site.length) await askTask(api, chatId, session, null);
+}
+
+/** "It's a document" on the task question: file the waiting photos in Documents as they are. */
+export async function asDocuments(api: any, chatId: ChatId, messageId: any, session: any) {
+  const lang = normalizeLang(session?.lang);
+  const inbox = await takeInbox(chatId);
+  if (!inbox?.photos?.length) {
+    await api.editMessage(chatId, messageId, tt(lang, "spNothing"));
+    return;
+  }
+  const base = projPath(session.orgId, session.activeProjectId);
+  let n = 0;
+  for (const p of inbox.photos) {
+    const got = await api.fetchPhotoBytes(p.sizes);
+    if (!got.ok) continue;
+    await saveDocument(base, session, got.buffer, "Others", inbox.caption ? inbox.caption.slice(0, 60) : "Document from Telegram");
+    n++;
+  }
+  await api.editMessage(chatId, messageId, tt(lang, "spDocsSaved", { n }));
 }
 
 /** Webhook side: an album sent while a log is waiting for "send the photo now". */

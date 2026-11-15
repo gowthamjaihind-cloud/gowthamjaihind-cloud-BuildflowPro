@@ -131,6 +131,8 @@ async function handleInbound(wa: WhatsAppApi, m: InboundMessage, geminiKey: stri
       // into one batch the same way.
       const r = await sitePhotos.receivePhoto(wa, chatId, session, { photo: m.mediaId, caption: m.text || "" });
       if (r === "invoice") await invoice.handleInvoicePhoto(wa, chatId, session, m.mediaId, geminiKey);
+      // No albums on WhatsApp, so no wait before looking.
+      else if (r === "classify") await sitePhotos.classifyBatch(wa, chatId, geminiKey, 0);
     } else {
       // A document (usually a PDF) is a bill.
       await invoice.handleInvoicePhoto(wa, chatId, session, m.mediaId, geminiKey);
@@ -176,6 +178,7 @@ async function handleTap(wa: WhatsAppApi, chatId: ChatId, data: string) {
   if (data.startsWith("ct:")) return void (await log.pickTask(wa, chatId, null, session, data.substring(3)));
   if (data.startsWith("sp:t:")) return void (await sitePhotos.attachToTask(wa, chatId, null, session, data.slice(5)));
   if (data.startsWith("sp:br:")) return void (await sitePhotos.browse(wa, chatId, null, session, Number(data.slice(6)) || 0));
+  if (data === "sp:doc") return void (await sitePhotos.asDocuments(wa, chatId, null, session));
   if (data === "sp:x") return void (await sitePhotos.cancel(wa, chatId, null, session));
   if (data === "sp:inv") {
     const photos = await sitePhotos.asInvoices(chatId);

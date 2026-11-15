@@ -290,6 +290,10 @@ async function handleUpdate(tg, update, geminiKey) {
             for (const photo of photos) await enqueueBotJob({ kind: "invoice", chatId, photo });
             return;
         }
+        if (data === "sp:doc") {
+            await enqueueBotJob({ kind: "photoDocs", chatId, messageId });
+            return;
+        }
         if (data === "sp:x") {
             await sitePhotos.cancel(tg, chatId, messageId, session);
             return;
@@ -395,10 +399,11 @@ async function handleUpdate(tg, update, geminiKey) {
             return;
         }
         // Otherwise a site photo, unless the caption says it is a bill.
-        if ((await sitePhotos.receivePhoto(tg, chatId, session, msg)) === "invoice") {
-            // Reading a bill takes the AI several seconds, so it is queued.
-            await enqueueBotJob({ kind: "invoice", chatId, photo: msg.photo });
-        }
+        const r = await sitePhotos.receivePhoto(tg, chatId, session, msg);
+        // Reading a bill, or looking at what a photo shows, takes the AI
+        // several seconds, so both are queued.
+        if (r === "invoice") await enqueueBotJob({ kind: "invoice", chatId, photo: msg.photo });
+        else if (r === "classify") await enqueueBotJob({ kind: "classifyPhotos", chatId });
         return;
     }
     if (!msg?.text)
@@ -527,7 +532,9 @@ type BotJob =
     | { kind: "aiText"; chatId: any; text: string }
     | { kind: "invoice"; chatId: any; photo: any }
     | { kind: "sitePhotos"; chatId: any; taskId: string; messageId: any }
-    | { kind: "draftAlbum"; chatId: any };
+    | { kind: "draftAlbum"; chatId: any }
+    | { kind: "classifyPhotos"; chatId: any }
+    | { kind: "photoDocs"; chatId: any; messageId: any };
 async function enqueueBotJob(job: BotJob) {
     await db.collection("bot_jobs").add({ ...job, createdAt: Date.now() });
 }
@@ -561,6 +568,10 @@ export const onBotJobCreated = onDocumentCreated({
             await invoice.handleInvoicePhoto(tg, chatId, session, job.photo, GEMINI_API_KEY.value());
         } else if (job.kind === "sitePhotos") {
             await sitePhotos.attachToTask(tg, chatId, job.messageId, session, String(job.taskId || ""));
+        } else if (job.kind === "classifyPhotos") {
+            await sitePhotos.classifyBatch(tg, chatId, GEMINI_API_KEY.value());
+        } else if (job.kind === "photoDocs") {
+            await sitePhotos.asDocuments(tg, chatId, job.messageId, session);
         } else if (job.kind === "draftAlbum") {
             await sitePhotos.attachAlbumToDraft(tg, chatId);
         } else if (job.kind === "aiText") {
