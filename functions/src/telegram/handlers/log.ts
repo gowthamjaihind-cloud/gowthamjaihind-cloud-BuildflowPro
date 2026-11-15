@@ -473,6 +473,17 @@ export async function handleStepText(api: any, chatId: ChatId, session: any, tex
             await api.sendMessage(chatId, tt(lang, "enter0to100"));
             return true;
         }
+        const current = Number(session.draft?.currentProgress) || 0;
+        if (pct < current) {
+            // Progress going down is usually a slip (40 typed for 60): ask
+            // first, but allow it, since a real correction must be possible.
+            await setSession(chatId, { draft: { ...(session.draft || {}), pendingLowerPct: pct } });
+            await api.sendMessage(chatId, tt(lang, "lowerProgressAsk", { from: current, to: pct }), [
+                [{ text: tt(lang, "btnLowerYes", { pct }), callback_data: "plc:y" }],
+                [{ text: tt(lang, "btnLowerNo"), callback_data: "plc:n" }],
+            ]);
+            return true;
+        }
         await setSession(chatId, {
             draft: { ...(session.draft || {}), progressPercent: pct },
         });
@@ -537,3 +548,19 @@ export async function handleStepText(api: any, chatId: ChatId, session: any, tex
     }
     return false;
 }
+
+/** Answer to "Progress goes down from 60% to 40%. Correct?" (typed progress below the current figure). */
+export async function confirmLowerProgress(api: any, chatId: ChatId, messageId: any, session: any, yes: boolean) {
+    const lang = normalizeLang(session?.lang);
+    const d = session.draft || {};
+    const { pendingLowerPct, ...rest } = d;
+    if (yes && typeof pendingLowerPct === "number") {
+        await setSession(chatId, { step: "log:menu", draft: { ...rest, progressPercent: pendingLowerPct } });
+        await showMenu(api, chatId, messageId, await getSession(chatId));
+        return;
+    }
+    // Keep waiting for a figure; the draft is untouched.
+    await setSession(chatId, { step: "log:progress", draft: rest });
+    await api.editMessage(chatId, messageId, tt(lang, "lowerProgressRetype", { current: Number(d.currentProgress) || 0 }));
+}
+

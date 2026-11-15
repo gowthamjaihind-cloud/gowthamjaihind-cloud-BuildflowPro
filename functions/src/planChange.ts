@@ -61,6 +61,11 @@ export const scheduleDowngrade = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }
   if (!isPlanId(current) || !SELF_SERVE.includes(current as PlanId)) {
     throw new HttpsError("failed-precondition", "This organization's plan can't be changed here.");
   }
+  // A cancellation wins over a downgrade: only one change is ever pending.
+  // Resume the plan first, then choose the smaller one.
+  if (org.cancelAtPeriodEnd === true) {
+    throw new HttpsError("failed-precondition", "Your plan is already set to end. Resume it first if you would rather move to a smaller plan.");
+  }
   const curIdx = PLAN_ORDER.indexOf(current as PlanId);
   const tgtIdx = PLAN_ORDER.indexOf(target as PlanId);
   if (tgtIdx >= curIdx) {
@@ -103,6 +108,13 @@ export const applyScheduledPlanChanges = onSchedule(
     for (const orgDoc of snap.docs) {
       const change = (orgDoc.data() as any).pendingPlanChange;
       const target = change?.plan;
+      // Both a cancellation and a downgrade pending (possible before the
+      // check in scheduleDowngrade): the cancellation wins, so the downgrade
+      // is dropped rather than applied.
+      if ((orgDoc.data() as any).cancelAtPeriodEnd === true) {
+        await orgDoc.ref.set({ pendingPlanChange: FieldValue.delete() }, { merge: true }).catch(() => {});
+        continue;
+      }
       if (!isPlanId(target)) {
         // Malformed — clear so it doesn't loop forever.
         await orgDoc.ref.set({ pendingPlanChange: FieldValue.delete() }, { merge: true }).catch(() => {});

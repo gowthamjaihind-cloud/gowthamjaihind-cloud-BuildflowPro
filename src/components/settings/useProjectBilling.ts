@@ -51,7 +51,8 @@ export function useProjectBilling() {
     const ka = timeKey((a as any).createdAt), kb = timeKey((b as any).createdAt);
     return ka < kb ? -1 : ka > kb ? 1 : 0;
   });
-  const pending = plan.pendingPlanChange || null;
+  // A cancellation wins over a scheduled downgrade (functions/src/planChange.ts).
+  const pending = plan.cancelAtPeriodEnd ? null : plan.pendingPlanChange || null;
   const pendingCap = pending ? PLANS[pending.plan as PlanId]?.includedProjects : undefined;
   let planSeat = 0;
   const rows: ProjectBillingRow[] = ordered.map((p) => {

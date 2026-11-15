@@ -200,6 +200,7 @@ async function handleTap(wa: WhatsAppApi, chatId: ChatId, data: string) {
   if (data.startsWith("br:")) return void (await log.browseTasks(wa, chatId, null, session, Number(data.slice(3))));
   if (data.startsWith("t:")) return void (await log.pickTask(wa, chatId, null, session, data.slice(2)));
   if (data.startsWith("prj:")) return void (await projects.pickProject(wa, chatId, null, session, data.slice(4)));
+  if (data === "plc:y" || data === "plc:n") return void (await log.confirmLowerProgress(wa, chatId, null, session, data === "plc:y"));
   if (data.startsWith("p:")) {
     await setSession(chatId, { draft: { ...(session.draft || {}), progressPercent: Number(data.slice(2)) } });
     await log.showMenu(wa, chatId, null, await getSession(chatId));
