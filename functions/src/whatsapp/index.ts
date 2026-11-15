@@ -10,6 +10,7 @@ import * as log from "../telegram/handlers/log";
 import * as projects from "../telegram/handlers/projects";
 import * as agent from "../telegram/handlers/agent";
 import * as invoice from "../telegram/handlers/invoice";
+import * as sitePhotos from "../telegram/handlers/sitePhotos";
 import { db } from "../db";
 
 const WA_TOKEN = defineSecret("WHATSAPP_TOKEN");
@@ -121,9 +122,19 @@ async function handleInbound(wa: WhatsAppApi, m: InboundMessage, geminiKey: stri
       return;
     }
     if (!m.mediaId) return;
-    if (session.step === "log:photo") {
+    const draftOpen = !!session.draft?.logId && String(session.step || "").startsWith("log:");
+    if (draftOpen && m.kind === "image") {
       await log.handlePhoto(wa, chatId, session, m.mediaId);
+    } else if (m.kind === "image") {
+      // A site photo unless the caption says it is a bill (same as Telegram).
+      // WhatsApp has no albums: each photo is its own message, collected
+      // into one batch the same way.
+      const r = await sitePhotos.receivePhoto(wa, chatId, session, { photo: m.mediaId, caption: m.text || "" });
+      if (r === "invoice") await invoice.handleInvoicePhoto(wa, chatId, session, m.mediaId, geminiKey);
+      // No albums on WhatsApp, so no wait before looking.
+      else if (r === "classify") await sitePhotos.classifyBatch(wa, chatId, geminiKey, 0);
     } else {
+      // A document (usually a PDF) is a bill.
       await invoice.handleInvoicePhoto(wa, chatId, session, m.mediaId, geminiKey);
     }
     return;
@@ -165,6 +176,16 @@ async function handleTap(wa: WhatsAppApi, chatId: ChatId, data: string) {
   if (data === "psav") return void (await agent.savePlan(wa, chatId, null, session));
   if (data === "dt") return void (await log.showTaskPicker(wa, chatId, null, session));
   if (data.startsWith("ct:")) return void (await log.pickTask(wa, chatId, null, session, data.substring(3)));
+  if (data.startsWith("sp:t:")) return void (await sitePhotos.attachToTask(wa, chatId, null, session, data.slice(5)));
+  if (data.startsWith("sp:br:")) return void (await sitePhotos.browse(wa, chatId, null, session, Number(data.slice(6)) || 0));
+  if (data === "sp:doc") return void (await sitePhotos.asDocuments(wa, chatId, null, session));
+  if (data === "sp:x") return void (await sitePhotos.cancel(wa, chatId, null, session));
+  if (data === "sp:inv") {
+    const photos = await sitePhotos.asInvoices(chatId);
+    await wa.sendMessage(chatId, tt(lang, "spAsInvoice", { n: photos.length }));
+    for (const photo of photos) await invoice.handleInvoicePhoto(wa, chatId, session, photo, GEMINI_API_KEY.value());
+    return;
+  }
   if (data === "xx") {
     await clearStep(chatId);
     if (Array.isArray(session?.pendingDrafts) && session.pendingDrafts.length) {

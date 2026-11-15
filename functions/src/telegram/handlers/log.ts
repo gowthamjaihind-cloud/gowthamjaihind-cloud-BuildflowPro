@@ -309,6 +309,24 @@ export async function askEquipmentQty(tg: any, chatId: ChatId, messageId, sessio
 // `photoRef` is whatever the channel uses to identify an image -- Telegram
 // passes its array of renditions, WhatsApp a single media id. The handler
 // never inspects it; `api.fetchPhotoBytes` does.
+/**
+ * Fetch one photo from the chat and store it under the log, using the SAME
+ * path and URL form as the web app ({projectPath}/dailyLogs/{logId}/photo_*.jpg
+ * with a download token): the dailyLogs Cloud Function's deletePhotos()
+ * parses "/o/" out of that URL, and a signed URL would leave photos orphaned.
+ */
+export async function uploadLogPhoto(api: any, base: string, logId: string, photoRef: any, idx: number): Promise<{ ok: true; url: string } | { ok: false; reason: "fetch" | "download" }> {
+    // Channel-neutral: TelegramApi resolves a file_id, WhatsAppApi a media id.
+    const got = await api.fetchPhotoBytes(photoRef);
+    if (!got.ok) return got;
+    const storagePath = `${base}/dailyLogs/${logId}/photo_${Date.now()}_${idx}.jpg`;
+    const bucket = admin.storage().bucket();
+    const token = crypto.randomUUID();
+    await bucket.file(storagePath).save(got.buffer, {
+        metadata: { contentType: "image/jpeg", metadata: { firebaseStorageDownloadTokens: token } },
+    });
+    return { ok: true, url: `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media&token=${token}` };
+}
 export async function handlePhoto(api: any, chatId: ChatId, session, photoRef: any) {
     const lang = normalizeLang(session?.lang);
     const d = session.draft || {};
@@ -316,33 +334,13 @@ export async function handlePhoto(api: any, chatId: ChatId, session, photoRef: a
         await api.sendMessage(chatId, tt(lang, "startLogBeforePhoto"));
         return;
     }
-    // Channel-neutral: TelegramApi resolves a file_id, WhatsAppApi a media id.
-    const got = await api.fetchPhotoBytes(photoRef);
-    if (!got.ok) {
-        await api.sendMessage(chatId, tt(lang, got.reason === "fetch" ? "cantFetchPhoto" : "cantDownloadPhoto"));
+    const base = projPath(session.orgId, session.activeProjectId);
+    const up = await uploadLogPhoto(api, base, d.logId, photoRef, (d.photoUrls || []).length);
+    if (!up.ok) {
+        await api.sendMessage(chatId, tt(lang, (up as any).reason === "fetch" ? "cantFetchPhoto" : "cantDownloadPhoto"));
         return;
     }
-    const buffer = got.buffer;
-    // Upload to Firebase Storage, using the SAME path convention as the web app:
-    //   {projectPath}/dailyLogs/{logId}/photo_{ts}.jpg
-    const base = projPath(session.orgId, session.activeProjectId);
-    const idx = (d.photoUrls || []).length;
-    const storagePath = `${base}/dailyLogs/${d.logId}/photo_${Date.now()}_${idx}.jpg`;
-    const bucket = admin.storage().bucket();
-    const file = bucket.file(storagePath);
-    // CRITICAL: set a download token so the resulting URL matches the format that
-    // getDownloadURL() produces in the web app. The dailyLogs Cloud Function's
-    // deletePhotos() parses "/o/" out of that URL — a signed URL would NOT match and
-    // photos would be orphaned in the bucket forever.
-    const token = crypto.randomUUID();
-    await file.save(buffer, {
-        metadata: {
-            contentType: "image/jpeg",
-            metadata: { firebaseStorageDownloadTokens: token },
-        },
-    });
-    const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
-        `${encodeURIComponent(storagePath)}?alt=media&token=${token}`;
+    const url = (up as any).url as string;
     const photoUrls = [...(d.photoUrls || []), url];
     await setSession(chatId, { draft: { ...d, photoUrls } });
     const s = await getSession(chatId);

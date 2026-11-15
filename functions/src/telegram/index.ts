@@ -12,6 +12,7 @@ import * as log from "./handlers/log";
 import * as projects from "./handlers/projects";
 import * as agent from "./handlers/agent";
 import * as invoice from "./handlers/invoice";
+import * as sitePhotos from "./handlers/sitePhotos";
 import * as aiLog from "./handlers/aiLog";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
 import { looksLikeLogText } from "../bot/aiLog";
@@ -274,6 +275,29 @@ async function handleUpdate(tg, update, geminiKey) {
             await log.pickTask(tg, chatId, messageId, session, taskId);
             return;
         }
+        // ---- Photos sent outside a log (handlers/sitePhotos.ts) ----
+        if (data.startsWith("sp:t:")) {
+            await enqueueBotJob({ kind: "sitePhotos", chatId, taskId: data.slice(5), messageId });
+            return;
+        }
+        if (data.startsWith("sp:br:")) {
+            await sitePhotos.browse(tg, chatId, messageId, session, Number(data.slice(6)) || 0);
+            return;
+        }
+        if (data === "sp:inv") {
+            const photos = await sitePhotos.asInvoices(chatId);
+            await tg.editMessage(chatId, messageId, tt(lang, "spAsInvoice", { n: photos.length }));
+            for (const photo of photos) await enqueueBotJob({ kind: "invoice", chatId, photo });
+            return;
+        }
+        if (data === "sp:doc") {
+            await enqueueBotJob({ kind: "photoDocs", chatId, messageId });
+            return;
+        }
+        if (data === "sp:x") {
+            await sitePhotos.cancel(tg, chatId, messageId, session);
+            return;
+        }
         if (data === "xx") {
             await clearStep(chatId);
             // Cancel on one log of several from the same message skips just
@@ -363,13 +387,23 @@ async function handleUpdate(tg, update, geminiKey) {
             await tg.sendMessage(chatId, tt(session?.lang, "notLinkedShort"));
             return;
         }
-        if (session.step === "log:photo") {
-            await log.handlePhoto(tg, chatId, session, msg.photo);
-        } else {
-            // Any other photo is treated as a vendor invoice to read + stage.
-            // Reading it takes the AI several seconds, so it is queued.
-            await enqueueBotJob({ kind: "invoice", chatId, photo: msg.photo });
+        // A log is open (its menu or "send the photo now"): the photo is for it.
+        const draftOpen = !!session.draft?.logId && String(session.step || "").startsWith("log:");
+        if (draftOpen) {
+            if (msg.media_group_id) {
+                // An album: collected, then added in one go (one menu, not one per photo).
+                if (await sitePhotos.receiveDraftAlbumPhoto(chatId, msg)) await enqueueBotJob({ kind: "draftAlbum", chatId });
+            } else {
+                await log.handlePhoto(tg, chatId, session, msg.photo);
+            }
+            return;
         }
+        // Otherwise a site photo, unless the caption says it is a bill.
+        const r = await sitePhotos.receivePhoto(tg, chatId, session, msg);
+        // Reading a bill, or looking at what a photo shows, takes the AI
+        // several seconds, so both are queued.
+        if (r === "invoice") await enqueueBotJob({ kind: "invoice", chatId, photo: msg.photo });
+        else if (r === "classify") await enqueueBotJob({ kind: "classifyPhotos", chatId });
         return;
     }
     if (!msg?.text)
@@ -494,7 +528,14 @@ async function handleUpdate(tg, update, geminiKey) {
     await tg.sendMessage(chatId, tt(lang, "didntUnderstand"));
 }
 /** Hand slow, AI-backed work to the queue worker below. */
-async function enqueueBotJob(job: { kind: "aiText"; chatId: any; text: string } | { kind: "invoice"; chatId: any; photo: any }) {
+type BotJob =
+    | { kind: "aiText"; chatId: any; text: string }
+    | { kind: "invoice"; chatId: any; photo: any }
+    | { kind: "sitePhotos"; chatId: any; taskId: string; messageId: any }
+    | { kind: "draftAlbum"; chatId: any }
+    | { kind: "classifyPhotos"; chatId: any }
+    | { kind: "photoDocs"; chatId: any; messageId: any };
+async function enqueueBotJob(job: BotJob) {
     await db.collection("bot_jobs").add({ ...job, createdAt: Date.now() });
 }
 
@@ -525,6 +566,14 @@ export const onBotJobCreated = onDocumentCreated({
         const lang: BotLang = normalizeLang(session?.lang);
         if (job.kind === "invoice") {
             await invoice.handleInvoicePhoto(tg, chatId, session, job.photo, GEMINI_API_KEY.value());
+        } else if (job.kind === "sitePhotos") {
+            await sitePhotos.attachToTask(tg, chatId, job.messageId, session, String(job.taskId || ""));
+        } else if (job.kind === "classifyPhotos") {
+            await sitePhotos.classifyBatch(tg, chatId, GEMINI_API_KEY.value());
+        } else if (job.kind === "photoDocs") {
+            await sitePhotos.asDocuments(tg, chatId, job.messageId, session);
+        } else if (job.kind === "draftAlbum") {
+            await sitePhotos.attachAlbumToDraft(tg, chatId);
         } else if (job.kind === "aiText") {
             const handled = await aiLog.handleFreeText(tg, chatId, session, String(job.text || ""), GEMINI_API_KEY.value());
             if (!handled) await tg.sendMessage(chatId, tt(lang, "didntUnderstand"));
