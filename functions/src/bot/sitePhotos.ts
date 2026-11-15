@@ -5,7 +5,9 @@
 
 /** A caption that says the photo is a bill. Anything else is a site photo. */
 export function captionSaysInvoice(caption: string): boolean {
-  return /\b(invoice|bill|bills|receipt|challan|gst bill|vendor bill)\b/i.test(caption || "");
+  // File names count too ("Tax Invoice_VTSALE 26-27.pdf"): "_" and "." are
+  // word characters to a regex, so they are turned into spaces first.
+  return /\b(invoice|bill|bills|receipt|challan|gst bill|vendor bill)\b/i.test(String(caption || "").replace(/[_.]+/g, " "));
 }
 
 const words = (s: string) =>
