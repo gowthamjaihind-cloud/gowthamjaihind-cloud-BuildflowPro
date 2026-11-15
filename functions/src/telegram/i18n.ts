@@ -114,7 +114,7 @@ const en: Dict = {
   "cantDownloadPhoto": "Couldn't download that photo. Try again.",
   "loggedSummary": "✅ <b>Logged</b>\n\n{name} — {pct}%",
   "loggedMaterials": "\n📦 {n} material(s)",
-  "loggedLabour": "\n👷 {n} labour",
+  "loggedLabour": "\n👷 {n} workers",
   "todayNothing":
     "<b>Today · {date}</b>\n\nNothing logged yet. Send /log to add today's progress.",
   "todayHeader": "<b>Today · {date}</b>\n{n} update(s)\n",
