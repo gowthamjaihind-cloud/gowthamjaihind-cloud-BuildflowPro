@@ -514,5 +514,12 @@ export const callUpdateClientShare = async (args: { token: string; sections?: Cl
 
 // ── In-app help assistant (functions/src/help) ───────────────────────────────
 export interface HelpTurn { role: "user" | "assistant"; text: string }
-export const callHelpChat = async (args: { orgId?: string; messages: HelpTurn[] }) =>
+export interface HelpCheck { id: string; label: string; status: "ok" | "warn" | "fail" | "info"; detail: string; fix?: string }
+export const callHelpDiagnose = async (args: { orgId?: string }) =>
+  (await httpsCallable<typeof args, { checks: HelpCheck[] }>(getFunctionsInstance(), "helpDiagnose")(args)).data;
+export const callReportProblem = async (args: { orgId?: string; description: string; checks: HelpCheck[]; errors: string[]; device: string; page?: string }) =>
+  (await httpsCallable<typeof args, { reportId: string }>(getFunctionsInstance(), "reportProblem")(args)).data;
+export const callListSupportReports = async () =>
+  (await httpsCallable<Record<string, never>, any[]>(getFunctionsInstance(), "listSupportReports")({})).data;
+export const callHelpChat = async (args: { orgId?: string; messages: HelpTurn[]; checks?: HelpCheck[] }) =>
   (await httpsCallable<typeof args, { answer: string }>(getFunctionsInstance(), "helpChat", { timeout: 70_000 })(args)).data;
