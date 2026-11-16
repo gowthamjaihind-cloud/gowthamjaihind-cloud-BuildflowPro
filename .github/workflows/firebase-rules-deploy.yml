@@ -47,3 +47,13 @@ jobs:
       # problem here never holds the rules back.
       - name: Deploy Firestore indexes and TTL policies
         run: npx firebase-tools@latest deploy --only firestore:indexes --project jewel-ledger --non-interactive
+
+      # Lets the website read photos cross-origin (storage.cors.json). The
+      # printable progress report loads photos that way so its PDF export can
+      # draw them; without this the browser refuses every photo there.
+      # Needs the service account to hold Storage Admin on the bucket.
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Apply Storage CORS settings
+        run: gcloud storage buckets update gs://jewel-ledger.firebasestorage.app --cors-file=storage.cors.json --project jewel-ledger

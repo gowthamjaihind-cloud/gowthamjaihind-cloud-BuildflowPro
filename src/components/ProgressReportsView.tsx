@@ -671,13 +671,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
                                 .flatMap((l) => l.photoUrls || [])
                                 .slice(0, 4)
                                 .map((url, i) => (
-                                  <img
-                                    key={i}
-                                    src={url}
-                                    className="w-16 h-16 object-cover rounded border"
-                                    alt="Site shot"
-                                    crossOrigin="anonymous"
-                                  />
+                                  <ReportPhoto key={i} url={url} />
                                 ))}
                               {tLogs.flatMap((l) => l.photoUrls || []).length >
                                 4 && (
@@ -805,5 +799,26 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
         </div>
       )}
     </div>
+  );
+};
+
+/**
+ * A site photo in the printable report. It is loaded cross-origin so the
+ * PDF export can draw it; that needs the storage bucket's CORS setting
+ * (storage.cors.json). Where that is missing, a cross-origin load fails
+ * outright and the browser showed a broken "?" box, so the photo is loaded
+ * again plainly: it shows on screen, and the PDF export reports the one
+ * thing it cannot include instead of the whole page losing its photos.
+ */
+const ReportPhoto: React.FC<{ url: string }> = ({ url }) => {
+  const [plain, setPlain] = React.useState(false);
+  return (
+    <img
+      src={url}
+      className="w-16 h-16 object-cover rounded border"
+      alt="Site shot"
+      {...(plain ? {} : { crossOrigin: "anonymous" as const })}
+      onError={() => !plain && setPlain(true)}
+    />
   );
 };
