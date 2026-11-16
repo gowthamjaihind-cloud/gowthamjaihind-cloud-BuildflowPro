@@ -5,6 +5,12 @@ import { CALLABLE_OPTS } from "../callable";
 import { geminiText } from "../ai/gemini";
 import { aiQuotaFor } from "../ai/quota";
 import { buildHelpPrompt, cleanHistory, type HelpContext } from "./knowledge";
+import { workspaceChecks, cleanChecks } from "./diagnose";
+import { sendSupportReportEmail } from "../email";
+import { assertSuperAdmin } from "../razorpay";
+
+/** Where problem reports are emailed: the support address the app already shows. */
+const SUPPORT_EMAIL = "gowtham.jaihind@gmail.com";
 
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
@@ -51,6 +57,70 @@ async function workspaceFacts(uid: string, orgId: string): Promise<HelpContext> 
   };
 }
 
+/** The workspace the user is in and a member of, or "" when none. */
+async function memberOrg(uid: string, requested: unknown): Promise<string> {
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const orgId = String(requested || (userSnap.data() as any)?.currentOrgId || "");
+  if (!orgId) return "";
+  const org = await db.doc(`organizations/${orgId}`).get();
+  return org.exists && (org.data() as any)?.members?.[uid] ? orgId : "";
+}
+
+/** "Something's not working?": the server's half of the checks. */
+export const helpDiagnose = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
+  const orgId = await memberOrg(uid, request.data?.orgId);
+  if (!orgId) return { checks: [{ id: "org", label: "Workspace", status: "fail", detail: "You are not a member of a workspace, so the app has nothing to show. Ask your company's admin for an invite." }] };
+  return { checks: workspaceChecks(await workspaceFacts(uid, orgId)) };
+});
+
+/**
+ * A problem the checks did not solve, sent to support with what the checks
+ * found. Stored in support_reports (server-only) and emailed to support.
+ * Returns a short reference the user can quote.
+ */
+export const reportProblem = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
+  const description = String(request.data?.description || "").trim().slice(0, 2000);
+  if (description.length < 5) throw new HttpsError("invalid-argument", "Describe the problem in a few words.");
+  const today = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);
+  const capRef = db.doc(`help_usage/${uid}_report_${today}`);
+  const allowed = await db.runTransaction(async (tx) => {
+    const n = Number((await tx.get(capRef)).data()?.count) || 0;
+    if (n >= 5) return false;
+    tx.set(capRef, { uid, count: n + 1, expireAt: new Date(Date.now() + 3 * 86400_000) }, { merge: true });
+    return true;
+  });
+  if (!allowed) throw new HttpsError("resource-exhausted", "You have sent 5 reports today. Support will reply to those first.");
+
+  const orgId = await memberOrg(uid, request.data?.orgId);
+  const facts = orgId ? await workspaceFacts(uid, orgId) : {};
+  const checks = [...cleanChecks(request.data?.checks), ...(orgId ? workspaceChecks(facts) : [])];
+  const errors = (Array.isArray(request.data?.errors) ? request.data.errors : []).slice(0, 15).map((e: unknown) => String(e).slice(0, 300));
+  const device = String(request.data?.device || "").slice(0, 300);
+  const ref = db.collection("support_reports").doc();
+  const reportId = ref.id.slice(0, 6).toUpperCase();
+  const email = String(request.auth?.token?.email || "");
+  await ref.set({
+    reportId, uid, email, orgId: orgId || null, company: facts.companyName || "", role: facts.role || "",
+    description, checks, errors, device, page: String(request.data?.page || "").slice(0, 100),
+    createdAt: new Date().toISOString(), status: "open",
+  });
+  const lines = checks.map((c) => `[${c.status}] ${c.label}: ${c.detail}`).concat(device ? [`Device: ${device}`] : [], errors.length ? [`Recent errors: ${errors.join(" | ")}`] : []);
+  const mail = await sendSupportReportEmail({ to: SUPPORT_EMAIL, reportId, from: email || uid, company: facts.companyName || "(no workspace)", description, lines });
+  if (!mail.sent) console.warn("support report email not sent", reportId, mail.error);
+  return { reportId };
+});
+
+/** Operator panel: the latest problem reports. */
+export const listSupportReports = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  assertSuperAdmin(request);
+  const snap = await db.collection("support_reports").orderBy("createdAt", "desc").limit(30).get();
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+});
+
 export const helpChat = onCall({ ...CALLABLE_OPTS, secrets: [GEMINI_API_KEY], timeoutSeconds: 60, maxInstances: 10 }, async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
@@ -60,13 +130,10 @@ export const helpChat = onCall({ ...CALLABLE_OPTS, secrets: [GEMINI_API_KEY], ti
   }
 
   // The workspace the user is in, checked against its members list.
-  const userSnap = await db.doc(`users/${uid}`).get();
-  const orgId = String(request.data?.orgId || (userSnap.data() as any)?.currentOrgId || "");
-  let context: HelpContext = {};
-  if (orgId) {
-    const org = await db.doc(`organizations/${orgId}`).get();
-    if (org.exists && (org.data() as any)?.members?.[uid]) context = await workspaceFacts(uid, orgId);
-  }
+  const orgId = await memberOrg(uid, request.data?.orgId);
+  const context: HelpContext = orgId ? await workspaceFacts(uid, orgId) : {};
+  // Results of "Something's not working?", when the question comes from it.
+  const checks = cleanChecks(request.data?.checks);
 
   // Daily cap per person.
   const capRef = db.doc(`help_usage/${uid}_${istDay()}`);
@@ -81,7 +148,7 @@ export const helpChat = onCall({ ...CALLABLE_OPTS, secrets: [GEMINI_API_KEY], ti
   }
 
   const body = {
-    contents: [{ role: "user", parts: [{ text: buildHelpPrompt(context, history) }] }],
+    contents: [{ role: "user", parts: [{ text: buildHelpPrompt(context, history, checks) }] }],
     generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
   };
   try {

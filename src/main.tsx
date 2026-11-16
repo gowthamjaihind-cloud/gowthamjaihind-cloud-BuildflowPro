@@ -6,9 +6,12 @@ import App from "./App.tsx";
 import "./index.css";
 import { registerSW } from "virtual:pwa-register";
 import { initSentry } from "./sentry";
+import { installErrorLog } from "./lib/errorLog";
 
 // Start error tracking as early as possible (no-op until VITE_SENTRY_DSN is set).
 initSentry();
+// The last few errors, for the help assistant's problem reports.
+installErrorLog();
 
 // The web app is English only (see src/i18n/index.ts). Tamil lives in the
 // Telegram bot, which is where site engineers work. Clear the stale preference

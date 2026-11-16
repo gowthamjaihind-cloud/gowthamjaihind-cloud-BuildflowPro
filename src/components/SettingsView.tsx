@@ -31,6 +31,7 @@ import { MastersPanel } from "./settings/MastersPanel";
 import { OperatorPanel } from "./settings/OperatorPanel";
 import { BillingPanel } from "./settings/BillingPanel";
 import { BotDiagnostics } from "./settings/BotDiagnostics";
+import { SupportReports } from "./settings/SupportReports";
 import { CompanyProfilePanel } from "./settings/CompanyProfilePanel";
 import { Receipt } from "@phosphor-icons/react";
 import { PrivacyPanel } from "./settings/PrivacyPanel";
@@ -64,6 +65,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsSection>("organization");
+  // A tab asked for from outside Settings (the help assistant's buttons).
+  const requestedTab = useUIStore((state) => state.settingsTab);
+  const openSettingsTab = useUIStore((state) => state.openSettingsTab);
+  React.useEffect(() => {
+    if (requestedTab) {
+      setActiveTab(requestedTab as SettingsSection);
+      openSettingsTab(null);
+    }
+  }, [requestedTab, openSettingsTab]);
   const companyName = useUIStore((state) => state.companyName);
   const setCompanyName = useUIStore((state) => state.setCompanyName);
   const uiMode = useUIStore((state) => state.uiMode);
@@ -178,7 +188,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             {activeTab === "operator" &&
               SUPER_ADMIN_EMAILS.includes((currentUser?.email || "").toLowerCase()) && (
-                <OperatorPanel />
+                <>
+                  <OperatorPanel />
+                  <SupportReports />
+                </>
               )}
 
             {activeTab === "organization" && (

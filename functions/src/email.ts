@@ -288,3 +288,34 @@ function escapeHtml(s: string): string {
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string
   ));
 }
+
+const escHtml = (s: unknown) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// A problem reported from the in-app help ("Something's not working?"), sent
+// to the operator. No-ops when email isn't configured; the report is stored
+// in support_reports either way and listed in the operator panel.
+export async function sendSupportReportEmail(opts: {
+  to: string; reportId: string; from: string; company: string; description: string; lines: string[];
+}): Promise<{ sent: boolean; error?: string }> {
+  const cfg = await getEmailConfig();
+  if (!cfg) return { sent: false, error: "email not configured" };
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${cfg.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: `${cfg.fromName} <${cfg.fromEmail}>`,
+        to: [opts.to],
+        subject: `Problem report ${opts.reportId} from ${opts.company}`,
+        html: `<p><b>From:</b> ${escHtml(opts.from)}<br><b>Workspace:</b> ${escHtml(opts.company)}<br><b>Report:</b> ${escHtml(opts.reportId)}</p>
+<p><b>What they said:</b><br>${escHtml(opts.description).replace(/\n/g, "<br>")}</p>
+<p><b>Checks:</b><br>${opts.lines.map(escHtml).join("<br>")}</p>
+<p>All reports: Settings &gt; Operator in ${APP_URL}</p>`,
+      }),
+    });
+    if (!res.ok) return { sent: false, error: `resend ${res.status}` };
+    return { sent: true };
+  } catch (e: any) {
+    return { sent: false, error: String(e) };
+  }
+}

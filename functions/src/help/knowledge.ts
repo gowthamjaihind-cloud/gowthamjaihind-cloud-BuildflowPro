@@ -97,7 +97,25 @@ export function cleanHistory(raw: unknown): HelpMessage[] {
     .map((m: any) => ({ role: m.role, text: String(m.text).slice(0, m.role === "user" ? 1000 : 2000) }));
 }
 
-export function buildHelpPrompt(context: HelpContext, history: HelpMessage[]): string {
+export interface CheckLine { label: string; status: string; detail: string; fix?: string }
+
+/** Names of the fix buttons the app shows next to a check (src/lib/diagnostics.ts). */
+const FIX_BUTTONS: Record<string, string> = {
+  update: "Update the app",
+  reconnect: "Sign in again",
+  clearCache: "Clear saved data",
+  openBilling: "Open Projects & Billing",
+  recheckBilling: "Re-check payment",
+  openTelegram: "Open Telegram settings",
+  goOnline: "(connect to the internet)",
+};
+
+export function buildHelpPrompt(context: HelpContext, history: HelpMessage[], checks: CheckLine[] = []): string {
+  const diag = checks.length
+    ? `\nDIAGNOSIS RESULTS (just run on this user's device and workspace):\n${checks
+        .map((c) => `- [${c.status}] ${c.label}: ${c.detail}${c.fix && FIX_BUTTONS[c.fix] ? ` (button: "${FIX_BUTTONS[c.fix]}")` : ""}`)
+        .join("\n")}\nWhen these are present, the user is reporting a problem: explain the most likely cause from them in plain words, and tell them which button to press, by its exact name. If every check is ok, say so, suggest the usual steps from the knowledge (fully close and reopen the app; check the internet), and offer "Send to support". Do not blame anything the checks do not show.\n`
+    : "";
   const ctx = Object.entries(context)
     .filter(([, v]) => v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && !v.length))
     .map(([k, v]) => `- ${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
@@ -117,7 +135,7 @@ ${knowledge()}
 
 WORKSPACE FACTS (this user only):
 ${ctx || "- (not available)"}
-
+${diag}
 CONVERSATION:
 ${convo}
 

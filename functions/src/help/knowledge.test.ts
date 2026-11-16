@@ -32,3 +32,19 @@ describe("help assistant knowledge", () => {
     expect(p).toMatch(/You cannot change anything/);
   });
 });
+
+describe("diagnosis results in the prompt", () => {
+  it("lists each check with the exact button name to press", () => {
+    const p = buildHelpPrompt({}, [{ role: "user", text: "Photos don't load" }], [
+      { label: "App version", status: "warn", detail: "A newer version is available.", fix: "update" },
+      { label: "Internet", status: "ok", detail: "Connected." },
+    ]);
+    expect(p).toContain('[warn] App version: A newer version is available. (button: "Update the app")');
+    expect(p).toContain("[ok] Internet: Connected.");
+    expect(p).toMatch(/Do not blame anything the checks do not show/);
+  });
+  it("adds nothing when there are no checks", () => {
+    expect(buildHelpPrompt({}, [{ role: "user", text: "hi" }])).not.toContain("DIAGNOSIS RESULTS");
+  });
+});
+
