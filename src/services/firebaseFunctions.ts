@@ -511,3 +511,8 @@ export const callListClientShares = async (args: { orgId?: string; projectId: st
   (await httpsCallable<typeof args, ClientShare[]>(getFunctionsInstance(), "listClientShares")(args)).data;
 export const callUpdateClientShare = async (args: { token: string; sections?: ClientShareSections; showHeadcount?: boolean; label?: string; revoked?: boolean }) =>
   (await httpsCallable<typeof args, ClientShare>(getFunctionsInstance(), "updateClientShare")(args)).data;
+
+// ── In-app help assistant (functions/src/help) ───────────────────────────────
+export interface HelpTurn { role: "user" | "assistant"; text: string }
+export const callHelpChat = async (args: { orgId?: string; messages: HelpTurn[] }) =>
+  (await httpsCallable<typeof args, { answer: string }>(getFunctionsInstance(), "helpChat", { timeout: 70_000 })(args)).data;

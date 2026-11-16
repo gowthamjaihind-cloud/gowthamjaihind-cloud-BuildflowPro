@@ -17,6 +17,7 @@ export * from "./dailyLogs";
 export * from "./goodsReceipt";
 export * from "./telegram";
 export * from "./clientShare";
+export * from "./help";
 
 /**
  * The WhatsApp lane, registered ONLY when it has been configured.

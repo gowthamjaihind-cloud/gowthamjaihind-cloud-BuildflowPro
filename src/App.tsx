@@ -31,6 +31,7 @@ import {
   TaskDependency,
 } from "./types";
 import { Layout } from "./components/Layout";
+import { HelpChat } from "./components/HelpChat";
 import { SettingsView } from "./components/SettingsView";
 import { EnterpriseAuthView } from "./components/EnterpriseAuthView";
 import {
@@ -224,7 +225,13 @@ function AppContent() {
   // Billing gate: block the app once the trial has ended (or a subscription
   // lapsed). Grandfathered orgs (no subscriptionStatus) are always allowed.
   if (!access.loading && !access.allowed) {
-    return <Paywall access={access} user={user} />;
+    return (
+      <>
+        <Paywall access={access} user={user} />
+        {/* Billing questions are most likely right here. */}
+        <HelpChat />
+      </>
+    );
   }
 
   // The store's copy of the open project can predate a lock or an unlock; the
@@ -263,6 +270,7 @@ function AppContent() {
       {access.isTrial && access.allowed && <TrialBanner daysLeft={access.daysLeft} />}
       {/* Folds away entirely in the production bundle. */}
       <Feedback />
+      <HelpChat />
       {__DEMO__ && demoRequested() && <DemoBanner />}
       {__DEMO__ && demoRequested() && <DemoTour />}
     </>
