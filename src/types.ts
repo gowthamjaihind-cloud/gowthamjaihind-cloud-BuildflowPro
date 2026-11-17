@@ -537,6 +537,9 @@ export interface RABill {
   lumpSumIds?: string[];
   marginPct?: number;
   marginAmount?: number;
+  /** The dates of the work the bill covers (the period chosen when certifying). */
+  periodFrom?: string;
+  periodTo?: string;
 }
 
 export interface CostEntry {
