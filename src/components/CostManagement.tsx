@@ -262,7 +262,9 @@ export const CostManagement: React.FC<CostManagementProps> = ({
     description: "",
     amount: 0,
     type: "Actual",
-    category: "Labor",
+    // No default head: the person picks one (the select is required), so a
+    // fuel or transport bill is never filed under Labour by accident.
+    category: "" as CostEntry["category"],
     date: new Date().toISOString().split("T")[0],
     taskId: "",
   });
@@ -461,7 +463,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
         description: "",
         amount: 0,
         type: "Actual",
-        category: "Labor",
+        category: "" as CostEntry["category"],
         date: new Date().toISOString().split("T")[0],
         taskId: "",
       });
@@ -1242,7 +1244,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 description: "",
                 amount: 0,
                 type: "Actual",
-                category: "Labor",
+                category: "" as CostEntry["category"],
                 date: new Date().toISOString().split("T")[0],
                 taskId: "",
               });
@@ -1266,7 +1268,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 icon: IndianRupee,
               },
               {
-                title: "Labor Cost",
+                title: "Labour Cost",
                 planned: stats.laborPlanned,
                 actual: stats.laborActual,
                 icon: PieChart,
@@ -1278,15 +1280,19 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                 icon: Layers,
               },
               {
-                title: "Equipment Cost",
-                planned: stats.equipmentPlanned,
-                actual: stats.equipmentActual,
+                // Equipment AND direct costs (fuel, transport, subcontract):
+                // both live in "other", so the four cards add up to Total.
+                // Before, this card showed equipment only and a direct cost
+                // appeared in Total but on no card.
+                title: "Equipment & Direct",
+                planned: stats.otherPlanned,
+                actual: stats.otherActual,
                 icon: Truck,
               },
             ].map((stat, idx) => {
-              // Equipment is tracked actuals-only (no planned budget), so its
-              // card skips the planned/variance treatment.
-              const actualOnly = stat.title === "Equipment Cost";
+              // Nothing planned yet: spend is not "over budget", there is no
+              // budget to be over. Show the actual with a "No budget" badge.
+              const actualOnly = stat.planned <= 0;
               const variance = stat.planned - stat.actual;
               const isOver = !actualOnly && variance < 0;
               const percentage =
@@ -1304,7 +1310,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                     </h4>
                     {actualOnly ? (
                       <span className="shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-page text-ink-muted border border-divider">
-                        Actuals
+                        No budget
                       </span>
                     ) : (
                       <span
@@ -1332,7 +1338,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           })}
                         </div>
                         <div className="text-[10px] text-ink-muted font-medium mt-1">
-                          From logged equipment usage
+                          No planned amount set for this head
                         </div>
                       </div>
                     ) : (
@@ -2310,7 +2316,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                           Select category (e.g. Fuel, Equipment rental,
                           Transport...)
                         </option>
-                        <option value="Labor">Labor</option>
+                        <option value="Labor">Labour</option>
                         <option value="Equipment">{t("dlh.equipment")}</option>
                         <option value="Subcontractor">Subcontractor</option>
                         <option value="Transport">Transport</option>

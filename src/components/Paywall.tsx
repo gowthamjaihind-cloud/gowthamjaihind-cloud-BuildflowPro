@@ -149,8 +149,10 @@ const SignOutButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
 // Slim countdown shown while an org is on trial.
 export const TrialBanner: React.FC<{ daysLeft: number }> = ({ daysLeft }) => {
   const { t } = useTranslation();
+  // Below every dialog (z-50 and up) and click-through, so it never covers a
+  // form field or a button.
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-full bg-surface-dark text-white text-xs font-bold shadow-lg flex items-center gap-2">
+    <div role="status" className="pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-surface-dark text-white text-xs font-bold shadow-lg flex items-center gap-2">
       <Lock className="w-3.5 h-3.5" />
       {daysLeft > 1
         ? t("paywall.daysLeft", { n: daysLeft })

@@ -353,7 +353,7 @@ export const HelpChat: React.FC = () => {
         <button
           onClick={() => setOpen(true)}
           aria-label="Help"
-          className="fixed z-[65] left-4 bottom-24 md:left-auto md:right-6 md:bottom-6 w-12 h-12 rounded-full bg-surface-dark text-white shadow-xl flex items-center justify-center cursor-pointer"
+          className="fixed z-40 left-4 bottom-24 md:left-auto md:right-6 md:bottom-6 w-12 h-12 rounded-full bg-surface-dark text-white shadow-xl flex items-center justify-center cursor-pointer"
         >
           <ChatCircleDots weight="fill" className="w-6 h-6" />
         </button>

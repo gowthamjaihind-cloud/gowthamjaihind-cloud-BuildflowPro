@@ -456,7 +456,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                       </h3>
                       <div className="flex items-center gap-2">
                         <p className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">
-                          {rates.length} Labor Classification{rates.length !== 1 ? "s" : ""}
+                          {rates.length} Labour Classification{rates.length !== 1 ? "s" : ""}
                         </p>
                         <div className="w-1 h-1 rounded-full bg-divider" />
                         <p className="text-[10px] font-bold text-primary uppercase tracking-widest">
@@ -1313,7 +1313,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                   type="submit"
                   className="w-full bg-surface-dark text-white py-4 rounded-xl md:rounded-2xl text-xs md:text-sm font-black uppercase tracking-widest hover:bg-surface-dark/80 transition-all shadow-xl shadow-surface-dark/5"
                 >
-                  Save Index Entry
+                  Save Rate
                 </button>
               </form>
             </motion.div>

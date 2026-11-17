@@ -555,7 +555,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               }`}
             >
               <HardHat className="w-3.5 h-3.5" />
-              <span>Labor Consumption</span>
+              <span>Labour Consumption</span>
               <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-black ${activeTab === "labor" ? "bg-white/20 text-white" : "bg-surface text-ink-muted"}`}>
                 {laborRecords.length}
               </span>
@@ -615,7 +615,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                 </div>
                 <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Total Labor Cost</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Total Labour Cost</p>
                     <p className="text-2xl font-black text-ink font-mono">₹{laborTotals.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</p>
                   </div>
                   <div className="w-10 h-10 rounded-xl bg-success/12 text-success flex items-center justify-center border border-success/30"><IndianRupee className="w-5 h-5" /></div>
@@ -633,7 +633,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               <div className="bg-surface rounded-2xl border border-divider shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-divider flex items-center gap-2">
                   <HardHat className="w-4 h-4 text-surface-dark" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-ink">Labor Consumption per Task</h3>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-ink">Labour Consumption per Task</h3>
                 </div>
                 <div className="overflow-x-auto scrollbar-hide">
                   <table className="w-full text-left min-w-[600px]">
