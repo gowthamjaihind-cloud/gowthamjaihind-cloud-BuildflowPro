@@ -1,3 +1,4 @@
+import { wageRate, isLumpSum, marginPctOf, contractorBill, LUMP_SUM_UNIT } from "../lib/labourCost";
 import React, { useState, useEffect, useMemo } from "react";
 import { useProjectLabel } from "../hooks/useProjectLabel";
 import {
@@ -131,8 +132,8 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
             role: rateCard.role,
             headcount: labourItem.headcount,
             shifts: 1, 
-            rate: rateCard.rate,
-            cost: labourItem.headcount * 1 * rateCard.rate,
+            rate: wageRate(rateCard),
+            cost: labourItem.headcount * 1 * wageRate(rateCard),
           });
         }
       });
@@ -193,6 +194,19 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     }
   };
 
+  /** A contractor's margin on their bill (their profit), e.g. 10%. Added to their labour cost and RA bills. */
+  const saveMargin = async (vendorId: string, text: string) => {
+    const pct = Math.max(0, Math.min(100, parseFloat(text) || 0));
+    if (pct === marginPctOf(vendorId, allVendors)) return;
+    try {
+      await updateDoc(doc(db, `${basePath}/suppliers`, vendorId), { contractorMarginPct: pct });
+      queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
+      toast.success(pct ? `Contractor margin set to ${pct}%.` : "Contractor margin removed.");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `${basePath}/suppliers/${vendorId}`);
+    }
+  };
+
   const handleDeleteRABill = async (billId: string) => {
     if (!billId || isProcessing) return;
     setIsProcessing(true);
@@ -249,6 +263,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     net: number,
     logIds: string[],
     isChangeOrder: boolean = false,
+    extra: { lumpSumIds?: string[]; marginPct?: number; marginAmount?: number } = {},
   ) => {
     if (!isAdminOrOwner) return;
     if (isProcessing) return;
@@ -273,11 +288,15 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
           billDate: new Date().toISOString().split("T")[0],
           billNumber,
           grossAmount: gross,
-          deductions: gross - net,
+          // The contractor's margin is added, not deducted (lib/labourCost.ts).
+          deductions: Math.max(0, gross + (extra.marginAmount || 0) - net),
           netAmount: net,
           status: "Certified",
           logIds: logIds,
           isChangeOrder,
+          lumpSumIds: extra.lumpSumIds || [],
+          marginPct: extra.marginPct || 0,
+          marginAmount: extra.marginAmount || 0,
         };
 
         transaction.set(billRef, billData);
@@ -433,6 +452,22 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                    <label onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-ink-muted"
+                      title="The contractor's profit on their bill, added to their labour cost and RA bills">
+                      Margin
+                      <input
+                        key={`${vendor.id}-${marginPctOf(vendor.id, allVendors)}`}
+                        type="number" min="0" max="100" step="0.5"
+                        defaultValue={marginPctOf(vendor.id, allVendors) || ""}
+                        placeholder="0"
+                        disabled={!isAdminOrOwner}
+                        onBlur={(e) => saveMargin(vendor.id, e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                        aria-label={`Contractor margin % for ${vendor.name}`}
+                        className="w-14 px-2 py-1.5 rounded-lg bg-panel border border-divider text-xs font-mono text-ink text-right disabled:opacity-60"
+                      />
+                      %
+                    </label>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -510,6 +545,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                                           role: rate.role,
                                           rate: rate.rate,
                                           unit: rate.unit,
+                                          ...(rate.date ? { date: rate.date } : {}),
                                         });
                                         setEditingRateId(rate.id);
                                         setIsAddingRate(true);
@@ -536,15 +572,17 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
 
                             <div className="flex justify-between items-baseline border-t border-divider/30 pt-2.5 mt-1">
                               <span className="text-[8px] font-black uppercase tracking-widest text-ink-muted">
-                                Daily Yield
+                                {isLumpSum(rate) ? `Lump sum${rate.date ? ` · ${rate.date}` : ""}` : "Daily Yield"}
                               </span>
                               <div className="text-right">
                                 <span className="text-sm font-bold text-success font-mono">
                                   ₹{rate.rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                                 </span>
-                                <span className="text-[10px] text-ink-muted font-bold ml-1">
-                                  / {rate.unit}
-                                </span>
+                                {!isLumpSum(rate) && (
+                                  <span className="text-[10px] text-ink-muted font-bold ml-1">
+                                    / {rate.unit}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -594,7 +632,16 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         netPayable: number;
         logCount: number;
         logIds: string[];
+        wages: number;
+        lumpSum: number;
+        lumpSumIds: string[];
+        marginPct: number;
+        marginAmount: number;
       }[] = [];
+      // Lump sums not yet on a bill go on the base-contract bill.
+      const billedLumps = new Set(raBills.flatMap((b) => b.lumpSumIds || []));
+      const openLumps = rateCards.filter((r) => r.vendorId === vendor.id && isLumpSum(r) && !billedLumps.has(r.id));
+      const marginPct = marginPctOf(vendor.id, allVendors);
 
       const buildRow = (
         changeOrder: boolean,
@@ -608,7 +655,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
               (i) => taskIsChangeOrder(i.taskId) === changeOrder,
             ),
         );
-        const gross = logs.reduce(
+        const wages = logs.reduce(
           (sum, l) =>
             sum +
             (l.items || [])
@@ -616,16 +663,23 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
               .reduce((s, i) => s + i.cost, 0),
           0,
         );
-        if (gross > 0) {
+        const lumps = changeOrder ? [] : openLumps;
+        const bill = contractorBill(wages, lumps.reduce((a, r) => a + (Number(r.rate) || 0), 0), marginPct);
+        if (bill.wages + bill.lumpSum > 0) {
           rows.push({
             vendor,
             isChangeOrder: changeOrder,
             label,
-            grossAmount: gross,
+            grossAmount: bill.wages + bill.lumpSum,
             totalPaid: 0,
-            netPayable: gross,
+            netPayable: bill.total,
             logCount: logs.length,
             logIds: logs.map((l) => l.id),
+            wages: bill.wages,
+            lumpSum: bill.lumpSum,
+            lumpSumIds: lumps.map((r) => r.id),
+            marginPct: bill.marginPct,
+            marginAmount: bill.margin,
           });
         }
       };
@@ -675,6 +729,13 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                     <p className="text-ink-muted font-bold uppercase tracking-[0.2em] text-[10px] md:text-[10px]">
                       {bill.logCount} Postings Certified
                     </p>
+                    {(bill.lumpSum > 0 || bill.marginAmount > 0) && (
+                      <p className="text-ink-muted text-[11px] font-semibold mt-1.5">
+                        Wages ₹{bill.wages.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                        {bill.lumpSum > 0 && <> + lump sums ₹{bill.lumpSum.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</>}
+                        {bill.marginAmount > 0 && <> + contractor margin {bill.marginPct}% ₹{bill.marginAmount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</>}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -723,6 +784,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         bill.netPayable,
                         bill.logIds,
                         bill.isChangeOrder,
+                        { lumpSumIds: bill.lumpSumIds, marginPct: bill.marginPct, marginAmount: bill.marginAmount },
                       )
                     }
                     disabled={isProcessing}
@@ -1132,14 +1194,31 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                     ))}
                   </select>
                 </div>
+                <div className="flex gap-2" role="radiogroup" aria-label="Rate type">
+                  {([["Shift", "Per head (per shift)"], [LUMP_SUM_UNIT, "Lump sum"]] as const).map(([u, label]) => {
+                    const on = u === LUMP_SUM_UNIT ? newRate.unit === LUMP_SUM_UNIT : newRate.unit !== LUMP_SUM_UNIT;
+                    return (
+                      <button key={u} type="button" role="radio" aria-checked={on}
+                        onClick={() => setNewRate({ ...newRate, unit: u, ...(u === LUMP_SUM_UNIT && !newRate.date ? { date: new Date().toISOString().slice(0, 10) } : {}) })}
+                        className={`flex-1 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest border ${on ? "bg-surface-dark text-white border-surface-dark" : "bg-panel text-ink-muted border-divider"}`}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {newRate.unit === LUMP_SUM_UNIT && (
+                  <p className="text-[11px] text-ink-muted -mt-2">
+                    A fixed amount for a piece of work. It counts once in labour cost (not per head), goes on this contractor's next RA bill, and is not picked in daily logs.
+                  </p>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                   <div className="space-y-1.5 md:space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
-                      Role Type
+                      {newRate.unit === LUMP_SUM_UNIT ? "For (description)" : "Role Type"}
                     </label>
                     <input
                       required
-                      placeholder="e.g. Mason"
+                      placeholder={newRate.unit === LUMP_SUM_UNIT ? "e.g. Footing shuttering" : "e.g. Mason"}
                       className="w-full bg-panel border-2 border-transparent focus:border-primary rounded-xl md:rounded-2xl p-3 md:p-4 outline-none text-xs md:text-sm font-bold"
                       value={newRate.role}
                       onChange={(e) =>
@@ -1149,7 +1228,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                   </div>
                   <div className="space-y-1.5 md:space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
-                      Rate (₹) / Unit
+                      {newRate.unit === LUMP_SUM_UNIT ? "Lump sum amount (₹)" : "Rate (₹) / Unit"}
                     </label>
                     <input
                       type="number"
@@ -1164,6 +1243,20 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                       }
                     />
                   </div>
+                  {newRate.unit === LUMP_SUM_UNIT && (
+                    <div className="space-y-1.5 md:space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
+                        Date
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        className="w-full bg-panel border-2 border-transparent focus:border-primary rounded-xl md:rounded-2xl p-3 md:p-4 outline-none text-xs md:text-sm font-bold"
+                        value={newRate.date || ""}
+                        onChange={(e) => setNewRate({ ...newRate, date: e.target.value })}
+                      />
+                    </div>
+                  )}
                 </div>
                 <button
                   type="submit"

@@ -1,3 +1,4 @@
+import { labourLineCost, lumpSums } from "../../lib/labourCost";
 import React, { useState, useMemo } from "react";
 import {
   ResponsiveContainer,
@@ -49,6 +50,7 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
   const { data: laborLogs = [] } = useProjectDataQuery<any>(projectId, "labor_logs");
   const { data: dailyLogs = [] } = useProjectDataQuery<any>(projectId, "dailyLogs");
   const { data: laborRates = [] } = useProjectDataQuery<any>(projectId, "labor_rate_cards");
+  const { data: suppliers = [] } = useProjectDataQuery<any>(projectId, "suppliers");
   const { data: allTasks = [] } = useTasksQuery(projectId);
   const [view, setView] = useState<ViewId>("utilisation");
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
@@ -165,11 +167,12 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
     // Daily-log labour, costed from the rate cards.
     for (const log of dailyLogs as any[]) {
       const total = (log.labour || []).reduce((s: number, l: any) => {
-        const rate = laborRates.find((r: any) => r.id === l.roleId)?.rate || 0;
-        return s + (l.headcount || 0) * rate;
+        return s + labourLineCost(l.headcount || 0, laborRates.find((r: any) => r.id === l.roleId), suppliers);
       }, 0);
       add(log.workDate || log.date, total);
     }
+    // Lump-sum labour, on its own date.
+    for (const l of lumpSums(laborRates, suppliers)) add(l.date, l.cost);
     if (byMonth.size < 2) return [];
     let cum = 0;
     return Array.from(byMonth.entries())
@@ -178,7 +181,7 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
         cum += v;
         return { month: m, spend: Math.round(cum) };
       });
-  }, [costEntries, materialIssues, laborLogs, dailyLogs, laborRates]);
+  }, [costEntries, materialIssues, laborLogs, dailyLogs, laborRates, suppliers]);
 
   if (!hasData) {
     return (

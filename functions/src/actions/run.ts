@@ -10,6 +10,7 @@ import { buildActionPrompt, sanitizeAction, actionFor } from "./parse";
 import { denial, type Who } from "./permissions";
 import { previewLines, blockers, poTotals, type Pending } from "./preview";
 import { stockFacts, orderFacts } from "./facts";
+import { paymentDirection, methodOf, cleanPayment } from "./receipt";
 
 /**
  * The engine behind "Do it for me" (app) and typed/voice requests in the bot.
@@ -147,6 +148,47 @@ export async function prepareAction(opts: {
   }
 }
 
+/**
+ * A payment receipt read from a photo (ai/invoiceReader.ts says docType
+ * "payment"): a payment to a vendor or from the client, depending on who paid
+ * whom (receipt.ts), prepared like a typed one: role-checked, previewed, and
+ * written only on Confirm. Blocked if its reference is already recorded.
+ */
+export async function prepareFromReceipt(opts: {
+  uid: string; orgId: string; projectId: string; channel: Channel; payment: any; companyName: string; receiptUrl?: string;
+}): Promise<PrepareOutcome> {
+  const { uid, orgId, projectId } = opts;
+  const { who, project, org } = await loadWho(uid, orgId, projectId);
+  if (!project) throw new HttpsError("not-found", "That project was not found.");
+  const p = cleanPayment(opts.payment, istToday());
+  const transcript = "Payment receipt";
+  if (!p) return { type: "other", transcript, message: "This looks like a payment receipt, but I couldn't read the amount. Type it instead, e.g. \"Paid ABC Traders 1.45 lakh by UPI on 4/11, ref 4471\"." };
+  const b = base(orgId, projectId);
+  const vendors = (await db.collection(`${b}/suppliers`).limit(300).get()).docs.map((d) => ({ id: d.id, name: String((d.data() as any).name || "") }));
+  const dir = paymentDirection(p, opts.companyName || String(org?.companyName || ""), vendors);
+  const amt = `₹${p.amount.toLocaleString("en-IN")}`;
+  const ref = p.reference ? `, ref ${p.reference}` : "";
+  if (dir.kind === "vendorUnknown") {
+    return { type: "other", transcript, message: `Payment receipt: ${amt} paid to ${p.payeeName || "someone"} on ${p.date}${ref}. ${p.payeeName || "They"} is not one of this project's vendors. Add them as a vendor (or say which vendor it was, e.g. "Paid ABC Traders ${amt}"), then send it again.` };
+  }
+  if (dir.kind === "unknown") {
+    return { type: "other", transcript, message: `Payment receipt: ${amt} from ${p.payerName || "?"} to ${p.payeeName || "?"} on ${p.date}${ref}. I couldn't tell whether this is a payment to a vendor or from the client. Type it instead: "Paid <vendor> ${amt}" or "Client paid ${amt}".` };
+  }
+  const method = methodOf(p.mode);
+  const prepared: Pending = dir.kind === "vendor"
+    ? { kind: "vendorPayment", vendorId: dir.vendorId, vendorName: dir.vendorName, amount: p.amount, date: p.date, method, reference: p.reference, description: "Payment to Vendor (from receipt)", ...(opts.receiptUrl ? { receiptUrl: opts.receiptUrl } : {}) }
+    : { kind: "payment", amount: p.amount, date: p.date, method, reference: p.reference, description: `Client payment${p.payerName ? ` from ${p.payerName}` : ""} (from receipt)`, ...(opts.receiptUrl ? { receiptUrl: opts.receiptUrl } : {}) };
+  const no = denial(prepared.kind === "vendorPayment" ? "vendorpay.create" : "payment.create", who);
+  if (no) return { type: "denied", transcript, message: no };
+  // The same transfer sent twice: its UTR / reference is already recorded.
+  if (p.reference) {
+    const coll = prepared.kind === "vendorPayment" ? "ledger" : "client_payments";
+    const dupe = await db.collection(`${b}/${coll}`).where("referenceNumber", "==", p.reference).limit(1).get();
+    if (!dupe.empty) prepared.duplicate = `A payment with reference ${p.reference} is already recorded (${String((dupe.docs[0].data() as any).date || "").slice(0, 10)}, ₹${Number((dupe.docs[0].data() as any).amount || 0).toLocaleString("en-IN")}). Nothing new to record.`;
+  }
+  return storePending({ uid, orgId, projectId, channel: opts.channel, transcript, pending: prepared, projectName: project.name, org });
+}
+
 async function storePending(o: { uid: string; orgId: string; projectId: string; channel: Channel; transcript: string; pending: Pending; projectName: string; org: any }): Promise<PrepareOutcome> {
   if (o.pending.kind === "vendorPayment") {
     o.pending.balanceBefore = Number((await db.doc(`${base(o.orgId, o.projectId)}/suppliers/${o.pending.vendorId}`).get()).data()?.outstandingBalance) || 0;
@@ -235,7 +277,7 @@ export async function confirmAction(id: string, uid: string): Promise<{ message:
     if (pending.kind === "po") result = await writePo(b, p.projectId, pending, org, by);
     else if (pending.kind === "payment") {
       const r = db.collection(`${b}/client_payments`).doc();
-      await r.set({ id: r.id, projectId: p.projectId, date: pending.date, amount: pending.amount, referenceNumber: pending.reference, description: pending.description, paymentMethod: pending.method, ...by, createdAt: new Date().toISOString() });
+      await r.set({ id: r.id, projectId: p.projectId, date: pending.date, amount: pending.amount, referenceNumber: pending.reference, description: pending.description, paymentMethod: pending.method, ...(pending.receiptUrl ? { receiptUrl: pending.receiptUrl } : {}), ...by, createdAt: new Date().toISOString() });
       result = { message: `Recorded the client payment of ₹${pending.amount.toLocaleString("en-IN")}.` };
     } else if (pending.kind === "vendorPayment") {
       // As the app's "Record payment" (ProcurementView.tsx): a DEBIT in the
@@ -248,7 +290,7 @@ export async function confirmAction(id: string, uid: string): Promise<{ message:
           projectId: p.projectId, vendorId: pending.vendorId, date: new Date(`${pending.date}T00:00:00Z`).toISOString(), type: "DEBIT",
           amount: pending.amount, referenceType: "PAYMENT",
           description: [pending.description || "Payment to Vendor", pending.method, pending.reference ? `Ref ${pending.reference}` : ""].filter(Boolean).join(" · "),
-          paymentMethod: pending.method, referenceNumber: pending.reference, ...by, createdAt: new Date().toISOString(),
+          paymentMethod: pending.method, referenceNumber: pending.reference, ...(pending.receiptUrl ? { receiptUrl: pending.receiptUrl } : {}), ...by, createdAt: new Date().toISOString(),
         });
         tx.update(vendorRef, { outstandingBalance: (Number(v.data()?.outstandingBalance) || 0) - pending.amount });
       });

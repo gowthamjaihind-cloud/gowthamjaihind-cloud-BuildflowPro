@@ -1,5 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
+import * as admin from "firebase-admin";
+import * as crypto from "crypto";
 import { db } from "../db";
 import { chargeAiUsage, refundAiUsage } from "./usage";
 import { geminiText } from "./gemini";
@@ -12,6 +14,7 @@ const projPath = (orgId?: string, projectId?: string) =>
   orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
 
 import { fixSeller } from "./seller";
+import { normalizeInvoiceJson } from "./invoiceShape";
 const norm = (s: any) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
 // Callable wrapper used by the web app's Scan Invoice flow.
@@ -26,7 +29,21 @@ export const extractVendorInvoice = onCall(
     // The org is the caller's claim; check it against the org's own members
     // map before reading its vendors or charging its quota. See ai/access.ts.
     const checked = await requireOrgMember(request.auth.uid, orgId);
-    return await readAndMatchInvoice(fileBase64, mimeType, checked, projectId, GEMINI_API_KEY.value());
+    const result: any = await readAndMatchInvoice(fileBase64, mimeType, checked, projectId, GEMINI_API_KEY.value());
+    if (result?.docType !== "payment" || !checked) return result;
+    // A payment receipt: prepared as a payment (role-checked, Confirm to save), with the file kept.
+    let receiptUrl: string | undefined;
+    try {
+      const bucket = admin.storage().bucket();
+      const token = crypto.randomUUID();
+      const path = `organizations/${checked}/projects/${projectId}/payment_receipts/${crypto.randomUUID()}.${mimeType === "application/pdf" ? "pdf" : "jpg"}`;
+      await bucket.file(path).save(Buffer.from(String(fileBase64), "base64"), { metadata: { contentType: mimeType, metadata: { firebaseStorageDownloadTokens: token } } });
+      receiptUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(path)}?alt=media&token=${token}`;
+    } catch (e) {
+      console.error("Payment receipt upload failed:", e);
+    }
+    const { prepareFromReceipt } = await import("../actions/run");
+    return { receipt: await prepareFromReceipt({ uid: request.auth.uid, orgId: checked, projectId: String(projectId), channel: "app", payment: result.payment, companyName: result.companyName, receiptUrl }) };
   }
 );
 
@@ -64,6 +81,14 @@ export async function readAndMatchInvoice(
     // one that produced nothing is given back.
     await refundAiUsage(orgId, "invoice_scan");
     throw e;
+  }
+  // Not a bill: a payment receipt goes to payments (actions/receipt.ts), anything else is refused.
+  if (raw?.docType === "payment") {
+    return { docType: "payment" as const, payment: raw.payment, companyName, flags: [] as string[] };
+  }
+  if (raw?.docType === "other") {
+    await refundAiUsage(orgId, "invoice_scan");
+    throw new HttpsError("failed-precondition", "That doesn't look like a bill or a payment receipt. Send the vendor's tax invoice, or the payment receipt.");
   }
   // The vendor is the seller; if the model read our own company there, swap (ai/seller.ts).
   raw = fixSeller(raw, { name: companyName, gstin: companyGstin }).raw;
@@ -277,10 +302,18 @@ export const INVOICE_MODELS = ["gemini-2.5-flash", "gemini-flash-latest", "gemin
 const INVOICE_BUDGET_MS = 95_000;
 
 async function callGeminiVision(fileBase64: string, mimeType: string, key: string): Promise<any> {
-  const prompt = `You are reading an Indian GST vendor invoice (tax invoice). Extract its contents to JSON. Read only what is printed; if a value is absent leave it 0 or "".
+  const prompt = `You are reading a document a construction company photographed or uploaded as a vendor bill. Read only what is printed; if a value is absent leave it 0 or "".
+First decide "docType":
+- "invoice": a tax invoice, bill, delivery challan or quotation that lists items with quantities and amounts.
+- "payment": proof that money was PAID: a bank transfer / NEFT / RTGS / IMPS advice, a UPI or net-banking screenshot (Google Pay, PhonePe, Paytm, bank app), a cheque, or a cash/payment receipt. It shows an amount moving from a payer to a payee, not a list of items.
+- "other": anything else.
+For "payment", fill "payment": {"amount": number, "date": "YYYY-MM-DD" (dates on Indian receipts are day first), "payerName": who paid (the sender / debited account holder), "payeeName": who received it (beneficiary / credited account / "paid to"), "reference": the UTR / transaction / reference / cheque number, "mode": UPI, NEFT, RTGS, IMPS, Cheque or Cash}, and leave the invoice fields empty.
+For "invoice", fill the invoice fields below and leave "payment" empty.
 "vendorName" and "vendorGSTIN" are the SELLER: the business that ISSUED the invoice (usually the name and GSTIN printed at the top, or under "Seller", "Supplier", "From", "Sold by"). Never the buyer: the party under "Bill to", "Billed to", "Buyer", "Ship to", "Consignee" or "Customer" goes in "buyerName" and "buyerGSTIN".
-Return ONLY this JSON:
+Return ONLY one JSON object (not a list, not wrapped in another field), exactly this shape:
 {
+  "docType": "invoice" | "payment" | "other",
+  "payment": {"amount": number, "date": string, "payerName": string, "payeeName": string, "reference": string, "mode": string},
   "vendorName": string,
   "vendorGSTIN": string,
   "buyerName": string,
@@ -316,10 +349,17 @@ Return ONLY this JSON:
         ? { ...b, generationConfig: { ...b.generationConfig, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } }
         : b,
   });
-  try { return JSON.parse(text); }
+  let parsed: any = null;
+  try { parsed = JSON.parse(text); }
   catch {
-    const m = text.match(/\{[\s\S]*\}/);
-    if (m) return JSON.parse(m[0]);
-    throw new HttpsError("internal", "Couldn't read the invoice. Try a clearer photo or PDF.");
+    const m = text.match(/[\[{][\s\S]*[\]}]/);
+    try { parsed = m ? JSON.parse(m[0]) : null; } catch { parsed = null; }
   }
+  // A list, a wrapper, or nothing usable: see ai/invoiceShape.ts. Never save a blank bill.
+  const bill = normalizeInvoiceJson(parsed);
+  if (!bill) {
+    console.error("Invoice read gave nothing usable:", String(text).slice(0, 500));
+    throw new HttpsError("internal", "Couldn't read the invoice. Try a clearer photo or PDF, with the whole bill in view.");
+  }
+  return bill;
 }

@@ -166,6 +166,8 @@ export interface Vendor {
   /** The vendor's GSTIN. Its first two digits decide CGST+SGST versus IGST. */
   gstin?: string;
   outstandingBalance: number;
+  /** A labour contractor's margin on their bill (their profit), in percent. See lib/labourCost.ts. */
+  contractorMarginPct?: number;
 }
 
 export interface Supplier extends Vendor {}
@@ -175,8 +177,11 @@ export interface LaborRateCard {
   projectId: string;
   vendorId: string;
   role: string;
+  /** Per head for Shift/Day/Hour; for "Lumpsum", the whole amount (counted once, never per head). */
   rate: number;
-  unit: "Shift" | "Day" | "Hour";
+  unit: "Shift" | "Day" | "Hour" | "Lumpsum";
+  /** A lump sum's date (when it counts as cost). */
+  date?: string;
 }
 
 export type POStatus = "Draft" | "Approved" | "Partially Received" | "Closed";
@@ -528,6 +533,10 @@ export interface RABill {
   // Change-order labor is certified on its own RA bill so the vendor can be
   // paid for it separately from base-contract labor.
   isChangeOrder?: boolean;
+  /** Lump-sum rate cards billed on this bill, and the contractor's margin on it (grossAmount excludes the margin). */
+  lumpSumIds?: string[];
+  marginPct?: number;
+  marginAmount?: number;
 }
 
 export interface CostEntry {

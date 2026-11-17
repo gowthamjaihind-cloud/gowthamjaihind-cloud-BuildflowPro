@@ -2,7 +2,7 @@ import { HttpsError } from "firebase-functions/v2/https";
 import { db } from "../../db";
 import { channelOf, type ChatId } from "../../bot/channel";
 import { isQuotaError } from "../../ai/usage";
-import { prepareAction, confirmAction, cancelAction, listDraftPos, approvePo, whyNot, type DraftPo } from "../../actions/run";
+import { prepareAction, confirmAction, cancelAction, listDraftPos, approvePo, whyNot, type DraftPo, type PrepareOutcome } from "../../actions/run";
 import { pdfForPendingPo, pdfForPo } from "../../actions/poDoc";
 import { tt, normalizeLang } from "../i18n";
 import * as aiLog from "./aiLog";
@@ -55,6 +55,13 @@ export async function handleRequest(
     await sendApprovals(api, chatId, lang, out.pos);
     return;
   }
+  await sendOutcome(api, chatId, session, out, heard);
+}
+
+/** A prepared action's answer, or its preview with Confirm/Cancel (and the draft PO PDF). */
+export async function sendOutcome(api: any, chatId: ChatId, session: any, out: PrepareOutcome, heard = ""): Promise<void> {
+  const lang = normalizeLang(session?.lang);
+  if (out.type === "log" || out.type === "approvals") return;
   if (out.type !== "pending") {
     const icon = out.type === "denied" ? "🔒 " : "";
     await api.sendMessage(chatId, `${heard}${icon}${esc(out.message)}`);

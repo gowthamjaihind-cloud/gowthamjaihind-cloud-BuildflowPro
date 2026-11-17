@@ -1,3 +1,4 @@
+import { labourLineCost, lumpSums } from "../lib/labourCost";
 import { useMemo } from "react";
 import { Task, CostEntry, InventoryItem, DailyLaborLog } from "../types";
 import { useProjectDataQuery } from "./queries";
@@ -55,6 +56,7 @@ export const useProjectCostTotals = (projectId: string) => {
   const { data: laborLogs = [] } = useProjectDataQuery<DailyLaborLog>(projectId, "labor_logs");
   const { data: dailyLogs = [] } = useProjectDataQuery<any>(projectId, "dailyLogs");
   const { data: laborRates = [] } = useProjectDataQuery<any>(projectId, "labor_rate_cards");
+  const { data: suppliers = [] } = useProjectDataQuery<any>(projectId, "suppliers");
   const { data: materialIssues = [] } = useProjectDataQuery<any>(projectId, "material_issues");
   const { data: equipmentMaster = [] } = useProjectDataQuery<any>(projectId, "equipment");
 
@@ -148,9 +150,8 @@ export const useProjectCostTotals = (projectId: string) => {
         const logLab = laborLogs.filter((log) => log.items.some((item) => item.taskId === taskId)).reduce((sum, log) => sum + log.items.filter((item) => item.taskId === taskId).reduce((s, i) => s + i.cost, 0), 0);
         const dailyLogLab = dailyLogs.filter((log: any) => log.taskId === taskId).reduce((sum: number, log: any) => {
           return sum + (log.labour || []).reduce((s: number, l: any) => {
-            const rateCard = laborRates.find((r: any) => r.id === l.roleId);
-            const rate = rateCard ? rateCard.rate : 0;
-            return s + (l.headcount || 0) * rate;
+            // Wages plus the contractor's margin; never a lump sum per head (lib/labourCost.ts).
+            return s + labourLineCost(l.headcount || 0, laborRates.find((r: any) => r.id === l.roleId), suppliers);
           }, 0);
         }, 0);
         actualLabor = entryLab + logLab + dailyLogLab;
@@ -217,7 +218,7 @@ export const useProjectCostTotals = (projectId: string) => {
 
     tasks.forEach((t) => getTotals(t.id));
     return totals;
-  }, [tasks, entries, dailyLogs, laborLogs, inventory, materialIssues, laborRates, equipmentMaster]);
+  }, [tasks, entries, dailyLogs, laborLogs, inventory, materialIssues, laborRates, equipmentMaster, suppliers]);
 
   const getTaskTotals = (task: Task) => {
     return (
@@ -267,8 +268,13 @@ export const useProjectCostTotals = (projectId: string) => {
       equipmentActual += totals.actualEquipment;
     });
 
+    // Lump-sum labour (a rate card that is just an amount) belongs to no task:
+    // it counts once, at the project level, with the contractor's margin.
+    const lumpSumLabor = lumpSums(laborRates, suppliers).reduce((a, l) => a + l.cost, 0);
+    laborActual += lumpSumLabor;
+
     const totalBudgeted = budgetedTasks;
-    const totalActual = actualTasks;
+    const totalActual = actualTasks + lumpSumLabor;
 
     // Equipment lives inside "other"; subtract it so the chart's Direct Cost bar
     // and Equipment bar don't double-count.
@@ -296,8 +302,9 @@ export const useProjectCostTotals = (projectId: string) => {
       otherActual,
       equipmentPlanned,
       equipmentActual,
+      lumpSumLabor,
     };
-  }, [tasks, taskTotalsMap]);
+  }, [tasks, taskTotalsMap, laborRates, suppliers]);
 
   return { stats, taskTotalsMap, getTaskTotals };
 };

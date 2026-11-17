@@ -1,3 +1,4 @@
+import { labourLineCost, lumpSums } from "../../lib/labourCost";
 import React, { useState, useMemo } from "react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -22,6 +23,7 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
   // both, otherwise these breakdowns look empty for projects that log from site.
   const { data: dailyLogs = [] } = useProjectDataQuery<any>(projectId, "dailyLogs");
   const { data: laborRates = [] } = useProjectDataQuery<any>(projectId, "labor_rate_cards");
+  const { data: suppliers = [] } = useProjectDataQuery<any>(projectId, "suppliers");
   const [view, setView] = useState<ViewId>("byRole");
 
   const S = chartSeries;
@@ -54,17 +56,22 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
     for (const log of dailyLogs as any[]) {
       const date = log.workDate || log.date;
       for (const l of log.labour || []) {
-        const rate = laborRates.find((r: any) => r.id === l.roleId)?.rate || 0;
         const hc = l.headcount || 0;
+        const cost = labourLineCost(hc, laborRates.find((r: any) => r.id === l.roleId), suppliers);
         const name = l.roleName || "—";
-        roleCost.set(name, (roleCost.get(name) || 0) + hc * rate);
+        roleCost.set(name, (roleCost.get(name) || 0) + cost);
         hcDays += hc;
         if (date) {
           byDate.set(date, (byDate.get(date) || 0) + hc);
           const m = String(date).slice(0, 7);
-          byMonth.set(m, (byMonth.get(m) || 0) + hc * rate);
+          byMonth.set(m, (byMonth.get(m) || 0) + cost);
         }
       }
+    }
+    // Lump-sum labour: its own slice, on its own date.
+    for (const l of lumpSums(laborRates, suppliers)) {
+      roleCost.set("Lump sums", (roleCost.get("Lump sums") || 0) + l.cost);
+      if (l.date) byMonth.set(l.date.slice(0, 7), (byMonth.get(l.date.slice(0, 7)) || 0) + l.cost);
     }
     const byRole = Array.from(roleCost.entries())
       .map(([name, value]) => ({ name, value }))
@@ -82,7 +89,7 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
         return { month, spend: Math.round(cum) };
       });
     return { byRole, manpower, headcountDays: hcDays, trendData };
-  }, [laborLogs, dailyLogs, laborRates]);
+  }, [laborLogs, dailyLogs, laborRates, suppliers]);
 
   const statusColor = consumedPct >= 100 ? S.over : consumedPct >= 90 ? S.amber : S.under;
   const hasData = budget > 0 || actual > 0 || byRole.length > 0;

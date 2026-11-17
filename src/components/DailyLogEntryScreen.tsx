@@ -681,7 +681,8 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     className="flex-[2] bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none"
                   >
                     <option value="">{t("dlog.selectRole")}</option>
-                    {rateCards.map((r) => (
+                    {/* A lump sum is an amount, never head count x rate (lib/labourCost.ts). */}
+                    {rateCards.filter((r) => r.unit !== "Lumpsum").map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.role}
                       </option>

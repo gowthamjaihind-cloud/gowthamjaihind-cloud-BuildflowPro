@@ -67,7 +67,8 @@ export async function loadContext(base: string): Promise<AiLogContext> {
       .sort((a, b) => Number(a.progress >= 100) - Number(b.progress >= 100))
       .slice(0, 150),
     materials: inv.docs.map((d) => ({ id: d.id, name: String((d.data() as any).name || "").slice(0, 60), unit: String((d.data() as any).unit || "") })).filter((m) => m.name).slice(0, 150),
-    roles: roles.docs.map((d) => ({ id: d.id, name: String((d.data() as any).roleName || (d.data() as any).role || (d.data() as any).name || "") })).filter((r) => r.name).slice(0, 80),
+    // Lump-sum rate cards are amounts, not roles a head count can be logged against.
+    roles: roles.docs.filter((d) => (d.data() as any).unit !== "Lumpsum").map((d) => ({ id: d.id, name: String((d.data() as any).roleName || (d.data() as any).role || (d.data() as any).name || "") })).filter((r) => r.name).slice(0, 80),
     equipment: equip.docs.map((d) => ({ id: d.id, name: String((d.data() as any).name || "") })).filter((e) => e.name).slice(0, 80),
   };
 }

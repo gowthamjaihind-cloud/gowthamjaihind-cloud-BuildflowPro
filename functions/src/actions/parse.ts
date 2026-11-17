@@ -11,8 +11,8 @@ import { lookupTax } from "../shared/hsnTable";
 
 export type Prepared =
   | { kind: "po"; draft: PoDraft; unmatched: string[]; missingVendor: boolean }
-  | { kind: "payment"; amount: number; date: string; method: string; reference: string; description: string }
-  | { kind: "vendorPayment"; vendorId: string; vendorName: string; amount: number; date: string; method: string; reference: string; description: string; balanceBefore?: number }
+  | { kind: "payment"; amount: number; date: string; method: string; reference: string; description: string; receiptUrl?: string; duplicate?: string }
+  | { kind: "vendorPayment"; vendorId: string; vendorName: string; amount: number; date: string; method: string; reference: string; description: string; balanceBefore?: number; receiptUrl?: string; duplicate?: string }
   | { kind: "vendor"; name: string; type: "Material" | "Labor" | "Both"; phone: string; gstin: string; contactPerson: string; address: string }
   | { kind: "material"; name: string; unit: string; rate: number; hsn: string; gstRate: number; taxNote?: string }
   | { kind: "approve"; poNumber: string } // approve a Draft PO ("" = list the ones waiting)

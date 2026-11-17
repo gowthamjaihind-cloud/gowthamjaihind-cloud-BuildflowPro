@@ -232,14 +232,15 @@ export async function askMaterialQty(tg: any, chatId: ChatId, messageId, session
 export async function pickLabourRole(tg: any, chatId: ChatId, messageId, session) {
     const lang = normalizeLang(session?.lang);
     const base = projPath(session.orgId, session.activeProjectId);
-    const snap = await db.collection(`${base}/labor_rate_cards`).limit(20).get();
+    const snap = await db.collection(`${base}/labor_rate_cards`).limit(40).get();
     if (snap.empty) {
         await tg.editMessage(chatId, messageId, tt(lang, "noLabourRoles"));
         return;
     }
-    const rows = snap.docs.map((d) => {
+    // A lump-sum rate card is an amount, never head count x rate: not offered here.
+    const rows = snap.docs.filter((d) => d.data().unit !== "Lumpsum").map((d) => {
         const r = d.data();
-        return [{ text: r.roleName || r.name || "Role", callback_data: `lr:${d.id}` }];
+        return [{ text: r.roleName || r.role || r.name || "Role", callback_data: `lr:${d.id}` }];
     });
     rows.push([{ text: tt(lang, "btnBack"), callback_data: "bk" }]);
     await setSession(chatId, { step: "log:labour_pick" });

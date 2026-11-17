@@ -21,6 +21,7 @@ export function poTotals(p: Extract<Pending, { kind: "po" }>, buyerGstin?: strin
 
 /** Reasons the action cannot be confirmed as it is ([] when it can). */
 export function blockers(p: Pending): string[] {
+  if ((p.kind === "payment" || p.kind === "vendorPayment") && p.duplicate) return [p.duplicate];
   if (p.kind !== "po") return [];
   const out: string[] = [];
   if (p.missingVendor) out.push("No vendor was matched. Say which vendor (it must already be in this project's vendors).");
@@ -56,12 +57,13 @@ export function previewLines(p: Pending, projectName: string, opts: { buyerGstin
       ];
     }
     case "payment":
-      return [`Record a client payment for ${projectName}`, `Amount: ${inr(p.amount)}`, `Date: ${day(p.date)}`, `Method: ${p.method}${p.reference ? ` · Ref ${p.reference}` : ""}`, `Description: ${p.description}`];
+      return [`Record a client payment for ${projectName}`, `Amount: ${inr(p.amount)}`, `Date: ${day(p.date)}`, `Method: ${p.method}${p.reference ? ` · Ref ${p.reference}` : ""}`, `Description: ${p.description}`, ...(p.receiptUrl ? ["The payment receipt is attached to the entry."] : [])];
     case "vendorPayment":
       return [
         `Record a payment to ${p.vendorName} (${projectName})`, `Amount: ${inr(p.amount)}`, `Date: ${day(p.date)}`,
         `Method: ${p.method}${p.reference ? ` · Ref ${p.reference}` : ""}`, ...(p.description ? [`Note: ${p.description}`] : []),
         ...(p.balanceBefore !== undefined ? [`Amount owed to them: ${inr(p.balanceBefore)} → ${inr(p.balanceBefore - p.amount)}`] : []),
+        ...(p.receiptUrl ? ["The payment receipt is attached to the entry."] : []),
       ];
     case "vendor":
       return [`Add a vendor to ${projectName}`, `Name: ${p.name} (${p.type})`, ...(p.phone ? [`Phone: ${p.phone}`] : []), ...(p.gstin ? [`GSTIN: ${p.gstin}`] : ["GSTIN: not given (add it later for GST purchase orders)"]), ...(p.contactPerson ? [`Contact: ${p.contactPerson}`] : []), ...(p.address ? [`Address: ${p.address}`] : [])];
