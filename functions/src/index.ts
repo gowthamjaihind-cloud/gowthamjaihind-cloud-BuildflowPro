@@ -19,7 +19,7 @@ export * from "./telegram";
 export * from "./telegram/teamLinks";
 export * from "./clientShare";
 export * from "./help";
-export * from "./command";
+export * from "./actions";
 
 /**
  * The WhatsApp lane, registered ONLY when it has been configured.

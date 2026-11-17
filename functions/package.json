@@ -18,6 +18,7 @@
     "@sentry/node": "^8.55.2",
     "firebase-admin": "^13.1.0",
     "firebase-functions": "^6.1.1",
+    "pdf-lib": "^1.17.1",
     "react-example": "file:.."
   },
   "devDependencies": {

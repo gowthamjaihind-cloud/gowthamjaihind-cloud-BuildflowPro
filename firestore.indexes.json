@@ -1,5 +1,5 @@
 {
-  "//": "Version-controlled Firestore indexes for the named database. No composite indexes are needed: every query uses one sort field or equality filters only (checked Nov 2026). fieldOverrides hold TTL policies: documents are deleted after their expireAt passes (bot_updates_seen: Telegram message dedup, 3 days; bot_errors: the bot's failure log, 30 days; help_usage: the help assistant's daily counters, 3 days). Deployed by the manual 'Deploy Firestore rules' workflow, without --force so an index made in the console is never deleted.",
+  "//": "Version-controlled Firestore indexes for the named database. No composite indexes are needed: every query uses one sort field or equality filters only (checked Nov 2026). fieldOverrides hold TTL policies: documents are deleted after their expireAt passes (bot_updates_seen: Telegram message dedup, 3 days; bot_errors: the bot's failure log, 30 days; help_usage: the help assistant's daily counters, 3 days; pending_actions: requests awaiting Confirm, 30 minutes). Deployed by the manual 'Deploy Firestore rules' workflow, without --force so an index made in the console is never deleted.",
   "indexes": [],
   "fieldOverrides": [
     {
@@ -16,6 +16,12 @@
     },
     {
       "collectionGroup": "help_usage",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "pending_actions",
       "fieldPath": "expireAt",
       "ttl": true,
       "indexes": []
