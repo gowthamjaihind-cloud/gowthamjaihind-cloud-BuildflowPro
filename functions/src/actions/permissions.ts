@@ -22,6 +22,7 @@ export type Action =
   | "po.approve"
   | "bill.post"
   | "payment.create"
+  | "vendorpay.create"
   | "vendor.create"
   | "material.create"
   | "log.create"
@@ -46,6 +47,7 @@ const POLICY: Record<Action, { need: "read" | "write"; roles: string[] | "any"; 
   // Posting a bill records the goods receipt (rules: managers and site engineers) and the vendor payable.
   "bill.post": { need: "write", roles: [...MANAGER_ROLES, "Site Engineer"], what: "post bills and goods receipts" },
   "payment.create": { need: "write", roles: MANAGER_ROLES, what: "record client payments" },
+  "vendorpay.create": { need: "write", roles: MANAGER_ROLES, what: "record payments to vendors" },
   "vendor.create": { need: "write", roles: MANAGER_ROLES, what: "add vendors" },
   "material.create": { need: "write", roles: MANAGER_ROLES, what: "add materials" },
   "log.create": { need: "write", roles: [...MANAGER_ROLES, "Site Engineer"], what: "log daily work" },

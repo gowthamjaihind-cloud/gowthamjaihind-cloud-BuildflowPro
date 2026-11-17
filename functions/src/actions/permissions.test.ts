@@ -9,7 +9,7 @@ describe("command permissions", () => {
     expect(denial("po.create", base)).toMatch(/Site Engineer\) cannot create purchase orders/);
   });
   it("lets managers with write access do everything", () => {
-    expect(allowedActions({ ...base, role: "Project Manager" })).toHaveLength(8);
+    expect(allowedActions({ ...base, role: "Project Manager" })).toHaveLength(9);
     expect(denial("po.approve", { ...base, role: "Project Manager" })).toMatch(/Owner or Admin/);
     expect(denial("po.approve", { ...base, role: "Admin" })).toBeNull();
   });

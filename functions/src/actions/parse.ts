@@ -12,6 +12,7 @@ import { lookupTax } from "../shared/hsnTable";
 export type Prepared =
   | { kind: "po"; draft: PoDraft; unmatched: string[]; missingVendor: boolean }
   | { kind: "payment"; amount: number; date: string; method: string; reference: string; description: string }
+  | { kind: "vendorPayment"; vendorId: string; vendorName: string; amount: number; date: string; method: string; reference: string; description: string; balanceBefore?: number }
   | { kind: "vendor"; name: string; type: "Material" | "Labor" | "Both"; phone: string; gstin: string; contactPerson: string; address: string }
   | { kind: "material"; name: string; unit: string; rate: number; hsn: string; gstRate: number; taxNote?: string }
   | { kind: "approve"; poNumber: string } // approve a Draft PO ("" = list the ones waiting)
@@ -47,13 +48,14 @@ Choose "intent":
   "rateIncludesGst": true when the user says the price INCLUDES GST ("325 including GST", "with GST", "inclusive", "GST included", "all-in with tax"); false when they say excluding GST, plus GST, or say nothing. Give "rate" exactly as said; do NOT remove the GST yourself.
   Steel bars asked for as a NUMBER of bars ("12mm 150 nos", "100 rods of 16mm", "8mm - 40 numbers"): choose the material of that size, put the count in "nos" and leave "qty" null. Do NOT convert to kg or tonnes yourself; the app does it. Otherwise "nos" is null.
   "hsn" and "gstRate": only for a chosen material whose HSN above is "-": the Indian HSN code (4, 6 or 8 digits) and the current GST rate (%) you believe apply. Otherwise null.
-- "client_payment": money RECEIVED from the client/owner for this project. Fill "amount", "date" (YYYY-MM-DD, today if not said, never in the future), "method" (one of ${METHODS.join(", ")}), "reference" (cheque/UTR/transaction number or ""), "description".
+- "vendor_payment": money PAID BY US to a vendor/supplier/subcontractor ("paid ABC Traders 1.2 lakh", "payment made to ..."). Fill "vendorId" (from VENDORS, by meaning and spelling; null if none matches), "amount", "date" (YYYY-MM-DD, today if not said, never in the future), "method" (one of ${METHODS.join(", ")}), "reference", "description".
+- "client_payment": money RECEIVED from the client/owner for this project (never a payment made to a vendor). Fill "amount", "date" (YYYY-MM-DD, today if not said, never in the future), "method" (one of ${METHODS.join(", ")}), "reference" (cheque/UTR/transaction number or ""), "description".
 - "add_vendor": add a new vendor/supplier/subcontractor. Fill "vendor": {"name","type" ("Material", "Labor" or "Both"),"phone","gstin","contactPerson","address"} ("" for anything not said).
 - "add_material": add a new material to the project's inventory. Fill "material": {"name","unit" (bag, kg, MT, cft, cum, sqft, rmt, nos, litre, load),"rate" (or 0),"hsn" (the Indian HSN code for it, 4-8 digits, said or your best knowledge),"gstRate" (its current GST rate: ${GST.join(", ")})}.
 - "approve_po": approve a purchase order, or see which are waiting for approval ("approve PO 12", "pending approvals"). Fill "poNumber" with the number said (e.g. "PO-2026-0012" or just "12"), or "" for all waiting.
 - "daily_log": a report of work done today on site (progress %, labour, materials used, equipment). Fill nothing else.
 - "question": the user asks about this project's data. Fill "topic": "stock" (material quantities left), "progress" (schedule, % done, delays), "payments" (client payments, balance), "orders" (purchase orders and deliveries), or "general"; "materialIds" for any materials named; "question" restated briefly in English.
-- "other": anything else. Put a one-sentence "reply" saying what you can do: purchase orders and approving them, client payments, new vendors and materials, daily logs, and questions about stock, progress, payments and orders.
+- "other": anything else. Put a one-sentence "reply" saying what you can do: purchase orders and approving them, payments to vendors and from the client, new vendors and materials, daily logs, and questions about stock, progress, payments and orders.
 Never invent an id.
 
 Answer with JSON only:
@@ -84,6 +86,19 @@ export function sanitizeAction(raw: any, ctx: PoContext, typedText: string | nul
       });
     }
     return out({ kind: "other", reply: "How much was received? For example: \"Received 2 lakh from the client by UPI today, ref 4471\"." });
+  }
+  if (intent === "vendor_payment") {
+    const amount = money(raw.amount);
+    const d = String(raw.date || "");
+    const v = ctx.vendors.find((x) => x.id === String(raw.vendorId ?? ""));
+    if (!amount) return out({ kind: "other", reply: "How much was paid, and to which vendor? For example: \"Paid ABC Traders 1.2 lakh by UPI today, ref 4471\"." });
+    if (!v) return out({ kind: "other", reply: "Which vendor was paid? It must already be in this project's vendors (Procurement → Vendors). Say the name as it appears there." });
+    return out({
+      kind: "vendorPayment", vendorId: v.id, vendorName: v.name, amount,
+      date: /^\d{4}-\d{2}-\d{2}$/.test(d) && d <= ctx.today ? d : ctx.today,
+      method: METHODS.includes(raw.method) ? raw.method : "Bank Transfer",
+      reference: clip(raw.reference, 60), description: clip(raw.description, 200),
+    });
   }
   if (intent === "add_vendor") {
     const v = raw.vendor || {};
@@ -145,6 +160,7 @@ export function actionFor(p: Prepared): import("./permissions").Action | null {
     case "po": return "po.create";
     case "approve": return "po.approve";
     case "payment": return "payment.create";
+    case "vendorPayment": return "vendorpay.create";
     case "vendor": return "vendor.create";
     case "material": return "material.create";
     case "log": return "log.create";

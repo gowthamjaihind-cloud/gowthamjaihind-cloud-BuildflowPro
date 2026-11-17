@@ -57,6 +57,12 @@ export function previewLines(p: Pending, projectName: string, opts: { buyerGstin
     }
     case "payment":
       return [`Record a client payment for ${projectName}`, `Amount: ${inr(p.amount)}`, `Date: ${day(p.date)}`, `Method: ${p.method}${p.reference ? ` · Ref ${p.reference}` : ""}`, `Description: ${p.description}`];
+    case "vendorPayment":
+      return [
+        `Record a payment to ${p.vendorName} (${projectName})`, `Amount: ${inr(p.amount)}`, `Date: ${day(p.date)}`,
+        `Method: ${p.method}${p.reference ? ` · Ref ${p.reference}` : ""}`, ...(p.description ? [`Note: ${p.description}`] : []),
+        ...(p.balanceBefore !== undefined ? [`Amount owed to them: ${inr(p.balanceBefore)} → ${inr(p.balanceBefore - p.amount)}`] : []),
+      ];
     case "vendor":
       return [`Add a vendor to ${projectName}`, `Name: ${p.name} (${p.type})`, ...(p.phone ? [`Phone: ${p.phone}`] : []), ...(p.gstin ? [`GSTIN: ${p.gstin}`] : ["GSTIN: not given (add it later for GST purchase orders)"]), ...(p.contactPerson ? [`Contact: ${p.contactPerson}`] : []), ...(p.address ? [`Address: ${p.address}`] : [])];
     case "material":
