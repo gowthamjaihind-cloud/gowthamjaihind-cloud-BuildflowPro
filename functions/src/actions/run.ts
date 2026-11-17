@@ -6,7 +6,7 @@ import { parseModelJson, sanitizeAiLogs } from "../bot/aiLog";
 import { loadContext as loadLogContext, botLogRequest, BOT_LOG_MODELS } from "../telegram/handlers/aiLog";
 import { buildClientView } from "../clientShare/build";
 import type { PoContext } from "../command/po";
-import { buildActionPrompt, sanitizeAction, actionFor } from "./parse";
+import { buildActionPrompt, sanitizeAction, actionFor, needsBetterRead, type ParseResult } from "./parse";
 import { denial, type Who } from "./permissions";
 import { previewLines, blockers, poTotals, type Pending } from "./preview";
 import { stockFacts, orderFacts } from "./facts";
@@ -26,7 +26,11 @@ import { paymentDirection, methodOf, cleanPayment } from "./receipt";
  * here; it mirrors the rules and is stricter for purchasing and money.
  */
 
-const MODELS = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-flash-lite-latest"];
+// Requests are read by Flash-Lite first (about 4x cheaper, and quicker); a
+// reading too weak to show (parse.ts needsBetterRead) is read again by full
+// Flash. One AI use either way.
+const LITE_MODELS = ["gemini-2.5-flash-lite", "gemini-flash-lite-latest"];
+const FULL_MODELS = ["gemini-2.5-flash", "gemini-flash-latest"];
 const PENDING_MS = 30 * 60_000;
 const istToday = () => new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);
 const base = (orgId: string, projectId: string) => `organizations/${orgId}/projects/${projectId}`;
@@ -93,13 +97,35 @@ export async function prepareAction(opts: {
   let charged = true;
   const refund = async () => { if (charged) { charged = false; await refundAiUsage(orgId, "command"); } };
   try {
-    const parts: any[] = [{ text: buildActionPrompt(ctx, opts.audio ? null : opts.text || "") }];
+    const typed = opts.audio ? null : opts.text || "";
+    const parts: any[] = [{ text: buildActionPrompt(ctx, typed) }];
     if (opts.audio) parts.push({ inlineData: { mimeType: opts.audio.mimeType, data: opts.audio.base64 } });
-    const { text: out } = await geminiText(
-      { contents: [{ role: "user", parts }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } },
-      key, 70_000, { perAttemptMs: 30_000, models: MODELS, forModel: noThinking },
-    );
-    const { transcript, prepared } = sanitizeAction(parseModelJson(out), ctx, opts.audio ? null : opts.text || "");
+    const read = async (models: string[], budgetMs: number): Promise<ParseResult> => {
+      const { text: out } = await geminiText(
+        { contents: [{ role: "user", parts }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } },
+        key, budgetMs, { perAttemptMs: 25_000, models, forModel: noThinking },
+      );
+      return sanitizeAction(parseModelJson(out), ctx, typed);
+    };
+    let reading: ParseResult | null = null;
+    let why: string | null = null;
+    try {
+      reading = await read(LITE_MODELS, 35_000);
+      why = needsBetterRead(reading, !!opts.audio);
+    } catch (e) {
+      why = "lite failed";
+    }
+    if (why) {
+      // A weak or failed cheap reading: full Flash reads it again. If that
+      // fails too, the cheap reading (if any) is still shown for checking.
+      console.log("actionPrepare: reading again with Flash:", why);
+      try {
+        reading = await read(FULL_MODELS, 60_000);
+      } catch (e) {
+        if (!reading) throw e;
+      }
+    }
+    const { transcript, prepared } = reading!;
 
     const action = actionFor(prepared);
     if (action) {

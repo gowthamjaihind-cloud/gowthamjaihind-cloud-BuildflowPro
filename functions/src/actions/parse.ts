@@ -154,6 +154,25 @@ export function sanitizeAction(raw: any, ctx: PoContext, typedText: string | nul
   });
 }
 
+/**
+ * Whether a reading by the smaller, cheaper model (Flash-Lite) is too weak to
+ * show, so the request is read again by full Flash: it gave up, or a purchase
+ * order is missing its vendor or a material, or a voice note came back with no
+ * words. null when the reading is good enough to preview. The preview and
+ * Confirm still guard every action either way.
+ */
+export function needsBetterRead(r: ParseResult, fromAudio: boolean): string | null {
+  const p = r.prepared;
+  if (fromAudio && !r.transcript.trim()) return "no transcript";
+  if (p.kind === "other") return "gave up";
+  if (p.kind === "po") {
+    if (!p.draft.items.length) return "no material matched";
+    if (p.missingVendor) return "no vendor matched";
+    if (p.unmatched.length) return "some materials unmatched";
+  }
+  return null;
+}
+
 /** Which permission each prepared action needs (permissions.ts). */
 export function actionFor(p: Prepared): import("./permissions").Action | null {
   switch (p.kind) {
