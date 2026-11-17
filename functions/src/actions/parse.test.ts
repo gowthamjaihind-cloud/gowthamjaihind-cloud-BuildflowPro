@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildActionPrompt, sanitizeAction, actionFor } from "./parse";
+import { buildActionPrompt, sanitizeAction, actionFor, needsBetterRead } from "./parse";
 import type { PoContext } from "../command/po";
 
 const ctx: PoContext = {
@@ -52,5 +52,16 @@ describe("actions: reading a request", () => {
     expect(r.kind).toBe("other");
     expect(actionFor(r)).toBeNull();
     expect(buildActionPrompt(ctx, null)).toMatch(/attached audio/);
+  });
+
+  it("sends weak cheap readings to full Flash, and keeps good ones", () => {
+    const good = sanitizeAction({ intent: "create_po", vendorId: "v1", items: [{ itemId: "m1", qty: 50 }] }, ctx, "x");
+    expect(needsBetterRead(good, false)).toBeNull();
+    expect(needsBetterRead(sanitizeAction({ intent: "create_po", vendorId: null, items: [{ itemId: "m1", qty: 50 }] }, ctx, "x"), false)).toBe("no vendor matched");
+    expect(needsBetterRead(sanitizeAction({ intent: "create_po", vendorId: "v1", items: [] }, ctx, "x"), false)).toBe("no material matched");
+    expect(needsBetterRead(sanitizeAction({ intent: "create_po", vendorId: "v1", items: [{ itemId: "m1", qty: 5 }], unmatched: ["river sand"] }, ctx, "x"), false)).toBe("some materials unmatched");
+    expect(needsBetterRead(sanitizeAction({ intent: "nonsense" }, ctx, "x"), false)).toBe("gave up");
+    expect(needsBetterRead(sanitizeAction({ intent: "client_payment", amount: 5000, transcript: "" }, ctx, null), true)).toBe("no transcript");
+    expect(needsBetterRead(sanitizeAction({ intent: "client_payment", amount: 5000 }, ctx, "client paid 5000"), false)).toBeNull();
   });
 });
