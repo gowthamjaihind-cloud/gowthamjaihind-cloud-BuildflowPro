@@ -1,14 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ChatCircleDots, X, PaperPlaneRight, Wrench, CheckCircle, WarningCircle, XCircle, Info } from "@phosphor-icons/react";
+import { ChatCircleDots, X, PaperPlaneRight, Wrench, CheckCircle, WarningCircle, XCircle, Info, Microphone, Stop, Lightning } from "@phosphor-icons/react";
 import { useAuthStore, useUIStore, useProjectStore } from "../store";
 import {
   callHelpChat,
   callHelpDiagnose,
   callReportProblem,
   callConfirmSubscription,
+  callCommandParse,
   type HelpTurn,
   type HelpCheck,
+  type CommandPoDraft,
 } from "../services/firebaseFunctions";
+import { useVoiceNote, voiceSupported } from "../hooks/useVoiceNote";
+import { PurchaseOrderForm } from "./purchase/PurchaseOrderForm";
 import { runDeviceChecks, deviceSummary, fixUpdate, fixReconnect, fixClearCache, FIX_LABELS, type FixId } from "../lib/diagnostics";
 import { recentErrors } from "../lib/errorLog";
 
@@ -24,10 +28,16 @@ import { recentErrors } from "../lib/errorLog";
  * helpDiagnose), shows them with one-tap fixes, has the assistant explain
  * them, and can send the lot to support (reportProblem).
  *
+ * Do: a typed or spoken request carried out in the app (commandParse,
+ * functions/src/command). Today: "Order 100 bags of cement from Vaigai
+ * Traders, deliver Friday" opens the Create Purchase Order form filled in;
+ * the user checks it and presses Create. Nothing is saved from the request
+ * alone.
+ *
  * The conversation is kept for the browser tab only (sessionStorage).
  */
 
-type Turn = HelpTurn & { checks?: HelpCheck[] };
+type Turn = HelpTurn & { checks?: HelpCheck[]; po?: CommandPoDraft };
 
 const STORE_KEY = "sitetru.help.v2";
 const SUGGESTIONS = [
@@ -82,6 +92,10 @@ export const HelpChat: React.FC = () => {
   const [diagMode, setDiagMode] = useState(false);
   const [lastProblem, setLastProblem] = useState<{ text: string; checks: HelpCheck[] } | null>(null);
   const [reportId, setReportId] = useState("");
+  const [mode, setMode] = useState<"ask" | "do">("ask");
+  const [poDraft, setPoDraft] = useState<CommandPoDraft | null>(null);
+  const activeProject = useProjectStore((s) => s.activeProject);
+  const voice = useVoiceNote((audio) => runCommand({ audio }));
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -224,6 +238,51 @@ export const HelpChat: React.FC = () => {
     }
   };
 
+  const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+
+  /** "Do": turn a typed or spoken request into a prepared action. */
+  const runCommand = async ({ text, audio }: { text?: string; audio?: { base64: string; mimeType: string } }) => {
+    if (busy) return;
+    if (!activeProject) {
+      setError("Open a project first, then ask (purchase orders belong to a project).");
+      return;
+    }
+    const said = text?.trim();
+    if (!said && !audio) return;
+    setError("");
+    setNote("");
+    setInput("");
+    let next: Turn[] = said ? [...turns, { role: "user", text: said }] : [...turns];
+    if (said) setTurns(next);
+    setBusy(audio ? "Listening to your voice note…" : "Working on it…");
+    try {
+      const r = await callCommandParse({ orgId, projectId: activeProject.id, ...(said ? { text: said } : { audioBase64: audio!.base64, mimeType: audio!.mimeType }) });
+      if (!said) next = [...turns, { role: "user", text: `🎤 ${r.transcript || "(voice note)"}` }];
+      if (r.kind === "other") {
+        setTurns([...next, { role: "assistant", text: r.reply }]);
+        return;
+      }
+      const d = r.draft;
+      if (!d.items.length) {
+        setTurns([...next, { role: "assistant", text: `I couldn't match any material in **${activeProject.name}**'s inventory${r.unmatched.length ? ` (${r.unmatched.join(", ")})` : ""}. Add it under **Inventory** first, or open the form and pick it.` }]);
+        return;
+      }
+      const lines = [
+        `Purchase order ready for **${activeProject.name}**:`,
+        `Vendor: ${d.vendorName ? `**${d.vendorName}**` : "**not chosen** (pick one in the form)"}`,
+        ...d.items.map((i) => `• ${i.name}: ${i.orderedQty} ${i.unit} × ${inr(i.rate)}${i.rateFromRequest ? "" : i.rate ? " (usual rate)" : " (no rate yet)"}`),
+        ...(d.expectedDeliveryDate ? [`Delivery: ${new Date(`${d.expectedDeliveryDate}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`] : []),
+        ...(r.unmatched.length ? [`Not in inventory, left out: ${r.unmatched.join(", ")}`] : []),
+        "Check it in the form (GST and totals are worked out there), then press Create.",
+      ];
+      setTurns([...next, { role: "assistant", text: lines.join("\n"), po: d }]);
+    } catch (e) {
+      setError(errText(e));
+    } finally {
+      setBusy("");
+    }
+  };
+
   const startDiagnosis = () => {
     setDiagMode(true);
     setError("");
@@ -264,8 +323,31 @@ export const HelpChat: React.FC = () => {
             </div>
           </div>
 
+          <div className="flex gap-1 px-4 pt-2" role="tablist">
+            {(["ask", "do"] as const).map((k) => (
+              <button
+                key={k}
+                role="tab"
+                aria-selected={mode === k}
+                onClick={() => { setMode(k); setDiagMode(false); setError(""); }}
+                className={`flex-1 text-xs font-bold py-1.5 rounded-lg cursor-pointer ${mode === k ? "bg-surface-dark text-white" : "text-ink-muted hover:bg-surface-2"}`}
+              >
+                {k === "ask" ? "Ask" : "Do it for me"}
+              </button>
+            ))}
+          </div>
+
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm">
-            {turns.length === 0 && !diagMode && (
+            {mode === "do" && turns.length === 0 && (
+              <div className="space-y-2 text-ink-muted">
+                <p className="flex items-center gap-2 text-ink font-bold"><Lightning weight="fill" className="w-4 h-4 text-primary" />Type or say what you want done.</p>
+                <p>For now I can prepare <b className="text-ink">purchase orders</b> for the open project{activeProject ? <> (<b className="text-ink">{activeProject.name}</b>)</> : ""}. For example:</p>
+                <p className="italic">"Order 100 bags of cement from Vaigai Traders, deliver on Friday"</p>
+                <p className="italic">"Raise a PO for 2 tonnes 12mm steel at 62 rupees per kg from Sri Murugan Steels"</p>
+                {!activeProject && <p className="text-warning font-bold">Open a project first.</p>}
+              </div>
+            )}
+            {mode === "ask" && turns.length === 0 && !diagMode && (
               <div className="space-y-3">
                 <p className="text-ink-muted">Hi! Ask me how to do something in Sitetru, about your plan and billing, or about the Telegram bot.</p>
                 <button onClick={startDiagnosis} className="w-full flex items-center gap-2 text-left text-sm font-bold px-3 py-2.5 rounded-xl border border-divider hover:bg-surface-2 cursor-pointer">
@@ -284,6 +366,11 @@ export const HelpChat: React.FC = () => {
               <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
                 <div className={`max-w-[88%] rounded-2xl px-3 py-2 space-y-1 ${m.role === "user" ? "bg-primary text-on-primary" : "bg-surface-2 text-ink"}`}>
                   {m.role === "assistant" ? <Rich text={m.text} /> : m.text}
+                  {m.po && (
+                    <button onClick={() => { setPoDraft(m.po!); setOpen(false); }} className="mt-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-primary text-on-primary cursor-pointer">
+                      Review & create PO
+                    </button>
+                  )}
                   {m.checks && (
                     <ul className="mt-2 space-y-2">
                       {m.checks.map((c, j) => (
@@ -321,6 +408,7 @@ export const HelpChat: React.FC = () => {
             {busy && <p className="text-xs text-ink-muted">{busy}</p>}
             {note && <p className="text-xs font-bold text-ink">{note}</p>}
             {error && <p className="text-xs font-bold text-danger">{error}</p>}
+            {voice.error && <p className="text-xs font-bold text-danger">{voice.error}</p>}
             <div ref={endRef} />
           </div>
 
@@ -328,7 +416,18 @@ export const HelpChat: React.FC = () => {
             onSubmit={(e) => { e.preventDefault(); ask(input || (diagMode ? " " : "")); }}
             className="flex items-end gap-2 p-3 border-t border-divider pb-[max(0.75rem,env(safe-area-inset-bottom))]"
           >
-            {!diagMode && turns.length > 0 && (
+            {mode === "do" && voiceSupported() && (
+              <button
+                type="button"
+                onClick={() => (voice.recording ? voice.stop() : voice.start())}
+                disabled={!!busy && !voice.recording}
+                aria-label={voice.recording ? "Stop recording" : "Record a voice note"}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer shrink-0 ${voice.recording ? "bg-danger text-on-danger" : "border border-divider hover:bg-surface-2"}`}
+              >
+                {voice.recording ? <Stop weight="fill" className="w-5 h-5" /> : <Microphone weight="bold" className="w-5 h-5 text-primary" />}
+              </button>
+            )}
+            {mode === "ask" && !diagMode && turns.length > 0 && (
               <button type="button" onClick={startDiagnosis} aria-label="Something's not working" title="Something's not working?" className="w-10 h-10 rounded-xl border border-divider flex items-center justify-center hover:bg-surface-2 cursor-pointer shrink-0">
                 <Wrench weight="bold" className="w-5 h-5 text-primary" />
               </button>
@@ -336,16 +435,17 @@ export const HelpChat: React.FC = () => {
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); diagMode ? diagnose(input) : ask(input); } }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); mode === "do" ? runCommand({ text: input }) : diagMode ? diagnose(input) : ask(input); } }}
               rows={1}
               maxLength={1000}
-              placeholder={diagMode ? "What's going wrong?" : "Ask a question…"}
+              placeholder={voice.recording ? `Recording… ${voice.seconds}s (tap ■ to send)` : mode === "do" ? "e.g. Order 100 bags cement from…" : diagMode ? "What's going wrong?" : "Ask a question…"}
+              disabled={voice.recording}
               className="flex-1 resize-none max-h-28 px-3 py-2 rounded-xl bg-surface-1 border border-divider text-base md:text-sm"
             />
             <button
               type="button"
-              onClick={() => (diagMode ? diagnose(input) : ask(input))}
-              disabled={!!busy || (!diagMode && !input.trim())}
+              onClick={() => (mode === "do" ? runCommand({ text: input }) : diagMode ? diagnose(input) : ask(input))}
+              disabled={!!busy || voice.recording || (!diagMode && !input.trim())}
               aria-label="Send"
               className="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center disabled:opacity-50 cursor-pointer shrink-0"
             >
@@ -354,6 +454,17 @@ export const HelpChat: React.FC = () => {
           </form>
           <p className="text-[10px] text-ink-muted text-center pb-2 -mt-1">AI answers can be wrong. Fixes never delete anything on the server.</p>
         </div>
+      )}
+      {poDraft && activeProject && (
+        <PurchaseOrderForm
+          projectId={activeProject.id}
+          draft={poDraft}
+          onClose={() => {
+            setPoDraft(null);
+            setNote("If you pressed Create, the order is in Procurement → Purchase orders as a Draft.");
+            setOpen(true);
+          }}
+        />
       )}
     </>
   );

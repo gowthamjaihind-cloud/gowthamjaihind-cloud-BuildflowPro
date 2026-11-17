@@ -534,3 +534,17 @@ export const callRevokeMemberTelegramLink = async (orgId: string, memberUid: str
   (await httpsCallable<{ orgId: string; memberUid: string }, { revoked: number }>(getFunctionsInstance(), "revokeMemberTelegramLink")({ orgId, memberUid })).data;
 export const callUnlinkMemberTelegram = async (orgId: string, memberUid: string) =>
   (await httpsCallable<{ orgId: string; memberUid: string }, { unlinked: boolean }>(getFunctionsInstance(), "unlinkMemberTelegram")({ orgId, memberUid })).data;
+
+// ── Command chat (functions/src/command) ─────────────────────────────────────
+export interface CommandPoDraft {
+  vendorId: string;
+  vendorName: string;
+  expectedDeliveryDate: string;
+  notes: string;
+  items: { itemId: string; materialId: string; name: string; unit: string; orderedQty: number; rate: number; hsn: string; gstRate: number; rateFromRequest: boolean }[];
+}
+export type CommandResult =
+  | { kind: "po"; draft: CommandPoDraft; transcript: string; unmatched: string[]; missingVendor: boolean }
+  | { kind: "other"; transcript: string; reply: string };
+export const callCommandParse = async (args: { orgId?: string; projectId: string; text?: string; audioBase64?: string; mimeType?: string }) =>
+  (await httpsCallable<typeof args, CommandResult>(getFunctionsInstance(), "commandParse", { timeout: 100_000 })(args)).data;
