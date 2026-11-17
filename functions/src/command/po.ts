@@ -1,5 +1,6 @@
 import { barsToStockUnit } from "../shared/steel";
 import { lookupTax } from "../shared/hsnTable";
+import { exGstRate } from "../shared/poTax";
 
 const GST_OK = [0, 0.25, 3, 5, 12, 18, 28, 40];
 
@@ -31,6 +32,8 @@ export interface PoDraft {
     nos?: number; conversion?: string;
     /** Where HSN/GST came from when not from the material itself: Sitetru's checked list, or an AI suggestion. */
     taxSource?: "list" | "ai"; taxNote?: string;
+    /** The rate as said, including GST; `rate` is then worked back to the rate before tax. */
+    rateInclGst?: number;
   }[];
 }
 
@@ -98,10 +101,16 @@ export function sanitizeCommand(raw: any, ctx: PoContext, typedText: string | nu
       }
       continue;
     }
+    const tax = taxFor(m, it);
+    // "325 a bag including GST": the PO carries the rate before tax and the GST
+    // separately, so work the rate back. Without a GST rate it stays as said.
+    const incl = !!stated && it?.rateIncludesGst === true && tax.gstRate > 0;
     items.push({
-      itemId: m.id, materialId: m.materialId || "", name: m.name, unit: m.unit, orderedQty: qty, rate: stated || m.rate || 0, rateFromRequest: !!stated,
+      itemId: m.id, materialId: m.materialId || "", name: m.name, unit: m.unit, orderedQty: qty,
+      rate: incl ? exGstRate(stated, tax.gstRate) : stated || m.rate || 0, rateFromRequest: !!stated,
+      ...(incl ? { rateInclGst: stated } : {}),
       ...(bars ? { nos, conversion: bars.working } : {}),
-      ...taxFor(m, it),
+      ...tax,
     });
   }
   // Steel ordered by count: tell the vendor the count too.

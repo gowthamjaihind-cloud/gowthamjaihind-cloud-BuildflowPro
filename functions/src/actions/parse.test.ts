@@ -4,11 +4,19 @@ import type { PoContext } from "../command/po";
 
 const ctx: PoContext = {
   today: "2026-11-17",
-  vendors: [{ id: "v1", name: "VAIGAI TRADERS" }],
+  vendors: [{ id: "v1", name: "ABC TRADERS" }],
   materials: [{ id: "m1", name: "OPC 53 Cement", unit: "bag", rate: 380, hsn: "2523", gstRate: 28 }],
 };
 
 describe("actions: reading a request", () => {
+  it("records a payment MADE to a vendor (not a client payment), day-first date", () => {
+    // "Payment made to abc traders on 4/11/2026 amount is rs.144970"
+    const r = sanitizeAction({ intent: "vendor_payment", vendorId: "v1", amount: 144970, date: "2026-11-04", method: "" }, ctx, "x");
+    expect(r.prepared).toEqual({ kind: "vendorPayment", vendorId: "v1", vendorName: "ABC TRADERS", amount: 144970, date: "2026-11-04", method: "Bank Transfer", reference: "", description: "" });
+    expect(actionFor(r.prepared)).toBe("vendorpay.create");
+    // An unknown vendor is asked about, not guessed.
+    expect(sanitizeAction({ intent: "vendor_payment", vendorId: "zz", amount: 5000 }, ctx, "x").prepared.kind).toBe("other");
+  });
   it("prepares a PO through the PO checks", () => {
     const r = sanitizeAction({ intent: "create_po", vendorId: "v1", items: [{ itemId: "m1", qty: 50 }] }, ctx, "order cement");
     expect(r.prepared).toMatchObject({ kind: "po", missingVendor: false });

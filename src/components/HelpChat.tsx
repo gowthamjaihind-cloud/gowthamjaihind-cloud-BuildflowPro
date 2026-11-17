@@ -9,6 +9,7 @@ import {
   callActionPrepare,
   callActionConfirm,
   callActionCancel,
+  callPoApprove,
   type HelpTurn,
   type HelpCheck,
   type CommandPoDraft,
@@ -44,6 +45,8 @@ type Turn = HelpTurn & {
   checks?: HelpCheck[];
   /** A prepared action waiting for Confirm (pending_actions/{id}). */
   action?: { id: string; state: "pending" | "done" | "cancelled"; canConfirm: boolean; po?: CommandPoDraft };
+  /** Draft POs waiting for approval, each with an Approve button. */
+  approvals?: { id: string; poNumber: string; done?: boolean }[];
 };
 
 const STORE_KEY = "sitetru.help.v2";
@@ -264,6 +267,13 @@ export const HelpChat: React.FC = () => {
     try {
       const r = await callActionPrepare({ orgId, projectId: activeProject.id, ...(said ? { text: said } : { audioBase64: audio!.base64, mimeType: audio!.mimeType }) });
       if (!said) next = [...turns, { role: "user", text: `🎤 ${r.transcript || "(voice note)"}` }];
+      if (r.type === "approvals") {
+        const inrs = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+        setTurns([...next, r.pos.length
+          ? { role: "assistant", text: ["**Waiting for approval:**", ...r.pos.map((p) => `• **${p.poNumber}** · ${p.vendorName} · ${inrs(p.total)}${p.createdByName ? ` · by ${p.createdByName}` : ""}`)].join("\n"), approvals: r.pos.map((p) => ({ id: p.id, poNumber: p.poNumber })) }
+          : { role: "assistant", text: "No purchase orders are waiting for approval in this project." }]);
+        return;
+      }
       if (r.type !== "pending") {
         const msg = "message" in r ? r.message : "That looks like a work report. Log it from the Daily log screen or the Telegram bot.";
         setTurns([...next, { role: "assistant", text: r.type === "denied" ? `🔒 ${msg}` : msg }]);
@@ -279,6 +289,21 @@ export const HelpChat: React.FC = () => {
         text: lines.join("\n"),
         action: { id: r.id, state: "pending", canConfirm: !r.blockers.length, po: r.pending.kind === "po" ? (r.pending as any).draft : undefined },
       }]);
+    } catch (e) {
+      setError(errText(e));
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const approvePoNow = async (poId: string) => {
+    if (busy || !activeProject) return;
+    setError("");
+    setBusy("Approving…");
+    try {
+      const r = await callPoApprove(orgId, activeProject.id, poId);
+      setTurns((ts) => [...ts.map((t) => (t.approvals ? { ...t, approvals: t.approvals.map((a) => (a.id === poId ? { ...a, done: true } : a)) } : t)),
+        { role: "assistant", text: `✅ **${r.poNumber}** approved. It can now be sent to the vendor, and bills and goods received against it.` }]);
     } catch (e) {
       setError(errText(e));
     } finally {
@@ -418,6 +443,13 @@ export const HelpChat: React.FC = () => {
                     </div>
                   )}
                   {m.action?.state === "done" && <p className="text-xs font-bold text-success">Saved</p>}
+                  {m.approvals && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {m.approvals.map((a) => (a.done
+                        ? <span key={a.id} className="text-xs font-bold text-success">{a.poNumber} approved</span>
+                        : <button key={a.id} onClick={() => approvePoNow(a.id)} disabled={!!busy} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-primary text-on-primary disabled:opacity-50 cursor-pointer">Approve {a.poNumber}</button>))}
+                    </div>
+                  )}
                   {m.action?.state === "cancelled" && <p className="text-xs text-ink-muted">Cancelled, nothing saved</p>}
                   {m.checks && (
                     <ul className="mt-2 space-y-2">

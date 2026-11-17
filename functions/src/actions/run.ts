@@ -74,6 +74,7 @@ export type PrepareOutcome =
   | { type: "answer"; transcript: string; message: string }
   | { type: "other"; transcript: string; message: string }
   | { type: "log"; transcript: string } // the bot sends these to its own daily-log flow
+  | { type: "approvals"; transcript: string; pos: DraftPo[] } // Draft POs the person may approve
   | { type: "pending"; transcript: string; id: string; kind: Pending["kind"]; lines: string[]; blockers: string[]; pending: Pending };
 
 export async function prepareAction(opts: {
@@ -106,6 +107,9 @@ export async function prepareAction(opts: {
     }
     if (prepared.kind === "other") { await refund(); return { type: "other", transcript, message: prepared.reply }; }
 
+    if (prepared.kind === "approve") {
+      return { type: "approvals", transcript, pos: await listDraftPos(orgId, projectId, prepared.poNumber) };
+    }
     if (prepared.kind === "question") {
       const message = await answerQuestion(prepared, { orgId, projectId, project, ctx, key });
       return { type: "answer", transcript, message };
@@ -144,6 +148,9 @@ export async function prepareAction(opts: {
 }
 
 async function storePending(o: { uid: string; orgId: string; projectId: string; channel: Channel; transcript: string; pending: Pending; projectName: string; org: any }): Promise<PrepareOutcome> {
+  if (o.pending.kind === "vendorPayment") {
+    o.pending.balanceBefore = Number((await db.doc(`${base(o.orgId, o.projectId)}/suppliers/${o.pending.vendorId}`).get()).data()?.outstandingBalance) || 0;
+  }
   let vendorGstin = "";
   if (o.pending.kind === "po" && o.pending.draft.vendorId) {
     vendorGstin = String((await db.doc(`${base(o.orgId, o.projectId)}/suppliers/${o.pending.draft.vendorId}`).get()).data()?.gstin || "");
@@ -206,7 +213,7 @@ export async function confirmAction(id: string, uid: string): Promise<{ message:
   const pending = p.pending as Pending;
   const { who, user, org, project } = await loadWho(uid, p.orgId, p.projectId);
   if (!project) throw new HttpsError("not-found", "That project no longer exists.");
-  const action = pending.kind === "logs" ? "log.create" : pending.kind === "po" ? "po.create" : pending.kind === "payment" ? "payment.create" : pending.kind === "vendor" ? "vendor.create" : "material.create";
+  const action = pending.kind === "logs" ? "log.create" : pending.kind === "po" ? "po.create" : pending.kind === "payment" ? "payment.create" : pending.kind === "vendorPayment" ? "vendorpay.create" : pending.kind === "vendor" ? "vendor.create" : "material.create";
   const no = denial(action, who);
   if (no) throw new HttpsError("permission-denied", no);
   const stop = blockers(pending);
@@ -230,6 +237,22 @@ export async function confirmAction(id: string, uid: string): Promise<{ message:
       const r = db.collection(`${b}/client_payments`).doc();
       await r.set({ id: r.id, projectId: p.projectId, date: pending.date, amount: pending.amount, referenceNumber: pending.reference, description: pending.description, paymentMethod: pending.method, ...by, createdAt: new Date().toISOString() });
       result = { message: `Recorded the client payment of ₹${pending.amount.toLocaleString("en-IN")}.` };
+    } else if (pending.kind === "vendorPayment") {
+      // As the app's "Record payment" (ProcurementView.tsx): a DEBIT in the
+      // vendor ledger and the amount off what is owed to them.
+      const vendorRef = db.doc(`${b}/suppliers/${pending.vendorId}`);
+      await db.runTransaction(async (tx) => {
+        const v = await tx.get(vendorRef);
+        if (!v.exists) throw new HttpsError("not-found", `${pending.vendorName} is no longer a vendor on this project.`);
+        tx.set(db.collection(`${b}/ledger`).doc(), {
+          projectId: p.projectId, vendorId: pending.vendorId, date: new Date(`${pending.date}T00:00:00Z`).toISOString(), type: "DEBIT",
+          amount: pending.amount, referenceType: "PAYMENT",
+          description: [pending.description || "Payment to Vendor", pending.method, pending.reference ? `Ref ${pending.reference}` : ""].filter(Boolean).join(" · "),
+          paymentMethod: pending.method, referenceNumber: pending.reference, ...by, createdAt: new Date().toISOString(),
+        });
+        tx.update(vendorRef, { outstandingBalance: (Number(v.data()?.outstandingBalance) || 0) - pending.amount });
+      });
+      result = { message: `Recorded the payment of ₹${pending.amount.toLocaleString("en-IN")} to ${pending.vendorName}.` };
     } else if (pending.kind === "vendor") {
       const dupe = await db.collection(`${b}/suppliers`).where("name", "==", pending.name).limit(1).get();
       if (!dupe.empty) throw new HttpsError("already-exists", `${pending.name} is already a vendor on this project.`);
@@ -294,6 +317,47 @@ async function writePo(b: string, projectId: string, p: Extract<Pending, { kind:
     }
   });
   return { message: `Created ${poNumber} for ${vendor.name}, total ₹${t.grandTotal.toLocaleString("en-IN")}, as a Draft.`, poId: poRef.id, poNumber };
+}
+
+export interface DraftPo { id: string; poNumber: string; vendorName: string; total: number; orderDate: string; createdByName: string }
+
+/** Draft POs in a project, newest first; `poNumber` narrows it ("12" matches PO-2026-0012). */
+export async function listDraftPos(orgId: string, projectId: string, poNumber = ""): Promise<DraftPo[]> {
+  const snap = await db.collection(`${base(orgId, projectId)}/purchase_orders`).where("status", "==", "Draft").limit(50).get();
+  const want = poNumber.replace(/\D/g, "").replace(/^0+/, "");
+  return snap.docs
+    .map((d) => ({ id: d.id, ...(d.data() as any) }))
+    .filter((p) => !want || String(p.poNumber || "").replace(/\D/g, "").replace(/^0+/, "").endsWith(want))
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+    .slice(0, 8)
+    .map((p) => ({ id: p.id, poNumber: String(p.poNumber || ""), vendorName: String(p.vendorName || ""), total: Number(p.totalAmount) || 0, orderDate: String(p.orderDate || ""), createdByName: String(p.createdByName || "") }));
+}
+
+/** null when this person may do `action` in the project, else why not. */
+export async function whyNot(uid: string, orgId: string, projectId: string, action: import("./permissions").Action): Promise<string | null> {
+  const { who, project } = await loadWho(uid, orgId, projectId);
+  if (!project) return "That project was not found.";
+  return denial(action, who);
+}
+
+/** Approve a Draft PO, exactly as the app's "Approve Order" does. */
+export async function approvePo(uid: string, orgId: string, projectId: string, poId: string): Promise<{ poNumber: string; vendorName: string; total: number }> {
+  const { who, user, project } = await loadWho(uid, orgId, projectId);
+  if (!project) throw new HttpsError("not-found", "That project was not found.");
+  const no = denial("po.approve", who);
+  if (no) throw new HttpsError("permission-denied", no);
+  const ref = db.doc(`${base(orgId, projectId)}/purchase_orders/${poId}`);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new HttpsError("not-found", "That purchase order no longer exists.");
+    const po: any = snap.data();
+    if (po.status !== "Draft") throw new HttpsError("failed-precondition", `${po.poNumber} is already ${String(po.status).toLowerCase()}.`);
+    tx.update(ref, {
+      status: "Approved", approvedByUid: uid, approvedByName: String(user.displayName || user.email || "Unknown"),
+      approvedAt: new Date().toISOString(),
+    });
+    return { poNumber: String(po.poNumber || ""), vendorName: String(po.vendorName || ""), total: Number(po.totalAmount) || 0 };
+  });
 }
 
 export async function cancelAction(id: string, uid: string) {

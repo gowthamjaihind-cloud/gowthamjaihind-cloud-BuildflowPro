@@ -5,11 +5,13 @@ const base: Who = { uid: "u", role: "Site Engineer", isMember: true, projectAcce
 
 describe("command permissions", () => {
   it("lets a site engineer with write access log work and ask about the site, nothing more", () => {
-    expect(allowedActions(base).sort()).toEqual(["ask.site", "log.create"]);
+    expect(allowedActions(base).sort()).toEqual(["ask.site", "bill.post", "log.create"]);
     expect(denial("po.create", base)).toMatch(/Site Engineer\) cannot create purchase orders/);
   });
   it("lets managers with write access do everything", () => {
-    expect(allowedActions({ ...base, role: "Project Manager" })).toHaveLength(7);
+    expect(allowedActions({ ...base, role: "Project Manager" })).toHaveLength(9);
+    expect(denial("po.approve", { ...base, role: "Project Manager" })).toMatch(/Owner or Admin/);
+    expect(denial("po.approve", { ...base, role: "Admin" })).toBeNull();
   });
   it("gives Owners and Admins every project without per-project access", () => {
     expect(denial("payment.create", { uid: "o", role: "Owner", isMember: true })).toBeNull();

@@ -15,6 +15,7 @@ import * as invoice from "./handlers/invoice";
 import * as sitePhotos from "./handlers/sitePhotos";
 import * as aiLog from "./handlers/aiLog";
 import * as actions from "./handlers/actions";
+import * as bills from "./handlers/bills";
 import { looksLikeRequest } from "../bot/request";
 import { AUDIO_TYPES, MAX_AUDIO_BASE64 } from "../command/po";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
@@ -252,6 +253,16 @@ async function handleUpdate(tg, update, geminiKey) {
         // The engine checks the person's role again before saving anything.
         if (data.startsWith("act:")) {
             await actions.handleTap(tg, chatId, messageId, session, data);
+            return;
+        }
+        // Approve a PO / send its PDF (handlers/actions.ts; Owner or Admin to approve).
+        // Post a scanned bill and its goods receipt (handlers/bills.ts).
+        if (data.startsWith("bill:")) {
+            await bills.handleBillTap(tg, chatId, messageId, session, data);
+            return;
+        }
+        if (data.startsWith("poa:") || data.startsWith("pov:")) {
+            await actions.handlePoTap(tg, chatId, messageId, session, data);
             return;
         }
         // "Log now" button from the daily reminder — starts the normal log flow.
@@ -559,6 +570,10 @@ async function handleUpdate(tg, update, geminiKey) {
         }
         const ok = await agent.sendPlanPrompt(tg, chatId, session);
         if (!ok) await tg.sendMessage(chatId, tt(lang, "noPlannableTasks"));
+        return;
+    }
+    if (text === "/approve") {
+        await actions.listApprovals(tg, chatId, session);
         return;
     }
     if (text === "/projects") {

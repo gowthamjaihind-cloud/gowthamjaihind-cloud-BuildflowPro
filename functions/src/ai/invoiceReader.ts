@@ -11,6 +11,7 @@ const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 const projPath = (orgId?: string, projectId?: string) =>
   orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
 
+import { fixSeller } from "./seller";
 const norm = (s: any) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
 // Callable wrapper used by the web app's Scan Invoice flow.
@@ -47,9 +48,11 @@ export async function readAndMatchInvoice(
 
   let companyState = "";
   let companyGstin = "";
+  let companyName = "";
   if (orgId) {
     const org = await db.doc(`organizations/${orgId}`).get();
     companyGstin = org.exists ? org.data()!.gstin || "" : "";
+    companyName = org.exists ? org.data()!.companyName || org.data()!.name || "" : "";
     companyState = org.exists ? org.data()!.stateCode || companyGstin.slice(0, 2) : "";
   }
 
@@ -62,6 +65,8 @@ export async function readAndMatchInvoice(
     await refundAiUsage(orgId, "invoice_scan");
     throw e;
   }
+  // The vendor is the seller; if the model read our own company there, swap (ai/seller.ts).
+  raw = fixSeller(raw, { name: companyName, gstin: companyGstin }).raw;
 
   // ---- match vendor ----
   const vendorsSnap = await db.collection(`${base}/suppliers`).get();
@@ -88,7 +93,7 @@ export async function readAndMatchInvoice(
     const vpos = openPOs.filter((p) => p.vendorId === vendor!.id);
     po = vpos.map((p) => ({ p, score: overlapScore(p, raw.lineItems || []) })).sort((a, b) => b.score - a.score)[0]?.p;
   }
-  if (!po) flags.push("No open purchase order matches this bill. In the app, link it to a PO, or post it without one.");
+  if (!po) flags.push("No approved purchase order matches this bill. Link it to one to record the goods receipt.");
 
   const sameState = !!(companyState && exGstin && companyState === exGstin.slice(0, 2));
 
@@ -272,10 +277,14 @@ export const INVOICE_MODELS = ["gemini-2.5-flash", "gemini-flash-latest", "gemin
 const INVOICE_BUDGET_MS = 95_000;
 
 async function callGeminiVision(fileBase64: string, mimeType: string, key: string): Promise<any> {
-  const prompt = `You are reading an Indian GST vendor invoice (tax invoice). Extract its contents to JSON. Read only what is printed; if a value is absent leave it 0 or "". Return ONLY this JSON:
+  const prompt = `You are reading an Indian GST vendor invoice (tax invoice). Extract its contents to JSON. Read only what is printed; if a value is absent leave it 0 or "".
+"vendorName" and "vendorGSTIN" are the SELLER: the business that ISSUED the invoice (usually the name and GSTIN printed at the top, or under "Seller", "Supplier", "From", "Sold by"). Never the buyer: the party under "Bill to", "Billed to", "Buyer", "Ship to", "Consignee" or "Customer" goes in "buyerName" and "buyerGSTIN".
+Return ONLY this JSON:
 {
   "vendorName": string,
   "vendorGSTIN": string,
+  "buyerName": string,
+  "buyerGSTIN": string,
   "invoiceNumber": string,
   "invoiceDate": string (YYYY-MM-DD if possible),
   "poNumber": string (if the invoice references a PO/order number, else ""),
