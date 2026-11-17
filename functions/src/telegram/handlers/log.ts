@@ -403,7 +403,7 @@ export async function saveLog(tg: any, chatId: ChatId, messageId, session) {
     if ((d.materials || []).length)
         summary += tt(lang, "loggedMaterials", { n: d.materials.length });
     if ((d.labour || []).length)
-        summary += tt(lang, "loggedLabour", { n: d.labour.reduce((s: number, l: any) => s + (Number(l.headcount) || 0), 0) });
+        summary += tt(lang, "loggedLabour", { n: Math.round(d.labour.reduce((s: number, l: any) => s + (Number(l.headcount) || 0), 0) * 10) / 10 });
     // clearStep above removed the queue from Firestore; the copy read with
     // this session is what carries on to the next log from the same message.
     if (messageId) await tg.editMessage(chatId, messageId, summary);
@@ -527,7 +527,8 @@ export async function handleStepText(api: any, chatId: ChatId, session: any, tex
         return true;
     }
     if (step === "log:labour_count") {
-        const n = parseInt(text, 10);
+        // To one decimal (2.5 = two and a half shifts); "2,5" is read as 2.5.
+        const n = Math.round(parseFloat(text.replace(",", ".")) * 10) / 10;
         if (isNaN(n) || n <= 0) {
             await api.sendMessage(chatId, tt(lang, "enterHeadcountGt0"));
             return true;

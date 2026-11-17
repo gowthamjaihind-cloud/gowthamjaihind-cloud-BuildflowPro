@@ -697,11 +697,12 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                   <input
                     type="number"
                     placeholder={t("dlog.count")}
-                    min="1"
-                    step="1"
+                    min="0.1"
+                    step="0.1"
                     value={l.headcount || ""}
                     onChange={(e) =>
-                      updateLabor(i, "headcount", parseInt(e.target.value))
+                      // To one decimal: 2.5 = two and a half shifts.
+                      updateLabor(i, "headcount", Math.round(parseFloat(e.target.value) * 10) / 10)
                     }
                     className="flex-1 w-20 bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none font-mono"
                   />

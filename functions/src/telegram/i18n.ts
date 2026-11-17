@@ -125,7 +125,7 @@ const en: Dict = {
     "<b>{name}</b>\n\nHow much was used? ({unit})\n<i>Type a number.</i>",
   "noLabourRoles": "No labour roles set up. Add them in the web app.",
   "whichRole": "<b>Which role?</b>",
-  "headcountPrompt": "<b>{role}</b>\n\nHow many workers?\n<i>Type a number.</i>",
+  "headcountPrompt": "<b>{role}</b>\n\nHow many workers?\n<i>Type a number; one decimal is fine, e.g. 2.5 for a half shift.</i>",
   "noEquipment": "No equipment set up. Add it in the web app.",
   "whichEquipment": "<b>Which equipment?</b>",
   "measuredIn": "<b>{name}</b>\n\nMeasured in?",
