@@ -27,6 +27,14 @@ export interface IntakeInput {
   acceptedSpend: number;
   /** Accepted qty across all receipts BEFORE this write. */
   acceptedBefore: number;
+  /**
+   * What this write itself accepted. Every way of recording a receipt (Goods
+   * Receipt, Review & Post, posting from the bot) adds it to inventory.quantity
+   * in the same transaction, so by the time this trigger runs currentQuantity
+   * already holds it. Not subtracting it counted a first delivery twice: once
+   * as "opening stock" and once as the receipt.
+   */
+  acceptedThisWrite?: number;
 }
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
@@ -44,7 +52,7 @@ const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0
 export function openingQtyFor(i: IntakeInput): number {
   if (typeof i.openingQty === "number" && Number.isFinite(i.openingQty)) return i.openingQty;
   if (i.acceptedBefore > 0) return 0;
-  return Math.max(0, num(i.currentQuantity) + num(i.consumed));
+  return Math.max(0, num(i.currentQuantity) - num(i.acceptedThisWrite) + num(i.consumed));
 }
 
 /** Total intake and its weighted average cost. */

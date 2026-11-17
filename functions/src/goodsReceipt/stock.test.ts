@@ -27,4 +27,11 @@ describe("stock intake", () => {
   it("does not zero the average cost when nothing was accepted", () => {
     expect(intake({ ...base, openingQty: 1000, unitCost: 70 }).avgUnitCost).toBe(70);
   });
+
+  it("does not count a first delivery twice: the app has already added it to quantity", () => {
+    // Created with quantity 0 and no openingQty; a first receipt of 100 (the app made quantity 100).
+    const r = intake({ ...base, currentQuantity: 100, acceptedQty: 100, acceptedSpend: 100 * 380, acceptedThisWrite: 100 });
+    expect(r.openingQty).toBe(0);
+    expect(r.quantity).toBe(100);
+  });
 });

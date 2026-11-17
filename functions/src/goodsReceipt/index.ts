@@ -186,6 +186,7 @@ async function handleGRNWritten(
          acceptedQty: sumQty,
          acceptedSpend: sumSpend,
          acceptedBefore,
+         acceptedThisWrite: acceptedIn(afterData, itemId) - acceptedIn(beforeData, itemId),
        });
        batch.update(invRef, {
          openingQty: r.openingQty,

@@ -303,7 +303,7 @@ export async function confirmAction(id: string, uid: string): Promise<{ message:
     } else if (pending.kind === "material") {
       const dupe = await db.collection(`${b}/inventory`).where("name", "==", pending.name).limit(1).get();
       if (!dupe.empty) throw new HttpsError("already-exists", `${pending.name} is already in this project's inventory.`);
-      await db.collection(`${b}/inventory`).add({ projectId: p.projectId, materialId: "", name: pending.name, category: "Material", code: "", hsn: pending.hsn, gstRate: pending.gstRate, quantity: 0, unit: pending.unit, unitCost: pending.rate, minThreshold: 0, ...by });
+      await db.collection(`${b}/inventory`).add({ projectId: p.projectId, materialId: "", name: pending.name, category: "Material", code: "", hsn: pending.hsn, gstRate: pending.gstRate, quantity: 0, openingQty: 0, unit: pending.unit, unitCost: pending.rate, minThreshold: 0, ...by });
       result = { message: `Added ${pending.name} to this project's inventory.` };
     } else {
       // Daily logs, in the shape the bot's Save writes (telegram/handlers/log.ts).

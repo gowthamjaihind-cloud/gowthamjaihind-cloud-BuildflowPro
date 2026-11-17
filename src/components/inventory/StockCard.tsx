@@ -6,6 +6,8 @@ import { useProjectDailyLogsQuery } from "../../hooks/useDailyLogs";
 import { useAuthStore } from "../../store";
 import { stockCard, type Movement } from "../../lib/stockCard";
 import { deleteGrn } from "../../services/grnReversal";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../../firebase";
 import { confirmDialog, toast } from "../../lib/feedback";
 import { DialogBehaviour } from "../../lib/useDialog";
 import type { InventoryItem } from "../../types";
@@ -28,6 +30,9 @@ export const StockCard: React.FC<{ item: InventoryItem; projectId: string; onClo
   const { data: tasks = [] } = useTasksQuery(projectId);
   const [filter, setFilter] = useState<"all" | "in" | "out">("all");
   const [deleting, setDeleting] = useState("");
+  const [openingEdit, setOpeningEdit] = useState<string | null>(null);
+  const [savingOpening, setSavingOpening] = useState(false);
+  const isManager = ["Owner", "Admin", "Project Manager", "Project Director"].includes(String(user?.role));
 
   const card = useMemo(
     () => stockCard(item, grns, dailyLogs as any[], (id) => tasks.find((t: any) => t.id === id)?.name || ""),
@@ -59,6 +64,28 @@ export const StockCard: React.FC<{ item: InventoryItem; projectId: string; onClo
       toast.error(e?.message || "Couldn't delete it.");
     } finally {
       setDeleting("");
+    }
+  };
+
+  /**
+   * Opening stock is not a record of its own: it is the item's quantity beyond
+   * its receipts (inventory.openingQty; quantity = opening + receipts, as the
+   * goods-receipt trigger keeps it). Correcting it sets both.
+   */
+  const saveOpening = async (value: number) => {
+    if (!(value >= 0)) { toast.error("Enter 0 or more."); return; }
+    setSavingOpening(true);
+    try {
+      await updateDoc(doc(db, `${tenantPath}/inventory/${item.id}`), {
+        openingQty: value,
+        quantity: Math.round((value + card.received) * 1000) / 1000,
+      });
+      toast.success(value ? `Opening stock set to ${q(value)} ${item.unit}.` : "Opening stock removed.");
+      setOpeningEdit(null);
+    } catch (e: any) {
+      toast.error(e?.code === "permission-denied" ? "Only a manager can correct stock." : e?.message || "Couldn't save it.");
+    } finally {
+      setSavingOpening(false);
     }
   };
 
@@ -101,7 +128,14 @@ export const StockCard: React.FC<{ item: InventoryItem; projectId: string; onClo
           {card.mismatch > 0 && (
             <div className="flex gap-2 p-3 rounded-xl bg-panel border border-divider text-sm text-ink">
               <WarningCircle weight="fill" className="w-5 h-5 text-ink-muted shrink-0" />
-              <p>Goods receipts add up to {q(card.mismatch)} {item.unit} more than this item's quantity. The quantity was probably edited in Inventory after a receipt.</p>
+              <p>
+                Goods receipts add up to {q(card.mismatch)} {item.unit} more than this item's quantity. The quantity was probably edited in Inventory after a receipt.
+                {isManager && (
+                  <button onClick={() => saveOpening(0)} disabled={savingOpening} className="ml-2 font-bold text-primary underline disabled:opacity-50">
+                    Make stock match the receipts
+                  </button>
+                )}
+              </p>
             </div>
           )}
 
@@ -140,6 +174,34 @@ export const StockCard: React.FC<{ item: InventoryItem; projectId: string; onClo
                       <p className="text-[10px] text-ink-muted font-mono">Bal {q(r.balance)}</p>
                     </div>
                   </div>
+                  {r.kind === "opening" && isManager && (
+                    openingEdit === null ? (
+                      <button onClick={() => setOpeningEdit(String(r.qty))}
+                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-primary px-2.5 py-1 rounded-lg hover:bg-primary/10">
+                        Correct opening stock
+                      </button>
+                    ) : (
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <label className="text-xs font-bold text-ink-muted">
+                          Opening stock ({item.unit})
+                          <input type="number" min="0" step="any" value={openingEdit} onChange={(e) => setOpeningEdit(e.target.value)}
+                            className="ml-2 w-24 px-2 py-1 rounded-lg bg-panel border border-divider font-mono text-ink" />
+                        </label>
+                        <button onClick={() => saveOpening(parseFloat(openingEdit) || 0)} disabled={savingOpening}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg bg-primary text-on-primary disabled:opacity-50">
+                          {savingOpening ? "Saving…" : "Save"}
+                        </button>
+                        <button onClick={() => saveOpening(0)} disabled={savingOpening}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg border border-divider text-danger disabled:opacity-50">
+                          Remove (set to 0)
+                        </button>
+                        <button onClick={() => setOpeningEdit(null)} className="text-xs font-bold text-ink-muted">Cancel</button>
+                        <p className="basis-full text-[11px] text-ink-muted">
+                          Stock becomes this plus the goods received ({q(card.received)} {item.unit}). Use it to remove opening stock that was never there.
+                        </p>
+                      </div>
+                    )
+                  )}
                   {r.kind === "in" && r.duplicateOf && canDelete(r) && (
                     <button onClick={() => removeReceipt(r)} disabled={!!deleting}
                       className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-danger px-2.5 py-1 rounded-lg hover:bg-danger/10 disabled:opacity-50">
