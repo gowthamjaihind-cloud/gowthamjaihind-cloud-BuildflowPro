@@ -87,10 +87,17 @@ export function useAuthInit() {
         // means uploads stay denied until the next attempt.
         void ensureOrgClaim(firebaseUser);
 
+        // The handler below awaits (consent write, org role read), so two
+        // profile updates can finish out of order. Only the newest may set the
+        // user: an older one finishing late would put back a stale profile --
+        // e.g. one without the organization just joined, which sends the person
+        // back to "Create your organization" with the invite already used.
+        let snapSeq = 0;
         try {
           unsubscribeUser = onSnapshot(
             doc(db, "users", firebaseUser.uid),
             async (userDoc) => {
+              const seq = ++snapSeq;
               if (userDoc.exists()) {
                 const data = userDoc.data() as UserProfile;
                 // Creating or joining a company happens AFTER sign-in, so the
@@ -134,6 +141,7 @@ export function useAuthInit() {
                     /* not a member (or offline): fall back to Viewer below */
                   }
                 }
+                if (seq !== snapSeq) return; // a newer profile update has arrived
                 setUser({
                   uid: firebaseUser.uid,
                   ...data,
@@ -163,6 +171,7 @@ export function useAuthInit() {
                 };
                 await setDoc(doc(db, "users", firebaseUser.uid), newProfile);
                 clearPendingConsent();
+                if (seq !== snapSeq) return; // the write's own snapshot is newer
                 setUser(newProfile);
                 setLoading(false);
               }

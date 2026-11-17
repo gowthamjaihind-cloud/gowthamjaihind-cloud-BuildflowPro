@@ -265,16 +265,16 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-divider text-ink-muted text-[10px] uppercase tracking-widest font-black">
-                <th className="px-8 py-6">{"User Email / Identity"}</th>
-                <th className="px-8 py-6">{"Platform Role"}</th>
-                <th className="px-8 py-6">{"Projects Access"}</th>
-                <th className="px-8 py-6 text-right">{"Actions"}</th>
+                <th className="px-4 lg:px-6 py-6">{"User Email / Identity"}</th>
+                <th className="px-4 lg:px-6 py-6">{"Platform Role"}</th>
+                <th className="px-4 lg:px-6 py-6">{"Projects Access"}</th>
+                <th className="px-4 lg:px-6 py-6 text-right">{"Actions"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-divider/60">
               {users.map((u) => (
                 <tr key={u.uid} className="hover:bg-panel/50 transition-colors">
-                  <td className="px-8 py-6">
+                  <td className="px-4 lg:px-6 py-6">
                     <div className="font-bold text-ink text-sm">{u.email}</div>
                     <div className="mt-2 flex items-center gap-2">
                       {u.telegramChatId ? (
@@ -312,7 +312,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                       )}
                     </div>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-4 lg:px-6 py-6">
                     {editingUserId === u.uid ? (
                       <select
                         className="bg-surface border border-divider text-sm font-bold rounded-lg px-3 py-2 w-40 outline-none focus:border-primary"
@@ -349,7 +349,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                       </div>
                     )}
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-4 lg:px-6 py-6">
                     <div className="flex flex-col gap-2 text-[13px] text-ink-muted font-medium">
                       {editingUserId === u.uid && editingRole !== "Admin" && editingRole !== "Owner" ? (
                         <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
@@ -416,18 +416,19 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                                 </div>
                               ))
                           ) : (
-                            <span>{"Global Role Applied"}</span>
+                            <span>{"No project access yet"}</span>
                           )}
                         </div>
                       )}
                     </div>
                   </td>
-                  <td className="px-8 py-6 text-right">
+                  <td className="px-4 lg:px-6 py-6 text-right">
                     {editingUserId === u.uid ? (
                       <div className="flex justify-end gap-2">
                         <Tooltip label={"Save Role"}>
                           <button
                             onClick={() => handleUpdateRole(u.uid)}
+                            aria-label={`Save role and access for ${u.email}`}
                             className="p-2 bg-success text-on-success rounded-xl hover:bg-success transition-colors"
                            
                           >
@@ -437,6 +438,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                         <Tooltip label={"Cancel"}>
                           <button
                             onClick={() => setEditingUserId(null)}
+                            aria-label="Cancel"
                             className="p-2 bg-divider text-ink rounded-xl hover:bg-ink-muted/25 transition-colors"
                            
                           >
@@ -460,6 +462,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
                             setEditingProjectAccess(accessMap);
                                                     }}
                           disabled={currentUser.role !== "Admin" && currentUser.role !== "Owner"}
+                          aria-label={`Edit role and access for ${u.email}`}
                           className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           <Edit2 className="w-5 h-5" />

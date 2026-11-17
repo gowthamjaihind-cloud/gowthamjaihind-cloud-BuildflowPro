@@ -25,11 +25,23 @@ const PAID: PlanId[] = ["starter", "business"];
 export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
   const { t } = useTranslation();
   const logout = useAuthStore((s) => s.logout);
-  const urlCode = new URLSearchParams(window.location.search).get("invite") || "";
+  // The code is kept for this tab too: accepting it strips ?invite= from the
+  // URL, and if this screen is re-created before the app moves on, it must
+  // still know it is joining (and that it already joined), not offer to
+  // create a new organization.
+  const urlCode = (() => {
+    const fromUrl = new URLSearchParams(window.location.search).get("invite") || "";
+    try {
+      if (fromUrl) sessionStorage.setItem("pendingInvite", fromUrl);
+      return fromUrl || sessionStorage.getItem("pendingInvite") || "";
+    } catch { return fromUrl; }
+  })();
   const hasOrg = !!user.currentOrgId;
 
   const [mode, setMode] = useState<"create" | "invite">(urlCode ? "invite" : "create");
-  const [joined, setJoined] = useState<string | null>(null);
+  const [joined, setJoined] = useState<string | null>(() => {
+    try { return sessionStorage.getItem("joinedOrg"); } catch { return null; }
+  });
 
   const reload = () => window.location.assign(window.location.pathname);
 
@@ -46,8 +58,11 @@ export const Onboarding: React.FC<{ user: UserProfile }> = ({ user }) => {
     try {
       const res = await callAcceptInvite(c);
       try { window.history.replaceState({}, "", window.location.pathname); } catch { /* ignore */ }
-      setJoined(res.orgName || "your organization");
+      const name = res.orgName || "your organization";
+      try { sessionStorage.removeItem("pendingInvite"); sessionStorage.setItem("joinedOrg", name); } catch { /* ignore */ }
+      setJoined(name);
     } catch (e: any) {
+      try { sessionStorage.removeItem("pendingInvite"); } catch { /* ignore */ }
       setError(e?.message || t("onb.errJoin"));
     } finally { setBusy(false); }
   };
