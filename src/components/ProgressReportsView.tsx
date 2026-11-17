@@ -360,7 +360,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
           </p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex bg-panel/50 p-1.5 rounded-xl border border-divider shadow-sm">
+          <div className="flex flex-wrap bg-panel/50 p-1.5 rounded-xl border border-divider shadow-sm">
             {(["daily", "weekly", "monthly"] as const).map((rt) => (
               <button
                 key={rt}
@@ -374,8 +374,9 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex-1 bg-surface p-4 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
+      {/* Wraps on narrow screens: side by side, the export buttons ran off the edge. */}
+      <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+        <div className="flex-1 min-w-0 bg-surface p-4 rounded-2xl border border-divider shadow-sm flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
             {t("reports.reportDatePeriod")}
           </span>
@@ -386,11 +387,11 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             className="bg-panel border-none outline-none font-bold text-sm text-ink px-3 py-1.5 rounded-lg"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleExportCSV}
             disabled={logs.length === 0 || !canExport}
-            className={`flex items-center gap-2 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-panel border border-divider hover:bg-divider text-ink active:scale-95 cursor-pointer"}`}
+            className={`flex items-center gap-2 px-4 md:px-5 py-3 md:py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-panel border border-divider hover:bg-divider text-ink active:scale-95 cursor-pointer"}`}
           >
             <Download className="w-4 h-4 text-ink/80" />
             {t("common.exportCsv")}
@@ -399,7 +400,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
             <button aria-label={t("common.exportPdf")}
               onClick={handleExportPDF}
               disabled={logs.length === 0 || !canExport || isGeneratingPdf}
-              className={`flex items-center gap-2 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-primary text-on-primary hover:bg-primary/80 active:scale-95 cursor-pointer"}`}
+              className={`flex items-center gap-2 px-4 md:px-6 py-3 md:py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg ${logs.length === 0 || !canExport ? "bg-panel text-ink-muted cursor-not-allowed" : "bg-primary text-on-primary hover:bg-primary/80 active:scale-95 cursor-pointer"}`}
             >
               {isGeneratingPdf ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

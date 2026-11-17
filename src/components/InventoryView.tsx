@@ -73,6 +73,17 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
 
   const breakpoint = useBreakpoint();
+  // The stock table needs ~900px of content; beside the sidebar that is a
+  // 1280px window. Narrower, its Edit/Delete column ran off the edge, so the
+  // card list is used instead.
+  const [wideEnough, setWideEnough] = useState(() => typeof window === "undefined" || window.matchMedia("(min-width: 1280px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1280px)");
+    const on = () => setWideEnough(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  const tableFits = breakpoint === "desktop" && wideEnough;
   const queryClient = useQueryClient();
   const { data: rawItems = [] } = useProjectData<InventoryItem>(projectId, "inventory");
   const { data: purchaseOrders = [] } = useProjectData<any>(projectId, "purchase_orders");
@@ -737,29 +748,31 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       </div>
 
       {/* Controls Section */}
-      <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-panel p-3 md:p-4 rounded-2xl border border-divider shadow-sm">
-        <div className="flex flex-col md:flex-row gap-3 w-full lg:w-auto lg:min-w-0 lg:flex-1 items-center">
-          <div className="flex bg-panel p-1 rounded-xl w-full md:flex-1 md:min-w-0 border border-divider overflow-x-auto">
+      {/* Two rows: views + search, then filters + actions. Side by side, each
+          half was squeezed: the tabs were clipped and the buttons ran off the edge. */}
+      <div className="flex flex-col gap-3 bg-panel p-3 md:p-4 rounded-2xl border border-divider shadow-sm">
+        <div className="flex flex-col md:flex-row gap-3 w-full md:items-center">
+          <div className="flex flex-wrap bg-panel p-1 rounded-xl w-full md:w-auto border border-divider">
             <button
               onClick={() => setViewMode("inventory")}
-              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "inventory" ? "bg-surface shadow-sm text-primary" : "text-ink-muted hover:text-ink"}`}
+              className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "inventory" ? "bg-surface shadow-sm text-primary" : "text-ink-muted hover:text-ink"}`}
             >
               Stock Ledger
             </button>
             <button
               onClick={() => setViewMode("reconciliation")}
-              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "reconciliation" ? "bg-surface shadow-sm text-primary" : "text-ink-muted hover:text-ink"}`}
+              className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "reconciliation" ? "bg-surface shadow-sm text-primary" : "text-ink-muted hover:text-ink"}`}
             >
               Reconciliation
             </button>
             <button
               onClick={() => setViewMode("config")}
-              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "config" ? "bg-surface shadow-sm text-primary" : "text-ink-muted hover:text-ink"}`}
+              className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider apple-transition whitespace-nowrap ${viewMode === "config" ? "bg-surface shadow-sm text-primary" : "text-ink-muted hover:text-ink"}`}
             >
               Configuration
             </button>
           </div>
-          <div className="relative w-full md:w-64 lg:w-72">
+          <div className="relative w-full md:w-64 lg:w-72 md:ml-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
             <input
               placeholder="Search items..."
@@ -769,7 +782,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             />
           </div>
         </div>
-        <div className="flex items-center gap-2 w-full lg:flex-1 lg:min-w-0 lg:flex-wrap lg:justify-end overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 scrollbar-hide">
+        <div className="flex flex-wrap items-center gap-2 w-full md:justify-end">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -814,7 +827,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
               </Tooltip>
             }
           >
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full sm:w-auto">
             <Tooltip label="Reuse a material saved for your organisation">
               <button
                 onClick={() => setShowMaterialPicker(true)}
@@ -892,7 +905,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             />
           ) : viewMode === "inventory" ? (
             <div className="bg-surface">
-              {breakpoint === "desktop" ? (
+              {tableFits ? (
                 <VirtualTable<InventoryItem>
                   data={filteredItems}
                   keyExtractor={(item) => item.id}
@@ -1094,7 +1107,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                 Receipt, since GRN-derived totals recompute from receipt
                 history.
               </div>
-              {breakpoint === "desktop" ? (
+              {tableFits ? (
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-surface-dark text-white/50">

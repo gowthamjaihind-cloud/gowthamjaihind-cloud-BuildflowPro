@@ -528,7 +528,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
       ) : (
         <div className="space-y-6" id="consumption-analytics-content">
           {/* TAB BAR — two top-level tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide" id="navigation-tabs-section">
+          <div className="flex flex-wrap items-center gap-2 pb-2" id="navigation-tabs-section">
             <button
               id="tab-material"
               onClick={() => setSelectedTab("material")}

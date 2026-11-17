@@ -197,6 +197,7 @@ export const PortfolioPage: React.FC = () => {
                 <Tooltip label={t("portfolio.globalSettings")}>
                   <button
                     onClick={() => setViewingSettings(true)}
+                    aria-label={t("portfolio.globalSettings")}
                     className="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white/90 transition-colors active:scale-95 shrink-0"
                    
                   >
