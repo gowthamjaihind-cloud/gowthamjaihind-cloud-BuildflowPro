@@ -28,12 +28,20 @@ export function knowledge(): string {
 - Roles: Owner, Admin, Project Manager, Site Engineer and others. Owners/Admins manage billing and team; site engineers mostly log work.
 
 ## Telegram bot (@Bvprojectbot)
-- Connect: Settings > Telegram Bot > Connect Telegram, then tap Start in Telegram.
+- Connect yourself: Settings > Telegram Bot > Connect Telegram, then tap Start in Telegram. That code connects the bot as YOU: never let someone else scan it.
+- Connect a team member (Owners/Admins): Settings > Team > "Send Telegram link" under their name, then send it to them (Copy, WhatsApp or Share). They tap it and press Start, and the bot is connected as them. The link works once and does not expire; "Revoke" cancels an unused link, "New link" replaces it, and "Unlink" disconnects a member's Telegram at once. The member must first be invited and have joined the workspace.
 - Commands: /log (log work with buttons), /today (today's logs), /projects (switch project), /plan (today's plan), /language, /cancel, /help, /unlink.
 - Typing work in plain words also works, e.g. "Footing 45% done, 20 bags cement, 4 masons". Site shorthand is understood (MC/FC = male/female helper, "no." = numbers). The bot shows what it understood; nothing is saved until Save is pressed. One message can cover several tasks; they are shown one at a time.
 - Photos sent on their own: the AI sorts them. Site photos are added to a task's log for the day (the bot asks which task, or uses the task named in the caption). Bills (photo or PDF) are read into a draft vendor bill. Other documents (drawings, permits, reports) are saved to the Document Vault.
 - Typing a progress figure lower than the current one asks for confirmation first.
 - The bot is in English and Tamil (/language).
+
+## "Do it for me" (Help > Do it for me)
+- Type or record a voice note asking for something to be done in the open project. It can: prepare a purchase order ("Order 100 bags of cement from ABC Traders, deliver Friday"), record a client payment ("Client paid 2 lakh by UPI today"), add a vendor or a material, log today's work, or answer a question from the project's data ("How much 12mm steel is left?", "Which orders are still pending?", "How much has the client paid?").
+- It always shows a preview first; nothing is saved until you press Confirm (a preview expires after 30 minutes). A purchase order can also be opened with "Edit in form" to change it before creating. Orders are created as Drafts with the next PO number, GST worked out as in the form. Vendors and materials must already exist for a PO (add them first, which "Do it for me" can also do).
+- Who can do what (checked on the server, before the preview and again on Confirm): purchase orders, client payments, new vendors and new materials: Owner, Admin, Project Manager, Project Director. Daily logs: those roles plus Site Engineer. Questions about stock and progress: anyone who can see the project; questions about payments and orders: the manager roles only. Everyone also needs write access to the project for changes, and nothing can be changed while a project is read-only (billing).
+- The same works in the Telegram bot: type the request or send a voice note. For a purchase order the bot sends a PDF preview of the PO to open in Telegram, with Confirm and Cancel buttons; after Confirm it sends the numbered PO as a PDF. Work reports typed in the bot still go to the daily-log flow.
+- Each request counts as one AI use (a work report typed here counts one more, for reading it into logs).
 
 ## Plans and prices (India, prices in rupees, per month unless yearly)
 - Starter: ${inr(s.monthly)} per project per month (${inr(s.annual)} per project per year). Includes ${lim(s.includedProjects)} project; each further project is ${inr(OVERAGE_RATE)}/month. Up to ${lim(s.userLimit)} users. ${lim(s.aiScansPerProject)} AI reads per project per month.

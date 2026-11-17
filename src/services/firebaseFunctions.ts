@@ -523,3 +523,36 @@ export const callListSupportReports = async () =>
   (await httpsCallable<Record<string, never>, any[]>(getFunctionsInstance(), "listSupportReports")({})).data;
 export const callHelpChat = async (args: { orgId?: string; messages: HelpTurn[]; checks?: HelpCheck[] }) =>
   (await httpsCallable<typeof args, { answer: string }>(getFunctionsInstance(), "helpChat", { timeout: 70_000 })(args)).data;
+
+// ── Team members' Telegram (functions/src/telegram/teamLinks) ───────────────
+export type TeamTelegramStatus = Record<string, { linked: boolean; linkedAt?: number; pendingSince?: number }>;
+export const callListTeamTelegram = async (orgId: string) =>
+  (await httpsCallable<{ orgId: string }, TeamTelegramStatus>(getFunctionsInstance(), "listTeamTelegram")({ orgId })).data;
+export const callCreateMemberTelegramLink = async (orgId: string, memberUid: string) =>
+  (await httpsCallable<{ orgId: string; memberUid: string }, { link: string }>(getFunctionsInstance(), "createMemberTelegramLink")({ orgId, memberUid })).data;
+export const callRevokeMemberTelegramLink = async (orgId: string, memberUid: string) =>
+  (await httpsCallable<{ orgId: string; memberUid: string }, { revoked: number }>(getFunctionsInstance(), "revokeMemberTelegramLink")({ orgId, memberUid })).data;
+export const callUnlinkMemberTelegram = async (orgId: string, memberUid: string) =>
+  (await httpsCallable<{ orgId: string; memberUid: string }, { unlinked: boolean }>(getFunctionsInstance(), "unlinkMemberTelegram")({ orgId, memberUid })).data;
+
+// ── "Do it for me" (functions/src/actions): the same engine the bot uses ────
+export interface CommandPoDraft {
+  vendorId: string;
+  vendorName: string;
+  expectedDeliveryDate: string;
+  notes: string;
+  items: { itemId: string; materialId: string; name: string; unit: string; orderedQty: number; rate: number; hsn: string; gstRate: number; rateFromRequest: boolean }[];
+}
+export type ActionPending =
+  | { kind: "po"; draft: CommandPoDraft; unmatched: string[]; missingVendor: boolean }
+  | { kind: "payment" | "vendor" | "material" | "logs"; [k: string]: unknown };
+export type ActionPrepared =
+  | { type: "denied" | "answer" | "other"; transcript: string; message: string }
+  | { type: "log"; transcript: string }
+  | { type: "pending"; transcript: string; id: string; kind: ActionPending["kind"]; lines: string[]; blockers: string[]; pending: ActionPending };
+export const callActionPrepare = async (args: { orgId?: string; projectId: string; text?: string; audioBase64?: string; mimeType?: string }) =>
+  (await httpsCallable<typeof args, ActionPrepared>(getFunctionsInstance(), "actionPrepare", { timeout: 130_000 })(args)).data;
+export const callActionConfirm = async (id: string) =>
+  (await httpsCallable<{ id: string }, { message: string; poId?: string; poNumber?: string; projectId: string; orgId: string }>(getFunctionsInstance(), "actionConfirm", { timeout: 60_000 })({ id })).data;
+export const callActionCancel = async (id: string) =>
+  (await httpsCallable<{ id: string }, { ok: boolean }>(getFunctionsInstance(), "actionCancel")({ id })).data;

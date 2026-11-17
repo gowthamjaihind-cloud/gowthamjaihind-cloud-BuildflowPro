@@ -14,6 +14,9 @@ import * as agent from "./handlers/agent";
 import * as invoice from "./handlers/invoice";
 import * as sitePhotos from "./handlers/sitePhotos";
 import * as aiLog from "./handlers/aiLog";
+import * as actions from "./handlers/actions";
+import { looksLikeRequest } from "../bot/request";
+import { AUDIO_TYPES, MAX_AUDIO_BASE64 } from "../command/po";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
 import { looksLikeLogText } from "../bot/aiLog";
 import { recordBotError, recentBotErrors } from "./botErrors";
@@ -245,6 +248,12 @@ async function handleUpdate(tg, update, geminiKey) {
             );
             return;
         }
+        // Confirm / Cancel on a typed or spoken request (handlers/actions.ts).
+        // The engine checks the person's role again before saving anything.
+        if (data.startsWith("act:")) {
+            await actions.handleTap(tg, chatId, messageId, session, data);
+            return;
+        }
         // "Log now" button from the daily reminder — starts the normal log flow.
         if (data === "log") {
             await log.startLog(tg, chatId, session);
@@ -430,6 +439,26 @@ async function handleUpdate(tg, update, geminiKey) {
         else if (r === "classify") await enqueueBotJob({ kind: "classifyPhotos", chatId });
         return;
     }
+    // A voice note (or an audio file): a request or a work report, spoken.
+    // Read by the same engine as typed requests, in the queue (it takes a few seconds).
+    const voice = msg?.voice || msg?.audio;
+    if (voice?.file_id) {
+        const chatId = msg.chat.id;
+        const session = await getSession(chatId);
+        if (!(await validateSession(chatId, session))) {
+            await tg.sendMessage(chatId, tt(session?.lang, "notLinkedShort"));
+            return;
+        }
+        const lang: BotLang = normalizeLang(session?.lang);
+        // base64 is 4/3 of the bytes: keep the file under the engine's limit.
+        if (Number(voice.file_size || 0) * 4 / 3 > MAX_AUDIO_BASE64) {
+            await tg.sendMessage(chatId, tt(lang, "voiceTooLong"));
+            return;
+        }
+        await tg.sendMessage(chatId, tt(lang, "actListening"));
+        await enqueueBotJob({ kind: "action", chatId, voice: { file_id: voice.file_id, mime_type: voice.mime_type || "audio/ogg" } });
+        return;
+    }
     if (!msg?.text)
         return;
     const chatId = msg.chat.id;
@@ -542,6 +571,13 @@ async function handleUpdate(tg, update, geminiKey) {
     if (await log.handleStepText(tg, chatId, session, text)) return;
     // A sentence with no command and no step in progress: read it as a work
     // report. Returns false when it is not one, so the reply below still fires.
+    // An order, a payment, a new vendor or material, or a question about the
+    // project: the action engine, which checks the person's role first.
+    if (looksLikeRequest(text) && geminiKey) {
+        await tg.sendMessage(chatId, tt(lang, "aiReading"));
+        await enqueueBotJob({ kind: "action", chatId, text });
+        return;
+    }
     if (looksLikeLogText(text) && geminiKey) {
         // Say something at once: the reading takes a few seconds and silence
         // reads as a bot that is not working.
@@ -560,6 +596,7 @@ async function handleUpdate(tg, update, geminiKey) {
 /** Hand slow, AI-backed work to the queue worker below. */
 type BotJob =
     | { kind: "aiText"; chatId: any; text: string }
+    | { kind: "action"; chatId: any; text?: string; voice?: { file_id: string; mime_type: string } }
     | { kind: "invoice"; chatId: any; photo: any }
     | { kind: "sitePhotos"; chatId: any; taskId: string; messageId: any }
     | { kind: "draftAlbum"; chatId: any }
@@ -604,6 +641,19 @@ export const onBotJobCreated = onDocumentCreated({
             await sitePhotos.asDocuments(tg, chatId, job.messageId, session);
         } else if (job.kind === "draftAlbum") {
             await sitePhotos.attachAlbumToDraft(tg, chatId);
+        } else if (job.kind === "action") {
+            let audio: { base64: string; mimeType: string } | undefined;
+            if (job.voice?.file_id) {
+                const got = await tg.fetchPhotoBytes([{ file_id: job.voice.file_id, mime_type: job.voice.mime_type }]);
+                // Telegram labels voice notes "audio/ogg"; some phones send "audio/opus" or m4a.
+                const mime = String(job.voice.mime_type || "audio/ogg").replace("audio/opus", "audio/ogg").replace("audio/m4a", "audio/x-m4a");
+                if (!got.ok || !AUDIO_TYPES.includes(mime)) {
+                    await tg.sendMessage(chatId, tt(lang, got.ok ? "voiceUnsupported" : "cantFetchPhoto"));
+                    return;
+                }
+                audio = { base64: got.buffer.toString("base64"), mimeType: mime };
+            }
+            await actions.handleRequest(tg, chatId, session, { text: job.text, audio }, GEMINI_API_KEY.value());
         } else if (job.kind === "aiText") {
             const handled = await aiLog.handleFreeText(tg, chatId, session, String(job.text || ""), GEMINI_API_KEY.value());
             if (!handled) await tg.sendMessage(chatId, tt(lang, "didntUnderstand"));

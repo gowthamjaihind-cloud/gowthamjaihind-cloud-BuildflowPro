@@ -27,19 +27,29 @@ interface PurchaseOrderFormProps {
   onClose: () => void;
   /** When set, the form edits this existing (Draft) PO instead of creating one. */
   existingPO?: PurchaseOrder | null;
+  /**
+   * A new PO prepared from a typed or spoken request (the command chat). The
+   * form opens filled in; nothing is saved until the user presses Create.
+   */
+  draft?: {
+    vendorId?: string;
+    expectedDeliveryDate?: string;
+    notes?: string;
+    items: { itemId: string; materialId?: string; name: string; unit: string; orderedQty: number; rate: number; hsn?: string; gstRate?: number }[];
+  } | null;
 }
 
-export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId, onClose, existingPO }) => {
+export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId, onClose, existingPO, draft }) => {
   const { t } = useTranslation();
   const user = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
   const isEditing = !!existingPO;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [vendorId, setVendorId] = useState(existingPO?.vendorId || "");
+  const [vendorId, setVendorId] = useState(existingPO?.vendorId || draft?.vendorId || "");
   const [orderDate, setOrderDate] = useState(existingPO?.orderDate || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date()));
-  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(existingPO?.expectedDeliveryDate || "");
-  const [notes, setNotes] = useState(existingPO?.notes || "");
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(existingPO?.expectedDeliveryDate || draft?.expectedDeliveryDate || "");
+  const [notes, setNotes] = useState(existingPO?.notes || draft?.notes || "");
   const [items, setItems] = useState<Omit<POLineItem, "amount">[]>(
     existingPO?.lineItems?.length
       ? existingPO.lineItems.map((i) => ({
@@ -53,7 +63,9 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
           hsn: i.hsn || "",
           gstRate: i.gstRate || 0,
         }))
-      : [{ itemId: "", materialId: "", name: "", orderedQty: 0, unit: "", rate: 0, hsn: "", gstRate: 0 }],
+      : draft?.items?.length
+        ? draft.items.map((i) => ({ itemId: i.itemId, materialId: i.materialId || "", name: i.name, orderedQty: i.orderedQty, unit: i.unit, rate: i.rate, hsn: i.hsn || "", gstRate: i.gstRate || 0 }))
+        : [{ itemId: "", materialId: "", name: "", orderedQty: 0, unit: "", rate: 0, hsn: "", gstRate: 0 }],
   );
   const [chargesGstRate, setChargesGstRate] = useState<number>(existingPO?.chargesGstRate || 0);
   const { settings: org } = useOrgSettings();

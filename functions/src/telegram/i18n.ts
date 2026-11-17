@@ -34,6 +34,7 @@ const en: Dict = {
     "/plan — plan today's tasks (morning)\n" +
     "/log — log today's site progress\n" +
     "…or just type what was done, for example:\n<i>Footing concrete 45% done, 20 bags cement, 4 masons, 6 helpers</i>\n" +
+    "…or ask me to do something, typed or as a voice note:\n<i>PO for 100 bags OPC 53 cement from ABC Traders</i>\n<i>Client paid 2 lakh by UPI today</i>\n<i>How much cement is left?</i>\n" +
     "/today — see what's already logged today\n" +
     "/projects — switch active project\n" +
     "/language — change language (English / தமிழ்)\n" +
@@ -173,6 +174,19 @@ const en: Dict = {
   "invNotMatched": "— not matched —",
   "invReviewPost":
     "Review &amp; post it in the app → <b>Procurement → Bills</b>.",
+
+  // Requests through the action engine (handlers/actions.ts)
+  "actCheck": "🧾 <b>Check this before I save it</b>",
+  "actTapConfirm": "Tap <b>Confirm</b> to save it. Nothing is saved until then (this expires in 30 minutes).",
+  "actFixInApp": "Fix this in the app, or send the request again with the missing details.",
+  "actBtnConfirm": "✅ Confirm",
+  "actBtnCancel": "✖ Cancel",
+  "actCancelled": "Cancelled. Nothing was saved.",
+  "actDraftCaption": "📄 Draft preview of the PO. It gets its number when you tap Confirm.",
+  "actPoCaption": "📄 <b>{po}</b>, saved as a Draft. Send it to the vendor from the app when it is approved.",
+  "actListening": "🎙 Listening…",
+  "voiceTooLong": "That voice note is too long. Keep it under about a minute, or type it.",
+  "voiceUnsupported": "I can't play that audio format. Send a Telegram voice note, or type it.",
 
   // Language switch
   "chooseLanguage": "🌐 Choose your language:",

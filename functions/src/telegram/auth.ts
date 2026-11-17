@@ -1,5 +1,6 @@
 import { BotSession, channelOf, linkFields, type ChatId } from "./session";
 import { db } from "../db";
+import { codeUsable } from "../bot/linkCode";
 
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 60 * 60 * 1000;
@@ -28,8 +29,7 @@ export const redeemLinkCode = async (code: string, chatId: ChatId): Promise<Rede
     const snap = await tx.get(ref);
     if (!snap.exists) return { ok: false };
     const data = snap.data()!;
-    if (data.used) return { ok: false };
-    if (Date.now() > (data.expiresAt || 0)) return { ok: false };
+    if (!codeUsable(data, Date.now())) return { ok: false };
     tx.update(ref, { used: true, usedAt: Date.now(), usedByChatId: chatId });
     // Which field depends on the channel. One link code can be redeemed from
     // either, and writing a WhatsApp id into telegramChatId silently unlinks

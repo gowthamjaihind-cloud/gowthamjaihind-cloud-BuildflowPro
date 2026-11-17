@@ -1,14 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ChatCircleDots, X, PaperPlaneRight, Wrench, CheckCircle, WarningCircle, XCircle, Info } from "@phosphor-icons/react";
+import { ChatCircleDots, X, PaperPlaneRight, Wrench, CheckCircle, WarningCircle, XCircle, Info, Microphone, Stop, Lightning } from "@phosphor-icons/react";
 import { useAuthStore, useUIStore, useProjectStore } from "../store";
 import {
   callHelpChat,
   callHelpDiagnose,
   callReportProblem,
   callConfirmSubscription,
+  callActionPrepare,
+  callActionConfirm,
+  callActionCancel,
   type HelpTurn,
   type HelpCheck,
+  type CommandPoDraft,
 } from "../services/firebaseFunctions";
+import { useVoiceNote, voiceSupported } from "../hooks/useVoiceNote";
+import { PurchaseOrderForm } from "./purchase/PurchaseOrderForm";
 import { runDeviceChecks, deviceSummary, fixUpdate, fixReconnect, fixClearCache, FIX_LABELS, type FixId } from "../lib/diagnostics";
 import { recentErrors } from "../lib/errorLog";
 
@@ -24,10 +30,21 @@ import { recentErrors } from "../lib/errorLog";
  * helpDiagnose), shows them with one-tap fixes, has the assistant explain
  * them, and can send the lot to support (reportProblem).
  *
+ * Do: a typed or spoken request (actionPrepare, functions/src/actions; the
+ * same engine the Telegram bot uses): a purchase order, a client payment, a
+ * new vendor or material, today's work, or a question about the project's
+ * stock, orders, payments or progress. The server checks the person's role
+ * and project access, shows a preview, and saves only on Confirm (checking
+ * again). A PO can instead be opened in the form to edit before creating.
+ *
  * The conversation is kept for the browser tab only (sessionStorage).
  */
 
-type Turn = HelpTurn & { checks?: HelpCheck[] };
+type Turn = HelpTurn & {
+  checks?: HelpCheck[];
+  /** A prepared action waiting for Confirm (pending_actions/{id}). */
+  action?: { id: string; state: "pending" | "done" | "cancelled"; canConfirm: boolean; po?: CommandPoDraft };
+};
 
 const STORE_KEY = "sitetru.help.v2";
 const SUGGESTIONS = [
@@ -82,6 +99,10 @@ export const HelpChat: React.FC = () => {
   const [diagMode, setDiagMode] = useState(false);
   const [lastProblem, setLastProblem] = useState<{ text: string; checks: HelpCheck[] } | null>(null);
   const [reportId, setReportId] = useState("");
+  const [mode, setMode] = useState<"ask" | "do">("ask");
+  const [poDraft, setPoDraft] = useState<CommandPoDraft | null>(null);
+  const activeProject = useProjectStore((s) => s.activeProject);
+  const voice = useVoiceNote((audio) => runCommand({ audio }));
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -224,6 +245,77 @@ export const HelpChat: React.FC = () => {
     }
   };
 
+
+  /** "Do": turn a typed or spoken request into a prepared action. */
+  const runCommand = async ({ text, audio }: { text?: string; audio?: { base64: string; mimeType: string } }) => {
+    if (busy) return;
+    if (!activeProject) {
+      setError("Open a project first, then ask (everything here belongs to a project).");
+      return;
+    }
+    const said = text?.trim();
+    if (!said && !audio) return;
+    setError("");
+    setNote("");
+    setInput("");
+    let next: Turn[] = said ? [...turns, { role: "user", text: said }] : [...turns];
+    if (said) setTurns(next);
+    setBusy(audio ? "Listening to your voice note…" : "Working on it…");
+    try {
+      const r = await callActionPrepare({ orgId, projectId: activeProject.id, ...(said ? { text: said } : { audioBase64: audio!.base64, mimeType: audio!.mimeType }) });
+      if (!said) next = [...turns, { role: "user", text: `🎤 ${r.transcript || "(voice note)"}` }];
+      if (r.type !== "pending") {
+        const msg = "message" in r ? r.message : "That looks like a work report. Log it from the Daily log screen or the Telegram bot.";
+        setTurns([...next, { role: "assistant", text: r.type === "denied" ? `🔒 ${msg}` : msg }]);
+        return;
+      }
+      const lines = [
+        "**Check this before I save it:**",
+        ...r.lines,
+        ...(r.blockers.length ? ["", ...r.blockers.map((b) => `⚠️ ${b}`)] : []),
+      ];
+      setTurns([...next, {
+        role: "assistant",
+        text: lines.join("\n"),
+        action: { id: r.id, state: "pending", canConfirm: !r.blockers.length, po: r.pending.kind === "po" ? (r.pending as any).draft : undefined },
+      }]);
+    } catch (e) {
+      setError(errText(e));
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const setActionState = (id: string, state: "done" | "cancelled") =>
+    setTurns((ts) => ts.map((t) => (t.action?.id === id ? { ...t, action: { ...t.action, state } } : t)));
+
+  const confirmAction = async (id: string) => {
+    if (busy) return;
+    setError("");
+    setBusy("Saving…");
+    try {
+      const r = await callActionConfirm(id);
+      setActionState(id, "done");
+      setTurns((ts) => [...ts, { role: "assistant", text: `✅ ${r.message}${r.poNumber ? "\nIt's in **Procurement → Purchase orders**, where you can print it or send it to the vendor." : ""}` }]);
+    } catch (e) {
+      setError(errText(e));
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const cancelAction = async (id: string) => {
+    setActionState(id, "cancelled");
+    callActionCancel(id).catch(() => {});
+  };
+
+  /** Edit a prepared PO in the full form instead; the prepared one is dropped. */
+  const editPo = (id: string, po: CommandPoDraft) => {
+    cancelAction(id);
+    setPoDraft(po);
+    setOpen(false);
+  };
+
   const startDiagnosis = () => {
     setDiagMode(true);
     setError("");
@@ -264,8 +356,32 @@ export const HelpChat: React.FC = () => {
             </div>
           </div>
 
+          <div className="flex gap-1 px-4 pt-2" role="tablist">
+            {(["ask", "do"] as const).map((k) => (
+              <button
+                key={k}
+                role="tab"
+                aria-selected={mode === k}
+                onClick={() => { setMode(k); setDiagMode(false); setError(""); }}
+                className={`flex-1 text-xs font-bold py-1.5 rounded-lg cursor-pointer ${mode === k ? "bg-surface-dark text-white" : "text-ink-muted hover:bg-surface-2"}`}
+              >
+                {k === "ask" ? "Ask" : "Do it for me"}
+              </button>
+            ))}
+          </div>
+
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm">
-            {turns.length === 0 && !diagMode && (
+            {mode === "do" && turns.length === 0 && (
+              <div className="space-y-2 text-ink-muted">
+                <p className="flex items-center gap-2 text-ink font-bold"><Lightning weight="fill" className="w-4 h-4 text-primary" />Type or say what you want done.</p>
+                <p>In the open project{activeProject ? <> (<b className="text-ink">{activeProject.name}</b>)</> : ""} I can prepare <b className="text-ink">purchase orders</b>, record <b className="text-ink">client payments</b>, add <b className="text-ink">vendors</b> and <b className="text-ink">materials</b>, log <b className="text-ink">today's work</b>, and answer questions about stock, orders, payments and progress. You see a preview first; nothing is saved until you press Confirm. What you can do depends on your role.</p>
+                <p className="italic">"Order 100 bags of cement from ABC Traders, deliver on Friday"</p>
+                <p className="italic">"Client paid 2 lakh by UPI today"</p>
+                <p className="italic">"How much 12mm steel is left?"</p>
+                {!activeProject && <p className="text-warning font-bold">Open a project first.</p>}
+              </div>
+            )}
+            {mode === "ask" && turns.length === 0 && !diagMode && (
               <div className="space-y-3">
                 <p className="text-ink-muted">Hi! Ask me how to do something in Sitetru, about your plan and billing, or about the Telegram bot.</p>
                 <button onClick={startDiagnosis} className="w-full flex items-center gap-2 text-left text-sm font-bold px-3 py-2.5 rounded-xl border border-divider hover:bg-surface-2 cursor-pointer">
@@ -284,6 +400,25 @@ export const HelpChat: React.FC = () => {
               <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
                 <div className={`max-w-[88%] rounded-2xl px-3 py-2 space-y-1 ${m.role === "user" ? "bg-primary text-on-primary" : "bg-surface-2 text-ink"}`}>
                   {m.role === "assistant" ? <Rich text={m.text} /> : m.text}
+                  {m.action && m.action.state === "pending" && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {m.action.canConfirm && (
+                        <button onClick={() => confirmAction(m.action!.id)} disabled={!!busy} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-primary text-on-primary disabled:opacity-50 cursor-pointer">
+                          Confirm
+                        </button>
+                      )}
+                      {m.action.po && (
+                        <button onClick={() => editPo(m.action!.id, m.action!.po!)} disabled={!!busy} className="text-xs font-bold px-3 py-1.5 rounded-lg border border-divider bg-surface-1 disabled:opacity-50 cursor-pointer">
+                          Edit in form
+                        </button>
+                      )}
+                      <button onClick={() => cancelAction(m.action!.id)} disabled={!!busy} className="text-xs font-bold px-3 py-1.5 rounded-lg border border-divider bg-surface-1 disabled:opacity-50 cursor-pointer">
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                  {m.action?.state === "done" && <p className="text-xs font-bold text-success">Saved</p>}
+                  {m.action?.state === "cancelled" && <p className="text-xs text-ink-muted">Cancelled, nothing saved</p>}
                   {m.checks && (
                     <ul className="mt-2 space-y-2">
                       {m.checks.map((c, j) => (
@@ -321,6 +456,7 @@ export const HelpChat: React.FC = () => {
             {busy && <p className="text-xs text-ink-muted">{busy}</p>}
             {note && <p className="text-xs font-bold text-ink">{note}</p>}
             {error && <p className="text-xs font-bold text-danger">{error}</p>}
+            {voice.error && <p className="text-xs font-bold text-danger">{voice.error}</p>}
             <div ref={endRef} />
           </div>
 
@@ -328,7 +464,18 @@ export const HelpChat: React.FC = () => {
             onSubmit={(e) => { e.preventDefault(); ask(input || (diagMode ? " " : "")); }}
             className="flex items-end gap-2 p-3 border-t border-divider pb-[max(0.75rem,env(safe-area-inset-bottom))]"
           >
-            {!diagMode && turns.length > 0 && (
+            {mode === "do" && voiceSupported() && (
+              <button
+                type="button"
+                onClick={() => (voice.recording ? voice.stop() : voice.start())}
+                disabled={!!busy && !voice.recording}
+                aria-label={voice.recording ? "Stop recording" : "Record a voice note"}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer shrink-0 ${voice.recording ? "bg-danger text-on-danger" : "border border-divider hover:bg-surface-2"}`}
+              >
+                {voice.recording ? <Stop weight="fill" className="w-5 h-5" /> : <Microphone weight="bold" className="w-5 h-5 text-primary" />}
+              </button>
+            )}
+            {mode === "ask" && !diagMode && turns.length > 0 && (
               <button type="button" onClick={startDiagnosis} aria-label="Something's not working" title="Something's not working?" className="w-10 h-10 rounded-xl border border-divider flex items-center justify-center hover:bg-surface-2 cursor-pointer shrink-0">
                 <Wrench weight="bold" className="w-5 h-5 text-primary" />
               </button>
@@ -336,16 +483,17 @@ export const HelpChat: React.FC = () => {
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); diagMode ? diagnose(input) : ask(input); } }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); mode === "do" ? runCommand({ text: input }) : diagMode ? diagnose(input) : ask(input); } }}
               rows={1}
               maxLength={1000}
-              placeholder={diagMode ? "What's going wrong?" : "Ask a question…"}
+              placeholder={voice.recording ? `Recording… ${voice.seconds}s (tap ■ to send)` : mode === "do" ? "e.g. Client paid 2 lakh by UPI…" : diagMode ? "What's going wrong?" : "Ask a question…"}
+              disabled={voice.recording}
               className="flex-1 resize-none max-h-28 px-3 py-2 rounded-xl bg-surface-1 border border-divider text-base md:text-sm"
             />
             <button
               type="button"
-              onClick={() => (diagMode ? diagnose(input) : ask(input))}
-              disabled={!!busy || (!diagMode && !input.trim())}
+              onClick={() => (mode === "do" ? runCommand({ text: input }) : diagMode ? diagnose(input) : ask(input))}
+              disabled={!!busy || voice.recording || (!diagMode && !input.trim())}
               aria-label="Send"
               className="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center disabled:opacity-50 cursor-pointer shrink-0"
             >
@@ -354,6 +502,17 @@ export const HelpChat: React.FC = () => {
           </form>
           <p className="text-[10px] text-ink-muted text-center pb-2 -mt-1">AI answers can be wrong. Fixes never delete anything on the server.</p>
         </div>
+      )}
+      {poDraft && activeProject && (
+        <PurchaseOrderForm
+          projectId={activeProject.id}
+          draft={poDraft}
+          onClose={() => {
+            setPoDraft(null);
+            setNote("If you pressed Create, the order is in Procurement → Purchase orders as a Draft.");
+            setOpen(true);
+          }}
+        />
       )}
     </>
   );
