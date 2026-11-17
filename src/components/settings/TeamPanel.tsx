@@ -10,7 +10,8 @@ import { db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useOrgSettings } from "../../hooks/useOrgSettings";
 import { useAuthStore } from "../../store";
-import { callCreateInvite } from "../../services/firebaseFunctions";
+import { callCreateInvite, callListTeamTelegram, type TeamTelegramStatus } from "../../services/firebaseFunctions";
+import { MemberTelegram } from "./MemberTelegram";
 
 const INVITABLE_ROLES = ["Admin", "Project Manager", "Site Engineer", "Stakeholder", "Viewer"];
 
@@ -28,6 +29,15 @@ export const TeamPanel: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [invite, setInvite] = useState<{ code: string; link: string; emailed: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Who has Telegram connected, and who has a link waiting (Owner/Admin only).
+  const [tg, setTg] = useState<TeamTelegramStatus>({});
+  const orgId = user?.currentOrgId || "";
+  const loadTelegram = React.useCallback(() => {
+    if (!canInvite || !orgId) return;
+    callListTeamTelegram(orgId).then(setTg).catch(() => {});
+  }, [canInvite, orgId]);
+  useEffect(loadTelegram, [loadTelegram, members]);
 
   // Resolve member uids -> names/emails for display.
   useEffect(() => {
@@ -110,10 +120,16 @@ export const TeamPanel: React.FC = () => {
                 <td className="p-3">
                   <div className="font-semibold text-ink">{m.name || m.email || m.uid}</div>
                   {m.email && m.name && <div className="text-xs text-ink-muted">{m.email}</div>}
+                  {canInvite && (
+                    <div className="mt-2">
+                      <MemberTelegram orgId={orgId} memberUid={m.uid} memberName={m.name || m.email || "this member"} status={tg[m.uid]} onChanged={loadTelegram} />
+                    </div>
+                  )}
                 </td>
-                <td className="p-3 text-right">
+                <td className="p-3 text-right align-top">
                   <span className="px-2.5 py-1 rounded-full bg-panel text-ink-muted text-xs font-bold">{m.role}</span>
                 </td>
+
               </tr>
             ))}
             {rows.length === 0 && (

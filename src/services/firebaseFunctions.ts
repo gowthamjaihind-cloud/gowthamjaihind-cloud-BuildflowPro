@@ -523,3 +523,14 @@ export const callListSupportReports = async () =>
   (await httpsCallable<Record<string, never>, any[]>(getFunctionsInstance(), "listSupportReports")({})).data;
 export const callHelpChat = async (args: { orgId?: string; messages: HelpTurn[]; checks?: HelpCheck[] }) =>
   (await httpsCallable<typeof args, { answer: string }>(getFunctionsInstance(), "helpChat", { timeout: 70_000 })(args)).data;
+
+// ── Team members' Telegram (functions/src/telegram/teamLinks) ───────────────
+export type TeamTelegramStatus = Record<string, { linked: boolean; linkedAt?: number; pendingSince?: number }>;
+export const callListTeamTelegram = async (orgId: string) =>
+  (await httpsCallable<{ orgId: string }, TeamTelegramStatus>(getFunctionsInstance(), "listTeamTelegram")({ orgId })).data;
+export const callCreateMemberTelegramLink = async (orgId: string, memberUid: string) =>
+  (await httpsCallable<{ orgId: string; memberUid: string }, { link: string }>(getFunctionsInstance(), "createMemberTelegramLink")({ orgId, memberUid })).data;
+export const callRevokeMemberTelegramLink = async (orgId: string, memberUid: string) =>
+  (await httpsCallable<{ orgId: string; memberUid: string }, { revoked: number }>(getFunctionsInstance(), "revokeMemberTelegramLink")({ orgId, memberUid })).data;
+export const callUnlinkMemberTelegram = async (orgId: string, memberUid: string) =>
+  (await httpsCallable<{ orgId: string; memberUid: string }, { unlinked: boolean }>(getFunctionsInstance(), "unlinkMemberTelegram")({ orgId, memberUid })).data;

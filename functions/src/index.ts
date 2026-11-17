@@ -16,6 +16,7 @@ export * from "./ai";
 export * from "./dailyLogs";
 export * from "./goodsReceipt";
 export * from "./telegram";
+export * from "./telegram/teamLinks";
 export * from "./clientShare";
 export * from "./help";
 
