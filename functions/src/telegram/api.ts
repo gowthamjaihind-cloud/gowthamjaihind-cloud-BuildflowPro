@@ -35,6 +35,19 @@ export class TelegramApi {
     });
   }
 
+  /** Send a file (a PO PDF) as a document; opens in Telegram's own viewer. */
+  async sendDocument(chatId: ChatId, file: Buffer, filename: string, caption?: string, buttons?: InlineButton[][]) {
+    const form = new FormData();
+    form.append("chat_id", String(chatId));
+    form.append("document", new Blob([new Uint8Array(file)], { type: "application/pdf" }), filename);
+    if (caption) { form.append("caption", caption.slice(0, 1000)); form.append("parse_mode", "HTML"); }
+    if (buttons) form.append("reply_markup", JSON.stringify({ inline_keyboard: buttons }));
+    const res = await fetch(`${API}${this.token}/sendDocument`, { method: "POST", body: form });
+    const json = await res.json().catch(() => ({}));
+    if (!json.ok) console.error("Telegram sendDocument failed:", json.description);
+    return json;
+  }
+
   answerCallback(callbackId: string, text?: string) {
     return this.call("answerCallbackQuery", { callback_query_id: callbackId, text });
   }

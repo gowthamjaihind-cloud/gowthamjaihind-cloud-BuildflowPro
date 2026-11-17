@@ -10,6 +10,9 @@ import * as log from "../telegram/handlers/log";
 import * as projects from "../telegram/handlers/projects";
 import * as agent from "../telegram/handlers/agent";
 import * as invoice from "../telegram/handlers/invoice";
+import * as actions from "../telegram/handlers/actions";
+import { looksLikeRequest } from "../bot/request";
+import { AUDIO_TYPES, MAX_AUDIO_BASE64 } from "../command/po";
 import * as sitePhotos from "../telegram/handlers/sitePhotos";
 import { db } from "../db";
 
@@ -140,6 +143,30 @@ async function handleInbound(wa: WhatsAppApi, m: InboundMessage, geminiKey: stri
     return;
   }
 
+  if (m.kind === "audio" && m.mediaId) {
+    // A voice note: a request or a work report, spoken (same engine as Telegram).
+    const session = await getSession(chatId);
+    if (!(await validateSession(chatId, session))) {
+      await wa.sendMessage(chatId, tt(session?.lang, "notLinkedShort"));
+      return;
+    }
+    const lang: BotLang = normalizeLang(session?.lang);
+    const got = await wa.downloadMedia(m.mediaId);
+    // WhatsApp labels voice notes "audio/ogg; codecs=opus".
+    const mime = String(m.mimeType || got?.mimeType || "").split(";")[0].trim();
+    if (!got || !AUDIO_TYPES.includes(mime)) {
+      await wa.sendMessage(chatId, tt(lang, got ? "voiceUnsupported" : "cantFetchPhoto"));
+      return;
+    }
+    const base64 = got.buffer.toString("base64");
+    if (base64.length > MAX_AUDIO_BASE64) {
+      await wa.sendMessage(chatId, tt(lang, "voiceTooLong"));
+      return;
+    }
+    await actions.handleRequest(wa, chatId, session, { audio: { base64, mimeType: mime } }, geminiKey);
+    return;
+  }
+
   if (m.kind !== "text") {
     const session = await getSession(chatId);
     await wa.sendMessage(chatId, tt(session?.lang, "cantFetchPhoto"));
@@ -224,6 +251,8 @@ async function handleTap(wa: WhatsAppApi, chatId: ChatId, data: string) {
     return;
   }
   if (data === "sv") return void (await log.saveLog(wa, chatId, null, session));
+  // Confirm / Cancel on a typed or spoken request; the engine re-checks the role.
+  if (data.startsWith("act:")) return void (await actions.handleTap(wa, chatId, null, session, data));
 }
 
 async function handleText(wa: WhatsAppApi, chatId: ChatId, text: string) {
@@ -297,6 +326,12 @@ async function handleText(wa: WhatsAppApi, chatId: ChatId, text: string) {
   // Free text belongs to whatever step the log flow is waiting on.
   if (session.step) {
     await log.handleStepText(wa, chatId, session, text);
+    return;
+  }
+  // An order, a payment, a new vendor or material, or a question.
+  if (looksLikeRequest(text)) {
+    await wa.sendMessage(chatId, tt(lang, "aiReading"));
+    await actions.handleRequest(wa, chatId, session, { text }, GEMINI_API_KEY.value());
     return;
   }
   await wa.sendMessage(chatId, tt(lang, "help"));

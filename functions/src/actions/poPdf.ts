@@ -13,6 +13,8 @@ import { computePoTotals, supplyKind, rupeesInWords, hsnSummary, GST_STATES, sta
 export interface PoPdfInput {
   draft: boolean;
   poNumber?: string;
+  /** "Draft" prints "DRAFT · NOT YET APPROVED" under the number, as the app does. */
+  status?: string;
   orderDate: string;
   expectedDeliveryDate?: string;
   notes?: string;
@@ -96,6 +98,10 @@ export async function renderPoPdf(i: PoPdfInput): Promise<Buffer> {
   y -= 14;
   text(`Project: ${i.projectName}`, M, 9, font, muted);
   right(`Date: ${day(i.orderDate)}${i.expectedDeliveryDate ? `   Delivery by: ${day(i.expectedDeliveryDate)}` : ""}`, A4.w - M, 9, font, muted);
+  if (!i.draft && i.status === "Draft") {
+    y -= 12;
+    right("DRAFT · NOT YET APPROVED", A4.w - M, 8, bold, rgb(0.71, 0.33, 0.04));
+  }
   y -= 22;
 
   // Vendor.
