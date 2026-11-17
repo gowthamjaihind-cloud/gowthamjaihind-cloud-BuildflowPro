@@ -7,6 +7,7 @@ import { useAuthStore } from "../../store";
 import { stockCard, type Movement } from "../../lib/stockCard";
 import { deleteGrn } from "../../services/grnReversal";
 import { doc, updateDoc } from "firebase/firestore";
+import { useQueryClient } from "@tanstack/react-query";
 import { db } from "../../firebase";
 import { confirmDialog, toast } from "../../lib/feedback";
 import { DialogBehaviour } from "../../lib/useDialog";
@@ -25,6 +26,10 @@ const q = (n: number) => n.toLocaleString("en-IN", { maximumFractionDigits: 3 })
 
 export const StockCard: React.FC<{ item: InventoryItem; projectId: string; onClose: () => void }> = ({ item, projectId, onClose }) => {
   const user = useAuthStore((s) => s.user);
+  const queryClient = useQueryClient();
+  // Project data is fetched, not live: reload what a change here touches, so
+  // the card and the Stock Ledger show it at once.
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["projectData", projectId] });
   const { data: grns = [] } = useProjectData<any>(projectId, "goodsReceiptNotes");
   const { data: dailyLogs = [] } = useProjectDailyLogsQuery(projectId);
   const { data: tasks = [] } = useTasksQuery(projectId);
@@ -59,6 +64,7 @@ export const StockCard: React.FC<{ item: InventoryItem; projectId: string; onClo
     setDeleting(g.id);
     try {
       await deleteGrn(tenantPath, { id: g.id, ...g });
+      await refresh();
       toast.success(`${g.grnNumber} deleted.`);
     } catch (e: any) {
       toast.error(e?.message || "Couldn't delete it.");
@@ -80,6 +86,7 @@ export const StockCard: React.FC<{ item: InventoryItem; projectId: string; onClo
         openingQty: value,
         quantity: Math.round((value + card.received) * 1000) / 1000,
       });
+      await refresh();
       toast.success(value ? `Opening stock set to ${q(value)} ${item.unit}.` : "Opening stock removed.");
       setOpeningEdit(null);
     } catch (e: any) {
