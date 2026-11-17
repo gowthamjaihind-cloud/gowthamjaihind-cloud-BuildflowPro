@@ -525,6 +525,12 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
               </div>
             )}
 
+            {editLog && !taskId && selectedTaskId && editLog.taskId && selectedTaskId !== editLog.taskId && (
+              <p className="text-xs font-semibold text-warning bg-warning/10 border border-warning/25 rounded-xl p-3 -mt-4">
+                This log moves from "{tasks.find((x) => x.id === editLog.taskId)?.name || "its task"}" to "{currentTask?.name || "the chosen task"}". Both tasks' progress is recalculated. Check the progress % below: it is the progress of the new task.
+              </p>
+            )}
+
             {taskId && currentTask && (
               <div className="bg-warning/12 p-4 rounded-xl border border-warning/25">
                 <span className="text-[10px] font-black uppercase tracking-widest text-primary-strong block mb-1">

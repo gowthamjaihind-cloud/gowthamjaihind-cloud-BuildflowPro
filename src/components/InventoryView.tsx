@@ -50,6 +50,7 @@ import { CountUp } from "./motion";
 import { VirtualTable } from "./VirtualTable";
 import { useAuthStore } from "../store";
 import { useProjectData } from "../hooks/useProjectData";
+import { StockCard } from "./inventory/StockCard";
 import { useTasksQuery } from "../hooks/queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBreakpoint } from "../hooks/useBreakpoint";
@@ -76,6 +77,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
   const { data: rawItems = [] } = useProjectData<InventoryItem>(projectId, "inventory");
   const { data: purchaseOrders = [] } = useProjectData<any>(projectId, "purchase_orders");
   const { data: grns = [] } = useProjectData<any>(projectId, "goodsReceiptNotes");
+  // Tap a material to see where its stock came from and went (inventory/StockCard.tsx).
+  const [cardItem, setCardItem] = useState<InventoryItem | null>(null);
 
   const items = useMemo(() => {
     return (rawItems || []).map((item) => {
@@ -632,6 +635,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
   return (
     <div className="space-y-6 md:space-y-12 pb-20">
+      {cardItem && <StockCard item={cardItem} projectId={projectId} onClose={() => setCardItem(null)} />}
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6">
         <div>
@@ -912,9 +916,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                       sortAccessor: (item) => item.name,
                       render: (item) => (
                         <div>
-                          <div className="font-bold text-ink text-[10px] md:text-sm tracking-tight mb-0.5 truncate">
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setCardItem(item); }}
+                            title="Stock card: when and from whom it was received, and where it was used"
+                            className="block font-bold text-ink text-[10px] md:text-sm tracking-tight mb-0.5 truncate text-left hover:text-primary hover:underline cursor-pointer">
                             {item.name}
-                          </div>
+                          </button>
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">
                               {item.unit}
@@ -1016,7 +1022,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                     <div className="bg-surface p-4 rounded-2xl border border-divider/40 shadow-sm" key={item.id}>
                       <div className="flex justify-between items-start mb-3">
                         <div className="min-w-0 flex-1">
-                          <div className="font-bold text-ink text-sm tracking-tight truncate">{item.name}</div>
+                          <button type="button" onClick={() => setCardItem(item)} className="block font-bold text-ink text-sm tracking-tight truncate text-left hover:text-primary underline decoration-dotted underline-offset-2">{item.name}</button>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             <span className="font-mono text-[10px] font-bold text-ink-muted bg-panel px-1.5 py-0.5 rounded border border-divider">
                               {item.materialId || "N/A"}

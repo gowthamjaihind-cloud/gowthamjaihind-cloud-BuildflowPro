@@ -211,6 +211,10 @@ export const onProjectDailyLogWritten = onDocumentWritten(
       const taskRef = db.doc(`projects/${projectId}/tasks/${logData.taskId}`);
       await handleDailyLogRollup(projectId, logData.taskId, logsPath, taskRef);
     }
+    // A log moved to another task: the task it left is recomputed too.
+    if (beforeData?.taskId && afterData?.taskId && beforeData.taskId !== afterData.taskId) {
+      await handleDailyLogRollup(projectId, beforeData.taskId, logsPath, db.doc(`projects/${projectId}/tasks/${beforeData.taskId}`));
+    }
     
     await handleInventoryRollup(logsPath, inventoryPath, beforeData, afterData);
   }
@@ -239,6 +243,10 @@ export const onOrgDailyLogWritten = onDocumentWritten(
     if (logData.taskId) {
       const taskRef = db.doc(`organizations/${orgId}/projects/${projectId}/tasks/${logData.taskId}`);
       await handleDailyLogRollup(projectId, logData.taskId, logsPath, taskRef);
+    }
+    // A log moved to another task (edited in Reports): the task it left is recomputed too.
+    if (beforeData?.taskId && afterData?.taskId && beforeData.taskId !== afterData.taskId) {
+      await handleDailyLogRollup(projectId, beforeData.taskId, logsPath, db.doc(`organizations/${orgId}/projects/${projectId}/tasks/${beforeData.taskId}`));
     }
 
     await handleInventoryRollup(logsPath, inventoryPath, beforeData, afterData);
