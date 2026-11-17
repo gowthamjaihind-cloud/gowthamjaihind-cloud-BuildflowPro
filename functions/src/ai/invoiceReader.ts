@@ -12,6 +12,7 @@ const projPath = (orgId?: string, projectId?: string) =>
   orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
 
 import { fixSeller } from "./seller";
+import { normalizeInvoiceJson } from "./invoiceShape";
 const norm = (s: any) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
 // Callable wrapper used by the web app's Scan Invoice flow.
@@ -279,7 +280,7 @@ const INVOICE_BUDGET_MS = 95_000;
 async function callGeminiVision(fileBase64: string, mimeType: string, key: string): Promise<any> {
   const prompt = `You are reading an Indian GST vendor invoice (tax invoice). Extract its contents to JSON. Read only what is printed; if a value is absent leave it 0 or "".
 "vendorName" and "vendorGSTIN" are the SELLER: the business that ISSUED the invoice (usually the name and GSTIN printed at the top, or under "Seller", "Supplier", "From", "Sold by"). Never the buyer: the party under "Bill to", "Billed to", "Buyer", "Ship to", "Consignee" or "Customer" goes in "buyerName" and "buyerGSTIN".
-Return ONLY this JSON:
+Return ONLY one JSON object (not a list, not wrapped in another field), exactly this shape:
 {
   "vendorName": string,
   "vendorGSTIN": string,
@@ -316,10 +317,17 @@ Return ONLY this JSON:
         ? { ...b, generationConfig: { ...b.generationConfig, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } }
         : b,
   });
-  try { return JSON.parse(text); }
+  let parsed: any = null;
+  try { parsed = JSON.parse(text); }
   catch {
-    const m = text.match(/\{[\s\S]*\}/);
-    if (m) return JSON.parse(m[0]);
-    throw new HttpsError("internal", "Couldn't read the invoice. Try a clearer photo or PDF.");
+    const m = text.match(/[\[{][\s\S]*[\]}]/);
+    try { parsed = m ? JSON.parse(m[0]) : null; } catch { parsed = null; }
   }
+  // A list, a wrapper, or nothing usable: see ai/invoiceShape.ts. Never save a blank bill.
+  const bill = normalizeInvoiceJson(parsed);
+  if (!bill) {
+    console.error("Invoice read gave nothing usable:", String(text).slice(0, 500));
+    throw new HttpsError("internal", "Couldn't read the invoice. Try a clearer photo or PDF, with the whole bill in view.");
+  }
+  return bill;
 }
