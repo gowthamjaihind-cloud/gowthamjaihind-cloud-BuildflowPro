@@ -32,6 +32,7 @@ import {
 import { motion } from "motion/react";
 import { handleFirestoreError, OperationType } from "../firebase";
 import { toast } from "../lib/feedback";
+import { callSetMemberAccess } from "../services/firebaseFunctions";
 import { Tooltip } from "./Tooltip";
 import { DialogBehaviour } from "../lib/useDialog";
 
@@ -152,7 +153,9 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
           uids.map(async (uid) => {
             try {
               const s = await getDoc(doc(db, "users", uid));
-              return s.exists() ? ({ uid, ...s.data() } as UserProfile) : null;
+              // The role shown is the one in THIS organization (its members
+              // map), which is what the security rules enforce.
+              return s.exists() ? ({ uid, ...s.data(), role: members[uid] } as UserProfile) : null;
             } catch {
               return null;
             }
@@ -201,10 +204,14 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
     }
 
     try {
-      await updateDoc(doc(db, "users", userId), {
+      // Through the server: it checks the caller is an Owner or Admin of this
+      // organization and updates the members map and the profile together.
+      await callSetMemberAccess({
+        orgId: currentUser.currentOrgId || "",
+        memberUid: userId,
         role: editingRole,
-        projectAccess: editingProjectAccess,
-              });
+        projectAccess: editingProjectAccess as Record<string, string>,
+      });
       setUsers(
         users.map((u) =>
           u.uid === userId
@@ -218,7 +225,7 @@ export const EnterpriseAuthView: React.FC<EnterpriseAuthViewProps> = ({
       );
       setEditingUserId(null);
     } catch (err: any) {
-      handleFirestoreError(err, OperationType.UPDATE, `users/${userId}`);
+      toast.error(String(err?.message || "Couldn't save the change.").replace(/^.*?:\s*/, ""));
     }
   };
 

@@ -59,3 +59,4 @@ export * from "./razorpay";
 export * from "./cleanup";
 export * from "./planChange";
 export * from "./claims";
+export { setMemberAccess } from "./members";

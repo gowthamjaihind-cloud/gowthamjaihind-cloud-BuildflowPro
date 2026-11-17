@@ -2,22 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---------------------------------------------------------------------
-    // Role helpers (unchanged semantics): a caller has a role if either their
-    // auth-token custom claim OR their users/{uid} profile carries that role.
-    // ---------------------------------------------------------------------
-    function hasAnyRole(roles) {
-      return request.auth != null && (
-        request.auth.token.role in roles ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in roles
-      );
-    }
-    function isAdminOrManager() {
-      return hasAnyRole(['Admin', 'Project Manager', 'Project Director', 'Owner']);
-    }
-    function isSiteEngineer() {
-      return hasAnyRole(['Site Engineer']);
-    }
+    // Roles are per organization: see orgRole() below. There is deliberately
+    // no helper that reads users/{uid}.role -- that is one value per person,
+    // not per organization, and trusting it let an Owner of one organization
+    // act as Owner in every other organization they belonged to.
 
     // ---------------------------------------------------------------------
     // Multi-tenant isolation.
@@ -49,6 +37,32 @@ service cloud.firestore {
     }
     function thisOrgUnclaimed() {
       return thisOrgMembers().size() == 0;
+    }
+
+    // ---------------------------------------------------------------------
+    // A person's role is per ORGANIZATION: organizations/{orgId}.members[uid].
+    //
+    // Every rule below used to read hasAnyRole(), i.e. users/{uid}.role -- ONE
+    // value per person, which the last action overwrites. Creating your own
+    // organization sets it to "Owner"; switching organizations leaves it as it
+    // was. So a person invited as a Viewer who owned another organization was
+    // an Owner here too: every project, every bill and payment, and the members
+    // map itself (make themselves Owner, remove the real one). The members map
+    // is written only by Cloud Functions (invites, setMemberAccess) and the
+    // one-time claim, so it cannot be raised from the browser.
+    // scripts/role-scope-probe.mjs covers this.
+    // ---------------------------------------------------------------------
+    function orgRole(orgId) {
+      return orgMembersById(orgId).get(request.auth.uid, '');
+    }
+    function hasOrgRole(orgId, roles) {
+      return request.auth != null && orgRole(orgId) in roles;
+    }
+    function isOrgAdminOrManager(orgId) {
+      return hasOrgRole(orgId, ['Admin', 'Project Manager', 'Project Director', 'Owner']);
+    }
+    function isOrgSiteEngineer(orgId) {
+      return hasOrgRole(orgId, ['Site Engineer']);
     }
     // The ONLY org-document fields a client may write. Everything else on an
     // org -- plan, subscriptionStatus, trialEndsAt, currentPeriodEnd,
@@ -97,7 +111,7 @@ service cloud.firestore {
     }
     function canReadProject(orgId, projectId) {
       return isOrgMember(orgId) && (
-        hasAnyRole(['Admin', 'Owner'])
+        hasOrgRole(orgId, ['Admin', 'Owner'])
         || myProjectAccess(projectId) in ['read', 'write']
         || ownsProject(orgId, projectId)
       );
@@ -111,7 +125,7 @@ service cloud.firestore {
     }
     function canWriteProject(orgId, projectId) {
       return isOrgMember(orgId) && !projectLocked(orgId, projectId) && (
-        hasAnyRole(['Admin', 'Owner'])
+        hasOrgRole(orgId, ['Admin', 'Owner'])
         || myProjectAccess(projectId) == 'write'
         || ownsProject(orgId, projectId)
       );
@@ -191,8 +205,17 @@ service cloud.firestore {
         && request.resource.data.members[request.auth.uid] == 'Owner';
       // A one-time claim, or an existing admin-member editing org settings
       // (company name, GSTIN, membership changes) -- never billing state.
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(orgClientKeys())
-        && (isValidClaim() || (isMemberOfThisOrg() && isAdminOrManager()));
+      // The members map changes only through Cloud Functions (invites,
+      // setMemberAccess), apart from the one-time claim; settings (name,
+      // GSTIN, state) are the Owner's or an Admin's to edit.
+      allow update: if (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(orgClientKeys())
+          && isValidClaim()
+        ) || (
+          isMemberOfThisOrg()
+          && thisOrgMembers()[request.auth.uid] in ['Owner', 'Admin']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['companyName', 'gstin', 'stateCode'])
+        );
       allow delete: if false;
 
       // AI usage meters — written only by Cloud Functions (Admin SDK); members
@@ -203,7 +226,7 @@ service cloud.firestore {
       // size cap keeps a mis-sized logo from bloating every PO render.
       match /profile/{docId} {
         allow read: if isOrgMember(orgId);
-        allow write: if isOrgMember(orgId) && hasAnyRole(['Admin', 'Owner'])
+        allow write: if hasOrgRole(orgId, ['Admin', 'Owner'])
           && docId == 'company'
           && request.resource.data.get('logo', '').size() < 300000;
       }
@@ -219,7 +242,7 @@ service cloud.firestore {
       // Manager may change a master.
       match /wbs_templates/{templateId} {
         allow read: if isOrgMember(orgId);
-        allow write: if isOrgMember(orgId) && isAdminOrManager();
+        allow write: if isOrgMember(orgId) && isOrgAdminOrManager(orgId);
       }
 
       // Vendor master — the supplier's DEFINITION only (name, GSTIN, contact).
@@ -228,7 +251,7 @@ service cloud.firestore {
       // untouched by this collection.
       match /vendors/{vendorId} {
         allow read: if isOrgMember(orgId);
-        allow write: if isOrgMember(orgId) && isAdminOrManager();
+        allow write: if isOrgMember(orgId) && isOrgAdminOrManager(orgId);
       }
 
       // Material master — the item's DEFINITION only (name, code, unit, HSN,
@@ -236,7 +259,7 @@ service cloud.firestore {
       // material exists at a site, not in an organisation.
       match /materials/{materialId} {
         allow read: if isOrgMember(orgId);
-        allow write: if isOrgMember(orgId) && isAdminOrManager();
+        allow write: if isOrgMember(orgId) && isOrgAdminOrManager(orgId);
       }
 
       match /projects/{projectId} {
@@ -244,14 +267,14 @@ service cloud.firestore {
         // Creating or editing the project itself is a role decision, not a
         // per-project grant (a project being created has no grants yet).
         // Creating is also limited by the plan: see underProjectCap.
-        allow create: if isOrgMember(orgId) && isAdminOrManager() && underProjectCap(orgId)
+        allow create: if isOrgMember(orgId) && isOrgAdminOrManager(orgId) && underProjectCap(orgId)
           && request.resource.data.get('billingLocked', false) != true;
         // A locked project cannot be edited, and nobody can lock or unlock one
         // from the browser. It can still be deleted.
-        allow update: if isOrgMember(orgId) && isAdminOrManager()
+        allow update: if isOrgMember(orgId) && isOrgAdminOrManager(orgId)
           && resource.data.get('billingLocked', false) != true
           && request.resource.data.get('billingLocked', false) != true;
-        allow delete: if isOrgMember(orgId) && isAdminOrManager();
+        allow delete: if isOrgMember(orgId) && isOrgAdminOrManager(orgId);
 
         // Generic project sub-collections (tasks, inventory, suppliers, costs,
         // materials, equipment, dailyPlans, vendor_bills, …). The financial /
@@ -264,38 +287,38 @@ service cloud.firestore {
           allow read: if canReadProject(orgId, projectId);
           allow create: if canWriteProject(orgId, projectId);
           allow update: if canWriteProject(orgId, projectId) && (
-            request.resource.data.status == resource.data.status || isAdminOrManager()
+            request.resource.data.status == resource.data.status || isOrgAdminOrManager(orgId)
           );
-          allow delete: if canWriteProject(orgId, projectId) && isAdminOrManager();
+          allow delete: if canWriteProject(orgId, projectId) && isOrgAdminOrManager(orgId);
         }
         match /audit_logs/{auditId} {
-          allow read: if canReadProject(orgId, projectId) && isAdminOrManager();
+          allow read: if canReadProject(orgId, projectId) && isOrgAdminOrManager(orgId);
           allow create: if canWriteProject(orgId, projectId);
           allow update, delete: if false;
         }
         match /documents/{docId} {
           allow read: if canReadProject(orgId, projectId);
           allow create: if canWriteProject(orgId, projectId);
-          allow update, delete: if canWriteProject(orgId, projectId) && isAdminOrManager();
+          allow update, delete: if canWriteProject(orgId, projectId) && isOrgAdminOrManager(orgId);
         }
         match /client_payments/{paymentId} {
           allow read: if canReadProject(orgId, projectId);
-          allow write: if canWriteProject(orgId, projectId) && isAdminOrManager();
+          allow write: if canWriteProject(orgId, projectId) && isOrgAdminOrManager(orgId);
         }
         match /ra_bills/{billId} {
           allow read: if canReadProject(orgId, projectId);
-          allow write: if canWriteProject(orgId, projectId) && isAdminOrManager();
+          allow write: if canWriteProject(orgId, projectId) && isOrgAdminOrManager(orgId);
         }
         match /labor_rate_cards/{cardId} {
           allow read: if canReadProject(orgId, projectId);
-          allow write: if canWriteProject(orgId, projectId) && isAdminOrManager();
+          allow write: if canWriteProject(orgId, projectId) && isOrgAdminOrManager(orgId);
         }
         match /ledger/{ledgerId} {
           allow read: if canReadProject(orgId, projectId);
           allow create: if canWriteProject(orgId, projectId) && (
-            request.resource.data.referenceType != 'PAYMENT' || isAdminOrManager()
+            request.resource.data.referenceType != 'PAYMENT' || isOrgAdminOrManager(orgId)
           );
-          allow update, delete: if canWriteProject(orgId, projectId) && isAdminOrManager();
+          allow update, delete: if canWriteProject(orgId, projectId) && isOrgAdminOrManager(orgId);
         }
         match /system/{docId} {
           allow read: if canReadProject(orgId, projectId);
@@ -305,7 +328,7 @@ service cloud.firestore {
           allow read: if canReadProject(orgId, projectId);
           allow create: if canWriteProject(orgId, projectId);
           allow update, delete: if canWriteProject(orgId, projectId) && (
-            isAdminOrManager() || isSiteEngineer() ||
+            isOrgAdminOrManager(orgId) || isOrgSiteEngineer(orgId) ||
             resource.data.createdByUid == request.auth.uid
           );
         }
@@ -315,24 +338,24 @@ service cloud.firestore {
             && request.resource.data.status == 'Draft'
             && request.resource.data.createdByUid == request.auth.uid;
           allow update: if canWriteProject(orgId, projectId) && (
-            isAdminOrManager() || isSiteEngineer() ||
+            isOrgAdminOrManager(orgId) || isOrgSiteEngineer(orgId) ||
             resource.data.createdByUid == request.auth.uid
           );
           allow delete: if canWriteProject(orgId, projectId) && (
-            isAdminOrManager() ||
+            isOrgAdminOrManager(orgId) ||
             (resource.data.createdByUid == request.auth.uid && resource.data.status == 'Draft')
           );
         }
         match /dailyLogs/{logId} {
           allow read: if canReadProject(orgId, projectId);
-          allow create: if canWriteProject(orgId, projectId) && (isSiteEngineer() || isAdminOrManager());
+          allow create: if canWriteProject(orgId, projectId) && (isOrgSiteEngineer(orgId) || isOrgAdminOrManager(orgId));
           allow update: if canWriteProject(orgId, projectId) && (
-            isAdminOrManager() ||
-            (isSiteEngineer() && resource.data.createdByUid == request.auth.uid)
+            isOrgAdminOrManager(orgId) ||
+            (isOrgSiteEngineer(orgId) && resource.data.createdByUid == request.auth.uid)
           );
           allow delete: if canWriteProject(orgId, projectId) && (
-            isAdminOrManager() ||
-            (isSiteEngineer() && resource.data.createdByUid == request.auth.uid)
+            isOrgAdminOrManager(orgId) ||
+            (isOrgSiteEngineer(orgId) && resource.data.createdByUid == request.auth.uid)
           );
         }
       }
@@ -409,10 +432,14 @@ service cloud.firestore {
               || request.resource.data.get('currentOrgId', '') == ''
               || isOrgMember(request.resource.data.currentOrgId)))
         ||
+        // Another member's role and project access change only through the
+        // setMemberAccess function, which checks the caller is an Owner or
+        // Admin of THAT organization and keeps the members map in step. An
+        // Owner or Admin may still unlink a member's Telegram here.
         (request.auth.uid != userId
-          && isAdminOrManager()
           && sharesReaderOrg()
-          && changed().hasOnly(['role', 'projectAccess', 'telegramChatId', 'telegramLinkedAt']))
+          && hasOrgRole(readerOrg(), ['Owner', 'Admin'])
+          && changed().hasOnly(['telegramChatId', 'telegramLinkedAt']))
       );
       allow delete: if false;
     }

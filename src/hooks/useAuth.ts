@@ -3,13 +3,14 @@ import {
   auth,
   db,
   doc,
+  getDoc,
   onSnapshot,
   updateDoc,
   setDoc,
   handleFirestoreError,
   OperationType,
 } from "../firebase";
-import { UserProfile } from "../types";
+import { UserProfile, UserRole } from "../types";
 import { useAuthStore } from "../store";
 import { readPendingConsent, clearPendingConsent, TERMS_VERSION } from "../lib/legal";
 import { demoRequested } from "../demo";
@@ -120,12 +121,25 @@ export function useAuthInit() {
                 // spreading it blind: a profile written by an older build (or
                 // a partial write) otherwise yields a user with no email,
                 // which the post-sign-up screen renders as "Signed in as .".
+                // The role that counts is the one in the organization open now
+                // (its members map), which is what firestore.rules enforce:
+                // users/{uid}.role is one value per person and can belong to
+                // another organization they created or joined.
+                let orgRole: UserRole | undefined;
+                if (data.currentOrgId) {
+                  try {
+                    const org = await getDoc(doc(db, "organizations", data.currentOrgId));
+                    orgRole = (org.data()?.members || {})[firebaseUser.uid];
+                  } catch {
+                    /* not a member (or offline): fall back to Viewer below */
+                  }
+                }
                 setUser({
                   uid: firebaseUser.uid,
                   ...data,
                   email: data.email || firebaseUser.email || "",
                   displayName: data.displayName || firebaseUser.displayName || "User",
-                  role: data.role || "Viewer",
+                  role: (data.currentOrgId ? orgRole : data.role) || "Viewer",
                 });
                 setLoading(false);
               } else {

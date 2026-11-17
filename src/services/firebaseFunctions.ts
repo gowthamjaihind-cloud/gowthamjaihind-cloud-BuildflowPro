@@ -562,5 +562,8 @@ export const callApplyTaxCodes = async (orgId: string, updates: { masterId: stri
   (await httpsCallable<{ orgId: string; updates: typeof updates }, { masters: number; inventoryItems: number }>(getFunctionsInstance(), "applyTaxCodes", { timeout: 130_000 })({ orgId, updates })).data;
 export const callPoApprove = async (orgId: string, projectId: string, poId: string) =>
   (await httpsCallable<{ orgId: string; projectId: string; poId: string }, { poNumber: string; vendorName: string; total: number }>(getFunctionsInstance(), "poApprove")({ orgId, projectId, poId })).data;
+/** Change a member's role and/or project access (Owner/Admin of that organization; functions/src/members.ts). */
+export const callSetMemberAccess = async (args: { orgId: string; memberUid: string; role?: string; projectAccess?: Record<string, string> }) =>
+  (await httpsCallable<typeof args, { ok: boolean }>(getFunctionsInstance(), "setMemberAccess")(args)).data;
 export const callActionCancel = async (id: string) =>
   (await httpsCallable<{ id: string }, { ok: boolean }>(getFunctionsInstance(), "actionCancel")({ id })).data;
