@@ -13,6 +13,7 @@ import { callExtractVendorInvoice } from "../../services/firebaseFunctions";
 import { postInvoiceReceipt } from "../../services/invoiceReceiptService";
 import { PurchaseOrder, VendorBill, InventoryItem } from "../../types";
 import { Tooltip } from "../Tooltip";
+import { relinkToPo, linkLine } from "../../lib/lineMatch";
 import { DialogBehaviour } from "../../lib/useDialog";
 
 import { useTranslation } from "../../i18n";
@@ -66,14 +67,18 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
   const [bill, setBill] = useState<VendorBill | null>(initialBill || null);
   const [flags, setFlags] = useState<string[]>(initialBill?.flags || []);
 
-  // Open POs for the match selector (works for both scanned + draft review).
+  // POs for the match selector (works for both scanned + draft review). Open
+  // ones can be posted against; Drafts are listed (so it is clear why one is
+  // missing) but must be approved first. This vendor's POs come first.
   const candidatePOs = useMemo(
     () =>
       pos
-        .filter((p) => p.status === "Approved" || p.status === "Partially Received")
-        .map((p) => ({ id: p.id, poNumber: p.poNumber })),
-    [pos],
+        .filter((p) => p.status === "Approved" || p.status === "Partially Received" || p.status === "Draft")
+        .sort((a, b) => Number(b.vendorId === bill?.vendorId) - Number(a.vendorId === bill?.vendorId))
+        .map((p) => ({ id: p.id, poNumber: p.poNumber, vendorName: p.vendorName, draft: p.status === "Draft", lineItems: p.lineItems || [] })),
+    [pos, bill?.vendorId],
   );
+  const chosenPo = candidatePOs.find((p) => p.id === bill?.poId);
 
   const handleFile = async (f: File) => {
     setError(null);
@@ -105,8 +110,18 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
   const setPo = (poId: string) => {
     if (!bill) return;
     const po = candidatePOs.find((p) => p.id === poId);
-    setBill({ ...bill, poId, poNumber: po?.poNumber });
+    // Re-link the lines to THIS PO's lines; without it posting fails with
+    // "No invoice lines matched the PO" and no goods receipt is made.
+    const lineItems = po ? relinkToPo(bill.lineItems, po.lineItems) : bill.lineItems.map((l) => linkLine(l, null));
+    setBill({ ...bill, poId: po?.id, poNumber: po?.poNumber, lineItems });
   };
+
+  const setLineLink = (idx: number, itemId: string) => {
+    if (!bill) return;
+    const poLine = chosenPo?.lineItems.find((x) => x.itemId === itemId) || null;
+    setBill({ ...bill, lineItems: bill.lineItems.map((l, i) => (i === idx ? linkLine(l, poLine) : l)) });
+  };
+  const linkedCount = bill ? bill.lineItems.filter((l) => l.poLineRef).length : 0;
 
   const editQty = (idx: number, qty: number) => {
     if (!bill) return;
@@ -199,9 +214,14 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
                   >
                     <option value="">— Select PO —</option>
                     {candidatePOs.map((p) => (
-                      <option key={p.id} value={p.id}>{p.poNumber}</option>
+                      <option key={p.id} value={p.id} disabled={p.draft}>
+                        {p.poNumber} · {p.vendorName}{p.draft ? " (Draft, approve it first)" : ""}
+                      </option>
                     ))}
                   </select>
+                  {!candidatePOs.some((p) => !p.draft) && (
+                    <p className="text-[10px] text-warning font-semibold mt-1">No approved purchase order to post against. Create or approve a PO for this vendor first.</p>
+                  )}
                 </div>
               </div>
 
@@ -232,6 +252,19 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
                             <Tooltip label="Not on PO">
                               <span className="text-primary text-[10px] font-semibold"> ⚠️ not on PO</span>
                             </Tooltip>
+                          )}
+                          {chosenPo && (
+                            <select
+                              value={l.poLineRef || ""}
+                              onChange={(e) => setLineLink(i, e.target.value)}
+                              aria-label={`PO line for ${l.name}`}
+                              className="mt-1 block w-full max-w-[200px] bg-panel p-1 rounded border border-divider text-[10px]"
+                            >
+                              <option value="">Not received against the PO</option>
+                              {chosenPo.lineItems.map((pl) => (
+                                <option key={pl.itemId} value={pl.itemId}>{pl.name} ({pl.orderedQty} {pl.unit})</option>
+                              ))}
+                            </select>
                           )}
                         </td>
                         <td className="p-2 text-right">
@@ -267,6 +300,9 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
                 </div>
               </div>
 
+              {bill.poId && linkedCount === 0 && (
+                <p className="text-xs font-bold text-warning">Link at least one line to the PO (the box under each item) to record the goods receipt.</p>
+              )}
               <p className="text-[10px] text-ink-muted">
                 Posting records the goods receipt + this bill. Payable = grand total (incl-GST); material cost is booked ex-GST (GST is input credit). Review before saving.
               </p>
@@ -289,7 +325,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
             </button>
             <button
               onClick={confirm}
-              disabled={step === "posting" || !bill.poId}
+              disabled={step === "posting" || !bill.poId || linkedCount === 0}
               className="flex-1 px-5 py-3 bg-primary text-on-primary font-bold rounded-xl hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {step === "posting" ? <><RefreshCw className="w-4 h-4 animate-spin" /> Posting…</> : "Confirm & Post"}

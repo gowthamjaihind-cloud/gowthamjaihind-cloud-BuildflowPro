@@ -41,11 +41,16 @@ export function previewLines(p: Pending, projectName: string, opts: { buyerGstin
       return [
         `New purchase order for ${projectName}`,
         `Vendor: ${p.draft.vendorName || "not matched"}`,
-        ...p.draft.items.map((i, k) => `• ${i.name}: ${i.orderedQty} ${i.unit} × ${inr(i.rate)}${i.rateFromRequest ? "" : " (usual rate)"}${i.gstRate ? ` + GST ${i.gstRate}%` : ""} = ${inr(t.lines[k].total)}`),
+        ...p.draft.items.flatMap((i, k) => [
+          `• ${i.name}: ${i.orderedQty} ${i.unit} × ${inr(i.rate)}${i.rateFromRequest ? "" : " (usual rate)"}${i.gstRate ? ` + GST ${i.gstRate}%` : ""} = ${inr(t.lines[k].total)}`,
+          ...(i.conversion ? [`   ↳ ${i.conversion}, rounded to 10 kg`] : []),
+          ...(i.taxSource ? [`   ↳ HSN ${i.hsn || "none"}, GST ${i.gstRate}%: ${i.taxNote || ""}`] : []),
+        ]),
         ...(p.draft.expectedDeliveryDate ? [`Delivery: ${day(p.draft.expectedDeliveryDate)}`] : []),
         ...(p.draft.notes ? [`Notes: ${p.draft.notes}`] : []),
         `Value ${inr(t.subtotalTaxable)} + GST ${inr(t.totalTax)}${t.totalTax ? (t.interState ? " (IGST)" : " (CGST+SGST)") : ""} = Total ${inr(t.grandTotal)}`,
         ...(p.unmatched.length ? [`Not in inventory, left out: ${p.unmatched.join(", ")}`] : []),
+        ...(p.draft.items.some((i) => i.taxSource) ? ["The HSN/GST shown is saved to these materials when you confirm."] : []),
         "It is saved as a Draft PO.",
       ];
     }
@@ -54,7 +59,7 @@ export function previewLines(p: Pending, projectName: string, opts: { buyerGstin
     case "vendor":
       return [`Add a vendor to ${projectName}`, `Name: ${p.name} (${p.type})`, ...(p.phone ? [`Phone: ${p.phone}`] : []), ...(p.gstin ? [`GSTIN: ${p.gstin}`] : ["GSTIN: not given (add it later for GST purchase orders)"]), ...(p.contactPerson ? [`Contact: ${p.contactPerson}`] : []), ...(p.address ? [`Address: ${p.address}`] : [])];
     case "material":
-      return [`Add a material to ${projectName}'s inventory`, `Name: ${p.name}`, `Unit: ${p.unit}`, `Rate: ${p.rate ? inr(p.rate) : "not given"}`, `HSN: ${p.hsn || "not given"} · GST: ${p.gstRate}%`, "Stock starts at 0; goods receipts add to it."];
+      return [`Add a material to ${projectName}'s inventory`, `Name: ${p.name}`, `Unit: ${p.unit}`, `Rate: ${p.rate ? inr(p.rate) : "not given"}`, `HSN: ${p.hsn || "not given"} · GST: ${p.gstRate}%${p.taxNote ? ` (${p.taxNote})` : ""}`, "Stock starts at 0; goods receipts add to it."];
     case "logs":
       return [
         `Daily log${p.drafts.length > 1 ? `s (${p.drafts.length})` : ""} for ${projectName}`,

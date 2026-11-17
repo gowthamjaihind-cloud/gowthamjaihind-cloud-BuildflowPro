@@ -26,6 +26,12 @@ import { confirmDialog, toast } from "../../lib/feedback";
 import { Tooltip } from "../Tooltip";
 import { EmptyState } from "../EmptyState";
 import { SkeletonRows } from "../Skeleton";
+import { useAuthStore } from "../../store";
+import { lookupTax, TAX_LIST_CHECKED } from "../../lib/hsnTable";
+import { callTaxCodeSuggestions, callApplyTaxCodes } from "../../services/firebaseFunctions";
+
+/** One row of the "Check HSN & GST" review. */
+type TaxRow = { masterId: string; name: string; hsn: string; gstRate: number; newHsn: string; newGst: number; source: "list" | "ai"; pick: boolean };
 
 // Organisation master data. These records are shared by every project, so they
 // belong with the organisation's settings rather than inside one project.
@@ -70,6 +76,62 @@ export const MastersPanel: React.FC = () => {
   const [form, setForm] = useState(emptyVendor);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const orgId = useAuthStore((s) => s.user?.currentOrgId) || "";
+  const [taxRows, setTaxRows] = useState<TaxRow[] | null>(null);
+  const [taxBusy, setTaxBusy] = useState("");
+  const [mTaxNote, setMTaxNote] = useState("");
+
+  /** Materials with no HSN, or whose HSN/GST Sitetru's checked list disagrees with. */
+  const checkTax = async () => {
+    const todo = materials.filter((m) => {
+      const l = lookupTax(m.name);
+      const hsn = String(m.hsn || "");
+      return !hsn || (l && (hsn.slice(0, 4) !== l.hsn || (m.gstRate ?? 18) !== l.gstRate));
+    });
+    if (!todo.length) { toast.success("Every material has an HSN code, and none disagrees with Sitetru's checked list."); return; }
+    setTaxBusy("Checking…");
+    try {
+      const { suggestions } = await callTaxCodeSuggestions(orgId, todo.map((m) => m.name));
+      const rows: TaxRow[] = [];
+      for (const m of todo) {
+        const s = suggestions.find((x) => x.name === m.name.replace(/\s+/g, " ").trim().slice(0, 80));
+        if (!s || (s.hsn === m.hsn && s.gstRate === (m.gstRate ?? 18))) continue;
+        rows.push({ masterId: m.id, name: m.name, hsn: m.hsn || "", gstRate: m.gstRate ?? 18, newHsn: s.hsn, newGst: s.gstRate, source: s.source, pick: s.source === "list" });
+      }
+      if (!rows.length) toast.info("No suggestions for the materials without an HSN code. Add those by hand.");
+      setTaxRows(rows.length ? rows : null);
+    } catch (e: any) {
+      toast.error(String(e?.message || "Couldn't check just now.").replace(/^.*?:\s*/, ""));
+    } finally { setTaxBusy(""); }
+  };
+
+  const applyTax = async () => {
+    const picked = (taxRows || []).filter((r) => r.pick);
+    if (!picked.length) return;
+    setTaxBusy("Saving…");
+    try {
+      const r = await callApplyTaxCodes(orgId, picked.map((x) => ({ masterId: x.masterId, hsn: x.newHsn, gstRate: x.newGst })));
+      toast.success(`Updated ${r.masters} material${r.masters === 1 ? "" : "s"}, and ${r.inventoryItems} copies in your projects.`);
+      setTaxRows(null);
+      await reload();
+    } catch (e: any) {
+      toast.error(String(e?.message || "Couldn't save.").replace(/^.*?:\s*/, ""));
+    } finally { setTaxBusy(""); }
+  };
+
+  /** Typing a material's name fills an empty HSN (and its GST) from the checked list. */
+  const setMName = (name: string) => {
+    const l = !mForm.hsn || mTaxNote ? lookupTax(name) : null;
+    if (l) {
+      setMForm({ ...mForm, name, hsn: l.hsn, gstRate: l.gstRate });
+      setMTaxNote(`HSN ${l.hsn} and GST ${l.gstRate}% filled from Sitetru's checked list (${l.label}).`);
+    } else if (mTaxNote && !l) {
+      setMForm({ ...mForm, name, hsn: "", gstRate: 18 });
+      setMTaxNote("");
+    } else {
+      setMForm({ ...mForm, name });
+    }
+  };
 
   const reload = async () => {
     const [v, m, t] = await Promise.all([
@@ -120,14 +182,14 @@ export const MastersPanel: React.FC = () => {
     } finally { setBusy(false); }
   };
 
-  const startAddM = () => { setMForm(emptyMaterial); setMEditingId(null); setShowMForm(true); setError(null); };
+  const startAddM = () => { setMForm(emptyMaterial); setMEditingId(null); setShowMForm(true); setError(null); setMTaxNote(""); };
   const startEditM = (m: MasterMaterial) => {
     setMForm({
       name: m.name || "", code: m.code || "", category: m.category || "Material",
       unit: m.unit || "Nos", hsn: m.hsn || "", gstRate: m.gstRate ?? 18,
       indicativeRate: round2(m.indicativeRate ?? 0), minThreshold: m.minThreshold ?? 0,
     });
-    setMEditingId(m.id); setShowMForm(true); setError(null);
+    setMEditingId(m.id); setShowMForm(true); setError(null); setMTaxNote("");
   };
 
   const submitM = async (e: React.FormEvent) => {
@@ -324,6 +386,51 @@ export const MastersPanel: React.FC = () => {
         </div>
       ) : tab === "materials" ? (
         <div className="space-y-3">
+          {materials.length > 0 && !taxRows && (
+            <div className="flex items-start justify-between gap-3 p-4 rounded-2xl bg-panel border border-divider">
+              <p className="text-[13px] text-ink">
+                Check HSN codes and GST rates
+                <span className="block text-ink-muted mt-0.5">
+                  Fills missing codes and corrects old rates from Sitetru's checked list (rates as of {new Date(`${TAX_LIST_CHECKED}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}); AI suggests the rest for you to check. Nothing changes until you apply.
+                </span>
+              </p>
+              <button onClick={checkTax} disabled={!!taxBusy}
+                className="shrink-0 px-4 py-2 rounded-xl bg-surface-dark text-white text-[11px] font-bold uppercase tracking-widest disabled:opacity-50">
+                {taxBusy || "Check HSN & GST"}
+              </button>
+            </div>
+          )}
+          {taxRows && (
+            <div className="p-4 rounded-2xl bg-panel border border-divider space-y-3">
+              <p className="text-[13px] font-bold text-ink">Tick the changes to apply. They are saved to the material and to every project's copy of it.</p>
+              <ul className="space-y-2">
+                {taxRows.map((r, i) => (
+                  <li key={r.masterId}>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input type="checkbox" checked={r.pick} className="mt-1"
+                        onChange={(e) => setTaxRows(taxRows.map((x, j) => (j === i ? { ...x, pick: e.target.checked } : x)))} />
+                      <span className="text-[13px] text-ink">
+                        <b>{r.name}</b>: HSN {r.hsn || "none"} → <b>{r.newHsn}</b>, GST {r.gstRate}% → <b>{r.newGst}%</b>
+                        <span className={`block text-[11px] font-semibold ${r.source === "list" ? "text-success" : "text-warning"}`}>
+                          {r.source === "list" ? "Sitetru's checked list" : "AI suggestion, please check before applying"}
+                        </span>
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex gap-2">
+                <button onClick={applyTax} disabled={!!taxBusy || !taxRows.some((r) => r.pick)}
+                  className="px-4 py-2 rounded-xl bg-primary text-on-primary text-[11px] font-bold uppercase tracking-widest disabled:opacity-50">
+                  {taxBusy || `Apply ${taxRows.filter((r) => r.pick).length}`}
+                </button>
+                <button onClick={() => setTaxRows(null)} disabled={!!taxBusy}
+                  className="px-4 py-2 rounded-xl border border-divider text-[11px] font-bold uppercase tracking-widest">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
           {untidy.length > 0 && (
             <div className="flex items-start justify-between gap-3 p-4 rounded-2xl bg-primary/8 border border-primary/25">
               <p className="text-[13px] text-ink">
@@ -354,7 +461,7 @@ export const MastersPanel: React.FC = () => {
             <form onSubmit={submitM} className="bg-panel border border-divider rounded-2xl p-5 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input className={field} placeholder={"Name *"} value={mForm.name}
-                  onChange={(e) => setMForm({ ...mForm, name: e.target.value })} />
+                  onChange={(e) => setMName(e.target.value)} />
                 <input className={field} placeholder={"Item code"} value={mForm.code}
                   onChange={(e) => setMForm({ ...mForm, code: e.target.value })} />
                 <input className={field} placeholder={"Unit (Bag, MT, Nos, Cum)"} value={mForm.unit}
@@ -362,9 +469,9 @@ export const MastersPanel: React.FC = () => {
                 <input className={field} placeholder={"Category"} value={mForm.category}
                   onChange={(e) => setMForm({ ...mForm, category: e.target.value })} />
                 <input className={field} placeholder="HSN / SAC" value={mForm.hsn}
-                  onChange={(e) => setMForm({ ...mForm, hsn: e.target.value })} />
+                  onChange={(e) => { setMForm({ ...mForm, hsn: e.target.value }); setMTaxNote(""); }} />
                 <select className={field} value={mForm.gstRate}
-                  onChange={(e) => setMForm({ ...mForm, gstRate: Number(e.target.value) })}>
+                  onChange={(e) => { setMForm({ ...mForm, gstRate: Number(e.target.value) }); setMTaxNote(""); }}>
                   {[0, 5, 12, 18, 28].map((r) => (
                     <option key={r} value={r}>{`GST ${r}%`}</option>
                   ))}
@@ -376,6 +483,7 @@ export const MastersPanel: React.FC = () => {
                   value={mForm.minThreshold || ""}
                   onChange={(e) => setMForm({ ...mForm, minThreshold: parseFloat(e.target.value) || 0 })} />
               </div>
+              {mTaxNote && <p className="text-[11px] font-semibold text-success">{mTaxNote}</p>}
               <p className="text-[11px] text-ink-muted">
                 {"The indicative rate is a reference only — actual cost always comes from your goods receipts."}
               </p>

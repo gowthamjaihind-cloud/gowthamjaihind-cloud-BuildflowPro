@@ -22,9 +22,13 @@ describe("actions: reading a request", () => {
   it("prepares a vendor and a material, cleaning bad GSTIN, HSN and GST rate", () => {
     expect(sanitizeAction({ intent: "add_vendor", vendor: { name: "Sri Murugan Steels", type: "Labour", gstin: "33abcde1234f1z5", phone: "+91 98765-43210" } }, ctx, "x").prepared)
       .toEqual({ kind: "vendor", name: "Sri Murugan Steels", type: "Material", phone: "+91 9876543210", gstin: "33ABCDE1234F1Z5", contactPerson: "", address: "" });
-    expect(sanitizeAction({ intent: "add_material", material: { name: "River sand", unit: "load", rate: 4500, hsn: "25-05", gstRate: 7 } }, ctx, "x").prepared)
-      .toEqual({ kind: "material", name: "River sand", unit: "load", rate: 4500, hsn: "2505", gstRate: 0 });
-    expect(sanitizeAction({ intent: "add_material", material: { name: "Sand", hsn: "123" } }, ctx, "x").prepared).toMatchObject({ hsn: "", unit: "nos" });
+    // Not on the checked list: the model's values, cleaned and marked for checking.
+    expect(sanitizeAction({ intent: "add_material", material: { name: "Teak door frame", unit: "nos", rate: 4500, hsn: "44-18", gstRate: 7 } }, ctx, "x").prepared)
+      .toEqual({ kind: "material", name: "Teak door frame", unit: "nos", rate: 4500, hsn: "4418", gstRate: 0, taxNote: "AI suggestion, please check" });
+    expect(sanitizeAction({ intent: "add_material", material: { name: "Door handle", hsn: "123" } }, ctx, "x").prepared).toMatchObject({ hsn: "", unit: "nos" });
+    // On the list: the checked HSN and rate win over the model's.
+    expect(sanitizeAction({ intent: "add_material", material: { name: "River sand", unit: "load", rate: 4500, hsn: "2517", gstRate: 18 } }, ctx, "x").prepared)
+      .toEqual({ kind: "material", name: "River sand", unit: "load", rate: 4500, hsn: "2505", gstRate: 5, taxNote: "from Sitetru's checked list" });
   });
   it("hands daily work reports to the daily-log reader", () => {
     expect(sanitizeAction({ intent: "daily_log" }, ctx, "footing 50% done").prepared).toEqual({ kind: "log" });

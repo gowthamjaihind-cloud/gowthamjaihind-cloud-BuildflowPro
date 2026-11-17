@@ -196,13 +196,14 @@ function overlapScore(po: any, lines: any[]): number {
 // Offline fuzzy fallback: match on shared tokens, treating size/spec tokens
 // (8mm, 10mm, fe500, m20 …) as strong signals. Handles word-order and extra
 // descriptors ("TMT BAR 8MM" vs "8MM TMT Fe500") without an AI call.
-function tokenize(s: string): string[] {
-  return String(s || "")
+// "12 mm" and "12mm" are the same size: join a number to its unit first.
+const tokenize = (s: string): string[] =>
+  String(s || "")
     .toLowerCase()
+    .replace(/(\d+(?:\.\d+)?)\s*(mm|kg|mt|cm|m|sqft|cft)\b/g, "$1$2")
     .replace(/[^a-z0-9]+/g, " ")
     .split(" ")
     .filter(Boolean);
-}
 const isSpecToken = (t: string) => /\d/.test(t); // e.g. 8mm, 10, fe500, m20
 export function tokenMatch(a: string, b: string): boolean {
   const A = new Set(tokenize(a));

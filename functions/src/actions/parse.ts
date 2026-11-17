@@ -1,4 +1,5 @@
 import { sanitizeCommand, type PoContext, type PoDraft } from "../command/po";
+import { lookupTax } from "../shared/hsnTable";
 
 /**
  * One typed or spoken request, read into ONE prepared action. Shared by the
@@ -12,7 +13,7 @@ export type Prepared =
   | { kind: "po"; draft: PoDraft; unmatched: string[]; missingVendor: boolean }
   | { kind: "payment"; amount: number; date: string; method: string; reference: string; description: string }
   | { kind: "vendor"; name: string; type: "Material" | "Labor" | "Both"; phone: string; gstin: string; contactPerson: string; address: string }
-  | { kind: "material"; name: string; unit: string; rate: number; hsn: string; gstRate: number }
+  | { kind: "material"; name: string; unit: string; rate: number; hsn: string; gstRate: number; taxNote?: string }
   | { kind: "log" } // a daily work report: handed to the daily-log reader (bot/aiLog.ts)
   | { kind: "question"; topic: "stock" | "progress" | "payments" | "orders" | "general"; materialIds: string[]; question: string }
   | { kind: "other"; reply: string };
@@ -37,14 +38,16 @@ Today is ${ctx.today}. Dates are day first in India ("5/12" is 5 December). Amou
 VENDORS (id | name):
 ${list(ctx.vendors.map((v) => `${v.id} | ${v.name}`))}
 
-MATERIALS (id | name | unit | usual rate):
-${list(ctx.materials.map((m) => `${m.id} | ${m.name} | ${m.unit} | ${m.rate || "?"}`))}
+MATERIALS (id | name | unit | usual rate | HSN):
+${list(ctx.materials.map((m) => `${m.id} | ${m.name} | ${m.unit} | ${m.rate || "?"} | ${m.hsn || "-"}`))}
 
 Choose "intent":
-- "create_po": order/buy/raise a PO for materials. Fill "vendorId" (from VENDORS, by meaning and spelling; null if none), "items" [{"itemId" from MATERIALS, "qty" in its unit, "rate" only if a price per unit is said else null}], "expectedDeliveryDate" (YYYY-MM-DD, not before today, or null), "notes". Materials that match nothing go in "unmatched".
+- "create_po": order/buy/raise a PO for materials. Fill "vendorId" (from VENDORS, by meaning and spelling; null if none), "items" [{"itemId" from MATERIALS, "qty" in its unit, "nos", "rate" only if a price per unit is said else null, "hsn", "gstRate"}], "expectedDeliveryDate" (YYYY-MM-DD, not before today, or null), "notes". Materials that match nothing go in "unmatched".
+  Steel bars asked for as a NUMBER of bars ("12mm 150 nos", "100 rods of 16mm", "8mm - 40 numbers"): choose the material of that size, put the count in "nos" and leave "qty" null. Do NOT convert to kg or tonnes yourself; the app does it. Otherwise "nos" is null.
+  "hsn" and "gstRate": only for a chosen material whose HSN above is "-": the Indian HSN code (4, 6 or 8 digits) and the current GST rate (%) you believe apply. Otherwise null.
 - "client_payment": money RECEIVED from the client/owner for this project. Fill "amount", "date" (YYYY-MM-DD, today if not said, never in the future), "method" (one of ${METHODS.join(", ")}), "reference" (cheque/UTR/transaction number or ""), "description".
 - "add_vendor": add a new vendor/supplier/subcontractor. Fill "vendor": {"name","type" ("Material", "Labor" or "Both"),"phone","gstin","contactPerson","address"} ("" for anything not said).
-- "add_material": add a new material to the project's inventory. Fill "material": {"name","unit" (bag, kg, MT, cft, cum, sqft, rmt, nos, litre, load),"rate" (or 0),"hsn" (or ""),"gstRate" (${GST.join(", ")}, or 0)}.
+- "add_material": add a new material to the project's inventory. Fill "material": {"name","unit" (bag, kg, MT, cft, cum, sqft, rmt, nos, litre, load),"rate" (or 0),"hsn" (the Indian HSN code for it, 4-8 digits, said or your best knowledge),"gstRate" (its current GST rate: ${GST.join(", ")})}.
 - "daily_log": a report of work done today on site (progress %, labour, materials used, equipment). Fill nothing else.
 - "question": the user asks about this project's data. Fill "topic": "stock" (material quantities left), "progress" (schedule, % done, delays), "payments" (client payments, balance), "orders" (purchase orders and deliveries), or "general"; "materialIds" for any materials named; "question" restated briefly in English.
 - "other": anything else. Put a one-sentence "reply" saying what you can do: purchase orders, client payments, new vendors and materials, daily logs, and questions about stock, progress, payments and orders.
@@ -99,14 +102,19 @@ export function sanitizeAction(raw: any, ctx: PoContext, typedText: string | nul
     const m = raw.material || {};
     const name = clip(m.name, 80);
     if (name) {
-      const hsn = clip(m.hsn, 8).replace(/\D/g, "");
+      const said = clip(m.hsn, 8).replace(/\D/g, "");
+      // Sitetru's checked list first; otherwise the model's HSN/GST, marked for checking.
+      const listed = lookupTax(name);
+      const aiHsn = [4, 6, 8].includes(said.length) ? said : "";
+      const aiGst = GST.includes(Number(m.gstRate)) ? Number(m.gstRate) : 0;
       return out({
         kind: "material",
         name,
         unit: clip(m.unit, 12) || "nos",
         rate: money(m.rate),
-        hsn: [4, 6, 8].includes(hsn.length) ? hsn : "",
-        gstRate: GST.includes(Number(m.gstRate)) ? Number(m.gstRate) : 0,
+        ...(listed
+          ? { hsn: aiHsn.slice(0, 4) === listed.hsn ? aiHsn : listed.hsn, gstRate: listed.gstRate, taxNote: "from Sitetru's checked list" }
+          : { hsn: aiHsn, gstRate: aiGst, ...(aiHsn ? { taxNote: "AI suggestion, please check" } : {}) }),
       });
     }
   }

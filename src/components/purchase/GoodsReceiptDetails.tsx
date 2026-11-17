@@ -8,7 +8,8 @@ import {
 } from "@phosphor-icons/react";
 import { GoodsReceiptNote, PurchaseOrder } from "../../types";
 import { useAuthStore } from "../../store";
-import { doc, deleteDoc, runTransaction, addDoc, collection } from "firebase/firestore";
+import { addDoc, collection } from "firebase/firestore";
+import { deleteGrn } from "../../services/grnReversal";
 import { db } from "../../firebase";
 import { useQueryClient } from "@tanstack/react-query";
 import { confirmDialog, toast } from "../../lib/feedback";
@@ -31,112 +32,22 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
   const canEditOrDelete = isAdminOrOwner || user?.uid === grn.createdByUid;
 
   const tenantPath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
-  const grnRef = doc(db, `${tenantPath}/goodsReceiptNotes`, grn.id);
 
   const handleDelete = async () => {
     if (!canEditOrDelete) return;
     if (!(await confirmDialog({ title: "Are you sure you want to delete this GRN? This will revert the received quantities on the PO and Inventory." }))) return;
     setIsDeleting(true);
     try {
-      await runTransaction(db, async (transaction) => {
-        const materialIds = Array.from(new Set((grn.lineItems || []).map(i => i.poLineRef).filter(Boolean))) as string[];
-
-        // ---- ALL READS FIRST ----
-        const inventoryItemDocs: { [id: string]: any } = {};
-        for (const matId of materialIds) {
-          const itemRef = doc(db, `${tenantPath}/inventory`, matId);
-          inventoryItemDocs[matId] = await transaction.get(itemRef);
-        }
-
-        // The ledger entry records the exact amount that was added to the vendor
-        // balance when this GRN was created. Reversing that same figure keeps the
-        // balance and the statement in step — any mismatch silently reappears as
-        // "opening balance", since opening balance is derived, not stored.
-        let ledgerDoc: any = null;
-        if (grn.ledgerId) {
-          ledgerDoc = await transaction.get(doc(db, `${tenantPath}/ledger`, grn.ledgerId));
-        }
-
-        // Read the vendor from the GRN itself, so the balance is still reversed
-        // even when the purchase order has since been deleted.
-        let vendorDoc: any = null;
-        if (grn.vendorId) {
-          vendorDoc = await transaction.get(doc(db, `${tenantPath}/suppliers`, grn.vendorId));
-        }
-
-        let poDoc: any = null;
-        let poData: any = null;
-        if (grn.poId) {
-          poDoc = await transaction.get(doc(db, `${tenantPath}/purchase_orders`, grn.poId));
-          if (poDoc.exists()) poData = poDoc.data() as PurchaseOrder;
-        }
-
-        // ---- COMPUTE REVERSAL ----
-        let reversalAmount = 0;
-        if (ledgerDoc && ledgerDoc.exists()) {
-          reversalAmount = ledgerDoc.data().amount || 0;
-        } else if (poData) {
-          // Fallback only for legacy GRNs saved without a ledger reference.
-          (grn.lineItems || []).forEach(grnItem => {
-            const poItem = poData.lineItems?.find((i: any) => i.itemId === grnItem.poLineRef);
-            if (poItem) reversalAmount += (grnItem.acceptedQty || 0) * (poItem.rate || 0);
-          });
-        }
-
-        // ---- WRITES ----
-        if (poDoc && poData) {
-          const updatedLineItems = (poData.lineItems || []).map(item => {
-            const grnItem = (grn.lineItems || []).find(i => i.poLineRef === item.itemId);
-            if (grnItem) {
-              return { ...item, receivedQty: Math.max(0, (item.receivedQty || 0) - (grnItem.acceptedQty || 0)) };
-            }
-            return item;
-          });
-
-          const isFullyReceived = updatedLineItems.every(i => (i.receivedQty || 0) >= i.orderedQty);
-
-          transaction.update(poDoc.ref, {
-            lineItems: updatedLineItems,
-            status: isFullyReceived ? "Completed" : "Approved"
-          });
-        }
-
-        if (vendorDoc && vendorDoc.exists() && reversalAmount !== 0) {
-          // Deliberately not clamped at 0: clamping is what left the balance and
-          // the statement out of step and surfaced the remainder as opening balance.
-          transaction.update(vendorDoc.ref, {
-            outstandingBalance: (vendorDoc.data().outstandingBalance || 0) - reversalAmount
-          });
-        }
-
-        // Delete Ledger and Cost Entries
-        if (ledgerDoc && ledgerDoc.exists()) {
-          transaction.delete(ledgerDoc.ref);
-        }
-        if (grn.costEntryId) {
-          const costRef = doc(db, `${tenantPath}/costs`, grn.costEntryId);
-          transaction.delete(costRef);
-        }
-
-        for (const matId of materialIds) {
-          const snap = inventoryItemDocs[matId];
-          if (snap && snap.exists()) {
-             const data = snap.data();
-             const totalAcceptedForThisMaterial = (grn.lineItems || []).filter(i => i.poLineRef === matId).reduce((acc, curr) => acc + curr.acceptedQty, 0);
-             transaction.update(snap.ref, {
-               quantity: Math.max(0, (data.quantity || 0) - totalAcceptedForThisMaterial)
-             });
-          }
-        }
-
-        transaction.delete(grnRef);
-      });
+      // Reverses the PO, inventory, vendor balance, ledger and cost, and sends
+      // a scanned bill this GRN came from back to "Pending review".
+      await deleteGrn(tenantPath, grn);
       queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'goodsReceiptNotes'] });
       queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'purchase_orders'] });
       queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'inventory'] });
       queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'ledger'] });
       queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'costs'] });
       queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'suppliers'] });
+      queryClient.invalidateQueries({ queryKey: ['projectData', projectId, 'vendor_bills'] });
       onClose();
     } catch (e: any) {
       console.error(e);
