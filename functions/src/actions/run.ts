@@ -287,6 +287,11 @@ async function writePo(b: string, projectId: string, p: Extract<Pending, { kind:
       totalIGST: t.totalIGST, totalTax: t.totalTax, notes: p.draft.notes || "", ...by, createdAt: new Date().toISOString(),
     });
     tx.set(counterRef, { count: n }, { merge: true });
+    // HSN/GST the preview corrected or suggested (and the person confirmed):
+    // saved to the material, so the next order has them.
+    for (const i of p.draft.items) {
+      if (i.taxSource && i.hsn) tx.update(db.doc(`${b}/inventory/${i.itemId}`), { hsn: i.hsn, gstRate: i.gstRate });
+    }
   });
   return { message: `Created ${poNumber} for ${vendor.name}, total ₹${t.grandTotal.toLocaleString("en-IN")}, as a Draft.`, poId: poRef.id, poNumber };
 }

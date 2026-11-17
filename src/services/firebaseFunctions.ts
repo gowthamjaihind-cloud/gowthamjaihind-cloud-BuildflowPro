@@ -554,5 +554,10 @@ export const callActionPrepare = async (args: { orgId?: string; projectId: strin
   (await httpsCallable<typeof args, ActionPrepared>(getFunctionsInstance(), "actionPrepare", { timeout: 130_000 })(args)).data;
 export const callActionConfirm = async (id: string) =>
   (await httpsCallable<{ id: string }, { message: string; poId?: string; poNumber?: string; projectId: string; orgId: string }>(getFunctionsInstance(), "actionConfirm", { timeout: 60_000 })({ id })).data;
+export interface TaxSuggestion { name: string; hsn: string; gstRate: number; source: "list" | "ai" }
+export const callTaxCodeSuggestions = async (orgId: string, names: string[]) =>
+  (await httpsCallable<{ orgId: string; names: string[] }, { suggestions: TaxSuggestion[] }>(getFunctionsInstance(), "taxCodeSuggestions", { timeout: 100_000 })({ orgId, names })).data;
+export const callApplyTaxCodes = async (orgId: string, updates: { masterId: string; hsn: string; gstRate: number }[]) =>
+  (await httpsCallable<{ orgId: string; updates: typeof updates }, { masters: number; inventoryItems: number }>(getFunctionsInstance(), "applyTaxCodes", { timeout: 130_000 })({ orgId, updates })).data;
 export const callActionCancel = async (id: string) =>
   (await httpsCallable<{ id: string }, { ok: boolean }>(getFunctionsInstance(), "actionCancel")({ id })).data;

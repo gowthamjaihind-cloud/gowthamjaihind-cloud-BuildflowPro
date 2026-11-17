@@ -19,6 +19,7 @@ import { PurchaseOrderTab } from "./purchase/PurchaseOrderTab";
 import { GoodsReceiptTab } from "./purchase/GoodsReceiptTab";
 import { MaterialReceiptForm } from "./purchase/MaterialReceiptForm";
 import { ScanInvoice } from "./purchase/ScanInvoice";
+import { deleteVendorBill } from "../services/grnReversal";
 import {
   db,
   collection,
@@ -937,6 +938,34 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     return v ? v.outstandingBalance || 0 : 0;
   };
 
+  // Owner/Admin/Project Manager/Project Director may delete any bill; whoever
+  // captured a bill may delete it while it is still pending review.
+  const isBillManager = ["Owner", "Admin", "Project Manager", "Project Director"].includes(String(user?.role || ""));
+  const canDeleteBill = (b: VendorBill) => isBillManager || (b.status === "pending_review" && b.createdByUid === user?.uid);
+  const [deletingBillId, setDeletingBillId] = useState("");
+  const deleteBill = async (b: VendorBill) => {
+    const posted = b.status !== "pending_review";
+    const ok = await confirmDialog({
+      title: `Delete bill ${b.invoiceNumber || ""} from ${b.vendorName || "this vendor"}?`,
+      body: posted
+        ? "It has been posted, so its goods receipt is undone too: the quantities come off inventory and the PO, and the amount comes off the vendor's balance and the project cost."
+        : "It has not been posted, so nothing else changes. The scanned file is deleted too.",
+      confirmLabel: "Delete bill",
+      destructive: true,
+    });
+    if (!ok) return;
+    setDeletingBillId(b.id);
+    try {
+      await deleteVendorBill(basePath, b);
+      toast.success("Bill deleted.");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Couldn't delete the bill.");
+    } finally {
+      setDeletingBillId("");
+    }
+  };
+
   const renderBills = () => {
     const posted = bills.filter((b) => b.status !== "pending_review");
     const pending = bills.filter((b) => b.status === "pending_review");
@@ -982,7 +1011,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           <div className="soft-card p-5 squircle-24">
             <div className="text-[10px] font-black uppercase tracking-widest text-ink-muted mb-1">Pending review</div>
             <div className="text-2xl font-black text-ink">{pending.length}</div>
-            <div className="text-[10px] text-ink-muted mt-1">Scanned, awaiting confirm</div>
+            <div className="text-[10px] text-ink-muted mt-1">Scanned, not in goods receipt until posted</div>
           </div>
         </div>
 
@@ -1020,16 +1049,28 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                     <td className="p-4">{matchBadge(b.matchStatus)}</td>
                     <td className="p-4">{statusBadge(b)}</td>
                     <td className="p-4 text-right">
-                      {b.status === "pending_review" ? (
-                        <button
-                          onClick={() => setReviewBill(b)}
-                          className="px-3 py-1.5 bg-surface-dark text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-surface-dark/85"
-                        >
-                          Review &amp; Post
-                        </button>
-                      ) : (
-                        <span className="text-[10px] text-ink-muted">—</span>
-                      )}
+                      <div className="flex items-center justify-end gap-2">
+                        {b.status === "pending_review" && (
+                          <button
+                            onClick={() => setReviewBill(b)}
+                            className="px-3 py-1.5 bg-surface-dark text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-surface-dark/85"
+                          >
+                            Review &amp; Post
+                          </button>
+                        )}
+                        {canDeleteBill(b) && (
+                          <Tooltip label="Delete bill">
+                            <button
+                              onClick={() => deleteBill(b)}
+                              disabled={deletingBillId === b.id}
+                              aria-label={`Delete bill ${b.invoiceNumber || ""}`}
+                              className="p-1.5 rounded-lg text-ink-muted hover:text-danger hover:bg-danger/10 disabled:opacity-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
