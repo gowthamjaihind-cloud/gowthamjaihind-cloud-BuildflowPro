@@ -6,7 +6,9 @@ import {
   callHelpDiagnose,
   callReportProblem,
   callConfirmSubscription,
-  callCommandParse,
+  callActionPrepare,
+  callActionConfirm,
+  callActionCancel,
   type HelpTurn,
   type HelpCheck,
   type CommandPoDraft,
@@ -28,16 +30,21 @@ import { recentErrors } from "../lib/errorLog";
  * helpDiagnose), shows them with one-tap fixes, has the assistant explain
  * them, and can send the lot to support (reportProblem).
  *
- * Do: a typed or spoken request carried out in the app (commandParse,
- * functions/src/command). Today: "Order 100 bags of cement from Vaigai
- * Traders, deliver Friday" opens the Create Purchase Order form filled in;
- * the user checks it and presses Create. Nothing is saved from the request
- * alone.
+ * Do: a typed or spoken request (actionPrepare, functions/src/actions; the
+ * same engine the Telegram bot uses): a purchase order, a client payment, a
+ * new vendor or material, today's work, or a question about the project's
+ * stock, orders, payments or progress. The server checks the person's role
+ * and project access, shows a preview, and saves only on Confirm (checking
+ * again). A PO can instead be opened in the form to edit before creating.
  *
  * The conversation is kept for the browser tab only (sessionStorage).
  */
 
-type Turn = HelpTurn & { checks?: HelpCheck[]; po?: CommandPoDraft };
+type Turn = HelpTurn & {
+  checks?: HelpCheck[];
+  /** A prepared action waiting for Confirm (pending_actions/{id}). */
+  action?: { id: string; state: "pending" | "done" | "cancelled"; canConfirm: boolean; po?: CommandPoDraft };
+};
 
 const STORE_KEY = "sitetru.help.v2";
 const SUGGESTIONS = [
@@ -238,13 +245,12 @@ export const HelpChat: React.FC = () => {
     }
   };
 
-  const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 
   /** "Do": turn a typed or spoken request into a prepared action. */
   const runCommand = async ({ text, audio }: { text?: string; audio?: { base64: string; mimeType: string } }) => {
     if (busy) return;
     if (!activeProject) {
-      setError("Open a project first, then ask (purchase orders belong to a project).");
+      setError("Open a project first, then ask (everything here belongs to a project).");
       return;
     }
     const said = text?.trim();
@@ -256,31 +262,58 @@ export const HelpChat: React.FC = () => {
     if (said) setTurns(next);
     setBusy(audio ? "Listening to your voice note…" : "Working on it…");
     try {
-      const r = await callCommandParse({ orgId, projectId: activeProject.id, ...(said ? { text: said } : { audioBase64: audio!.base64, mimeType: audio!.mimeType }) });
+      const r = await callActionPrepare({ orgId, projectId: activeProject.id, ...(said ? { text: said } : { audioBase64: audio!.base64, mimeType: audio!.mimeType }) });
       if (!said) next = [...turns, { role: "user", text: `🎤 ${r.transcript || "(voice note)"}` }];
-      if (r.kind === "other") {
-        setTurns([...next, { role: "assistant", text: r.reply }]);
-        return;
-      }
-      const d = r.draft;
-      if (!d.items.length) {
-        setTurns([...next, { role: "assistant", text: `I couldn't match any material in **${activeProject.name}**'s inventory${r.unmatched.length ? ` (${r.unmatched.join(", ")})` : ""}. Add it under **Inventory** first, or open the form and pick it.` }]);
+      if (r.type !== "pending") {
+        const msg = "message" in r ? r.message : "That looks like a work report. Log it from the Daily log screen or the Telegram bot.";
+        setTurns([...next, { role: "assistant", text: r.type === "denied" ? `🔒 ${msg}` : msg }]);
         return;
       }
       const lines = [
-        `Purchase order ready for **${activeProject.name}**:`,
-        `Vendor: ${d.vendorName ? `**${d.vendorName}**` : "**not chosen** (pick one in the form)"}`,
-        ...d.items.map((i) => `• ${i.name}: ${i.orderedQty} ${i.unit} × ${inr(i.rate)}${i.rateFromRequest ? "" : i.rate ? " (usual rate)" : " (no rate yet)"}`),
-        ...(d.expectedDeliveryDate ? [`Delivery: ${new Date(`${d.expectedDeliveryDate}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`] : []),
-        ...(r.unmatched.length ? [`Not in inventory, left out: ${r.unmatched.join(", ")}`] : []),
-        "Check it in the form (GST and totals are worked out there), then press Create.",
+        "**Check this before I save it:**",
+        ...r.lines,
+        ...(r.blockers.length ? ["", ...r.blockers.map((b) => `⚠️ ${b}`)] : []),
       ];
-      setTurns([...next, { role: "assistant", text: lines.join("\n"), po: d }]);
+      setTurns([...next, {
+        role: "assistant",
+        text: lines.join("\n"),
+        action: { id: r.id, state: "pending", canConfirm: !r.blockers.length, po: r.pending.kind === "po" ? (r.pending as any).draft : undefined },
+      }]);
     } catch (e) {
       setError(errText(e));
     } finally {
       setBusy("");
     }
+  };
+
+  const setActionState = (id: string, state: "done" | "cancelled") =>
+    setTurns((ts) => ts.map((t) => (t.action?.id === id ? { ...t, action: { ...t.action, state } } : t)));
+
+  const confirmAction = async (id: string) => {
+    if (busy) return;
+    setError("");
+    setBusy("Saving…");
+    try {
+      const r = await callActionConfirm(id);
+      setActionState(id, "done");
+      setTurns((ts) => [...ts, { role: "assistant", text: `✅ ${r.message}${r.poNumber ? "\nIt's in **Procurement → Purchase orders**, where you can print it or send it to the vendor." : ""}` }]);
+    } catch (e) {
+      setError(errText(e));
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const cancelAction = async (id: string) => {
+    setActionState(id, "cancelled");
+    callActionCancel(id).catch(() => {});
+  };
+
+  /** Edit a prepared PO in the full form instead; the prepared one is dropped. */
+  const editPo = (id: string, po: CommandPoDraft) => {
+    cancelAction(id);
+    setPoDraft(po);
+    setOpen(false);
   };
 
   const startDiagnosis = () => {
@@ -341,9 +374,10 @@ export const HelpChat: React.FC = () => {
             {mode === "do" && turns.length === 0 && (
               <div className="space-y-2 text-ink-muted">
                 <p className="flex items-center gap-2 text-ink font-bold"><Lightning weight="fill" className="w-4 h-4 text-primary" />Type or say what you want done.</p>
-                <p>For now I can prepare <b className="text-ink">purchase orders</b> for the open project{activeProject ? <> (<b className="text-ink">{activeProject.name}</b>)</> : ""}. For example:</p>
-                <p className="italic">"Order 100 bags of cement from Vaigai Traders, deliver on Friday"</p>
-                <p className="italic">"Raise a PO for 2 tonnes 12mm steel at 62 rupees per kg from Sri Murugan Steels"</p>
+                <p>In the open project{activeProject ? <> (<b className="text-ink">{activeProject.name}</b>)</> : ""} I can prepare <b className="text-ink">purchase orders</b>, record <b className="text-ink">client payments</b>, add <b className="text-ink">vendors</b> and <b className="text-ink">materials</b>, log <b className="text-ink">today's work</b>, and answer questions about stock, orders, payments and progress. You see a preview first; nothing is saved until you press Confirm. What you can do depends on your role.</p>
+                <p className="italic">"Order 100 bags of cement from ABC Traders, deliver on Friday"</p>
+                <p className="italic">"Client paid 2 lakh by UPI today"</p>
+                <p className="italic">"How much 12mm steel is left?"</p>
                 {!activeProject && <p className="text-warning font-bold">Open a project first.</p>}
               </div>
             )}
@@ -366,11 +400,25 @@ export const HelpChat: React.FC = () => {
               <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
                 <div className={`max-w-[88%] rounded-2xl px-3 py-2 space-y-1 ${m.role === "user" ? "bg-primary text-on-primary" : "bg-surface-2 text-ink"}`}>
                   {m.role === "assistant" ? <Rich text={m.text} /> : m.text}
-                  {m.po && (
-                    <button onClick={() => { setPoDraft(m.po!); setOpen(false); }} className="mt-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-primary text-on-primary cursor-pointer">
-                      Review & create PO
-                    </button>
+                  {m.action && m.action.state === "pending" && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {m.action.canConfirm && (
+                        <button onClick={() => confirmAction(m.action!.id)} disabled={!!busy} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-primary text-on-primary disabled:opacity-50 cursor-pointer">
+                          Confirm
+                        </button>
+                      )}
+                      {m.action.po && (
+                        <button onClick={() => editPo(m.action!.id, m.action!.po!)} disabled={!!busy} className="text-xs font-bold px-3 py-1.5 rounded-lg border border-divider bg-surface-1 disabled:opacity-50 cursor-pointer">
+                          Edit in form
+                        </button>
+                      )}
+                      <button onClick={() => cancelAction(m.action!.id)} disabled={!!busy} className="text-xs font-bold px-3 py-1.5 rounded-lg border border-divider bg-surface-1 disabled:opacity-50 cursor-pointer">
+                        Cancel
+                      </button>
+                    </div>
                   )}
+                  {m.action?.state === "done" && <p className="text-xs font-bold text-success">Saved</p>}
+                  {m.action?.state === "cancelled" && <p className="text-xs text-ink-muted">Cancelled, nothing saved</p>}
                   {m.checks && (
                     <ul className="mt-2 space-y-2">
                       {m.checks.map((c, j) => (
@@ -438,7 +486,7 @@ export const HelpChat: React.FC = () => {
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); mode === "do" ? runCommand({ text: input }) : diagMode ? diagnose(input) : ask(input); } }}
               rows={1}
               maxLength={1000}
-              placeholder={voice.recording ? `Recording… ${voice.seconds}s (tap ■ to send)` : mode === "do" ? "e.g. Order 100 bags cement from…" : diagMode ? "What's going wrong?" : "Ask a question…"}
+              placeholder={voice.recording ? `Recording… ${voice.seconds}s (tap ■ to send)` : mode === "do" ? "e.g. Client paid 2 lakh by UPI…" : diagMode ? "What's going wrong?" : "Ask a question…"}
               disabled={voice.recording}
               className="flex-1 resize-none max-h-28 px-3 py-2 rounded-xl bg-surface-1 border border-divider text-base md:text-sm"
             />

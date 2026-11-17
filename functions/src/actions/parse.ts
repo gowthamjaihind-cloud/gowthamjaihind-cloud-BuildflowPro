@@ -123,7 +123,7 @@ export function sanitizeAction(raw: any, ctx: PoContext, typedText: string | nul
   }
   return out({
     kind: "other",
-    reply: clip(raw?.reply, 300) || "I can prepare purchase orders, record client payments, add vendors and materials, log daily work, and answer questions about stock, progress, payments and orders. For example: \"Order 100 bags of cement from Vaigai Traders\".",
+    reply: clip(raw?.reply, 300) || "I can prepare purchase orders, record client payments, add vendors and materials, log daily work, and answer questions about stock, progress, payments and orders. For example: \"Order 100 bags of cement from ABC Traders\".",
   });
 }
 

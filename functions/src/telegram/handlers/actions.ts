@@ -8,7 +8,7 @@ import { tt, normalizeLang } from "../i18n";
 import * as aiLog from "./aiLog";
 
 /**
- * Typed or spoken requests in the bot ("PO for 100 bags cement from Vaigai",
+ * Typed or spoken requests in the bot ("PO for 100 bags cement from ABC Traders",
  * "client paid 2 lakh by UPI", "how much steel is left?"), through the same
  * engine as the app's "Do it for me" (actions/run.ts). That engine checks the
  * person's role and project access before preparing anything and again on

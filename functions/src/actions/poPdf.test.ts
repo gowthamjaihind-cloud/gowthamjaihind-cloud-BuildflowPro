@@ -1,7 +1,20 @@
 import { describe, it, expect } from "vitest";
-import { renderPoPdf } from "./poPdf";
+import { createRequire } from "node:module";
 
-describe("PO PDF", () => {
+// pdf-lib is installed only under functions/. The website deploy runs every
+// test from the repo root without it, so there this suite is skipped; it runs
+// with the functions tests.
+const hasPdfLib = (() => {
+  try {
+    createRequire(__filename).resolve("pdf-lib");
+    return true;
+  } catch {
+    return false;
+  }
+})();
+const renderPoPdf = async (i: any) => (await import("./poPdf")).renderPoPdf(i);
+
+describe.skipIf(!hasPdfLib)("PO PDF", () => {
   it("renders a draft and a numbered PO, including long and non-Latin text, without throwing", async () => {
     const input = {
       draft: true,

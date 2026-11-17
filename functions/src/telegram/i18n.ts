@@ -34,7 +34,7 @@ const en: Dict = {
     "/plan — plan today's tasks (morning)\n" +
     "/log — log today's site progress\n" +
     "…or just type what was done, for example:\n<i>Footing concrete 45% done, 20 bags cement, 4 masons, 6 helpers</i>\n" +
-    "…or ask me to do something, typed or as a voice note:\n<i>PO for 100 bags OPC 53 cement from Vaigai Traders</i>\n<i>Client paid 2 lakh by UPI today</i>\n<i>How much cement is left?</i>\n" +
+    "…or ask me to do something, typed or as a voice note:\n<i>PO for 100 bags OPC 53 cement from ABC Traders</i>\n<i>Client paid 2 lakh by UPI today</i>\n<i>How much cement is left?</i>\n" +
     "/today — see what's already logged today\n" +
     "/projects — switch active project\n" +
     "/language — change language (English / தமிழ்)\n" +

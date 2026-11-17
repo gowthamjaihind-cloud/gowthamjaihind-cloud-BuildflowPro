@@ -1,5 +1,5 @@
 /**
- * "Create a PO for 100 bags of cement from Vaigai Traders, deliver Friday",
+ * "Create a PO for 100 bags of cement from ABC Traders, deliver Friday",
  * typed or spoken in the app's command chat, as a draft purchase order.
  *
  * The model only chooses from this project's own vendors and materials, and
@@ -50,7 +50,7 @@ ${list(ctx.materials.map((m) => `${m.id} | ${m.name} | ${m.unit} | ${m.rate || "
 
 Rules:
 - "intent" is "create_po" when the request asks to order, buy, purchase or raise a PO for materials. Otherwise "other".
-- "vendorId": the vendor named in the request, matched by meaning and spelling mistakes ("vaigai" = "VAIGAI TRADERS"). null if none is named or none matches.
+- "vendorId": the vendor named in the request, matched by meaning and spelling mistakes ("vaigai" = "ABC TRADERS"). null if none is named or none matches.
 - "items": one per material: "itemId" from MATERIALS, "qty" in the material's own unit, "rate" only if the request states a price per unit, else null. Common site words: "bags" of cement, "MT"/"ton" of steel, "units"/"loads" of sand, "nos" = pieces.
 - Anything asked for that matches no material goes in "unmatched", in the user's words.
 - "expectedDeliveryDate": the delivery date if one is said ("Friday", "tomorrow", "25th"), as YYYY-MM-DD, never before today. Today is ${ctx.today}. null if none.
@@ -64,7 +64,7 @@ Answer with JSON only, in exactly this shape:
 export function sanitizeCommand(raw: any, ctx: PoContext, typedText: string | null): CommandResult {
   const transcript = typedText ?? clip(raw?.transcript, 1500);
   if (!raw || raw.intent !== "create_po") {
-    return { kind: "other", transcript, reply: clip(raw?.reply, 300) || 'For now I can prepare purchase orders. Try: "Order 100 bags of cement from Vaigai Traders, deliver on Friday".' };
+    return { kind: "other", transcript, reply: clip(raw?.reply, 300) || 'For now I can prepare purchase orders. Try: "Order 100 bags of cement from ABC Traders, deliver on Friday".' };
   }
   const vendor = ctx.vendors.find((v) => v.id === String(raw.vendorId ?? ""));
   const unmatched: string[] = (Array.isArray(raw.unmatched) ? raw.unmatched : []).map((u: unknown) => clip(u, 80)).filter(Boolean).slice(0, 8);
