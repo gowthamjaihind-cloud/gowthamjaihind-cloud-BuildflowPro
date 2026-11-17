@@ -635,7 +635,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
 
   return (
     <div className="space-y-6 md:space-y-12 pb-20">
-      {cardItem && <StockCard item={cardItem} projectId={projectId} onClose={() => setCardItem(null)} />}
+      {cardItem && (
+        // The current record, not the copy taken when it was opened, so a correction shows at once.
+        <StockCard item={(rawItems.find((i) => i.id === cardItem.id) as InventoryItem) || cardItem} projectId={projectId} onClose={() => setCardItem(null)} />
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6">
         <div>
