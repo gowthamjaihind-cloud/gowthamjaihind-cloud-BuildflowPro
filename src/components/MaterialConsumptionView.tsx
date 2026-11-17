@@ -1,3 +1,4 @@
+import { labourLineCost, wageRate } from "../lib/labourCost";
 import React, { useState, useMemo } from "react";
 import { useProjectLabel } from "../hooks/useProjectLabel";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
@@ -194,7 +195,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
         const rateCard = rateCards.find((r: any) => r.id === li.roleId);
         const vendor = rateCard ? suppliers.find((v: any) => v.id === rateCard.vendorId) : null;
         const headcount = li.headcount || 0;
-        const rate = rateCard?.rate || 0;
+        const rate = wageRate(rateCard);
         records.push({
           id: `${log.id}-${li.roleId || li.roleName || Math.random()}`,
           date: log.workDate || "",
@@ -203,7 +204,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
           vendorName: vendor?.name || "—",
           headcount,
           shifts: 1,
-          cost: headcount * rate,
+          cost: labourLineCost(headcount, rateCard, suppliers),
           source: "Daily Log",
         });
       });

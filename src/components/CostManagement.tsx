@@ -1,3 +1,4 @@
+import { labourLineCost, wageRate } from "../lib/labourCost";
 import React, { useState, useEffect, useMemo } from "react";
 import { useProjectLabel } from "../hooks/useProjectLabel";
 import {
@@ -1013,8 +1014,9 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                         .flatMap((log: any) =>
                           log.labour.map((l: any, idx: number) => {
                             const rateCard = rateCards.find((r: any) => r.id === l.roleId);
-                            const rate = rateCard ? rateCard.rate : 0;
-                            const subtotal = (l.headcount || 0) * rate;
+                            const rate = wageRate(rateCard);
+                            // Wages plus the contractor's margin (lib/labourCost.ts).
+                            const subtotal = labourLineCost(l.headcount || 0, rateCard, vendors);
                             let displayDate = "";
                             if (log.workDate) {
                               if (typeof log.workDate === "string") displayDate = log.workDate;

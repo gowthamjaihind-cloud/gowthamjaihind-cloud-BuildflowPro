@@ -1,3 +1,4 @@
+import { marginPctOf } from "../lib/labourCost";
 import { useQueryClient } from "@tanstack/react-query";
 import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "../i18n";
@@ -2598,7 +2599,8 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                             name: `${vendor?.name || "Unknown"}: ${card.role}`,
                                             quantity: 1,
                                             unit: card.unit,
-                                            costPerUnit: card.rate,
+                                            // With the contractor's margin, so the budget compares with actual cost (lib/labourCost.ts).
+                                            costPerUnit: Math.round(card.rate * (1 + marginPctOf(card.vendorId, vendors) / 100) * 100) / 100,
                                           };
                                           if (editingTask) {
                                             setEditingTask({

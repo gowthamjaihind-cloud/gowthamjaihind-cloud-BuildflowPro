@@ -308,7 +308,7 @@ export async function pickLabourRole(tg: any, chatId: number, messageId, session
         await tg.editMessage(chatId, messageId, "No labour roles set up. Add them in the web app.");
         return;
     }
-    const rows = snap.docs.map((d) => {
+    const rows = snap.docs.filter((d) => d.data().unit !== "Lumpsum").map((d) => {
         const r = d.data();
         return [{ text: r.role || r.roleName || r.name || "Role", callback_data: `lr:${d.id}` }];
     });
