@@ -118,7 +118,7 @@ export const TeamPanel: React.FC = () => {
             {rows.map((m) => (
               <tr key={m.uid} className="border-t border-divider/50">
                 <td className="p-3">
-                  <div className="font-semibold text-ink">{m.name || m.email || m.uid}</div>
+                  <div className="font-semibold text-ink">{m.name || m.email || "Member (profile not available)"}</div>
                   {m.email && m.name && <div className="text-xs text-ink-muted">{m.email}</div>}
                   {canInvite && (
                     <div className="mt-2">
