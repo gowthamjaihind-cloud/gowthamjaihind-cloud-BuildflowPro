@@ -14,6 +14,7 @@ export type Prepared =
   | { kind: "payment"; amount: number; date: string; method: string; reference: string; description: string }
   | { kind: "vendor"; name: string; type: "Material" | "Labor" | "Both"; phone: string; gstin: string; contactPerson: string; address: string }
   | { kind: "material"; name: string; unit: string; rate: number; hsn: string; gstRate: number; taxNote?: string }
+  | { kind: "approve"; poNumber: string } // approve a Draft PO ("" = list the ones waiting)
   | { kind: "log" } // a daily work report: handed to the daily-log reader (bot/aiLog.ts)
   | { kind: "question"; topic: "stock" | "progress" | "payments" | "orders" | "general"; materialIds: string[]; question: string }
   | { kind: "other"; reply: string };
@@ -42,19 +43,21 @@ MATERIALS (id | name | unit | usual rate | HSN):
 ${list(ctx.materials.map((m) => `${m.id} | ${m.name} | ${m.unit} | ${m.rate || "?"} | ${m.hsn || "-"}`))}
 
 Choose "intent":
-- "create_po": order/buy/raise a PO for materials. Fill "vendorId" (from VENDORS, by meaning and spelling; null if none), "items" [{"itemId" from MATERIALS, "qty" in its unit, "nos", "rate" only if a price per unit is said else null, "hsn", "gstRate"}], "expectedDeliveryDate" (YYYY-MM-DD, not before today, or null), "notes". Materials that match nothing go in "unmatched".
+- "create_po": order/buy/raise a PO for materials. Fill "vendorId" (from VENDORS, by meaning and spelling; null if none), "items" [{"itemId" from MATERIALS, "qty" in its unit, "nos", "rate" only if a price per unit is said else null, "rateIncludesGst", "hsn", "gstRate"}], "expectedDeliveryDate" (YYYY-MM-DD, not before today, or null), "notes". Materials that match nothing go in "unmatched".
+  "rateIncludesGst": true when the user says the price INCLUDES GST ("325 including GST", "with GST", "inclusive", "GST included", "all-in with tax"); false when they say excluding GST, plus GST, or say nothing. Give "rate" exactly as said; do NOT remove the GST yourself.
   Steel bars asked for as a NUMBER of bars ("12mm 150 nos", "100 rods of 16mm", "8mm - 40 numbers"): choose the material of that size, put the count in "nos" and leave "qty" null. Do NOT convert to kg or tonnes yourself; the app does it. Otherwise "nos" is null.
   "hsn" and "gstRate": only for a chosen material whose HSN above is "-": the Indian HSN code (4, 6 or 8 digits) and the current GST rate (%) you believe apply. Otherwise null.
 - "client_payment": money RECEIVED from the client/owner for this project. Fill "amount", "date" (YYYY-MM-DD, today if not said, never in the future), "method" (one of ${METHODS.join(", ")}), "reference" (cheque/UTR/transaction number or ""), "description".
 - "add_vendor": add a new vendor/supplier/subcontractor. Fill "vendor": {"name","type" ("Material", "Labor" or "Both"),"phone","gstin","contactPerson","address"} ("" for anything not said).
 - "add_material": add a new material to the project's inventory. Fill "material": {"name","unit" (bag, kg, MT, cft, cum, sqft, rmt, nos, litre, load),"rate" (or 0),"hsn" (the Indian HSN code for it, 4-8 digits, said or your best knowledge),"gstRate" (its current GST rate: ${GST.join(", ")})}.
+- "approve_po": approve a purchase order, or see which are waiting for approval ("approve PO 12", "pending approvals"). Fill "poNumber" with the number said (e.g. "PO-2026-0012" or just "12"), or "" for all waiting.
 - "daily_log": a report of work done today on site (progress %, labour, materials used, equipment). Fill nothing else.
 - "question": the user asks about this project's data. Fill "topic": "stock" (material quantities left), "progress" (schedule, % done, delays), "payments" (client payments, balance), "orders" (purchase orders and deliveries), or "general"; "materialIds" for any materials named; "question" restated briefly in English.
-- "other": anything else. Put a one-sentence "reply" saying what you can do: purchase orders, client payments, new vendors and materials, daily logs, and questions about stock, progress, payments and orders.
+- "other": anything else. Put a one-sentence "reply" saying what you can do: purchase orders and approving them, client payments, new vendors and materials, daily logs, and questions about stock, progress, payments and orders.
 Never invent an id.
 
 Answer with JSON only:
-{"intent":"...","transcript":"","vendorId":null,"items":[],"expectedDeliveryDate":null,"notes":"","unmatched":[],"amount":0,"date":null,"method":"","reference":"","description":"","vendor":{},"material":{},"topic":"","materialIds":[],"question":"","reply":""}`;
+{"intent":"...","transcript":"","poNumber":"","vendorId":null,"items":[],"expectedDeliveryDate":null,"notes":"","unmatched":[],"amount":0,"date":null,"method":"","reference":"","description":"","vendor":{},"material":{},"topic":"","materialIds":[],"question":"","reply":""}`;
 }
 
 export function sanitizeAction(raw: any, ctx: PoContext, typedText: string | null): ParseResult {
@@ -118,6 +121,7 @@ export function sanitizeAction(raw: any, ctx: PoContext, typedText: string | nul
       });
     }
   }
+  if (intent === "approve_po") return out({ kind: "approve", poNumber: clip(raw.poNumber, 20).toUpperCase() });
   if (intent === "daily_log") return out({ kind: "log" });
   if (intent === "question") {
     const topics = ["stock", "progress", "payments", "orders", "general"] as const;
@@ -139,6 +143,7 @@ export function sanitizeAction(raw: any, ctx: PoContext, typedText: string | nul
 export function actionFor(p: Prepared): import("./permissions").Action | null {
   switch (p.kind) {
     case "po": return "po.create";
+    case "approve": return "po.approve";
     case "payment": return "payment.create";
     case "vendor": return "vendor.create";
     case "material": return "material.create";

@@ -19,7 +19,7 @@ import { toast } from "../../lib/feedback";
 import { Tooltip } from "../Tooltip";
 import { DialogBehaviour } from "../../lib/useDialog";
 import { useOrgSettings } from "../../hooks/useOrgSettings";
-import { computePoTotals, supplyKind, stateCodeOf, isValidHsn, GST_RATES, GST_STATES } from "../../lib/poTax";
+import { computePoTotals, supplyKind, stateCodeOf, isValidHsn, GST_RATES, GST_STATES, exGstRate, round2 } from "../../lib/poTax";
 
 import { useTranslation } from "../../i18n";
 interface PurchaseOrderFormProps {
@@ -121,6 +121,17 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
 
   const addItem = () => setItems([...items, { itemId: "", materialId: "", name: "", orderedQty: 0, unit: "", rate: 0, hsn: "", gstRate: 0 }]);
   const removeItem = (i: number) => setItems(items.filter((_, idx) => idx !== i));
+  // "Rate incl. GST": typing an all-in rate fills the rate before tax. The box
+  // shows rate x (1 + GST) except while it is being typed in.
+  const [inclEdit, setInclEdit] = useState<{ idx: number; text: string } | null>(null);
+  const setInclRate = (index: number, text: string) => {
+    setInclEdit({ idx: index, text });
+    const v = parseFloat(text);
+    const newItems = [...items];
+    newItems[index] = { ...newItems[index], rate: Number.isFinite(v) ? exGstRate(v, newItems[index].gstRate || 0) : 0 };
+    setItems(newItems);
+  };
+
   const updateItem = (index: number, field: keyof typeof items[0], value: any) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
@@ -464,6 +475,22 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ projectId,
                       {GST_RATES.map(r => <option key={r} value={r}>{r === 0 ? "None" : `${r}%`}</option>)}
                     </select>
                   </div>
+                  {(item.gstRate || 0) > 0 && (
+                    <div className="w-32 space-y-1">
+                      <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest ml-1">Rate incl. GST (₹)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="all-in rate"
+                        value={inclEdit?.idx === idx ? inclEdit.text : item.rate ? round2(item.rate * (1 + (item.gstRate || 0) / 100)) : ""}
+                        onChange={e => setInclRate(idx, e.target.value)}
+                        onBlur={() => setInclEdit(null)}
+                        title="Type the rate including GST; the rate before tax is worked out"
+                        className="w-full px-3 py-2 bg-panel rounded-lg text-sm font-mono"
+                      />
+                    </div>
+                  )}
                   {totals.lines[idx]?.tax > 0 && (
                     <p className="text-[11px] font-semibold text-ink-muted pb-2">
                       {supply.interState

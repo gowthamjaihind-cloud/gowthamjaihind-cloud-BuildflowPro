@@ -549,6 +549,7 @@ export type ActionPending =
 export type ActionPrepared =
   | { type: "denied" | "answer" | "other"; transcript: string; message: string }
   | { type: "log"; transcript: string }
+  | { type: "approvals"; transcript: string; pos: { id: string; poNumber: string; vendorName: string; total: number; orderDate: string; createdByName: string }[] }
   | { type: "pending"; transcript: string; id: string; kind: ActionPending["kind"]; lines: string[]; blockers: string[]; pending: ActionPending };
 export const callActionPrepare = async (args: { orgId?: string; projectId: string; text?: string; audioBase64?: string; mimeType?: string }) =>
   (await httpsCallable<typeof args, ActionPrepared>(getFunctionsInstance(), "actionPrepare", { timeout: 130_000 })(args)).data;
@@ -559,5 +560,7 @@ export const callTaxCodeSuggestions = async (orgId: string, names: string[]) =>
   (await httpsCallable<{ orgId: string; names: string[] }, { suggestions: TaxSuggestion[] }>(getFunctionsInstance(), "taxCodeSuggestions", { timeout: 100_000 })({ orgId, names })).data;
 export const callApplyTaxCodes = async (orgId: string, updates: { masterId: string; hsn: string; gstRate: number }[]) =>
   (await httpsCallable<{ orgId: string; updates: typeof updates }, { masters: number; inventoryItems: number }>(getFunctionsInstance(), "applyTaxCodes", { timeout: 130_000 })({ orgId, updates })).data;
+export const callPoApprove = async (orgId: string, projectId: string, poId: string) =>
+  (await httpsCallable<{ orgId: string; projectId: string; poId: string }, { poNumber: string; vendorName: string; total: number }>(getFunctionsInstance(), "poApprove")({ orgId, projectId, poId })).data;
 export const callActionCancel = async (id: string) =>
   (await httpsCallable<{ id: string }, { ok: boolean }>(getFunctionsInstance(), "actionCancel")({ id })).data;

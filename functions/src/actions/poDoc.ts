@@ -2,6 +2,22 @@ import { db } from "../db";
 import { renderPoPdf } from "./poPdf";
 import type { Pending } from "./preview";
 
+/** The PDF of a saved purchase order (any status). */
+export async function pdfForPo(orgId: string, projectId: string, poId: string): Promise<{ buffer: Buffer; filename: string; poNumber: string }> {
+  const snap = await db.doc(`organizations/${orgId}/projects/${projectId}/purchase_orders/${poId}`).get();
+  if (!snap.exists) throw new Error("PO not found");
+  const po: any = snap.data();
+  const pending = {
+    kind: "po" as const, unmatched: [], missingVendor: false,
+    draft: {
+      vendorId: String(po.vendorId || ""), vendorName: String(po.vendorName || ""), expectedDeliveryDate: String(po.expectedDeliveryDate || ""), notes: String(po.notes || ""),
+      items: (po.lineItems || []).map((i: any) => ({ itemId: i.itemId, materialId: i.materialId || "", name: i.name, unit: i.unit, orderedQty: Number(i.orderedQty) || 0, rate: Number(i.rate) || 0, hsn: i.hsn || "", gstRate: Number(i.gstRate) || 0, rateFromRequest: true })),
+    },
+  };
+  const pdf = await pdfForPendingPo(orgId, projectId, pending, { poNumber: String(po.poNumber || "PO"), orderDate: String(po.orderDate || ""), status: String(po.status || "") });
+  return { ...pdf, poNumber: String(po.poNumber || "") };
+}
+
 /**
  * The PO PDF for a pending action: a DRAFT PREVIEW before Confirm, the
  * numbered PO after it. Same letterhead the app prints (organization name and
@@ -11,7 +27,7 @@ export async function pdfForPendingPo(
   orgId: string,
   projectId: string,
   p: Extract<Pending, { kind: "po" }>,
-  opts: { poNumber?: string; orderDate?: string } = {},
+  opts: { poNumber?: string; orderDate?: string; status?: string } = {},
 ): Promise<{ buffer: Buffer; filename: string }> {
   const b = `organizations/${orgId}/projects/${projectId}`;
   const [orgSnap, profileSnap, projectSnap, vendorSnap] = await Promise.all([
@@ -27,7 +43,7 @@ export async function pdfForPendingPo(
   const buffer = await renderPoPdf({
     draft: !opts.poNumber,
     poNumber: opts.poNumber,
-    status: opts.poNumber ? "Draft" : undefined,
+    status: opts.poNumber ? opts.status || "Draft" : undefined,
     orderDate,
     expectedDeliveryDate: p.draft.expectedDeliveryDate || undefined,
     notes: p.draft.notes || undefined,

@@ -2,7 +2,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { CALLABLE_OPTS } from "../callable";
 import { AUDIO_TYPES, MAX_AUDIO_BASE64 } from "../command/po";
-import { prepareAction, confirmAction, cancelAction } from "./run";
+import { prepareAction, confirmAction, cancelAction, approvePo } from "./run";
 
 /** The app's "Do it for me": the same engine the bot uses (run.ts). */
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
@@ -27,6 +27,13 @@ export const actionConfirm = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 60 }, as
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
   return confirmAction(String(request.data?.id || ""), uid);
+});
+
+/** Approve a Draft PO from "Do it for me" (Owner or Admin, checked in approvePo). */
+export const poApprove = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
+  return approvePo(uid, String(request.data?.orgId || ""), String(request.data?.projectId || ""), String(request.data?.poId || ""));
 });
 
 export const actionCancel = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, async (request) => {

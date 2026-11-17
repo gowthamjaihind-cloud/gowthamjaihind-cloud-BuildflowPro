@@ -37,6 +37,7 @@ const en: Dict = {
     "…or ask me to do something, typed or as a voice note:\n<i>PO for 100 bags OPC 53 cement from ABC Traders</i>\n<i>Client paid 2 lakh by UPI today</i>\n<i>How much cement is left?</i>\n" +
     "/today — see what's already logged today\n" +
     "/projects — switch active project\n" +
+    "/approve — purchase orders waiting for approval (Owner, Admin)\n" +
     "/language — change language (English / தமிழ்)\n" +
     "/cancel — cancel what you're doing\n" +
     "/help — this message",
@@ -185,6 +186,27 @@ const en: Dict = {
   "actDraftCaption": "📄 Draft preview of the PO. It gets its number when you tap Confirm.",
   "actPoCaption": "📄 <b>{po}</b>, saved as a Draft. Send it to the vendor from the app when it is approved.",
   "actListening": "🎙 Listening…",
+  "poaHeader": "🧾 <b>Purchase orders waiting for approval</b>",
+  "poaNone": "No purchase orders are waiting for approval in this project.",
+  "poaAskNow": "Approve {po} now? Once approved it can be sent to the vendor and goods received against it.",
+  "poaBtnApprove": "✅ Approve now",
+  "poaDone": "✅ <b>{po}</b> approved ({vendor}, {total}). It can now be sent to the vendor, and bills and goods received against it.",
+  "billAgainst": "Record this bill and its goods receipt against <b>{po}</b>:",
+  "billNotOnPo": "Not on the PO, so not received into stock: {items}",
+  "billPostHint": "Posting adds these quantities to inventory and the PO, and the bill amount to the vendor's balance.",
+  "billBtnPost": "✅ Post bill + goods receipt",
+  "billBtnLater": "Later (review in the app)",
+  "billBtnApproveUse": "✅ Approve {po} and use it",
+  "billPoDraft": "Its purchase order <b>{po}</b> is still a Draft. Approve it to post this bill.",
+  "billPoDraftAsk": "Its purchase order <b>{po}</b> is still a Draft. Ask an Owner or Admin to approve it (/approve), then post the bill from Procurement → Bills.",
+  "billNoLines": "None of the bill's items match <b>{po}</b>'s items. Pick another PO, or link the items in the app (Procurement → Bills → Review &amp; Post).",
+  "billNoPo": "No approved purchase order was matched to this bill.",
+  "billPickPo": "Post it against:",
+  "billFixInApp": "Check it in the app: Procurement → Bills → Review &amp; Post.",
+  "billLinking": "Linking the bill to that PO…",
+  "billLeft": "Left for review in the app: Procurement → Bills.",
+  "billPosted": "✅ Posted. Goods receipt <b>{grn}</b> against {po}; bill {total} added to the vendor's balance, and the stock to inventory.",
+  "poaPdfFailed": "Couldn't make the PDF just now. Open the PO in the app to print it.",
   "voiceTooLong": "That voice note is too long. Keep it under about a minute, or type it.",
   "voiceUnsupported": "I can't play that audio format. Send a Telegram voice note, or type it.",
 

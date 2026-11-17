@@ -19,6 +19,8 @@
 
 export type Action =
   | "po.create"
+  | "po.approve"
+  | "bill.post"
   | "payment.create"
   | "vendor.create"
   | "material.create"
@@ -39,6 +41,10 @@ export interface Who {
 
 const POLICY: Record<Action, { need: "read" | "write"; roles: string[] | "any"; what: string }> = {
   "po.create": { need: "write", roles: MANAGER_ROLES, what: "create purchase orders" },
+  // As in the app (PurchaseOrderDetails.tsx): only an Owner or Admin approves.
+  "po.approve": { need: "write", roles: ["Owner", "Admin"], what: "approve purchase orders" },
+  // Posting a bill records the goods receipt (rules: managers and site engineers) and the vendor payable.
+  "bill.post": { need: "write", roles: [...MANAGER_ROLES, "Site Engineer"], what: "post bills and goods receipts" },
   "payment.create": { need: "write", roles: MANAGER_ROLES, what: "record client payments" },
   "vendor.create": { need: "write", roles: MANAGER_ROLES, what: "add vendors" },
   "material.create": { need: "write", roles: MANAGER_ROLES, what: "add materials" },
@@ -63,7 +69,7 @@ export function denial(action: Action, w: Who): string | null {
     return p.need === "read" ? "You don't have access to this project." : "You can view this project but not change it. Ask an Owner or Admin for edit access.";
   }
   if (p.roles !== "any" && !p.roles.includes(w.role)) {
-    return `Your role (${w.role || "member"}) cannot ${p.what}. Ask an Owner, Admin or Project Manager.`;
+    return `Your role (${w.role || "member"}) cannot ${p.what}. Ask ${p.roles.length <= 2 ? "an Owner or Admin" : "an Owner, Admin or Project Manager"}.`;
   }
   return null;
 }

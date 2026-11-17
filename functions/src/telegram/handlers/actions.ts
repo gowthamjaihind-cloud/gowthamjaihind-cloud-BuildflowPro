@@ -2,8 +2,8 @@ import { HttpsError } from "firebase-functions/v2/https";
 import { db } from "../../db";
 import { channelOf, type ChatId } from "../../bot/channel";
 import { isQuotaError } from "../../ai/usage";
-import { prepareAction, confirmAction, cancelAction } from "../../actions/run";
-import { pdfForPendingPo } from "../../actions/poDoc";
+import { prepareAction, confirmAction, cancelAction, listDraftPos, approvePo, whyNot, type DraftPo } from "../../actions/run";
+import { pdfForPendingPo, pdfForPo } from "../../actions/poDoc";
 import { tt, normalizeLang } from "../i18n";
 import * as aiLog from "./aiLog";
 
@@ -48,6 +48,11 @@ export async function handleRequest(
     if (heard) await api.sendMessage(chatId, heard.trim());
     const handled = await aiLog.handleFreeText(api, chatId, session, out.transcript, geminiKey);
     if (!handled) await api.sendMessage(chatId, tt(lang, "didntUnderstand"));
+    return;
+  }
+  if (out.type === "approvals") {
+    if (heard) await api.sendMessage(chatId, heard.trim());
+    await sendApprovals(api, chatId, lang, out.pos);
     return;
   }
   if (out.type !== "pending") {
@@ -106,5 +111,67 @@ export async function handleTap(api: any, chatId: ChatId, messageId: any, sessio
     } catch (e) {
       console.error("PO PDF failed", e);
     }
+  }
+  // An Owner or Admin can approve it straight away.
+  if (result.poId && !(await whyNot(session.userId, result.orgId, result.projectId, "po.approve"))) {
+    await api.sendMessage(chatId, tt(lang, "poaAskNow", { po: esc(result.poNumber || "") }), [[{ text: tt(lang, "poaBtnApprove"), callback_data: `poa:${result.poId}` }]]);
+  }
+}
+
+const inr = (n: number) => `₹${(Math.round(n * 100) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+
+/** Draft POs with an Approve and a PDF button each. */
+async function sendApprovals(api: any, chatId: ChatId, lang: any, pos: DraftPo[]) {
+  if (!pos.length) {
+    await api.sendMessage(chatId, tt(lang, "poaNone"));
+    return;
+  }
+  const lines = pos.map((p) => `• <b>${esc(p.poNumber)}</b> · ${esc(p.vendorName)} · ${inr(p.total)}${p.createdByName ? ` · by ${esc(p.createdByName)}` : ""}`);
+  const buttons = pos.map((p) => [
+    { text: `✅ ${p.poNumber}`, callback_data: `poa:${p.id}` },
+    { text: `📄 PDF`, callback_data: `pov:${p.id}` },
+  ]);
+  await api.sendMessage(chatId, `${tt(lang, "poaHeader")}\n\n${lines.join("\n")}`, buttons);
+}
+
+/** /approve: the Draft POs in the active project, for an Owner or Admin. */
+export async function listApprovals(api: any, chatId: ChatId, session: any): Promise<void> {
+  const lang = normalizeLang(session?.lang);
+  if (!session?.activeProjectId || !session?.orgId) {
+    await api.sendMessage(chatId, tt(lang, "noActiveProject"));
+    return;
+  }
+  const no = await whyNot(session.userId, session.orgId, session.activeProjectId, "po.approve");
+  if (no) {
+    await api.sendMessage(chatId, `🔒 ${esc(no)}`);
+    return;
+  }
+  await sendApprovals(api, chatId, lang, await listDraftPos(session.orgId, session.activeProjectId));
+}
+
+/** `poa:<poId>` approves; `pov:<poId>` sends the PO's PDF. */
+export async function handlePoTap(api: any, chatId: ChatId, messageId: any, session: any, data: string): Promise<void> {
+  const lang = normalizeLang(session?.lang);
+  const [verb, poId] = [data.slice(0, 3), data.slice(4)];
+  if (!poId || !session?.activeProjectId || !session?.orgId) {
+    await api.sendMessage(chatId, tt(lang, "noActiveProject"));
+    return;
+  }
+  if (verb === "poa") {
+    try {
+      const r = await approvePo(session.userId, session.orgId, session.activeProjectId, poId);
+      await api.sendMessage(chatId, tt(lang, "poaDone", { po: esc(r.poNumber), vendor: esc(r.vendorName), total: inr(r.total) }));
+    } catch (e: any) {
+      await api.sendMessage(chatId, `⚠️ ${esc(errText(e))}`);
+      return;
+    }
+  }
+  if (typeof api.sendDocument !== "function") return;
+  try {
+    const pdf = await pdfForPo(session.orgId, session.activeProjectId, poId);
+    await api.sendDocument(chatId, pdf.buffer, pdf.filename, `📄 <b>${esc(pdf.poNumber)}</b>`);
+  } catch (e) {
+    console.error("PO PDF failed", e);
+    if (verb === "pov") await api.sendMessage(chatId, tt(lang, "poaPdfFailed"));
   }
 }

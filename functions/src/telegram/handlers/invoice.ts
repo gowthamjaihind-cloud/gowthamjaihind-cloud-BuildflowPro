@@ -5,6 +5,7 @@ import { db } from "../../db";
 import { readAndMatchInvoice } from "../../ai/invoiceReader";
 import { tt, normalizeLang } from "../i18n";
 import { recordBotError } from "../botErrors";
+import { offerPosting } from "./bills";
 
 const projPath = (orgId: any, projectId: any) =>
   orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -12,9 +13,9 @@ const projPath = (orgId: any, projectId: any) =>
 const inr = (n: number) => `₹${(Number(n) || 0).toLocaleString("en-IN")}`;
 
 // A photo sent outside the /log flow is treated as a vendor GST invoice: the
-// bot reads it, matches the PO, and saves a PENDING draft bill for the office
-// to review and post in the app. It never posts to the ledger from Telegram —
-// the money transaction stays in one place (the web app).
+// bot reads it, matches the PO, and saves a PENDING draft bill. A manager or
+// site engineer can then post it from the chat (handlers/bills.ts, which shows
+// what will be received first); anyone else leaves it for the app.
 export async function handleInvoicePhoto(
   tg: any,
   chatId: ChatId,
@@ -103,4 +104,10 @@ export async function handleInvoicePhoto(
   }
   msg += `\n\n${tt(lang, "invReviewPost")}`;
   await tg.sendMessage(chatId, msg);
+  // Managers and site engineers can post it from here (bill + goods receipt).
+  try {
+    await offerPosting(tg, chatId, session, billId);
+  } catch (e) {
+    console.error("Offer to post bill failed", e);
+  }
 }

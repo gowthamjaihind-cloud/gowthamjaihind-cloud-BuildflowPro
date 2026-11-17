@@ -24,6 +24,17 @@ export const GST_RATES = [0, 0.25, 3, 5, 12, 18, 28] as const;
 
 export const round2 = (n: number) => Math.round((Number(n) || 0) * 100 + Number.EPSILON) / 100;
 
+/**
+ * The rate before tax, from a rate that already includes GST: 325 at 18% is
+ * 275.42. Rounded to the paisa, so qty x rate + GST can differ from the
+ * all-in figure by a few paise; the PO shows the rate and the GST separately.
+ */
+export function exGstRate(rateInclGst: number, gstRate: number): number {
+  const r = Number(rateInclGst) || 0;
+  const g = Number(gstRate) || 0;
+  return g > 0 ? round2(r / (1 + g / 100)) : round2(r);
+}
+
 const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
 /** A syntactically valid GSTIN (15 characters). Empty is not valid. */

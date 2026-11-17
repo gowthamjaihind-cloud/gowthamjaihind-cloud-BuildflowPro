@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import { relinkToPo as relink, tokenMatch } from "./lineMatch";
 
 type L = { name: string; unit?: string; poLineRef?: string; materialId?: string };
@@ -30,5 +31,13 @@ describe("relinking a scanned bill to a hand-picked PO", () => {
 
   it("sizes must agree", () => {
     expect(tokenMatch("TMT 8mm", "TMT 10mm")).toBe(false);
+  });
+});
+
+describe("line matching: app and server copies", () => {
+  it("are identical", () => {
+    const app = readFileSync(new URL("./lineMatch.ts", import.meta.url), "utf8");
+    const server = readFileSync(new URL("../../functions/src/shared/lineMatch.ts", import.meta.url), "utf8").split("\n").slice(3).join("\n");
+    expect(server).toBe(app);
   });
 });

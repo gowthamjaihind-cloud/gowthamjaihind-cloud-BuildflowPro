@@ -11,6 +11,7 @@ import * as projects from "../telegram/handlers/projects";
 import * as agent from "../telegram/handlers/agent";
 import * as invoice from "../telegram/handlers/invoice";
 import * as actions from "../telegram/handlers/actions";
+import * as bills from "../telegram/handlers/bills";
 import { looksLikeRequest } from "../bot/request";
 import { AUDIO_TYPES, MAX_AUDIO_BASE64 } from "../command/po";
 import * as sitePhotos from "../telegram/handlers/sitePhotos";
@@ -253,6 +254,8 @@ async function handleTap(wa: WhatsAppApi, chatId: ChatId, data: string) {
   if (data === "sv") return void (await log.saveLog(wa, chatId, null, session));
   // Confirm / Cancel on a typed or spoken request; the engine re-checks the role.
   if (data.startsWith("act:")) return void (await actions.handleTap(wa, chatId, null, session, data));
+  if (data.startsWith("bill:")) return void (await bills.handleBillTap(wa, chatId, null, session, data));
+  if (data.startsWith("poa:") || data.startsWith("pov:")) return void (await actions.handlePoTap(wa, chatId, null, session, data));
 }
 
 async function handleText(wa: WhatsAppApi, chatId: ChatId, text: string) {
@@ -321,6 +324,7 @@ async function handleText(wa: WhatsAppApi, chatId: ChatId, text: string) {
   }
   if (cmd === "log") return void (await log.startLog(wa, chatId, session));
   if (cmd === "today") return void (await log.showToday(wa, chatId, session));
+  if (cmd === "approve") return void (await actions.listApprovals(wa, chatId, session));
   if (cmd === "projects") return void (await projects.showProjects(wa, chatId, session));
 
   // Free text belongs to whatever step the log flow is waiting on.

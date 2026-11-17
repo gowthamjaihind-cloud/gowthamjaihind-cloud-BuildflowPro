@@ -78,4 +78,14 @@ describe("command chat: purchase orders", () => {
     const { blockers } = await import("../actions/preview");
     expect(blockers({ kind: "po", ...r })).toEqual([]);
   });
+
+  it("works a GST-inclusive rate back to the rate before tax", () => {
+    const c: PoContext = { ...ctx, materials: [{ id: "c", name: "CEMENT", unit: "BAGS", rate: 0, hsn: "2523", gstRate: 18 }, { id: "d", name: "Door handle", unit: "nos", rate: 0, hsn: "", gstRate: 0 }] };
+    const r = sanitizeCommand({ intent: "create_po", vendorId: "v1", items: [{ itemId: "c", qty: 50, rate: 325, rateIncludesGst: true }, { itemId: "d", qty: 2, rate: 100, rateIncludesGst: true }] }, c, "x");
+    if (r.kind !== "po") throw new Error("not a po");
+    expect(r.draft.items[0]).toMatchObject({ rate: 275.42, rateInclGst: 325, gstRate: 18 });
+    // No GST rate known: the rate stays as said.
+    expect(r.draft.items[1]).toMatchObject({ rate: 100 });
+    expect(r.draft.items[1].rateInclGst).toBeUndefined();
+  });
 });

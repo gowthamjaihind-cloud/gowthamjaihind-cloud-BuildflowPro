@@ -8,7 +8,7 @@ import type { AiLogDraft } from "../bot/aiLog";
  * Pure: totals come from the same GST maths the PO form uses.
  */
 
-export type Pending = Exclude<Prepared, { kind: "log" } | { kind: "question" } | { kind: "other" }> | { kind: "logs"; drafts: AiLogDraft[] };
+export type Pending = Exclude<Prepared, { kind: "log" } | { kind: "question" } | { kind: "other" } | { kind: "approve" }> | { kind: "logs"; drafts: AiLogDraft[] };
 
 const inr = (n: number) => `₹${(Math.round(n * 100) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 const day = (d: string) => (d ? new Date(`${d}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "");
@@ -44,6 +44,7 @@ export function previewLines(p: Pending, projectName: string, opts: { buyerGstin
         ...p.draft.items.flatMap((i, k) => [
           `• ${i.name}: ${i.orderedQty} ${i.unit} × ${inr(i.rate)}${i.rateFromRequest ? "" : " (usual rate)"}${i.gstRate ? ` + GST ${i.gstRate}%` : ""} = ${inr(t.lines[k].total)}`,
           ...(i.conversion ? [`   ↳ ${i.conversion}, rounded to 10 kg`] : []),
+          ...(i.rateInclGst ? [`   ↳ ${inr(i.rateInclGst)} including ${i.gstRate}% GST = ${inr(i.rate)} before tax + GST`] : []),
           ...(i.taxSource ? [`   ↳ HSN ${i.hsn || "none"}, GST ${i.gstRate}%: ${i.taxNote || ""}`] : []),
         ]),
         ...(p.draft.expectedDeliveryDate ? [`Delivery: ${day(p.draft.expectedDeliveryDate)}`] : []),
