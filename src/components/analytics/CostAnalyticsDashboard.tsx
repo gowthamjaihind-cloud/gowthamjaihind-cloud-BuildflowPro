@@ -235,7 +235,7 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
       {kpis}
 
       {/* View switcher */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1">
+      <div className="flex flex-wrap gap-2 pb-1">
         {views.map((v) => (
           <button
             key={v.id}

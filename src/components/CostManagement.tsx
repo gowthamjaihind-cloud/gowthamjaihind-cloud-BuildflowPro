@@ -1201,14 +1201,14 @@ export const CostManagement: React.FC<CostManagementProps> = ({
   return (
     <div className="space-y-10 pb-32">
       <div className="soft-card p-5 md:p-6 rounded-2xl flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
-        <div className="flex gap-2 bg-surface/30 p-1 rounded-xl w-full md:w-fit max-w-full overflow-x-auto ring-1 ring-white/20 shadow-inner">
+        <div className="flex flex-wrap gap-1 bg-surface/30 p-1 rounded-xl w-full md:w-fit max-w-full ring-1 ring-white/20 shadow-inner">
           {(
             ["dashboard", "wbs", "direct_costs", "report", "payments"] as const
           ).map((mode) => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
-              className={`flex-1 md:flex-none px-4 md:px-8 py-2 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.2em] apple-transition whitespace-nowrap ${viewMode === mode ? "bg-primary text-on-primary shadow-lg" : "text-ink-muted hover:text-ink"}`}
+              className={`flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] apple-transition whitespace-nowrap ${viewMode === mode ? "bg-primary text-on-primary shadow-lg" : "text-ink-muted hover:text-ink"}`}
             >
               {mode === "dashboard"
                 ? "Overview"

@@ -69,7 +69,7 @@ export const ProcurementAnalyticsDashboard: React.FC<{ projectId: string }> = ({
         <StatTile label={t("an.openPos")} value={String(open)} tone={open > 0 ? "default" : "success"} />
       </div>
 
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1">
+      <div className="flex flex-wrap gap-2 pb-1">
         {views.map((v) => (
           <button key={v.id} onClick={() => setView(v.id)}
             className={`px-3.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest whitespace-nowrap apple-transition shrink-0 ${

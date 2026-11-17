@@ -1149,19 +1149,19 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
   return (
     <div className="space-y-6 md:space-y-12 pb-24 md:pb-32">
       <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 md:gap-8 bg-panel p-4 md:p-6 rounded-[24px] md:rounded-[32px] border border-divider shadow-sm">
-        <div className="flex gap-2 bg-panel/50 p-1 md:p-1.5 rounded-xl md:rounded-2xl w-full md:w-auto md:min-w-0 md:flex-1 overflow-x-auto scrollbar-hide ring-1 ring-slate-200/50 shadow-inner">
+        <div className="flex flex-wrap gap-2 bg-panel/50 p-1 md:p-1.5 rounded-xl md:rounded-2xl w-full md:w-auto ring-1 ring-slate-200/50 shadow-inner">
           {(["rates", "billing"] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 md:flex-none px-4 md:px-8 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] apple-transition whitespace-nowrap ${activeTab === tab ? "bg-surface text-primary shadow-sm ring-1 ring-divider" : "text-ink-muted hover:text-ink/80"}`}
+              className={`flex-1 md:flex-none px-4 md:px-6 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] apple-transition whitespace-nowrap ${activeTab === tab ? "bg-surface text-primary shadow-sm ring-1 ring-divider" : "text-ink-muted hover:text-ink/80"}`}
             >
               {tab === "rates" ? "Pricing" : "RA Billing"}
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto md:shrink-0">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <button
             onClick={handleExportCSV}
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-surface-dark text-white px-4 md:px-5 py-2.5 md:py-3 rounded-lg md:rounded-2xl text-[10px] md:text-[10px] font-black uppercase tracking-[0.15em] hover:bg-surface-dark/85 apple-transition shadow-lg shadow-surface-dark/10"
