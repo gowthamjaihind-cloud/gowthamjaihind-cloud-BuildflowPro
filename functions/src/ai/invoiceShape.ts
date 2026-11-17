@@ -10,7 +10,7 @@
  */
 const looksLikeBill = (o: any) =>
   !!o && typeof o === "object" && !Array.isArray(o) &&
-  ("lineItems" in o || "vendorName" in o || "invoiceNumber" in o || "grandTotal" in o);
+  ("lineItems" in o || "vendorName" in o || "invoiceNumber" in o || "grandTotal" in o || "docType" in o);
 
 export function normalizeInvoiceJson(parsed: any): any | null {
   let o = parsed;
@@ -20,6 +20,9 @@ export function normalizeInvoiceJson(parsed: any): any | null {
     else o = null;
   }
   if (!looksLikeBill(o)) return null;
+  // A payment receipt or something else entirely: the caller decides (ai/invoiceReader.ts).
+  if (o.docType === "payment") return o.payment && typeof o.payment === "object" ? o : null;
+  if (o.docType === "other") return o;
   const lines = Array.isArray(o.lineItems) ? o.lineItems : [];
   const read = !!String(o.invoiceNumber || "").trim() || lines.length > 0 || Number(o.grandTotal) > 0;
   return read ? { ...o, lineItems: lines } : null;

@@ -9,7 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { useAuthStore } from "../../store";
 import { useProjectData } from "../../hooks/useProjectData";
-import { callExtractVendorInvoice } from "../../services/firebaseFunctions";
+import { callExtractVendorInvoice, callActionConfirm, callActionCancel, type ActionPrepared } from "../../services/firebaseFunctions";
 import { postInvoiceReceipt } from "../../services/invoiceReceiptService";
 import { PurchaseOrder, VendorBill, InventoryItem } from "../../types";
 import { Tooltip } from "../Tooltip";
@@ -66,6 +66,22 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
   const [file, setFile] = useState<File | null>(null);
   const [bill, setBill] = useState<VendorBill | null>(initialBill || null);
   const [flags, setFlags] = useState<string[]>(initialBill?.flags || []);
+  // A payment receipt scanned here by mistake: shown as the payment it is
+  // (to a vendor, or from the client), saved only on Confirm.
+  const [receipt, setReceipt] = useState<ActionPrepared | null>(null);
+  const [receiptDone, setReceiptDone] = useState("");
+  const [receiptBusy, setReceiptBusy] = useState(false);
+  const confirmReceipt = async (id: string) => {
+    setReceiptBusy(true);
+    setError(null);
+    try {
+      setReceiptDone((await callActionConfirm(id)).message);
+    } catch (e: any) {
+      setError(String(e?.message || "Couldn't save it.").replace(/^.*?:\s*/, ""));
+    } finally {
+      setReceiptBusy(false);
+    }
+  };
 
   // POs for the match selector (works for both scanned + draft review). Open
   // ones can be posted against; Drafts are listed (so it is clear why one is
@@ -98,6 +114,10 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
         fileBase64: base64,
         mimeType: f.type || "image/jpeg",
       });
+      if ((res as any).receipt) {
+        setReceipt((res as any).receipt as ActionPrepared);
+        return;
+      }
       setBill(res.bill as VendorBill);
       setFlags(res.flags || []);
     } catch (e: any) {
@@ -146,7 +166,7 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
   };
 
   const showReview = (step === "review" || step === "posting") && !!bill;
-  const showLoading = step === "review" && !bill;
+  const showLoading = step === "review" && !bill && !receipt;
 
   return (
     <div className="fixed inset-0 bg-surface-dark/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
@@ -166,6 +186,38 @@ export const ScanInvoice: React.FC<ScanInvoiceProps> = ({ projectId, onClose, on
             <div className="mb-4 p-3 bg-danger/8 text-danger rounded-xl border border-danger/20 flex items-start gap-2 text-sm whitespace-pre-line">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <p>{error}</p>
+            </div>
+          )}
+
+          {receipt && (
+            <div className="space-y-3 text-sm">
+              <p className="font-black text-ink">This is a payment receipt, not a bill.</p>
+              {receipt.type === "pending" ? (
+                <>
+                  <div className="bg-panel rounded-xl p-4 space-y-1">
+                    {receipt.lines.map((l, i) => <p key={i} className={i === 0 ? "font-bold text-ink" : "text-ink"}>{l}</p>)}
+                  </div>
+                  {receipt.blockers.map((b, i) => <p key={i} className="text-warning font-semibold">⚠️ {b}</p>)}
+                  {receiptDone ? (
+                    <p className="font-bold text-success">✅ {receiptDone}</p>
+                  ) : (
+                    <div className="flex gap-2">
+                      {!receipt.blockers.length && (
+                        <button onClick={() => confirmReceipt(receipt.id)} disabled={receiptBusy}
+                          className="px-4 py-2 bg-primary text-on-primary font-bold rounded-xl disabled:opacity-50">
+                          {receiptBusy ? "Saving…" : "Confirm payment"}
+                        </button>
+                      )}
+                      <button onClick={() => { callActionCancel(receipt.id).catch(() => {}); onClose(); }} disabled={receiptBusy}
+                        className="px-4 py-2 bg-panel text-ink font-bold rounded-xl">
+                        {t("common.cancel")}
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-ink">{receipt.type === "denied" ? "🔒 " : ""}{"message" in receipt ? receipt.message : ""}</p>
+              )}
             </div>
           )}
 

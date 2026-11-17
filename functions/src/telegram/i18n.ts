@@ -191,6 +191,7 @@ const en: Dict = {
   "poaAskNow": "Approve {po} now? Once approved it can be sent to the vendor and goods received against it.",
   "poaBtnApprove": "✅ Approve now",
   "poaDone": "✅ <b>{po}</b> approved ({vendor}, {total}). It can now be sent to the vendor, and bills and goods received against it.",
+  "rcptFound": "🏦 This is a payment receipt, not a bill. Reading it as a payment…",
   "billAgainst": "Record this bill and its goods receipt against <b>{po}</b>:",
   "billNotOnPo": "Not on the PO, so not received into stock: {items}",
   "billPostHint": "Posting adds these quantities to inventory and the PO, and the bill amount to the vendor's balance.",

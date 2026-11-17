@@ -6,6 +6,9 @@ import { readAndMatchInvoice } from "../../ai/invoiceReader";
 import { tt, normalizeLang } from "../i18n";
 import { recordBotError } from "../botErrors";
 import { offerPosting } from "./bills";
+import { prepareFromReceipt } from "../../actions/run";
+import { sendOutcome } from "./actions";
+import { channelOf } from "../../bot/channel";
 
 const projPath = (orgId: any, projectId: any) =>
   orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -54,6 +57,28 @@ export async function handleInvoicePhoto(
       ? `🚫 ${e.message}`
       : tt(lang, "invReadFailed");
     await tg.sendMessage(chatId, msg);
+    return;
+  }
+
+  // A payment receipt, not a bill: a payment to a vendor or from the client,
+  // previewed with Confirm like a typed one (actions/run.ts prepareFromReceipt).
+  if (result?.docType === "payment") {
+    let receiptUrl: string | undefined;
+    try {
+      const bucket = admin.storage().bucket();
+      const token = crypto.randomUUID();
+      const path = `${base}/payment_receipts/${crypto.randomUUID()}.${got.mimeType === "application/pdf" ? "pdf" : "jpg"}`;
+      await bucket.file(path).save(got.buffer, { metadata: { contentType: got.mimeType, metadata: { firebaseStorageDownloadTokens: token } } });
+      receiptUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(path)}?alt=media&token=${token}`;
+    } catch (e) {
+      console.error("Payment receipt upload failed:", e);
+    }
+    await tg.sendMessage(chatId, tt(lang, "rcptFound"));
+    const out = await prepareFromReceipt({
+      uid: session.userId, orgId: session.orgId, projectId: session.activeProjectId, channel: channelOf(chatId) as any,
+      payment: result.payment, companyName: result.companyName, receiptUrl,
+    });
+    await sendOutcome(tg, chatId, session, out);
     return;
   }
 
