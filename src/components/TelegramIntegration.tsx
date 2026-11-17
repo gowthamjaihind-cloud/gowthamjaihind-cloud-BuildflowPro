@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import QRCode from "qrcode";
 import {
   PaperPlaneTilt as Send,
   CheckCircle as CheckCircle2,
@@ -55,7 +54,9 @@ export const TelegramIntegration: React.FC<TelegramIntegrationProps> = ({ curren
       setQrDataUrl(null);
       return;
     }
-    QRCode.toDataURL(deepLink, { margin: 1, width: 220 })
+    // Loaded only when a QR is shown, not in every page's bundle.
+    import("qrcode")
+      .then((m) => m.default.toDataURL(deepLink, { margin: 1, width: 220 }))
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null));
   }, [deepLink]);

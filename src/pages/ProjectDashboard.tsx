@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { CircleNotch } from "@phosphor-icons/react";
 import { Layout } from "../components/Layout";
 import { DashboardView } from "../components/DashboardView";
-import { WBSView } from "../components/WBSView";
 import { Project, UserProfile } from "../types";
 import { useUIStore, useProjectStore, useTaskStore } from "../store";
 import { useTasksQuery } from "../hooks/queries";
@@ -11,6 +10,9 @@ import { SkeletonScreen } from "../components/Skeleton";
 
 // Heavy per-tab views are code-split so the initial bundle only pays for the
 // default dashboard. Each becomes its own async chunk, loaded on first visit.
+const WBSView = lazy(() =>
+  import("../components/WBSView").then((m) => ({ default: m.WBSView })),
+);
 const InventoryView = lazy(() =>
   import("../components/InventoryView").then((m) => ({ default: m.InventoryView })),
 );
