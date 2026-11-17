@@ -105,7 +105,7 @@ export async function deleteMasterMaterial(id: string): Promise<void> {
 export function toProjectInventoryItem(
   master: MasterMaterial,
   projectId: string,
-): Omit<InventoryItem, "id"> & { masterMaterialId: string; hsn?: string; gstRate?: number } {
+): Omit<InventoryItem, "id"> & { masterMaterialId: string; hsn?: string; gstRate?: number; openingQty: number } {
   return {
     projectId,
     masterMaterialId: master.id,
@@ -116,6 +116,8 @@ export function toProjectInventoryItem(
     hsn: master.hsn,
     gstRate: master.gstRate,
     quantity: 0,
+    // Recorded, so the first goods receipt never has to guess it (goodsReceipt/stock.ts).
+    openingQty: 0,
     unit: master.unit || "Nos",
     // Indicative only — the real landed cost comes from goods receipts.
     unitCost: master.indicativeRate || 0,

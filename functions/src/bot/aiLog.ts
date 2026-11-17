@@ -87,7 +87,7 @@ Rules:
 - Each entry's "note" is anything worth recording about that task that is not captured above (weather, delays, instructions), in English, at most 200 characters. Empty string if nothing.
 
 Answer with JSON only, in exactly this shape:
-{"intent":"daily_log","workDate":null,"logs":[{"taskId":"...","progressPercent":40,"materials":[{"materialId":"...","quantity":1}],"labour":[{"roleId":"...","headcount":1}],"equipment":[{"equipmentId":"...","quantity":1,"unit":"hours"}],"note":""}],"placed":[],"unmatched":[]}
+{"intent":"daily_log","workDate":null,"logs":[{"taskId":"...","progressPercent":40,"materials":[{"materialId":"...","quantity":1}],"labour":[{"roleId":"...","headcount":1.5}],"equipment":[{"equipmentId":"...","quantity":1,"unit":"hours"}],"note":""}],"placed":[],"unmatched":[]}
 
 MESSAGE:
 ${clip(message, 1200)}`;
@@ -117,7 +117,7 @@ export function sanitizeAiLog(raw: any, ctx: AiLogContext): AiLogResult {
     for (const r of rows) {
       const k = key(r);
       const prev = map.get(k);
-      if (prev) (prev as any)[field] = Number((prev as any)[field]) + Number((r as any)[field]);
+      if (prev) (prev as any)[field] = Math.round((Number((prev as any)[field]) + Number((r as any)[field])) * 1000) / 1000;
       else map.set(k, { ...r });
     }
     return [...map.values()];
@@ -135,7 +135,8 @@ export function sanitizeAiLog(raw: any, ctx: AiLogContext): AiLogResult {
   const labour = merge(
     (Array.isArray(raw.labour) ? raw.labour : []).flatMap((l: any) => {
       const role = ctx.roles.find((x) => x.id === String(l?.roleId ?? ""));
-      const headcount = Math.floor(posNum(l?.headcount));
+      // To one decimal: 2.5 = two full shifts and a half.
+      const headcount = Math.round(posNum(l?.headcount) * 10) / 10;
       return role && headcount ? [{ roleId: role.id, roleName: role.name, headcount }] : [];
     }),
     (r: any) => r.roleId, "headcount",
@@ -239,7 +240,7 @@ export function sanitizeAiLogs(raw: any, ctx: AiLogContext): AiLogsResult {
       const out = a.map((x) => ({ ...x }));
       for (const x of b) {
         const hit: any = out.find((y) => key(y) === key(x));
-        if (hit) hit[field] = Number(hit[field]) + Number((x as any)[field]);
+        if (hit) hit[field] = Math.round((Number(hit[field]) + Number((x as any)[field])) * 1000) / 1000;
         else out.push({ ...x });
       }
       return out;

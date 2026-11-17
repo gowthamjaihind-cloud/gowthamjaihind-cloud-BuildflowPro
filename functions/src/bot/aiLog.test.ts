@@ -47,10 +47,10 @@ describe("plain-language daily log", () => {
   });
 
   it("rejects zero, negative and non-numeric quantities, and adds repeats together", () => {
-    const r = sanitizeAiLog({ intent: "daily_log", taskId: "t1", materials: [{ materialId: "m1", quantity: 0 }, { materialId: "m1", quantity: -4 }, { materialId: "m1", quantity: "ten" }, { materialId: "m1", quantity: 5 }, { materialId: "m1", quantity: 7 }], labour: [{ roleId: "r1", headcount: 2.9 }] }, ctx);
+    const r = sanitizeAiLog({ intent: "daily_log", taskId: "t1", materials: [{ materialId: "m1", quantity: 0 }, { materialId: "m1", quantity: -4 }, { materialId: "m1", quantity: "ten" }, { materialId: "m1", quantity: 5 }, { materialId: "m1", quantity: 7 }], labour: [{ roleId: "r1", headcount: 2.94 }] }, ctx);
     if (r.kind !== "log") throw new Error("expected a log");
     expect(r.draft.materials).toEqual([{ materialId: "m1", name: "OPC 53 Cement", unit: "bag", quantity: 12 }]);
-    expect(r.draft.labour[0].headcount).toBe(2);
+    expect(r.draft.labour[0].headcount).toBe(2.9); // head count to one decimal
   });
 
   it("treats anything that is not a work report as not a log", () => {

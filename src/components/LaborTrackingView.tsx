@@ -157,6 +157,18 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     return logs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [dailyLogs, rateCards, tasks, vendors]);
 
+  // RA bill period: only unbilled work dated inside it goes on the bills ("" = open-ended).
+  const [raFrom, setRaFrom] = useState("");
+  const [raTo, setRaTo] = useState("");
+  const dayOf = (v: any): string =>
+    typeof v === "string" ? v.slice(0, 10) : typeof v?.seconds === "number" ? new Date(v.seconds * 1000).toISOString().slice(0, 10) : "";
+  const inRaPeriod = (v: any) => {
+    const d = dayOf(v);
+    if (!raFrom && !raTo) return true;
+    if (!d) return false;
+    return (!raFrom || d >= raFrom) && (!raTo || d <= raTo);
+  };
+
   // Modals
   const [isAddingRate, setIsAddingRate] = useState(false);
   const [isDeletingRate, setIsDeletingRate] = useState<string | null>(null);
@@ -263,7 +275,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     net: number,
     logIds: string[],
     isChangeOrder: boolean = false,
-    extra: { lumpSumIds?: string[]; marginPct?: number; marginAmount?: number } = {},
+    extra: { lumpSumIds?: string[]; marginPct?: number; marginAmount?: number; periodFrom?: string; periodTo?: string } = {},
   ) => {
     if (!isAdminOrOwner) return;
     if (isProcessing) return;
@@ -297,6 +309,9 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
           lumpSumIds: extra.lumpSumIds || [],
           marginPct: extra.marginPct || 0,
           marginAmount: extra.marginAmount || 0,
+          // The period the bill covers: the chosen range, else the dates of the work on it.
+          periodFrom: extra.periodFrom || "",
+          periodTo: extra.periodTo || "",
         };
 
         transaction.set(billRef, billData);
@@ -637,10 +652,12 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         lumpSumIds: string[];
         marginPct: number;
         marginAmount: number;
+        periodFrom: string;
+        periodTo: string;
       }[] = [];
       // Lump sums not yet on a bill go on the base-contract bill.
       const billedLumps = new Set(raBills.flatMap((b) => b.lumpSumIds || []));
-      const openLumps = rateCards.filter((r) => r.vendorId === vendor.id && isLumpSum(r) && !billedLumps.has(r.id));
+      const openLumps = rateCards.filter((r) => r.vendorId === vendor.id && isLumpSum(r) && !billedLumps.has(r.id) && inRaPeriod(r.date));
       const marginPct = marginPctOf(vendor.id, allVendors);
 
       const buildRow = (
@@ -651,6 +668,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         const logs = vendorLogs.filter(
           (l) =>
             !billedSet.has(l.id) &&
+            inRaPeriod(l.date) &&
             (l.items || []).some(
               (i) => taskIsChangeOrder(i.taskId) === changeOrder,
             ),
@@ -680,6 +698,10 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
             lumpSumIds: lumps.map((r) => r.id),
             marginPct: bill.marginPct,
             marginAmount: bill.margin,
+            ...(() => {
+              const days = [...logs.map((l) => dayOf(l.date)), ...lumps.map((r) => dayOf(r.date))].filter(Boolean).sort();
+              return { periodFrom: raFrom || days[0] || "", periodTo: raTo || days[days.length - 1] || "" };
+            })(),
           });
         }
       };
@@ -698,6 +720,28 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
             </h2>
             <p className="text-ink-muted font-bold text-xs md:text-sm tracking-tight uppercase tracking-[0.1em]">
               Running account fiscal reconciliation.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-end gap-3 bg-panel p-4 rounded-2xl border border-divider">
+            <label className="space-y-1">
+              <span className="block text-[10px] font-black uppercase tracking-widest text-ink-muted">Bill period from</span>
+              <input type="date" value={raFrom} max={raTo || undefined} onChange={(e) => setRaFrom(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-surface border border-divider text-sm font-bold text-ink" />
+            </label>
+            <label className="space-y-1">
+              <span className="block text-[10px] font-black uppercase tracking-widest text-ink-muted">To</span>
+              <input type="date" value={raTo} min={raFrom || undefined} onChange={(e) => setRaTo(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-surface border border-divider text-sm font-bold text-ink" />
+            </label>
+            {(raFrom || raTo) && (
+              <button type="button" onClick={() => { setRaFrom(""); setRaTo(""); }} className="px-3 py-2 rounded-xl text-xs font-bold text-ink-muted hover:text-ink">
+                Clear
+              </button>
+            )}
+            <p className="text-[11px] text-ink-muted basis-full">
+              {raFrom || raTo
+                ? "Only unbilled work (and lump sums) dated in this period go on the bills below; the rest waits for the next bill."
+                : "Choose a period to certify a bill for those dates only. Without one, all unbilled work is included."}
             </p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:gap-10">
@@ -729,6 +773,9 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                     <p className="text-ink-muted font-bold uppercase tracking-[0.2em] text-[10px] md:text-[10px]">
                       {bill.logCount} Postings Certified
                     </p>
+                    {(bill.periodFrom || bill.periodTo) && (
+                      <p className="text-ink text-[11px] font-bold mt-1">Work from {bill.periodFrom || "…"} to {bill.periodTo || "…"}</p>
+                    )}
                     {(bill.lumpSum > 0 || bill.marginAmount > 0) && (
                       <p className="text-ink-muted text-[11px] font-semibold mt-1.5">
                         Wages ₹{bill.wages.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
@@ -784,7 +831,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         bill.netPayable,
                         bill.logIds,
                         bill.isChangeOrder,
-                        { lumpSumIds: bill.lumpSumIds, marginPct: bill.marginPct, marginAmount: bill.marginAmount },
+                        { lumpSumIds: bill.lumpSumIds, marginPct: bill.marginPct, marginAmount: bill.marginAmount, periodFrom: bill.periodFrom, periodTo: bill.periodTo },
                       )
                     }
                     disabled={isProcessing}
@@ -831,6 +878,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         </span>
                         <span className="font-mono text-[10px] md:text-[10px] font-black text-ink-muted">
                           {bill.billDate}
+                          {(bill.periodFrom || bill.periodTo) && ` · work ${bill.periodFrom || "…"} to ${bill.periodTo || "…"}`}
                         </span>
                       </div>
                     </div>
@@ -962,6 +1010,9 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         </td>
                         <td className="px-6 md:px-10 py-6 md:py-8 font-mono text-[10px] md:text-[10px] font-black text-ink-muted group-hover:text-ink-muted apple-transition">
                           {bill.billDate}
+                          {(bill.periodFrom || bill.periodTo) && (
+                            <div className="mt-1 font-bold">Work {bill.periodFrom || "…"} to {bill.periodTo || "…"}</div>
+                          )}
                         </td>
                         <td className="px-6 md:px-10 py-6 md:py-8">
                           <div className="font-black text-ink text-base md:text-lg tracking-tight leading-none truncate max-w-[150px] md:max-w-none">
