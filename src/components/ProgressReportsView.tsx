@@ -765,7 +765,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
       {logToEdit && (
         <DailyLogEntryScreen
           projectId={projectId}
-          taskId={logToEdit.taskId}
+          // No fixed task: the log's task is preselected and can be changed.
           editLog={logToEdit}
           onClose={() => setLogToEdit(null)}
         />
