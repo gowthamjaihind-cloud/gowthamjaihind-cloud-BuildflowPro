@@ -10,3 +10,4 @@ export const demoProjects: any[] = [];
 export const demoTasks: any[] = [];
 export const demoCollections: Record<string, any[]> = {};
 export const demoInsights: any = null;
+export const demoCompany: any = null;

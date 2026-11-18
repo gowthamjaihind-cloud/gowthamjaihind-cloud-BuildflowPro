@@ -152,7 +152,7 @@
     {
       "id": "inventory",
       "kind": "screen",
-      "bars": 3,
+      "bars": 2,
       "enter": "rise",
       "kicker": "Inventory",
       "line": "What's in stock, what's running out.",
@@ -165,10 +165,16 @@
           "w": 2900
         },
         {
-          "at": 15,
+          "at": 10,
           "cx": 1944,
           "cy": 1000,
           "w": 2900
+        },
+        {
+          "at": 45,
+          "cx": 1640,
+          "cy": 820,
+          "w": 1950
         },
         {
           "at": 68,
@@ -177,13 +183,7 @@
           "w": 1950
         },
         {
-          "at": 102,
-          "cx": 1640,
-          "cy": 820,
-          "w": 1950
-        },
-        {
-          "at": 135,
+          "at": 90,
           "cx": 2260,
           "cy": 820,
           "w": 1950
@@ -191,34 +191,30 @@
       ],
       "marks": [
         {
-          "at": 63,
+          "at": 42,
           "x": 736,
           "y": 571,
           "w": 773,
           "h": 330
         },
         {
-          "at": 120,
+          "at": 80,
           "x": 2379,
           "y": 571,
           "w": 773,
           "h": 330
         }
       ],
-      "vo": "Inventory tells you what's in stock, and what's running out."
+      "vo": "What's in stock, and what's running out."
     },
     {
-      "id": "procurement",
+      "id": "stock-card",
       "kind": "screen",
       "bars": 3,
       "enter": "push",
-      "kicker": "Procurement",
-      "chips": [
-        "Purchase Orders",
-        "Goods Receipt",
-        "Bills"
-      ],
-      "src": "l-07-procurement.png",
+      "kicker": "Stock card",
+      "line": "when and from whom it was received, and where it was used",
+      "src": "l-x-stock-card.png",
       "camera": [
         {
           "at": 0,
@@ -233,46 +229,157 @@
           "w": 2900
         },
         {
-          "at": 68,
-          "cx": 1500,
-          "cy": 800,
-          "w": 1900
-        },
-        {
-          "at": 99,
-          "cx": 1500,
-          "cy": 800,
-          "w": 1900
+          "at": 60,
+          "cx": 2430,
+          "cy": 560,
+          "w": 1650
         },
         {
           "at": 135,
-          "cx": 2300,
-          "cy": 700,
-          "w": 1900
+          "cx": 2430,
+          "cy": 620,
+          "w": 1650
         }
       ],
       "marks": [
         {
-          "at": 48,
-          "x": 792,
-          "y": 328,
-          "w": 1128,
-          "h": 91
+          "at": 55,
+          "x": 1712,
+          "y": 250,
+          "w": 1400,
+          "h": 110
         },
         {
-          "at": 117,
-          "x": 2600,
-          "y": 704,
-          "w": 330,
-          "h": 528
+          "at": 105,
+          "x": 1712,
+          "y": 705,
+          "w": 1440,
+          "h": 120
         }
       ],
-      "vo": "Purchase orders, goods receipts and bills, in one place."
+      "vo": "Tap a material to see every receipt and every use, with a running balance."
+    },
+    {
+      "id": "po-document",
+      "kind": "screen",
+      "bars": 3,
+      "enter": "iris",
+      "kicker": "Purchase Orders",
+      "line": "View the purchase order as it will be sent, then download or print it",
+      "src": "l-x-po-document.png",
+      "camera": [
+        {
+          "at": 0,
+          "cx": 1600,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 15,
+          "cx": 1600,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 55,
+          "cx": 1600,
+          "cy": 620,
+          "w": 1800
+        },
+        {
+          "at": 95,
+          "cx": 1600,
+          "cy": 620,
+          "w": 1800
+        },
+        {
+          "at": 135,
+          "cx": 1750,
+          "cy": 1160,
+          "w": 1800
+        }
+      ],
+      "marks": [
+        {
+          "at": 50,
+          "x": 850,
+          "y": 285,
+          "w": 640,
+          "h": 250
+        },
+        {
+          "at": 118,
+          "x": 1733,
+          "y": 1180,
+          "w": 585,
+          "h": 75
+        }
+      ],
+      "vo": "Purchase orders work out the GST and print on your letterhead, ready to send."
+    },
+    {
+      "id": "do-it",
+      "kind": "screen",
+      "bars": 3,
+      "enter": "rise",
+      "kicker": "Do it for me",
+      "line": "Type or say what you want done.",
+      "src": "l-x-doit.png",
+      "camera": [
+        {
+          "at": 0,
+          "cx": 1944,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 11,
+          "cx": 1944,
+          "cy": 1000,
+          "w": 2900
+        },
+        {
+          "at": 45,
+          "cx": 2150,
+          "cy": 1350,
+          "w": 2100
+        },
+        {
+          "at": 135,
+          "cx": 2150,
+          "cy": 1350,
+          "w": 2100
+        }
+      ],
+      "marks": [
+        {
+          "at": 41,
+          "x": 2380,
+          "y": 955,
+          "w": 770,
+          "h": 75
+        },
+        {
+          "at": 75,
+          "x": 2380,
+          "y": 1280,
+          "w": 770,
+          "h": 200
+        },
+        {
+          "at": 112,
+          "x": 2460,
+          "y": 1795,
+          "w": 590,
+          "h": 105
+        }
+      ],
+      "vo": "Type or say what you want done. Nothing is saved until you confirm."
     },
     {
       "id": "insights",
       "kind": "screen",
-      "bars": 4,
+      "bars": 3,
       "enter": "iris",
       "kicker": "Project Insights",
       "line": "Reads your costs, schedule and daily logs, then flags what needs attention.",
@@ -285,25 +392,25 @@
           "w": 2900
         },
         {
-          "at": 16,
+          "at": 12,
           "cx": 1944,
           "cy": 900,
           "w": 2900
         },
         {
-          "at": 73,
+          "at": 55,
           "cx": 1700,
           "cy": 820,
           "w": 2000
         },
         {
-          "at": 133,
+          "at": 100,
           "cx": 1700,
           "cy": 820,
           "w": 2000
         },
         {
-          "at": 187,
+          "at": 140,
           "cx": 2540,
           "cy": 1560,
           "w": 1900
@@ -311,21 +418,21 @@
       ],
       "marks": [
         {
-          "at": 67,
+          "at": 50,
           "x": 736,
           "y": 565,
           "w": 1355,
           "h": 77
         },
         {
-          "at": 117,
+          "at": 88,
           "x": 736,
           "y": 818,
           "w": 1797,
           "h": 206
         },
         {
-          "at": 187,
+          "at": 140,
           "x": 1965,
           "y": 1722,
           "w": 1187,
@@ -335,13 +442,13 @@
       "vo": "Insights reads your costs, schedule and daily logs, then flags what needs attention."
     },
     {
-      "id": "estimates",
+      "id": "share",
       "kind": "screen",
       "bars": 3,
       "enter": "push",
-      "kicker": "Client Estimates",
-      "line": "Estimates sent to the client, and what they've approved.",
-      "src": "l-10-client-estimates.png",
+      "kicker": "Share with client",
+      "line": "Notes, costs, rates, materials and vendor details are never shown.",
+      "src": "l-x-share.png",
       "camera": [
         {
           "at": 0,
@@ -356,29 +463,35 @@
           "w": 2900
         },
         {
-          "at": 65,
-          "cx": 1700,
-          "cy": 780,
-          "w": 1950
+          "at": 60,
+          "cx": 1600,
+          "cy": 960,
+          "w": 2050
+        },
+        {
+          "at": 135,
+          "cx": 1600,
+          "cy": 960,
+          "w": 2050
         }
       ],
       "marks": [
         {
-          "at": 70,
-          "x": 1320,
-          "y": 720,
-          "w": 300,
-          "h": 232
+          "at": 55,
+          "x": 1090,
+          "y": 785,
+          "w": 1020,
+          "h": 480
         },
         {
-          "at": 125,
-          "x": 790,
-          "y": 718,
-          "w": 1820,
-          "h": 100
+          "at": 110,
+          "x": 1100,
+          "y": 1300,
+          "w": 990,
+          "h": 95
         }
       ],
-      "vo": "Track the estimates you send your client, and what they've approved."
+      "vo": "Share a live page with your client. Costs and rates are never shown."
     },
     {
       "id": "reports",

@@ -501,7 +501,132 @@ def kinetic(total, bpm=120, marks=None):
     return t.out(total)
 
 
-CUES = {"launch": launch, "walkthrough": walkthrough, "kinetic": kinetic}
+def impact(seconds=2.2, gain=1.0, seed=17):
+    """A drop hit: a long pitch-falling kick for the body and a burst of dark
+    noise for the air, so the downbeat lands as an EVENT, not just a louder
+    bar."""
+    n = int(seconds * SR)
+    t = np.arange(n) / SR
+    f = 150 * np.exp(-9 * t) + 36
+    body = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-2.2 * t)
+    rng = np.random.default_rng(seed)
+    air = low_pass(rng.standard_normal(n), 1800) * np.exp(-5.5 * t)
+    return (body * 0.9 + air * 0.35) * gain
+
+
+def pulse(total, bpm=120, marks=None, hits=None):
+    """
+    The fast cut's cue. D minor, 120 BPM -- 15 frames to the beat, the same
+    grid the picture is cut on -- in five parts read off the film's own
+    impacts (`hits`, from pulse.json via films/pulse.mjs):
+
+      intro      filtered pad, ticking hats and a riser INTO the first hit,
+                 under the type ("Every site. Every rupee. Every day.")
+      mark       the logo: an impact and an open chord, no drums yet
+      drop 1     the montage: four-on-the-floor, claps on 2 and 4, rolling
+                 sixteenth hats, eighth-note sub bass, the pumped pad, a pluck
+                 arpeggio -- and a short whoosh on every cut (`marks`)
+      breakdown  the two bars before the second drop: drums out, the pad
+                 opens, a riser builds back in
+      drop 2     a chord stab on every beat -- each one-beat cut -- and a
+                 snare roll through the last bar into the end card
+      end        an impact and the tonic held to the last frame
+
+    Every section boundary is a hit time, so moving a shot in pulse.json moves
+    the music with it.
+    """
+    beat = 60 / bpm
+    bar = 4 * beat
+    t = Track(total)
+    hits = sorted(h for h in (hits or []) if 0 <= h < total)
+    marks = sorted(m for m in (marks or []) if 0 < m < total)
+    # Section boundaries, falling back to proportions when run without a film.
+    h_mark = hits[0] if len(hits) > 0 else total * 0.1
+    h_drop = hits[1] if len(hits) > 1 else h_mark + bar / 2
+    h_drop2 = hits[2] if len(hits) > 2 else total * 0.65
+    h_end = hits[3] if len(hits) > 3 else total - 3 * bar
+    h_break = h_drop2 - 2 * bar
+
+    prog = [
+        (["D3", "F3", "A3", "D4"], "D2"),
+        (["A#2", "D3", "F3", "A#3"], "A#1"),
+        (["F3", "A3", "C4", "F4"], "F2"),
+        (["C3", "E3", "G3", "C4"], "C2"),
+    ]
+    nb = int(bar * SR)
+    phase = (np.arange(nb) / SR % beat) / beat
+    pump = 1 - 0.7 * np.exp(-phase * 7)
+
+    n_bars = int(total / bar) + 1
+    for b in range(n_bars):
+        at = b * bar
+        if at >= total:
+            break
+        notes, bass = prog[b % 4]
+        in_drop1 = h_drop - 1e-6 <= at < h_break - 1e-6
+        in_break = h_break - 1e-6 <= at < h_drop2 - 1e-6
+        in_drop2 = h_drop2 - 1e-6 <= at < h_end - 1e-6
+        in_end = at >= h_end - 1e-6
+        if at < h_mark - 1e-6:                     # intro: dark and thin
+            held = sum(pad(hz(n), bar, 1.0, attack=0.4, release=0.3) for n in notes)
+            t.add(at, low_pass(held, 900), 0.55)
+            for i in range(4):
+                t.add(at + i * beat, hat(0.04, seed=b * 4 + i), 0.5 + 0.12 * b)
+            continue
+        if in_end:
+            continue                               # the end chord is placed below
+        held = sum(pad(hz(n), bar, 1.0, attack=0.02 if not in_break else 0.3, release=0.08) for n in notes)
+        held = held[:nb]
+        if in_break:
+            t.add(at, held, 0.8)
+        else:
+            t.add(at, held * pump[: len(held)], 1.1)
+        if in_drop1 or in_drop2:
+            for i in range(8):
+                f = hz(bass) * (2 if i % 2 else 1)
+                t.add(at + i * beat / 2, sub(f, beat * 0.45), 0.95 if i % 2 == 0 else 0.45)
+            for i in range(4):
+                t.add(at + i * beat, kick(0.3), 1.05)
+            for i in (1, 3):
+                t.add(at + i * beat, clap(seed=b * 4 + i), 0.95)
+            for i in range(16):
+                accent = 1.0 if i % 4 == 2 else 0.45
+                t.add(at + i * beat / 4, hat(0.09 if i % 4 == 2 else 0.035, seed=b * 16 + i), accent)
+        if in_drop1:
+            arp = notes[1:] + [notes[1]]
+            for i in range(8):
+                t.add(at + i * beat / 2, pluck(hz(arp[i % len(arp)]) * 2, beat * 0.55), 0.38 if i % 2 == 0 else 0.26)
+        if in_drop2:
+            # A stab on every beat: each one-beat cut gets its own chord hit.
+            for i in range(4):
+                for n in notes[1:]:
+                    t.add(at + i * beat, pluck(hz(n) * 2, beat * 0.8), 0.32)
+        if in_break and at >= h_break + bar - 1e-6:
+            # Snare-style roll into drop 2: claps on sixteenths, rising.
+            for i in range(16):
+                t.add(at + i * beat / 4, clap(seed=300 + i), 0.18 + 0.05 * i)
+
+    # Risers into the first hit and into drop 2; a short one into the end.
+    for target, length in ((h_mark, h_mark), (h_drop2, 2 * bar), (h_end, bar)):
+        length = max(min(length, target), 0.5)
+        t.add(target - length, swell(length, seed=int(target * 10)), 1.4)
+    # Impacts on every hit.
+    for k, h in enumerate(hits):
+        t.add(h, impact(seed=40 + k), 0.9 if k else 0.8)
+    # The mark: an open chord under the logo, before the beat drops.
+    chord(t, h_mark, ["D3", "A3", "D4", "F4"], h_drop - h_mark + 0.6, pad, 0.5)
+    # A short whoosh on each montage cut (drop 1 only: drop 2 has its stabs).
+    for k, m in enumerate(marks):
+        if h_drop + 0.1 < m < h_break - 0.1:
+            w, peak = whoosh(rise=0.22, tail=0.16, seed=60 + k)
+            t.add(max(m - peak, 0), w, 0.55)
+    # The end: tonic held to the last frame.
+    chord(t, h_end, ["D3", "A3", "D4", "F4", "A4"], total - h_end + 0.5, pad, 0.55)
+    t.add(h_end, sub(hz("D2"), total - h_end), 0.6)
+    return t.out(total)
+
+
+CUES = {"launch": launch, "walkthrough": walkthrough, "kinetic": kinetic, "pulse": pulse}
 
 
 def write_wav(path, mono):
@@ -541,6 +666,11 @@ def main():
         i = args.index("--marks")
         marks = [float(x) for x in args[i + 1].split(",") if x.strip()]
         del args[i : i + 2]
+    hits = None
+    if "--hits" in args:
+        i = args.index("--hits")
+        hits = [float(x) for x in args[i + 1].split(",") if x.strip()]
+        del args[i : i + 2]
     if len(args) not in (3, 4):
         print(
             "usage: score.py <launch|walkthrough|kinetic> <out.wav> <seconds> [bpm] [--bloom <sec>] [--marks a,b,c]",
@@ -557,15 +687,17 @@ def main():
         kw["bpm"] = bpm
     if bloom is not None and cue == "walkthrough":
         kw["bloom"] = bloom
-    if marks is not None and cue == "kinetic":
+    if marks is not None and cue in ("kinetic", "pulse"):
         kw["marks"] = marks
+    if hits is not None and cue == "pulse":
+        kw["hits"] = hits
     audio = CUES[cue](seconds, **kw)
     # Reverb is per-cue because the cues move at different speeds. The two
     # slow beds want a room around them; under the kinetic cue's claps and
     # off-beat hats a 0.34 mix smears consecutive hits into each other and the
     # grid stops being audible -- which, in a film whose transitions land ON
     # that grid, loses the thing the tempo was chosen for.
-    audio = reverb(audio, mix={"launch": 0.30, "kinetic": 0.16}.get(cue, 0.34))
+    audio = reverb(audio, mix={"launch": 0.30, "kinetic": 0.16, "pulse": 0.14}.get(cue, 0.34))
     # Nothing in either cue needs to be below 45 Hz; leaving it there only eats
     # headroom that the limiter then takes back out of the music.
     audio = high_pass(audio, 45)

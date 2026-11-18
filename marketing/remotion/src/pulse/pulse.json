@@ -1,0 +1,559 @@
+{
+ "fps": 30,
+ "bpm": 120,
+ "theme": "dark",
+ "shots": [
+  {
+   "kind": "type",
+   "beats": 2,
+   "text": "Every site.",
+   "fx": "rise"
+  },
+  {
+   "kind": "type",
+   "beats": 2,
+   "text": "Every rupee.",
+   "fx": "rise"
+  },
+  {
+   "kind": "type",
+   "beats": 2,
+   "text": "Every day.",
+   "fx": "rise"
+  },
+  {
+   "kind": "type",
+   "beats": 2,
+   "text": "Reported.",
+   "fx": "glitch",
+   "style": "outline"
+  },
+  {
+   "kind": "logo",
+   "beats": 4,
+   "fx": "flash",
+   "hit": true
+  },
+  {
+   "kind": "phones",
+   "beats": 2,
+   "images": [
+    "p-menu.png",
+    "p-mats.png"
+   ],
+   "word": "LOG IT",
+   "sub": "From Telegram",
+   "fx": "punch",
+   "hit": true
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-04-daily-logs.png",
+   "from": [
+    1944,
+    1000,
+    2620
+   ],
+   "to": [
+    1533,
+    871,
+    1900
+   ],
+   "word": "LOGGED",
+   "sub": "Daily logs",
+   "fx": "whipL",
+   "vto": [
+    1150,
+    860,
+    1050
+   ]
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-01-dashboard.png",
+   "from": [
+    1944,
+    1000,
+    2620
+   ],
+   "to": [
+    1944,
+    684,
+    2500
+   ],
+   "word": "TRACK",
+   "sub": "Progress \u00b7 spend \u00b7 what's slipping",
+   "fx": "whipR",
+   "vto": [
+    1200,
+    684,
+    1150
+   ]
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-03-wbs.png",
+   "from": [
+    1944,
+    900,
+    2400
+   ],
+   "to": [
+    1700,
+    900,
+    2000
+   ],
+   "word": "PLAN",
+   "sub": "Work breakdown",
+   "fx": "spin",
+   "vto": [
+    1300,
+    900,
+    1200
+   ]
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-06-inventory.png",
+   "from": [
+    1944,
+    1000,
+    2620
+   ],
+   "to": [
+    1122,
+    737,
+    1500
+   ],
+   "word": "STOCK",
+   "sub": "What's in stock, what's running out",
+   "fx": "punch"
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-x-stock-card.png",
+   "from": [
+    2430,
+    700,
+    1700
+   ],
+   "to": [
+    2420,
+    560,
+    1500
+   ],
+   "word": "EVERY BAG",
+   "sub": "Stock card",
+   "fx": "whipL"
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-07-procurement.png",
+   "from": [
+    1944,
+    1000,
+    2620
+   ],
+   "to": [
+    1944,
+    932,
+    2100
+   ],
+   "word": "ORDER",
+   "sub": "Purchase orders",
+   "fx": "whipR",
+   "vto": [
+    1500,
+    932,
+    1150
+   ]
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-x-po-document.png",
+   "from": [
+    1600,
+    700,
+    1900
+   ],
+   "to": [
+    1700,
+    1150,
+    1700
+   ],
+   "word": "GST \u00b7 SENT",
+   "sub": "On your letterhead",
+   "fx": "zoom"
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-07-procurement-grn.png",
+   "from": [
+    1944,
+    1000,
+    2620
+   ],
+   "to": [
+    1800,
+    900,
+    2100
+   ],
+   "word": "RECEIVED",
+   "sub": "Goods receipt",
+   "fx": "punch",
+   "vto": [
+    1250,
+    900,
+    1100
+   ]
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-05-labour.png",
+   "from": [
+    1944,
+    1000,
+    2620
+   ],
+   "to": [
+    1944,
+    960,
+    2200
+   ],
+   "word": "PAY",
+   "sub": "Labour rates \u00b7 RA bills",
+   "fx": "whipL",
+   "vto": [
+    1200,
+    960,
+    1000
+   ]
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-09-cost-management.png",
+   "from": [
+    1944,
+    1000,
+    2620
+   ],
+   "to": [
+    1944,
+    834,
+    2500
+   ],
+   "word": "COST",
+   "sub": "Every head adds up",
+   "fx": "whipR"
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-02-insights.png",
+   "from": [
+    1944,
+    1000,
+    2620
+   ],
+   "to": [
+    1700,
+    900,
+    2100
+   ],
+   "word": "FLAGGED",
+   "sub": "Project Insights",
+   "fx": "glitch"
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-10-client-estimates.png",
+   "from": [
+    1944,
+    1000,
+    2620
+   ],
+   "to": [
+    1944,
+    900,
+    2300
+   ],
+   "word": "ESTIMATE",
+   "sub": "What the client approved",
+   "fx": "punch",
+   "vto": [
+    1500,
+    900,
+    1150
+   ]
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-11-reports.png",
+   "from": [
+    1944,
+    1000,
+    2620
+   ],
+   "to": [
+    1944,
+    1000,
+    2200
+   ],
+   "word": "REPORT",
+   "sub": "A report you can send",
+   "fx": "whipL",
+   "vto": [
+    1350,
+    1000,
+    1150
+   ]
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-12-vault.png",
+   "from": [
+    1944,
+    1000,
+    2620
+   ],
+   "to": [
+    1944,
+    1000,
+    2300
+   ],
+   "word": "FILED",
+   "sub": "Document Vault",
+   "fx": "whipR",
+   "vto": [
+    1300,
+    1000,
+    1150
+   ]
+  },
+  {
+   "kind": "card",
+   "beats": 2,
+   "src": "l-x-share.png",
+   "from": [
+    1600,
+    972,
+    2400
+   ],
+   "to": [
+    1600,
+    1000,
+    1900
+   ],
+   "word": "SHARE",
+   "sub": "A live page for your client",
+   "fx": "zoom"
+  },
+  {
+   "kind": "card",
+   "beats": 4,
+   "src": "l-x-doit.png",
+   "from": [
+    2150,
+    1300,
+    2400
+   ],
+   "to": [
+    2700,
+    1300,
+    1150
+   ],
+   "word": "SAY IT",
+   "sub": "Do it for me",
+   "fx": "rise",
+   "breakdown": true
+  },
+  {
+   "kind": "type",
+   "beats": 4,
+   "text": "Preview first.",
+   "sub": "Nothing is saved until you confirm.",
+   "fx": "rise",
+   "style": "invert"
+  },
+  {
+   "kind": "full",
+   "beats": 1,
+   "src": "l-01-dashboard.png",
+   "to": [
+    1026,
+    684,
+    700
+   ],
+   "fx": "punch",
+   "hit": true
+  },
+  {
+   "kind": "full",
+   "beats": 1,
+   "src": "l-01-dashboard.png",
+   "to": [
+    2250,
+    684,
+    700
+   ],
+   "fx": "whipL"
+  },
+  {
+   "kind": "full",
+   "beats": 1,
+   "src": "l-06-inventory.png",
+   "to": [
+    1122,
+    737,
+    850
+   ],
+   "fx": "whipR"
+  },
+  {
+   "kind": "full",
+   "beats": 1,
+   "src": "l-x-stock-card.png",
+   "to": [
+    2412,
+    305,
+    1000
+   ],
+   "fx": "punch"
+  },
+  {
+   "kind": "full",
+   "beats": 1,
+   "src": "l-x-po-document.png",
+   "to": [
+    2025,
+    1217,
+    800
+   ],
+   "fx": "whipL"
+  },
+  {
+   "kind": "full",
+   "beats": 1,
+   "src": "l-x-po-document.png",
+   "to": [
+    1170,
+    410,
+    800
+   ],
+   "fx": "whipR"
+  },
+  {
+   "kind": "full",
+   "beats": 1,
+   "src": "l-04-daily-logs.png",
+   "to": [
+    2765,
+    860,
+    800
+   ],
+   "fx": "punch"
+  },
+  {
+   "kind": "full",
+   "beats": 1,
+   "src": "l-09-cost-management.png",
+   "to": [
+    1020,
+    834,
+    800
+   ],
+   "fx": "whipL"
+  },
+  {
+   "kind": "full",
+   "beats": 1,
+   "src": "l-09-cost-management.png",
+   "to": [
+    2868,
+    834,
+    800
+   ],
+   "fx": "whipR"
+  },
+  {
+   "kind": "full",
+   "beats": 1,
+   "src": "l-x-share.png",
+   "to": [
+    1600,
+    1025,
+    1200
+   ],
+   "fx": "punch"
+  },
+  {
+   "kind": "full",
+   "beats": 1,
+   "src": "l-x-doit.png",
+   "to": [
+    2765,
+    1360,
+    900
+   ],
+   "fx": "whipL"
+  },
+  {
+   "kind": "full",
+   "beats": 1,
+   "src": "l-11-reports.png",
+   "to": [
+    1450,
+    950,
+    1100
+   ],
+   "fx": "whipR"
+  },
+  {
+   "kind": "type",
+   "beats": 1,
+   "text": "Site.",
+   "fx": "punch",
+   "style": "accent"
+  },
+  {
+   "kind": "type",
+   "beats": 1,
+   "text": "Stock.",
+   "fx": "punch",
+   "style": "accent"
+  },
+  {
+   "kind": "type",
+   "beats": 1,
+   "text": "Money.",
+   "fx": "punch",
+   "style": "accent"
+  },
+  {
+   "kind": "type",
+   "beats": 1,
+   "text": "One app.",
+   "fx": "stutter",
+   "style": "accent"
+  },
+  {
+   "kind": "end",
+   "beats": 12,
+   "fx": "flash",
+   "hit": true
+  }
+ ]
+}

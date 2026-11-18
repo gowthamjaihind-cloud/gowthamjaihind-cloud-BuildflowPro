@@ -8,7 +8,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const CHROME = process.env.CHROME_PATH ||
   "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 
-const SCREENS = join(HERE, "screens");
+const SCREENS = join(HERE, "screens-light"); // the light theme, like every film
 const IMG = {
   wbs:  join(SCREENS, "m-03-wbs.png"),
   logs: join(SCREENS, "m-04-daily-logs.png"),
@@ -27,7 +27,7 @@ const BEATS_EN = [
   { img: "wbs",  a: [740, 880, 1350], b: [1830, 880, 1350],
     h: "Plan it once", s: "Break the job the way you'd write it on paper — foundation, ground floor, first floor. Days and budget go in once.", tag: "WBS" },
   { img: "logs", a: [760, 330, 1560], b: [1640, 330, 1560],
-    h: "The site reports to you", s: "Progress, headcount, material — sent from site. Over Telegram if that's easier. Nobody learns a new app.", tag: "DAILY LOGS", badge: "65% · 22 workers today" },
+    h: "The site reports to you", s: "Progress, headcount, material — sent from site. Over Telegram if that's easier. Nobody learns a new app.", tag: "DAILY LOGS", badge: "61% · 20 workers today" },
   { img: "proc", a: [720, 588, 1350], b: [1810, 588, 1350],
     h: "Buy material", s: "Raise a purchase order. Receive it when it lands. Stock and the supplier's account move on their own.", tag: "PROCUREMENT" },
   { img: "cost", a: [720, 372, 1350], b: [1830, 372, 1350],
@@ -66,14 +66,14 @@ const COPY_EN = {
   introK: "How many calls?", introS: "How many registers?",
   introSub: "To find out what happened on your site today.",
   outroH: "Sitetru", outroTag: "truth, reported from site.",
-  outroL: ["Free plan to start", "From ₹999 / month", "14-day trial — no card"],
+  outroL: ["14-day free trial", "Then from ₹99 / month", "No card needed"],
   url: "sitetru.com",
 };
 const COPY_TA = {
   introK: "எத்தனை கால்?", introS: "எத்தனை ரிஜிஸ்டர்?",
   introSub: "உங்க சைட்ல இன்னிக்கு என்ன நடந்ததுன்னு தெரிஞ்சுக்க.",
   outroH: "Sitetru", outroTag: "தளத்திலிருந்து வரும் உண்மை",
-  outroL: ["இலவசமா ஆரம்பிங்க", "₹999/மாதம் முதல்", "14 நாள் ட்ரையல் — கார்டு வேணாம்"],
+  outroL: ["இலவசமா ஆரம்பிங்க", "₹99/மாதம் முதல்", "14 நாள் ட்ரையல் — கார்டு வேணாம்"],
   url: "sitetru.com",
 };
 
@@ -127,6 +127,8 @@ const easeOut = t => 1-Math.pow(1-t,3);
 const cl = (a,b,t)=>a+(b-a)*Math.max(0,Math.min(1,t));
 
 // ---------- build scenes ----------
+// The brand mark's three bars (remotion/src/kinetic/Mark.tsx), on the markbox tile.
+const BARS = "<svg viewBox='0 0 512 512' width='100%' height='100%'><rect x='136' y='272' width='72' height='104' rx='22' fill='#fff'/><rect x='222' y='212' width='72' height='164' rx='22' fill='#fff'/><rect x='308' y='140' width='72' height='236' rx='22' fill='#fff'/></svg>";
 function el(cls, css, html){ const d=document.createElement("div"); d.className=cls||"";
   if(css) Object.assign(d.style, css); if(html!=null) d.innerHTML=html; return d; }
 
@@ -137,7 +139,7 @@ const intro = el("scene");
     top:"50%", transform:"translateY(-50%)", textAlign: vertical?"center":"left"});
   const m = el("mark",{marginBottom:V.pad*0.7+"px",
     justifyContent: vertical?"center":"flex-start"});
-  m.appendChild(el("markbox",{},"S")); m.appendChild(el("markw",{},"Sitetru"));
+  m.appendChild(el("markbox",{},BARS)); m.appendChild(el("markw",{},"Sitetru"));
   wrap.appendChild(m);
   const b = el("big",{}, C.introK+"<br><em>"+C.introS+"</em>");
   b.id="introBig"; wrap.appendChild(b);
@@ -177,7 +179,7 @@ const footer = el("",{position:"absolute", left:V.dots.x+"px", top:V.foot+"px",
   display:"flex", alignItems:"center", gap:V.markG+"px", opacity:0});
 { const m = el("mark",{});
   m.appendChild(el("markbox",{width:(V.markS*0.72)+"px",height:(V.markS*0.72)+"px",
-    borderRadius:(V.markS*0.19)+"px",fontSize:(V.markS*0.40)+"px"},"S"));
+    borderRadius:(V.markS*0.19)+"px",fontSize:(V.markS*0.40)+"px"},BARS));
   m.appendChild(el("markw",{fontSize:(V.markS*0.46)+"px"},"Sitetru"));
   footer.appendChild(m);
   footer.appendChild(el("url",{fontSize:(V.url*0.78)+"px",opacity:.75}, "\u00b7 " + C.url));
@@ -196,9 +198,9 @@ const outro = el("scene");
     top:"50%", transform:"translateY(-50%)", textAlign: vertical?"center":"left"});
   const m = el("mark",{marginBottom:V.pad*0.55+"px",
     justifyContent: vertical?"center":"flex-start"});
-  m.appendChild(el("markbox",{},"S")); m.appendChild(el("markw",{},"Sitetru"));
+  m.appendChild(el("markbox",{},BARS)); m.appendChild(el("markw",{},"Sitetru"));
   wrap.appendChild(m);
-  const tagline = el("big",{fontSize:(V.big*(vertical?0.70:0.52))+"px", color:BRAND.primaryOnDark}, C.outroTag);
+  const tagline = el("big",{fontSize:(V.big*(vertical?0.70:0.52))+"px", color:"${BRAND.primaryOnDark}"}, C.outroTag);
   tagline.id="outroTag"; wrap.appendChild(tagline);
   const list = el("",{marginTop:V.pad*0.75+"px", display:"flex", flexWrap:"wrap",
     gap:V.pad*0.28+"px", justifyContent: vertical?"center":"flex-start"});

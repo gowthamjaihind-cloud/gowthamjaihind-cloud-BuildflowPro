@@ -3,6 +3,8 @@ import { db } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useAuthStore } from "../store";
 import { OrgSettings } from "../types";
+import { demoRequested } from "../demo";
+import { demoCompany } from "@demo";
 
 // Reads/writes company tax identity on the organization doc
 // (organizations/{orgId}) so both the web app and server-side functions can
@@ -15,6 +17,10 @@ export function useOrgSettings() {
   const [loading, setLoading] = useState(false);
 
   const load = () => {
+    if (__DEMO__ && demoRequested()) {
+      if (demoCompany) setSettings({ companyName: demoCompany.companyName, gstin: demoCompany.gstin, stateCode: demoCompany.stateCode });
+      return;
+    }
     if (!orgId) return;
     let cancelled = false;
     setLoading(true);

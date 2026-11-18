@@ -367,8 +367,8 @@ describe("the light theme", () => {
 
   it.skipIf(!CAN_MEASURE)("and those screenshots are actually light", () => {
     // The filename is a claim; this is the measurement. capture-screens.mjs
-    // defaults to dark, so a re-capture that forgets FILM_THEME=light writes
-    // dark frames under light names and nothing downstream complains.
+    // once defaulted to dark, and a re-capture that forgot FILM_THEME=light wrote
+    // dark frames under light names with nothing downstream complaining.
     const luma = (file: string): number => {
       const out = execFileSync(
         "ffmpeg",

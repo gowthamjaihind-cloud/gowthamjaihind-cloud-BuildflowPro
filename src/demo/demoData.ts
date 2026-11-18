@@ -320,3 +320,21 @@ export const demoCollections: Record<string, any[]> = {
   estimates: demoEstimates,
   documents: demoDocuments,
 };
+
+/** The demo company's letterhead (Settings > Default Organization), so a
+ *  purchase order opened in the demo prints like a real one. Placeholders. */
+export const demoCompany = {
+  companyName: "Demo Constructions",
+  gstin: "33AAAAA0000A1Z5",
+  stateCode: "33",
+  profile: {
+    addressLine1: "12, Sample Street",
+    city: "Sample Town",
+    state: "Tamil Nadu",
+    pincode: "600000",
+    phone: "+91 90000 00000",
+    email: "accounts@example.com",
+    pan: "AAAAA0000A",
+    poTerms: "Payment within 30 days of delivery. Quote this PO number on your delivery challan and tax invoice.",
+  },
+};

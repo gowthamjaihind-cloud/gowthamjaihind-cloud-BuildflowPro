@@ -14,6 +14,7 @@ import { useProjectCostTotals } from "../../hooks/useProjectCostTotals";
 import { useProjectDataQuery, useTasksQuery } from "../../hooks/queries";
 import { CostEntry, Task } from "../../types";
 import { useTranslation } from "../../i18n";
+import { categoryLabel } from "./categoryLabel";
 import { ChartLineUp, TrendUp, TrendDown } from "@phosphor-icons/react";
 import { Tooltip as HintTooltip } from "../Tooltip";
 
@@ -69,7 +70,7 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
   const S = chartSeries;
   const CAT = S.categories;
 
-  const catLabel = (name: string) => t(`an.cat${name.replace(/\s+/g, "")}`);
+  const catLabel = (name: string) => categoryLabel(name, t);
 
   const rows = useMemo(
     () =>
