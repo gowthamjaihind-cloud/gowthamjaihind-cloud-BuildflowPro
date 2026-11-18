@@ -105,5 +105,26 @@ await expect("Site Engineer writes a task", true, write(sam, `${P}/tasks/t3`, { 
 await expect("Site Engineer cannot record a client payment", false, write(sam, `${P}/client_payments/p3`, { amount: 1 }));
 await expect("Viewer reads their own org's doc", true, read(eve, `organizations/${A}`));
 
+await seed();
+for (const c of ["costs", "receipts", "vendor_bills", "ledger", "ra_bills", "estimates"]) {
+  await write("owner", `${P}/${c}/x1`, { amount: 1000 });
+}
+await write("owner", `${P}/labor_rate_cards/r1`, { role: "Mason", rate: 900 });
+await write("owner", `${P}/purchase_orders/po1`, { poNumber: "PO-1", totalAmount: 44840 });
+console.log("--- Site Engineers do not see money (src/lib/moneyAccess.ts) ---");
+for (const c of ["costs", "receipts", "vendor_bills", "ledger", "client_payments", "ra_bills", "estimates"]) {
+  const id = c === "client_payments" ? "p1" : "x1";
+  await expect(`Site Engineer reads ${c}`, false, read(sam, `${P}/${c}/${id}`));
+  await expect(`Project Manager reads ${c}`, true, read(pam, `${P}/${c}/${id}`));
+}
+await expect("Site Engineer writes the cost line of a goods receipt", true, write(sam, `${P}/costs/grn1`, { amount: 3800 }));
+await expect("Site Engineer writes the ledger line of a goods receipt", true,
+  write(sam, `${P}/ledger/grn1`, { referenceType: "GRN", amount: 4484 }));
+await expect("Site Engineer still cannot record a vendor payment in the ledger", false,
+  write(sam, `${P}/ledger/pay1`, { referenceType: "PAYMENT", amount: 1 }));
+await expect("Site Engineer reads labour rate cards (daily log role list)", true, read(sam, `${P}/labor_rate_cards/r1`));
+await expect("Site Engineer reads purchase orders (to receive goods)", true, read(sam, `${P}/purchase_orders/po1`));
+await expect("Site Engineer reads tasks", true, read(sam, `${P}/tasks/t1`));
+
 console.log(failed ? `\n${failed} FAIL` : "\nall ok");
 process.exit(failed ? 1 : 0);

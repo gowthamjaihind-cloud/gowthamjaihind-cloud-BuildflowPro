@@ -7,6 +7,7 @@ import { useAuthStore } from "../store";
 import { getProjectBasePath, getProjectSubCollectionPath } from "../utils/projectPath";
 import { demoRequested } from "../demo";
 import { demoCollections, demoProjects, demoTasks, DEMO_PROJECT_ID } from "@demo";
+import { canSeeMoney, MONEY_COLLECTIONS } from "../lib/moneyAccess";
 
 export function useProjectDataQuery<T>(
   projectId: string,
@@ -16,11 +17,15 @@ export function useProjectDataQuery<T>(
 ) {
   const user = useAuthStore((state) => state.user);
   const basePath = getProjectBasePath(projectId);
+  // Money collections are closed to roles that do not see money
+  // (lib/moneyAccess.ts); don't ask for them, so no screen trips on a denial.
+  const moneyBlocked = MONEY_COLLECTIONS.includes(type) && !canSeeMoney(user?.role);
 
   return useQuery({
-    queryKey: ['projectData', projectId, type, orderByField, orderDirection],
+    queryKey: ['projectData', projectId, type, orderByField, orderDirection, moneyBlocked],
     queryFn: async () => {
       if (__DEMO__ && demoRequested()) return (demoCollections[type] || []) as T[];
+      if (moneyBlocked) return [] as T[];
       try {
         const path = `${basePath}/${type}`;
         let queryObj = query(collection(db, path));

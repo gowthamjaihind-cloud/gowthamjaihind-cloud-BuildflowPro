@@ -138,7 +138,18 @@ service cloud.firestore {
         && collection != 'ledger' && collection != 'ra_bills'
         && collection != 'labor_rate_cards' && collection != 'client_payments'
         && collection != 'documents' && collection != 'estimates'
-        && collection != 'audit_logs';
+        && collection != 'audit_logs'
+        && collection != 'costs' && collection != 'receipts' && collection != 'vendor_bills';
+    }
+
+    // Who sees the company's money: costs, vendor bills and the vendor ledger,
+    // client payments, RA bills, estimates and margins. Site Engineers do not
+    // (src/lib/moneyAccess.ts hides the screens; the Telegram bot's
+    // `ask.money` keeps the same line). They can still WRITE the cost and
+    // ledger lines their goods receipts create -- a write needs no read.
+    // Labour rate cards stay readable: the daily log lists roles from them.
+    function canSeeMoney(orgId) {
+      return !isOrgSiteEngineer(orgId);
     }
 
     // ---------------------------------------------------------------------
@@ -276,15 +287,29 @@ service cloud.firestore {
           && request.resource.data.get('billingLocked', false) != true;
         allow delete: if isOrgMember(orgId) && isOrgAdminOrManager(orgId);
 
-        // Generic project sub-collections (tasks, inventory, suppliers, costs,
-        // materials, equipment, dailyPlans, vendor_bills, …). The financial /
-        // audited collections below are matched explicitly and excluded here.
+        // Generic project sub-collections (tasks, inventory, suppliers,
+        // materials, equipment, dailyPlans, …). The financial / audited
+        // collections below are matched explicitly and excluded here.
         match /{collection}/{docId} {
           allow read: if canReadProject(orgId, projectId) && isGenericCollection(collection);
           allow write: if canWriteProject(orgId, projectId) && isGenericCollection(collection);
         }
+        // Money collections that used to be generic: same writes, reads only
+        // for roles that see money (canSeeMoney).
+        match /costs/{docId} {
+          allow read: if canReadProject(orgId, projectId) && canSeeMoney(orgId);
+          allow write: if canWriteProject(orgId, projectId);
+        }
+        match /receipts/{docId} {
+          allow read: if canReadProject(orgId, projectId) && canSeeMoney(orgId);
+          allow write: if canWriteProject(orgId, projectId);
+        }
+        match /vendor_bills/{docId} {
+          allow read: if canReadProject(orgId, projectId) && canSeeMoney(orgId);
+          allow write: if canWriteProject(orgId, projectId);
+        }
         match /estimates/{estimateId} {
-          allow read: if canReadProject(orgId, projectId);
+          allow read: if canReadProject(orgId, projectId) && canSeeMoney(orgId);
           allow create: if canWriteProject(orgId, projectId);
           allow update: if canWriteProject(orgId, projectId) && (
             request.resource.data.status == resource.data.status || isOrgAdminOrManager(orgId)
@@ -302,11 +327,11 @@ service cloud.firestore {
           allow update, delete: if canWriteProject(orgId, projectId) && isOrgAdminOrManager(orgId);
         }
         match /client_payments/{paymentId} {
-          allow read: if canReadProject(orgId, projectId);
+          allow read: if canReadProject(orgId, projectId) && canSeeMoney(orgId);
           allow write: if canWriteProject(orgId, projectId) && isOrgAdminOrManager(orgId);
         }
         match /ra_bills/{billId} {
-          allow read: if canReadProject(orgId, projectId);
+          allow read: if canReadProject(orgId, projectId) && canSeeMoney(orgId);
           allow write: if canWriteProject(orgId, projectId) && isOrgAdminOrManager(orgId);
         }
         match /labor_rate_cards/{cardId} {
@@ -314,7 +339,7 @@ service cloud.firestore {
           allow write: if canWriteProject(orgId, projectId) && isOrgAdminOrManager(orgId);
         }
         match /ledger/{ledgerId} {
-          allow read: if canReadProject(orgId, projectId);
+          allow read: if canReadProject(orgId, projectId) && canSeeMoney(orgId);
           allow create: if canWriteProject(orgId, projectId) && (
             request.resource.data.referenceType != 'PAYMENT' || isOrgAdminOrManager(orgId)
           );

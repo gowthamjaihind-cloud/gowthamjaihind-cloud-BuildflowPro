@@ -27,6 +27,7 @@ import { useBreakpoint } from "../hooks/useBreakpoint";
 import { useTranslation } from "../i18n";
 import { Tooltip } from "./Tooltip";
 import { initialsOf } from "../utils/initials";
+import { useCanSeeMoney, MONEY_TABS } from "../lib/moneyAccess";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -52,7 +53,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     (state) => state.updateProjectStatus,
   );
 
-  const menuItems = [
+  const seeMoney = useCanSeeMoney();
+  const allMenuItems = [
     { id: "dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
     { id: "insights", label: t("nav.insights"), icon: Sparkles },
     { id: "wbs", label: t("nav.wbs"), icon: ListTree },
@@ -66,8 +68,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: "reports", label: t("nav.reports"), icon: FileText },
     { id: "documents", label: t("nav.documents"), icon: FolderOpen },
   ];
+  // Site Engineers don't see the money-only modules (lib/moneyAccess.ts).
+  const menuItems = seeMoney ? allMenuItems : allMenuItems.filter((m) => !MONEY_TABS.includes(m.id));
 
-  const bottomNavIds = ["dashboard", "dailylogs", "procurement", "costs"];
+  const bottomNavIds = ["dashboard", "dailylogs", "procurement", seeMoney ? "costs" : "inventory"];
   const bottomNavItems = bottomNavIds
     .map((id) => menuItems.find((item) => item.id === id))
     .filter(Boolean) as typeof menuItems;

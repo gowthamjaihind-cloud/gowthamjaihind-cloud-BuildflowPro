@@ -20,6 +20,7 @@ import { useScheduleData } from "../hooks/useScheduleData";
 import { ScheduleView } from "./schedule/ScheduleView";
 import { PhaseStrips } from "./schedule/PhaseStrips";
 import { useTranslation } from "../i18n";
+import { useCanSeeMoney } from "../lib/moneyAccess";
 
 interface DashboardViewProps {
   activeProjectId: string;
@@ -35,6 +36,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   handleAddDependency,
 }) => {
   const { t } = useTranslation();
+  const seeMoney = useCanSeeMoney();
   const setActiveTab = useUIStore((s) => s.setActiveTab);
   const user = useAuthStore((s) => s.user);
   const project = useProjectStore((s) => s.activeProject);
@@ -112,7 +114,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* KPI strip — one consistent row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+      <div className={`grid grid-cols-2 ${seeMoney ? "lg:grid-cols-4" : ""} gap-3 md:gap-4`}>
         <section className="soft-card p-4 md:p-5 squircle-24 flex flex-col gap-2">
           <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{t("dashboard.completion")}</span>
           <span className="text-2xl font-black font-mono text-primary tracking-tight"><CountUp value={completionPercentage} />%</span>
@@ -121,6 +123,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </section>
 
+        {/* Budget and spend: not for roles that do not see money (lib/moneyAccess.ts). */}
+        {seeMoney && <>
         <section className="soft-card p-4 md:p-5 squircle-24 flex flex-col gap-2">
           <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{t("an.consumed")}</span>
           <span className={`text-2xl font-black font-mono tracking-tight ${consumedPct > 100 ? "text-danger" : "text-ink"}`}>{consumedPct}%</span>
@@ -142,6 +146,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           )}
           {totalBudget > 0 && <span className="text-[10px] font-bold text-ink-muted">{t("an.totalSpent")} {inr(totalActual)}</span>}
         </section>
+        </>}
 
         <section className="bg-surface-dark p-4 md:p-5 squircle-24 text-white flex flex-col gap-1.5 justify-center">
           <span className="text-[10px] font-black uppercase tracking-widest text-white/60">{t("dashboard.tasksAtRisk")}</span>
@@ -155,7 +160,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Cost snapshot → full interactive analytics live on the AI Insights tab */}
-      <button
+      {seeMoney && <button
         onClick={() => setActiveTab("insights")}
         className="w-full soft-card rounded-2xl p-4 md:p-5 flex items-center justify-between gap-4 hover:bg-surface/40 apple-transition text-left group cursor-pointer"
       >
@@ -171,7 +176,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <span className="flex items-center gap-1.5 text-xs font-bold text-primary shrink-0 whitespace-nowrap">
           {t("an.viewFull")} <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
         </span>
-      </button>
+      </button>}
 
       {/* Phase timeline */}
       <div className="grid grid-cols-1">

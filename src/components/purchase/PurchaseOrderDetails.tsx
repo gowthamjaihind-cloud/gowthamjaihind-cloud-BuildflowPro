@@ -27,6 +27,7 @@ import { useProjectData } from "../../hooks/useProjectData";
 import { useOrgSettings } from "../../hooks/useOrgSettings";
 import { useCompanyProfile } from "../../hooks/useCompanyProfile";
 import { useProjectStore } from "../../store/projectStore";
+import { useCanSeeMoney } from "../../lib/moneyAccess";
 import { computePoTotals } from "../../lib/poTax";
 import type { Vendor } from "../../types";
 
@@ -38,6 +39,8 @@ interface PurchaseOrderDetailsProps {
 }
 
 export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, projectId, onClose, onEdit }) => {
+  // Prices, GST and totals are money (lib/moneyAccess.ts); quantities stay.
+  const seeMoney = useCanSeeMoney();
   const statusLabel = (st: string) => ({
     Draft: "Draft",
     Approved: "Approved",
@@ -142,6 +145,8 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                  </button>
                </Tooltip>
              )}
+             {/* Both exports carry prices: not for roles that do not see money. */}
+             {seeMoney && <>
              <Tooltip label={"Export CSV"}>
                <button
                  onClick={handleExportCSV}
@@ -160,6 +165,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                  <Download className="w-3.5 h-3.5" /> View / PDF
                </button>
              </Tooltip>
+             </>}
              <button aria-label={"Close"} type="button" onClick={onClose} className="p-2 bg-white hover:bg-divider rounded-full transition text-ink cursor-pointer ml-1">
                <X className="w-5 h-5" />
              </button>
@@ -204,10 +210,10 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                            <th className="p-4">{"Item"}</th>
                            <th className="p-4 text-right">{"Qty"}</th>
                            <th className="p-4 text-right">{"Received"}</th>
-                           <th className="p-4 text-right">{hasGst ? "Rate before tax" : "Rate"}</th>
-                           <th className="p-4 text-right">{hasGst ? "Taxable value" : "Amount"}</th>
-                           {hasGst && <th className="p-4 text-right">{"GST"}</th>}
-                           {hasGst && <th className="p-4 text-right">{"Total"}</th>}
+                           {seeMoney && <th className="p-4 text-right">{hasGst ? "Rate before tax" : "Rate"}</th>}
+                           {seeMoney && <th className="p-4 text-right">{hasGst ? "Taxable value" : "Amount"}</th>}
+                           {seeMoney && hasGst && <th className="p-4 text-right">{"GST"}</th>}
+                           {seeMoney && hasGst && <th className="p-4 text-right">{"Total"}</th>}
                         </tr>
                      </thead>
                      <tbody className="text-sm font-medium">
@@ -219,19 +225,19 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                               </td>
                               <td className="p-4 text-right font-mono">{item.orderedQty} {item.unit}</td>
                               <td className="p-4 text-right font-mono text-success font-bold">{item.receivedQty || 0} {item.unit}</td>
-                              <td className="p-4 text-right font-mono">₹{money(item.rate)}</td>
-                              <td className="p-4 text-right font-mono text-ink">₹{money(item.amount)}</td>
-                              {hasGst && (
+                              {seeMoney && <td className="p-4 text-right font-mono">₹{money(item.rate)}</td>}
+                              {seeMoney && <td className="p-4 text-right font-mono text-ink">₹{money(item.amount)}</td>}
+                              {seeMoney && hasGst && (
                                  <td className="p-4 text-right font-mono text-ink-muted">
                                     {totals.lines[i].gstRate ? `${totals.lines[i].gstRate}%` : "—"}
                                     {totals.lines[i].tax > 0 && <span className="block text-[10px]">₹{money(totals.lines[i].tax)}</span>}
                                  </td>
                               )}
-                              {hasGst && <td className="p-4 text-right font-mono text-ink font-bold">₹{money(totals.lines[i].total)}</td>}
+                              {seeMoney && hasGst && <td className="p-4 text-right font-mono text-ink font-bold">₹{money(totals.lines[i].total)}</td>}
                            </tr>
                         ))}
                      </tbody>
-                     <tfoot className="bg-warning/12 border-t border-warning/25">
+                     {seeMoney && <tfoot className="bg-warning/12 border-t border-warning/25">
                         {([["loading", "Loading charges"], ["transport", "Transport charges"], ["other", "Other charges"]] as const).map(([key, label]) =>
                            po.charges?.[key] ? (
                               <tr key={key}>
@@ -252,7 +258,7 @@ export const PurchaseOrderDetails: React.FC<PurchaseOrderDetailsProps> = ({ po, 
                            <td colSpan={hasGst ? 6 : 4} className="p-4 text-right text-[10px] font-black text-primary uppercase tracking-widest">{hasGst ? "Total including GST" : "Total Amount"}</td>
                            <td className="p-4 text-right text-lg font-black font-mono text-primary tracking-tight">₹{po.totalAmount.toLocaleString("en-IN")}</td>
                         </tr>
-                     </tfoot>
+                     </tfoot>}
                   </table>
                </div>
                

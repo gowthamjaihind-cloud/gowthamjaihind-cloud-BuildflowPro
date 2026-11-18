@@ -29,6 +29,7 @@ import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
 import { SkeletonCards, SkeletonRows } from "./Skeleton";
 import { standaloneIssues } from "../lib/dailyLogIssues";
+import { useCanSeeMoney } from "../lib/moneyAccess";
 
 interface MaterialConsumptionViewProps {
   projectId: string;
@@ -38,6 +39,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   projectId,
 }) => {
   const { t } = useTranslation();
+  const seeMoney = useCanSeeMoney(); // labour cost is money (lib/moneyAccess.ts)
   const projectLabel = useProjectLabel(projectId);
   // Local Filter state for Active Material Tab
   const [localTaskSearch, setLocalTaskSearch] = useState("");
@@ -390,7 +392,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
   // The labour tab had its export buttons hidden outright, so the one screen
   // that answers "what did we spend on people" could not leave the app.
   const handleExportLabourCSV = () => {
-    const headers = ["Date", "Task", "Role", "Contractor", "Headcount", "Shifts", "Cost (₹)"];
+    const headers = ["Date", "Task", "Role", "Contractor", "Headcount", "Shifts", ...(seeMoney ? ["Cost (₹)"] : [])];
     const rows = filteredLaborRecords.map((r) => [
       r.date,
       r.taskName,
@@ -398,14 +400,14 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
       r.vendorName,
       r.headcount || 0,
       r.shifts || 1,
-      round2(r.cost || 0),
+      ...(seeMoney ? [round2(r.cost || 0)] : []),
     ]);
     const dateStr = new Date().toISOString().split("T")[0];
     exportToCSV(`Labour_Consumption_${dateStr}`, headers, rows);
   };
 
   const handleExportLabourPDF = () => {
-    const headers = ["Date", "Task", "Role", "Contractor", "Headcount", "Shifts", "Cost (₹)"];
+    const headers = ["Date", "Task", "Role", "Contractor", "Headcount", "Shifts", ...(seeMoney ? ["Cost (₹)"] : [])];
     const rows = filteredLaborRecords.map((r) => [
       r.date,
       r.taskName,
@@ -413,7 +415,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
       r.vendorName,
       r.headcount || 0,
       r.shifts || 1,
-      round2(r.cost || 0),
+      ...(seeMoney ? [round2(r.cost || 0)] : []),
     ]);
     const dateStr = new Date().toISOString().split("T")[0];
     exportToPDF(
@@ -605,7 +607,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
               )}
 
               {/* LABOR TOTALS */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className={`grid grid-cols-1 ${seeMoney ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-4`}>
                 <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Total Manpower</p>
@@ -613,13 +615,13 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                   </div>
                   <div className="w-10 h-10 rounded-xl bg-surface-dark/10 text-surface-dark flex items-center justify-center border border-surface-dark/20"><Users className="w-5 h-5" /></div>
                 </div>
-                <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
+                {seeMoney && <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Total Labour Cost</p>
                     <p className="text-2xl font-black text-ink font-mono">₹{laborTotals.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</p>
                   </div>
                   <div className="w-10 h-10 rounded-xl bg-success/12 text-success flex items-center justify-center border border-success/30"><IndianRupee className="w-5 h-5" /></div>
-                </div>
+                </div>}
                 <div className="bg-surface p-5 rounded-2xl border border-divider shadow-sm flex items-center justify-between">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-ink-muted mb-1">Deployment Entries</p>
@@ -642,7 +644,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.filterByTask")}</th>
                         <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Entries</th>
                         <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.viewManpower")}</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.moduleCost")}</th>
+                        {seeMoney && <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.moduleCost")}</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-divider/40">
@@ -658,7 +660,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                           <td className="px-6 py-4 font-bold text-xs text-ink">{t.taskName}</td>
                           <td className="px-6 py-4 text-right font-mono text-xs text-ink-muted">{t.entries}</td>
                           <td className="px-6 py-4 text-right font-mono text-xs font-bold text-ink">{t.headcount.toLocaleString("en-IN")}</td>
-                          <td className="px-6 py-4 text-right font-mono text-xs font-bold text-success">₹{t.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                          {seeMoney && <td className="px-6 py-4 text-right font-mono text-xs font-bold text-success">₹{t.cost.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>}
                         </tr>
                       ))}
                     </tbody>
@@ -677,7 +679,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Role</th>
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">Vendor</th>
                         <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.viewManpower")}</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.moduleCost")}</th>
+                        {seeMoney && <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-ink-muted">{t("an.moduleCost")}</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-divider/40">
@@ -713,7 +715,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
                           <td className="px-6 py-4 text-xs text-ink">{r.role}</td>
                           <td className="px-6 py-4 text-xs text-ink-muted">{r.vendorName}</td>
                           <td className="px-6 py-4 text-right font-mono text-xs font-bold text-ink">{(r.headcount || 0).toLocaleString("en-IN")}</td>
-                          <td className="px-6 py-4 text-right font-mono text-xs font-bold text-success">₹{(r.cost || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                          {seeMoney && <td className="px-6 py-4 text-right font-mono text-xs font-bold text-success">₹{(r.cost || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>}
                         </tr>
                       ))}
                     </tbody>

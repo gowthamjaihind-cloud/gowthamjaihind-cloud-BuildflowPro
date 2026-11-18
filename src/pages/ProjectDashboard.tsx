@@ -7,6 +7,7 @@ import { Project, UserProfile } from "../types";
 import { useUIStore, useProjectStore, useTaskStore } from "../store";
 import { useTasksQuery } from "../hooks/queries";
 import { SkeletonScreen } from "../components/Skeleton";
+import { canSeeMoney, MONEY_TABS } from "../lib/moneyAccess";
 
 // Heavy per-tab views are code-split so the initial bundle only pays for the
 // default dashboard. Each becomes its own async chunk, loaded on first visit.
@@ -66,7 +67,10 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   activeProject,
   onBack,
 }) => {
-  const activeTab = useUIStore((state) => state.activeTab);
+  const chosenTab = useUIStore((state) => state.activeTab);
+  // A money-only tab (remembered from before, or reached by a link) opens the
+  // dashboard for roles that do not see money (lib/moneyAccess.ts).
+  const activeTab = !canSeeMoney(user?.role) && MONEY_TABS.includes(chosenTab) ? "dashboard" : chosenTab;
   const setActiveTab = useUIStore((state) => state.setActiveTab);
 
   const { data: tasks = [] } = useTasksQuery(activeProject.id);

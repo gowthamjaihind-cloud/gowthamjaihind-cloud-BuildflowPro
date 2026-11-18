@@ -14,11 +14,13 @@ import { Receipt } from "@phosphor-icons/react";
 import { EmptyState } from "../EmptyState";
 
 import { useTranslation } from "../../i18n";
+import { useCanSeeMoney } from "../../lib/moneyAccess";
 interface PurchaseOrderTabProps {
   projectId: string;
 }
 
 export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId }) => {
+  const seeMoney = useCanSeeMoney(); // PO values are money (lib/moneyAccess.ts)
   const { t } = useTranslation();
   const { data: pos = [], isLoading } = useProjectData<PurchaseOrder>(projectId, "purchase_orders", "createdAt", "desc");
   const [searchTerm, setSearchTerm] = useState("");
@@ -82,21 +84,21 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">PO Number</th>
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">{t("common.date")}</th>
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">Vendor</th>
-                  <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest text-right whitespace-nowrap">Amount</th>
+                  {seeMoney && <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest text-right whitespace-nowrap">Amount</th>}
                   <th className="p-4 text-[10px] font-bold text-ink-muted uppercase tracking-widest whitespace-nowrap">{t("common.status")}</th>
                 </tr>
              </thead>
              <tbody>
                 {pos.length === 0 ? (
                   <EmptyState
-                    colSpan={5}
+                    colSpan={seeMoney ? 5 : 4}
                     icon={Receipt}
                     title="No purchase orders yet"
                     body="Raise a PO to record what was ordered, from whom, and at what rate."
                   />
                 ) : filteredPOs.length === 0 ? (
                   <EmptyState
-                    colSpan={5}
+                    colSpan={seeMoney ? 5 : 4}
                     icon={Receipt}
                     variant="filtered"
                     title="No orders match"
@@ -127,9 +129,9 @@ export const PurchaseOrderTab: React.FC<PurchaseOrderTabProps> = ({ projectId })
                       <td className="p-4 align-middle">
                         <div className="text-sm font-semibold text-ink">{po.vendorName}</div>
                       </td>
-                      <td className="p-4 align-middle text-right text-sm font-mono font-medium">
+                      {seeMoney && <td className="p-4 align-middle text-right text-sm font-mono font-medium">
                         ₹{po.totalAmount.toLocaleString("en-IN")}
-                      </td>
+                      </td>}
                       <td className="p-4 align-middle">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                           po.status === 'Draft' ? 'bg-page text-ink-muted' :
