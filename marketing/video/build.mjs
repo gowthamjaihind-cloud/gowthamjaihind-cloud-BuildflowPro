@@ -127,6 +127,8 @@ const easeOut = t => 1-Math.pow(1-t,3);
 const cl = (a,b,t)=>a+(b-a)*Math.max(0,Math.min(1,t));
 
 // ---------- build scenes ----------
+// The brand mark's three bars (remotion/src/kinetic/Mark.tsx), on the markbox tile.
+const BARS = "<svg viewBox=\"0 0 512 512\" width=\"100%\" height=\"100%\"><rect x=\"136\" y=\"272\" width=\"72\" height=\"104\" rx=\"22\" fill=\"#fff\"/><rect x=\"222\" y=\"212\" width=\"72\" height=\"164\" rx=\"22\" fill=\"#fff\"/><rect x=\"308\" y=\"140\" width=\"72\" height=\"236\" rx=\"22\" fill=\"#fff\"/></svg>";
 function el(cls, css, html){ const d=document.createElement("div"); d.className=cls||"";
   if(css) Object.assign(d.style, css); if(html!=null) d.innerHTML=html; return d; }
 
@@ -137,7 +139,7 @@ const intro = el("scene");
     top:"50%", transform:"translateY(-50%)", textAlign: vertical?"center":"left"});
   const m = el("mark",{marginBottom:V.pad*0.7+"px",
     justifyContent: vertical?"center":"flex-start"});
-  m.appendChild(el("markbox",{},"S")); m.appendChild(el("markw",{},"Sitetru"));
+  m.appendChild(el("markbox",{},BARS)); m.appendChild(el("markw",{},"Sitetru"));
   wrap.appendChild(m);
   const b = el("big",{}, C.introK+"<br><em>"+C.introS+"</em>");
   b.id="introBig"; wrap.appendChild(b);
@@ -177,7 +179,7 @@ const footer = el("",{position:"absolute", left:V.dots.x+"px", top:V.foot+"px",
   display:"flex", alignItems:"center", gap:V.markG+"px", opacity:0});
 { const m = el("mark",{});
   m.appendChild(el("markbox",{width:(V.markS*0.72)+"px",height:(V.markS*0.72)+"px",
-    borderRadius:(V.markS*0.19)+"px",fontSize:(V.markS*0.40)+"px"},"S"));
+    borderRadius:(V.markS*0.19)+"px",fontSize:(V.markS*0.40)+"px"},BARS));
   m.appendChild(el("markw",{fontSize:(V.markS*0.46)+"px"},"Sitetru"));
   footer.appendChild(m);
   footer.appendChild(el("url",{fontSize:(V.url*0.78)+"px",opacity:.75}, "\u00b7 " + C.url));
@@ -196,7 +198,7 @@ const outro = el("scene");
     top:"50%", transform:"translateY(-50%)", textAlign: vertical?"center":"left"});
   const m = el("mark",{marginBottom:V.pad*0.55+"px",
     justifyContent: vertical?"center":"flex-start"});
-  m.appendChild(el("markbox",{},"S")); m.appendChild(el("markw",{},"Sitetru"));
+  m.appendChild(el("markbox",{},BARS)); m.appendChild(el("markw",{},"Sitetru"));
   wrap.appendChild(m);
   const tagline = el("big",{fontSize:(V.big*(vertical?0.70:0.52))+"px", color:"${BRAND.primaryOnDark}"}, C.outroTag);
   tagline.id="outroTag"; wrap.appendChild(tagline);
