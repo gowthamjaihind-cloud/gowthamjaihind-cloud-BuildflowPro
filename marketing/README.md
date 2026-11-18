@@ -299,8 +299,9 @@ FILM_THEME=dark npm run capture:screens                   # dark  -> video/scree
 default to **light**. The Remotion films (kinetic, Pulse, launch, Hero, Social)
 read `l-*.png` in `remotion/public`; `video/build.mjs` (vertical and Tamil)
 reads `video/screens-light/`. The launch film's title cards and caption band
-stay on the brand navy around the light screens, so the cuts into and out of
-them are dissolves or flashes rather than a bare 185-luma jump.
+stay on the brand navy around the light screens. The light set averages ~185
+luma more than the dark one, so watch the cuts between a navy card and a
+screen: a dissolve or flash there reads better than a hard cut.
 
 `marketing/kinetic.spec.ts` measures the actual luma of referenced light
 screenshots, so a dark capture written under light names fails rather than
