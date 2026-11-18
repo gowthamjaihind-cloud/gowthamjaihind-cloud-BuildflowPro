@@ -13,7 +13,7 @@
  * its kick, whoosh and impact with it. Delivered at -14 LUFS, under -1 dBTP,
  * like the other films (see kinetic.mjs for why both numbers are checked).
  */
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,22 +40,15 @@ export function readPulse(src = readFileSync(join(REMOTION, "src/pulse/pulse.jso
 }
 
 const ff = (args) => execFileSync("ffmpeg", ["-hide_banner", "-loglevel", "error", ...args], { stdio: "inherit" });
-const ffErr = (args) => {
-  try {
-    execFileSync("ffmpeg", ["-hide_banner", ...args], { stdio: ["ignore", "ignore", "pipe"] });
-    return "";
-  } catch (e) {
-    return String(e.stderr || "");
-  }
-};
+const ffErr = (args) => spawnSync("ffmpeg", ["-hide_banner", ...args], { encoding: "utf8" }).stderr || "";
 const probeSeconds = (f) =>
   Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f], { encoding: "utf8" }));
 
 function measure(wav) {
-  const r = execFileSync("ffmpeg", ["-hide_banner", "-i", wav, "-af", "loudnorm=I=-14:TP=-2:LRA=11:print_format=json", "-f", "null", "-"], {
-    stdio: ["ignore", "ignore", "pipe"],
+  // loudnorm prints its JSON on stderr.
+  const r = spawnSync("ffmpeg", ["-hide_banner", "-i", wav, "-af", "loudnorm=I=-14:TP=-2:LRA=11:print_format=json", "-f", "null", "-"], {
     encoding: "utf8",
-  });
+  }).stderr;
   return JSON.parse(r.slice(r.lastIndexOf("{")));
 }
 
@@ -75,7 +68,7 @@ function mux(silent, wav, final) {
     "[1:a]aresample=48000,aformat=channel_layouts=stereo,alimiter=limit=0.97," +
       `loudnorm=I=-14:TP=-2.0:LRA=11:measured_I=${m.input_i}:measured_TP=${m.input_tp}:` +
       `measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true,` +
-      "aresample=192000,alimiter=level_in=1:level_out=1:limit=-2.5dB:level=disabled,aresample=48000[a]",
+      "aresample=192000,alimiter=level_in=1:level_out=1:limit=-3.5dB:level=disabled,aresample=48000[a]",
     "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", "-shortest", final,
   ]);
   const v = probeSeconds(silent);
@@ -105,7 +98,7 @@ function main() {
   for (const [on, comp, name] of [[wide, "Pulse", "sitetru-pulse"], [tall, "PulseVertical", "sitetru-pulse-vertical"]]) {
     if (!on) continue;
     const silent = join(OUT, `${name}-silent.mp4`);
-    if (!muxOnly) render(comp, silent);
+    if (!muxOnly && !(a.includes("--reuse") && existsSync(silent))) render(comp, silent);
     else if (!existsSync(silent)) throw new Error(`--mux-only needs ${silent}`);
     mux(silent, wav, join(OUT, `${name}.mp4`));
   }

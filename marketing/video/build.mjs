@@ -27,7 +27,7 @@ const BEATS_EN = [
   { img: "wbs",  a: [740, 880, 1350], b: [1830, 880, 1350],
     h: "Plan it once", s: "Break the job the way you'd write it on paper — foundation, ground floor, first floor. Days and budget go in once.", tag: "WBS" },
   { img: "logs", a: [760, 330, 1560], b: [1640, 330, 1560],
-    h: "The site reports to you", s: "Progress, headcount, material — sent from site. Over Telegram if that's easier. Nobody learns a new app.", tag: "DAILY LOGS", badge: "65% · 22 workers today" },
+    h: "The site reports to you", s: "Progress, headcount, material — sent from site. Over Telegram if that's easier. Nobody learns a new app.", tag: "DAILY LOGS", badge: "61% · 20 workers today" },
   { img: "proc", a: [720, 588, 1350], b: [1810, 588, 1350],
     h: "Buy material", s: "Raise a purchase order. Receive it when it lands. Stock and the supplier's account move on their own.", tag: "PROCUREMENT" },
   { img: "cost", a: [720, 372, 1350], b: [1830, 372, 1350],
@@ -66,14 +66,14 @@ const COPY_EN = {
   introK: "How many calls?", introS: "How many registers?",
   introSub: "To find out what happened on your site today.",
   outroH: "Sitetru", outroTag: "truth, reported from site.",
-  outroL: ["Free plan to start", "From ₹999 / month", "14-day trial — no card"],
+  outroL: ["14-day free trial", "Then from ₹99 / month", "No card needed"],
   url: "sitetru.com",
 };
 const COPY_TA = {
   introK: "எத்தனை கால்?", introS: "எத்தனை ரிஜிஸ்டர்?",
   introSub: "உங்க சைட்ல இன்னிக்கு என்ன நடந்ததுன்னு தெரிஞ்சுக்க.",
   outroH: "Sitetru", outroTag: "தளத்திலிருந்து வரும் உண்மை",
-  outroL: ["இலவசமா ஆரம்பிங்க", "₹999/மாதம் முதல்", "14 நாள் ட்ரையல் — கார்டு வேணாம்"],
+  outroL: ["இலவசமா ஆரம்பிங்க", "₹99/மாதம் முதல்", "14 நாள் ட்ரையல் — கார்டு வேணாம்"],
   url: "sitetru.com",
 };
 

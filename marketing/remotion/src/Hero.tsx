@@ -109,7 +109,7 @@ export const Hero: React.FC = () => (
 
     <Sequence from={HERO_BEATS.logsB[0]} durationInFrames={len(HERO_BEATS.logsB)}>
       <Screen src={S.logs} from={F.logsNumbers} />
-      <Caption label="Yesterday, first floor" title="65% done. 22 on site." />
+      <Caption label="Yesterday, first floor" title="61% done. 20 on site." />
     </Sequence>
 
     <Sequence from={HERO_BEATS.proc[0]} durationInFrames={len(HERO_BEATS.proc)}>
@@ -187,7 +187,7 @@ export const Social: React.FC = () => {
 
       <Sequence from={B.logs[0]} durationInFrames={len(B.logs)}>
         <Screen src={S.logs} from={F.vLogs} to={F.vLogsIn} />
-        <Caption label="Yesterday" title="65% done. 22 on site." />
+        <Caption label="Yesterday" title="61% done. 20 on site." />
       </Sequence>
 
       <Sequence from={B.cost[0]} durationInFrames={len(B.cost)}>
