@@ -24,11 +24,10 @@ rules_version = '2';
 // on sign-in, then deploy these. Reversed, anyone holding an hour-old token is
 // denied their own files until it refreshes.
 //
-// STILL OPEN: the legacy `/projects/{projectId}` prefix below. Those paths
-// predate organisations and carry no orgId, so there is nothing to check a
-// claim against — the client still writes there whenever a user has no
-// currentOrgId. Closing it means migrating those objects under an
-// organisations/ prefix; until then it stays signed-in-only.
+// LEGACY: the `/projects/{projectId}` prefix predates organisations and
+// carries no orgId to check a claim against. It is closed (see below), like
+// the matching Firestore tree; the app sends anyone without an organisation
+// to setup before any upload, so nothing writes there any more.
 service firebase.storage {
   match /b/{bucket}/o {
 
@@ -54,11 +53,13 @@ service firebase.storage {
 
     // The app only ever uploads photos, PDFs, office documents and CSVs.
     function typeOk() {
-      return request.resource.contentType.matches('image/.*')
+      // No SVG (it can carry script) and no HTML: neither is a photo, a
+      // drawing PDF or a bill.
+      return (request.resource.contentType.matches('image/.*') && !request.resource.contentType.matches('image/svg.*'))
           || request.resource.contentType.matches('application/pdf')
           || request.resource.contentType.matches('application/msword')
           || request.resource.contentType.matches('application/vnd\\..*')
-          || request.resource.contentType.matches('text/.*');
+          || request.resource.contentType.matches('text/(plain|csv)');
     }
 
     // Document Vault, daily-log photos, goods-receipt scans, vendor bills.
@@ -68,12 +69,13 @@ service firebase.storage {
       allow delete:         if memberOf(orgId);
     }
 
-    // Legacy projects created before organisations existed. No orgId in the
-    // path, so no claim to check — see STILL OPEN in the header.
+    // Legacy single-tenant files, from before the organizations/ tree. Locked
+    // like the matching Firestore tree: any signed-in user (a free sign-up from
+    // another company) could list, read, overwrite or delete them. Images
+    // already shown in the app keep working -- their download URLs carry a
+    // token that does not go through these rules.
     match /projects/{projectId}/{allPaths=**} {
-      allow read:          if signedIn();
-      allow create, update: if signedIn() && sizeOk() && typeOk();
-      allow delete:        if signedIn();
+      allow read, write: if false;
     }
 
     // Everything else is denied. Cloud Functions use the Admin SDK, which

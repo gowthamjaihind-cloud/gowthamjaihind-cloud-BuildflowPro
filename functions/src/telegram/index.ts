@@ -1,4 +1,5 @@
 import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
+import { timingSafeEqual } from "node:crypto";
 import { CALLABLE_OPTS } from "../callable";
 import { assertSuperAdmin } from "../razorpay";
 import { onDocumentUpdated, onDocumentCreated } from "firebase-functions/v2/firestore";
@@ -179,13 +180,16 @@ export const telegramWebhook = onRequest({
     minInstances: 0,
 }, async (req, res) => {
     // ---- AUTH: verify this really came from Telegram, before anything else ----
-    const expected = WEBHOOK_SECRET.value();
-    const received = req.get("X-Telegram-Bot-Api-Secret-Token");
-    // Never log the secret itself: this line used to print whatever arrived,
-    // which put the real webhook secret into the function logs on every call.
-    if (expected && received !== expected) {
-        console.warn("Rejected unauthenticated webhook request");
-        res.status(401).send("Unauthorized");
+    const expected = WEBHOOK_SECRET.value() || "";
+    const received = req.get("X-Telegram-Bot-Api-Secret-Token") || "";
+    // Fails CLOSED: with no secret configured this used to accept every
+    // request, and anyone could post updates "from" a linked user's chat --
+    // which now creates purchase orders, records payments and approves POs.
+    // Compared in constant time. Never log the secret itself.
+    const a = Buffer.from(received), b = Buffer.from(expected);
+    if (!expected || a.length !== b.length || !timingSafeEqual(a, b)) {
+        console.warn(expected ? "Rejected unauthenticated webhook request" : "Rejected webhook request: TELEGRAM_WEBHOOK_SECRET is not set");
+        res.status(expected ? 401 : 503).send(expected ? "Unauthorized" : "Webhook secret not configured");
         return;
     }
     // The work is done BEFORE responding: on Cloud Run the CPU is throttled

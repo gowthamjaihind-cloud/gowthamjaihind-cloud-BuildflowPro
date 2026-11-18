@@ -3,13 +3,14 @@ import {
   auth,
   db,
   doc,
+  getDoc,
   onSnapshot,
   updateDoc,
   setDoc,
   handleFirestoreError,
   OperationType,
 } from "../firebase";
-import { UserProfile } from "../types";
+import { UserProfile, UserRole } from "../types";
 import { useAuthStore } from "../store";
 import { readPendingConsent, clearPendingConsent, TERMS_VERSION } from "../lib/legal";
 import { demoRequested } from "../demo";
@@ -86,10 +87,17 @@ export function useAuthInit() {
         // means uploads stay denied until the next attempt.
         void ensureOrgClaim(firebaseUser);
 
+        // The handler below awaits (consent write, org role read), so two
+        // profile updates can finish out of order. Only the newest may set the
+        // user: an older one finishing late would put back a stale profile --
+        // e.g. one without the organization just joined, which sends the person
+        // back to "Create your organization" with the invite already used.
+        let snapSeq = 0;
         try {
           unsubscribeUser = onSnapshot(
             doc(db, "users", firebaseUser.uid),
             async (userDoc) => {
+              const seq = ++snapSeq;
               if (userDoc.exists()) {
                 const data = userDoc.data() as UserProfile;
                 // Creating or joining a company happens AFTER sign-in, so the
@@ -120,12 +128,26 @@ export function useAuthInit() {
                 // spreading it blind: a profile written by an older build (or
                 // a partial write) otherwise yields a user with no email,
                 // which the post-sign-up screen renders as "Signed in as .".
+                // The role that counts is the one in the organization open now
+                // (its members map), which is what firestore.rules enforce:
+                // users/{uid}.role is one value per person and can belong to
+                // another organization they created or joined.
+                let orgRole: UserRole | undefined;
+                if (data.currentOrgId) {
+                  try {
+                    const org = await getDoc(doc(db, "organizations", data.currentOrgId));
+                    orgRole = (org.data()?.members || {})[firebaseUser.uid];
+                  } catch {
+                    /* not a member (or offline): fall back to Viewer below */
+                  }
+                }
+                if (seq !== snapSeq) return; // a newer profile update has arrived
                 setUser({
                   uid: firebaseUser.uid,
                   ...data,
                   email: data.email || firebaseUser.email || "",
                   displayName: data.displayName || firebaseUser.displayName || "User",
-                  role: data.role || "Viewer",
+                  role: (data.currentOrgId ? orgRole : data.role) || "Viewer",
                 });
                 setLoading(false);
               } else {
@@ -149,6 +171,7 @@ export function useAuthInit() {
                 };
                 await setDoc(doc(db, "users", firebaseUser.uid), newProfile);
                 clearPendingConsent();
+                if (seq !== snapSeq) return; // the write's own snapshot is newer
                 setUser(newProfile);
                 setLoading(false);
               }

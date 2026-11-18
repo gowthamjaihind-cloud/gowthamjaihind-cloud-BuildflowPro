@@ -5,8 +5,8 @@
  *
  * It mirrors firestore.rules, which guards the same data when the app writes
  * it directly:
- *   - a person's role is their profile role (users/{uid}.role), as the rules'
- *     hasAnyRole() reads it, falling back to their role in the org;
+ *   - a person's role is their role in THIS organization
+ *     (organizations/{orgId}.members[uid]), as the rules' orgRole() reads it;
  *   - reading a project: Owner/Admin, project access "read"/"write", or the
  *     project's owner; writing: Owner/Admin, access "write", or the owner,
  *     and never while the project is read-only (billingLocked).

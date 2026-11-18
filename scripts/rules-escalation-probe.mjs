@@ -99,8 +99,13 @@ await expect("Outsider reads a victim user's profile", false, read(mallory, "use
 console.log("\nApp paths (must stay allowed):");
 await expect("Owner saves GSTIN / state code", true, write(alice, `organizations/${ORG}`, { gstin: "29ABCDE1234F1Z5", stateCode: "29" }));
 await expect("Owner renames company", true, write(alice, `organizations/${ORG}`, { companyName: "Sample Builders Pvt Ltd" }));
-await expect("Owner adds a member", true, write(alice, `organizations/${ORG}`, { members: { alice: "Owner", sam: "Site Engineer", vic: "Viewer" } }));
-await expect("Owner edits a teammate's role", true, write(alice, "users/sam", { role: "Project Manager" }));
+// Membership and roles now change only through Cloud Functions (invites,
+// setMemberAccess), never from the browser -- see role-scope-probe.mjs. The
+// probe sets up what those functions would write.
+await expect("Owner rewrites the members map from the browser", false, write(alice, `organizations/${ORG}`, { members: { alice: "Owner", sam: "Site Engineer", vic: "Viewer" } }));
+await expect("Owner edits a teammate's role from the browser", false, write(alice, "users/sam", { role: "Project Manager" }));
+await write("owner", `organizations/${ORG}`, { members: { alice: "Owner", sam: "Project Manager", vic: "Viewer" } });
+await write("owner", "users/sam", { role: "Project Manager" });
 await expect("Teammate reads a teammate", true, read(sam, "users/alice"));
 await expect("User records consent on own profile", true, write(sam, "users/sam", { legal: { termsVersion: "v2" } }));
 await expect("User switches to an org they belong to", true, write(sam, "users/sam", { currentOrgId: ORG }));

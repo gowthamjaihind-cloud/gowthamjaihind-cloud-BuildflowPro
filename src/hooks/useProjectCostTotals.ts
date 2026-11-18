@@ -283,7 +283,7 @@ export const useProjectCostTotals = (projectId: string) => {
 
     const chartData = [
       { name: "Material", Budget: materialPlanned, Actual: materialActual },
-      { name: "Labor", Budget: laborPlanned, Actual: laborActual },
+      { name: "Labour", Budget: laborPlanned, Actual: laborActual },
       { name: "Equipment", Budget: equipmentPlanned, Actual: equipmentActual },
       { name: "Direct Cost", Budget: directPlanned, Actual: directActual },
     ];

@@ -11,3 +11,6 @@ coverage/
 .firebase/
 dist-demo
 dist-emulators
+
+# Local test recordings (shared outside git)
+audit/*.mp4

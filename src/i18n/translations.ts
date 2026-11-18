@@ -315,7 +315,7 @@ export const translations: { en: Record<string, string> } = {
     "onb.createOrg": "Create your organization",
     "onb.createPost": ". Set up your workspace to get started.",
     "onb.companyName": "Company / workspace name",
-    "onb.companyPlaceholder": "e.g. BV Realty",
+    "onb.companyPlaceholder": "e.g. ABC Builders",
     // This card's button calls createOrganization({ plan: "starter",
     // startTrial: true }) -- the SAME thing the Starter card's trial button
     // does. It used to read "Free / forever / 1 project - up to 2 users", none
@@ -338,7 +338,7 @@ export const translations: { en: Record<string, string> } = {
 
     // ---- Settings ----
     "settings.title": "Preferences",
-    "settings.subtitle": "Manage your global configuration and systemic parameters.",
+    "settings.subtitle": "Your company details, team, plan and connected apps.",
     "settings.back": "Back to Portfolio",
     "settings.tabOrganization": "Default Organization",
     "settings.tabTeam": "Team",
@@ -365,23 +365,23 @@ export const translations: { en: Record<string, string> } = {
     "cpay.recordPayment": "Record Client Payment",
 
     // ---- Create/Edit Project modal ----
-    "cpm.newWorkspace": "New Workspace",
-    "cpm.initParams": "Initialize Project Parameters",
-    "cpm.workspaceName": "Workspace Name",
+    "cpm.newWorkspace": "New Project",
+    "cpm.initParams": "Name it, set the dates, and start from a template",
+    "cpm.workspaceName": "Project Name",
     "cpm.projectCode": "Project code (optional)",
     "cpm.projectCodePlaceholder": "e.g. RR-2026-01",
     "cpm.projectCodeHint": "Shown on exported reports instead of the internal ID. Leave blank to use the internal ID.",
-    "cpm.workspacePlaceholder": "Project Horizon",
+    "cpm.workspacePlaceholder": "e.g. Sample Villa",
     "cpm.projectImage": "Project Image (Optional)",
     "cpm.uploadIcon": "Upload Icon",
-    "cpm.missionProfile": "Mission Profile",
+    "cpm.missionProfile": "Description",
     "cpm.missionPlaceholder": "Project scope and primary objectives...",
     "cpm.status": "Status",
     "cpm.commencement": "Commencement",
     "cpm.provisionalCompletion": "Provisional Completion",
     "cpm.discard": "Discard",
-    "cpm.initProject": "Initialize Project",
-    "cpm.editWorkspace": "Edit Workspace",
+    "cpm.initProject": "Create Project",
+    "cpm.editWorkspace": "Edit Project",
     "cpm.saveChanges": "Save Changes",
     "cpm.modifyParams": "Modify Project Parameters",
     "cpm.uploadCover": "Upload Cover",
@@ -481,6 +481,7 @@ export const translations: { en: Record<string, string> } = {
     "an.actual": "Actual",
     "an.overBudget": "over budget",
     "an.underBudget": "under budget",
+    "an.noBudget": "Spent so far · no budget set yet",
     "an.onBudget": "on budget",
     "an.noCostData":
       "No cost data yet. Add tasks with budgets and log actuals to see analytics.",

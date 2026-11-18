@@ -2274,7 +2274,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       }
                     >
                       <option value="Material">{t("an.catMaterial")}</option>
-                      <option value="Labor">Labor</option>
+                      <option value="Labor">Labour</option>
                       <option value="Both">Both</option>
                     </select>
                   </div>

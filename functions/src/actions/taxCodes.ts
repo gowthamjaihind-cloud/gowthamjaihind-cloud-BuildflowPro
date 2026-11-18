@@ -30,9 +30,10 @@ const noThinking = (model: string, b: any) =>
 async function requireManager(uid: string | undefined, orgId: string) {
   if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
   if (!orgId) throw new HttpsError("invalid-argument", "No workspace.");
-  const [u, o] = await Promise.all([db.doc(`users/${uid}`).get(), db.doc(`organizations/${orgId}`).get()]);
+  const o = await db.doc(`organizations/${orgId}`).get();
   const memberRole = (o.data()?.members || {})[uid];
-  const role = String(u.data()?.role || memberRole || "");
+  // The role in this organization, not the profile's (one value per person).
+  const role = String(memberRole || "");
   if (!memberRole || !MANAGER_ROLES.includes(role)) {
     throw new HttpsError("permission-denied", "Only an Owner, Admin, Project Manager or Project Director can change HSN and GST.");
   }

@@ -131,8 +131,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         <section className="soft-card p-4 md:p-5 squircle-24 flex flex-col gap-1.5 justify-center">
           <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">{t("an.variance")}</span>
-          <span className={`text-2xl font-black font-mono tracking-tight ${costVariance > 0 ? "text-danger" : "text-success"}`}>{inr(Math.abs(costVariance))}{" "}<span className="text-[11px] font-bold tracking-normal">{costVariance > 0 ? t("an.overBudget") : t("an.underBudget")}</span></span>
-          <span className="text-[10px] font-bold text-ink-muted">{t("an.totalSpent")} {inr(totalActual)}</span>
+          {/* No budget yet: every rupee spent is not "over budget". */}
+          {totalBudget > 0 ? (
+            <span className={`text-2xl font-black font-mono tracking-tight ${costVariance > 0 ? "text-danger" : "text-success"}`}>{inr(Math.abs(costVariance))}{" "}<span className="text-[11px] font-bold tracking-normal">{costVariance > 0 ? t("an.overBudget") : t("an.underBudget")}</span></span>
+          ) : (
+            <>
+              <span className="text-2xl font-black font-mono tracking-tight text-ink">{inr(totalActual)}</span>
+              <span className="text-[11px] font-bold text-ink-muted">{t("an.noBudget")}</span>
+            </>
+          )}
+          {totalBudget > 0 && <span className="text-[10px] font-bold text-ink-muted">{t("an.totalSpent")} {inr(totalActual)}</span>}
         </section>
 
         <section className="bg-surface-dark p-4 md:p-5 squircle-24 text-white flex flex-col gap-1.5 justify-center">

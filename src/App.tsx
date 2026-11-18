@@ -221,6 +221,8 @@ function AppContent() {
   if (!user.currentOrgId || hasInviteParam) {
     return <Onboarding user={user} />;
   }
+  // In the app: the joining hand-off Onboarding kept for this tab is done.
+  try { sessionStorage.removeItem("pendingInvite"); sessionStorage.removeItem("joinedOrg"); } catch { /* ignore */ }
 
   // Billing gate: block the app once the trial has ended (or a subscription
   // lapsed). Grandfathered orgs (no subscriptionStatus) are always allowed.

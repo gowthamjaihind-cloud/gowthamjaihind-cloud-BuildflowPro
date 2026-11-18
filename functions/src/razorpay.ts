@@ -904,7 +904,9 @@ export const razorpayWebhook = onRequest({ region: "asia-southeast1" }, async (r
       .createHmac("sha256", cfg.webhookSecret)
       .update((req as any).rawBody)
       .digest("hex");
-    if (expected !== signature) {
+    // Constant-time: a plain !== leaks how many leading characters match.
+    const sigBuf = Buffer.from(signature), expBuf = Buffer.from(expected);
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
       res.status(400).send("bad signature");
       return;
     }

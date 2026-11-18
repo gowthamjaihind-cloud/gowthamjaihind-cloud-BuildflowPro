@@ -51,7 +51,10 @@ export async function loadWho(uid: string, orgId: string, projectId: string) {
   const memberRole = (org.members || {})[uid];
   const who: Who = {
     uid,
-    role: String(user.role || memberRole || ""),
+    // The role in THIS organization (its members map), never users/{uid}.role:
+    // that is one value per person and follows whichever organization they
+    // created or joined last (see firestore.rules, orgRole).
+    role: String(memberRole || ""),
     isMember: !!memberRole,
     projectAccess: (user.projectAccess || {})[projectId],
     ownsProject: !!project && project.ownerId === uid,
