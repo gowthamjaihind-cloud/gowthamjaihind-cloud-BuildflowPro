@@ -198,7 +198,7 @@ const outro = el("scene");
     justifyContent: vertical?"center":"flex-start"});
   m.appendChild(el("markbox",{},"S")); m.appendChild(el("markw",{},"Sitetru"));
   wrap.appendChild(m);
-  const tagline = el("big",{fontSize:(V.big*(vertical?0.70:0.52))+"px", color:BRAND.primaryOnDark}, C.outroTag);
+  const tagline = el("big",{fontSize:(V.big*(vertical?0.70:0.52))+"px", color:"${BRAND.primaryOnDark}"}, C.outroTag);
   tagline.id="outroTag"; wrap.appendChild(tagline);
   const list = el("",{marginTop:V.pad*0.75+"px", display:"flex", flexWrap:"wrap",
     gap:V.pad*0.28+"px", justifyContent: vertical?"center":"flex-start"});
