@@ -128,7 +128,7 @@ const cl = (a,b,t)=>a+(b-a)*Math.max(0,Math.min(1,t));
 
 // ---------- build scenes ----------
 // The brand mark's three bars (remotion/src/kinetic/Mark.tsx), on the markbox tile.
-const BARS = "<svg viewBox=\"0 0 512 512\" width=\"100%\" height=\"100%\"><rect x=\"136\" y=\"272\" width=\"72\" height=\"104\" rx=\"22\" fill=\"#fff\"/><rect x=\"222\" y=\"212\" width=\"72\" height=\"164\" rx=\"22\" fill=\"#fff\"/><rect x=\"308\" y=\"140\" width=\"72\" height=\"236\" rx=\"22\" fill=\"#fff\"/></svg>";
+const BARS = "<svg viewBox='0 0 512 512' width='100%' height='100%'><rect x='136' y='272' width='72' height='104' rx='22' fill='#fff'/><rect x='222' y='212' width='72' height='164' rx='22' fill='#fff'/><rect x='308' y='140' width='72' height='236' rx='22' fill='#fff'/></svg>";
 function el(cls, css, html){ const d=document.createElement("div"); d.className=cls||"";
   if(css) Object.assign(d.style, css); if(html!=null) d.innerHTML=html; return d; }
 
