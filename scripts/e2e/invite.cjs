@@ -72,16 +72,53 @@ async function step(p, name, fn) { await caption(p, name); try { await fn(); res
     await p.getByText('Skip', { exact: true }).click({ timeout: 2000 }).catch(() => {});
     await shot(p, 'se-project', true);
   });
-  for (const m of ['Daily Logs', 'Inventory', 'Procurement', 'Cost Management', 'Client Estimates', 'Labour & Billing']) {
-    await step(p, `Site Engineer: ${m}`, async () => {
-      const ok = await openModule(p, m);
-      if (!ok) { note(`  ${m}: not in the menu`); return; }
-      await p.waitForTimeout(2000);
-      const t = (await p.locator('main').innerText()).replace(/\s+/g, ' ').slice(0, 160);
-      note(`  ${m}: ${t}`);
+  await step(p, 'Site Engineer: no money modules in the menu', async () => {
+    for (const m of ['Project Insights', 'Labour & Billing', 'Cost Management', 'Client Estimates']) {
+      if (await p.getByRole('button', { name: m, exact: true }).count()) throw new Error(m + ' is still in the menu');
+    }
+  });
+  const noRupee = async (where) => {
+    await p.waitForTimeout(1500);
+    const t = await p.locator('body').innerText();
+    const i = t.indexOf('₹');
+    if (i >= 0) throw new Error(`₹ shown on ${where}: ...${t.slice(Math.max(0, i - 60), i + 30).replace(/\s+/g, ' ')}`);
+  };
+  for (const m of ['Dashboard', 'WBS', 'Daily Logs', 'Inventory', 'Consumption History', 'Reports', 'Document Vault']) {
+    await step(p, `Site Engineer: ${m} shows no money`, async () => {
+      if (!(await openModule(p, m))) throw new Error('could not open ' + m);
+      await noRupee(m);
       await shot(p, 'se-' + m.replace(/\W+/g, '-'), false);
     });
   }
+  await step(p, 'Site Engineer: Procurement has only purchase orders and goods receipt, no prices', async () => {
+    await openModule(p, 'Procurement');
+    for (const tb of ['BILLS', 'RECEIPTS', 'LEDGER', 'VENDORS']) {
+      if (await p.locator('main button').filter({ hasText: new RegExp('^\\s*' + tb + '\\s*$', 'i') }).count()) throw new Error(tb + ' tab still shown');
+    }
+    await noRupee('purchase order list');
+    const po = p.getByText(/PO-\d{4}-\d{4}/).filter({ visible: true }).first();
+    if (await po.count()) { await po.click(); await noRupee('purchase order detail'); await shot(p, 'se-po-detail', false); await closeOverlays(p); }
+    await shot(p, 'se-procurement', false);
+  });
+  await step(p, 'Site Engineer: logs work with 2 masons (labour roles still load)', async () => {
+    await openModule(p, 'Daily Logs');
+    await p.getByRole('button', { name: /log work now|log another/i }).filter({ visible: true }).first().click(); await p.waitForTimeout(1000);
+    const loc = p.locator('select').filter({ hasText: 'Choose Location' }).filter({ visible: true }).first();
+    await loc.selectOption({ label: (await loc.locator('option').allInnerTexts()).find((x) => /General/.test(x)) });
+    await p.waitForTimeout(400);
+    const task = p.locator('select').filter({ visible: true }).filter({ hasText: /Choose Task/ }).first();
+    await task.selectOption({ index: 3 });
+    await p.getByRole('button', { name: /add labour/i }).filter({ visible: true }).last().click(); await p.waitForTimeout(600);
+    const lsel = p.locator('select').filter({ hasText: /Mason/ }).filter({ visible: true }).first();
+    await lsel.selectOption({ label: (await lsel.locator('option').allInnerTexts()).find((x) => /Mason/.test(x)) });
+    await lsel.locator('xpath=following::input[@type="number"][1]').fill('2');
+    await p.locator('textarea').filter({ visible: true }).first().fill('Shuttering for footing');
+    await noRupee('daily log form');
+    await p.getByRole('button', { name: /submit log/i }).filter({ visible: true }).last().click(); await p.waitForTimeout(2500);
+    await shot(p, 'se-after-submit', true);
+    await closeOverlays(p);
+    await p.getByText('Shuttering for footing').filter({ visible: true }).first().waitFor({ timeout: 8000 });
+  });
   await step(p, 'Site Engineer: Settings', async () => {
     await p.getByRole('button', { name: /switch/i }).filter({ visible: true }).first().click(); await p.waitForTimeout(1500);
     await shot(p, 'se-portfolio2', true);

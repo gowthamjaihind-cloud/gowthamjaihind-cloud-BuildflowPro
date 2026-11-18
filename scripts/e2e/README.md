@@ -7,7 +7,8 @@ local Firebase emulators. Never point them at production.
     npm run build:emulators
     npx vite preview --outDir dist-emulators --port 4173 --strictPort   # terminal 2
     node scripts/e2e/flow.cjs                      # new customer, sign-up to sign-out (40 steps)
-    node scripts/e2e/invite.cjs                    # needs explore@example.com with a "Sample Villa" project
+    EMAIL=explore@example.com node scripts/e2e/flow.cjs   # then:
+    node scripts/e2e/invite.cjs                    # invite a Site Engineer; checks they see no money
 
 `VIDEO=1` records a video, `OUT=dir` sets where screenshots, `results.json`
 and videos go (default: the system temp folder). Each step prints PASS/FAIL;
