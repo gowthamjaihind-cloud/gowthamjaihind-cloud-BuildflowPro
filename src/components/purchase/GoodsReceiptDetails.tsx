@@ -16,6 +16,7 @@ import { confirmDialog, toast } from "../../lib/feedback";
 import { DialogBehaviour } from "../../lib/useDialog";
 
 import { useTranslation } from "../../i18n";
+import { canSeeMoney } from "../../lib/moneyAccess";
 interface GoodsReceiptDetailsProps {
   grn: GoodsReceiptNote;
   projectId: string;
@@ -29,7 +30,11 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
   const [isDeleting, setIsDeleting] = useState(false);
 
   const isAdminOrOwner = user?.role === "Admin" || user?.role === "Owner" || user?.role === "Project Manager";
-  const canEditOrDelete = isAdminOrOwner || user?.uid === grn.createdByUid;
+  // Deleting reverses the supplier's balance, the ledger and the cost: money
+  // (lib/moneyAccess.ts), which a Site Engineer can neither read nor undo.
+  const seeMoney = canSeeMoney(user?.role);
+  const isCreator = user?.uid === grn.createdByUid;
+  const canEditOrDelete = isAdminOrOwner || (isCreator && seeMoney);
 
   const tenantPath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
 
@@ -159,6 +164,11 @@ export const GoodsReceiptDetails: React.FC<GoodsReceiptDetailsProps> = ({ grn, p
                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />} Delete GRN
                </button>
             </div>
+         )}
+         {!canEditOrDelete && isCreator && (
+            <p className="p-6 border-t border-divider bg-panel text-xs font-semibold text-ink-muted shrink-0">
+               Recorded this by mistake? Ask your Project Manager or Owner to delete it: deleting also undoes the supplier's balance.
+            </p>
          )}
       </motion.div>
     </div>

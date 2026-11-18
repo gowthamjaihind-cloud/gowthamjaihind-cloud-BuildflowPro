@@ -371,7 +371,7 @@ export const translations: { en: Record<string, string> } = {
     "cpm.projectCode": "Project code (optional)",
     "cpm.projectCodePlaceholder": "e.g. RR-2026-01",
     "cpm.projectCodeHint": "Shown on exported reports instead of the internal ID. Leave blank to use the internal ID.",
-    "cpm.workspacePlaceholder": "e.g. Sample Villa",
+    "cpm.workspacePlaceholder": "e.g. Lakeview Residence",
     "cpm.projectImage": "Project Image (Optional)",
     "cpm.uploadIcon": "Upload Icon",
     "cpm.missionProfile": "Description",

@@ -79,6 +79,7 @@ import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
 import { DialogBehaviour } from "../lib/useDialog";
+import { useCanSeeMoney } from "../lib/moneyAccess";
 // Removed unused import
 
 interface ProcurementViewProps {
@@ -104,6 +105,9 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   const breakpoint = useBreakpoint();
 
   const [activeTab, setActiveTab] = useState<Tab>("purchase_orders");
+  // Site Engineers raise and receive material here; bills, payments, the
+  // ledger and vendor balances are money (lib/moneyAccess.ts).
+  const seeMoney = useCanSeeMoney();
   const [showScanInvoice, setShowScanInvoice] = useState(false);
   const [bills, setBills] = useState<VendorBill[]>([]);
   const [reviewBill, setReviewBill] = useState<VendorBill | null>(null);
@@ -305,7 +309,8 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       (error) => handleFirestoreError(error, OperationType.LIST, vendorsPath),
     );
 
-    const unsubReceipts = onSnapshot(
+    const none = () => {};
+    const unsubReceipts = !seeMoney ? none : onSnapshot(
       query(collection(db, receiptsPath), orderBy("receiptDate", "desc")),
       (snapshot) => {
         setReceipts(
@@ -317,10 +322,10 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       (error) => handleFirestoreError(error, OperationType.LIST, receiptsPath),
     );
 
-    const unsubLedger = onSnapshot(
+    const unsubLedger = !seeMoney ? none : onSnapshot(
       query(collection(db, ledgerPath), orderBy("date", "desc")),
       (snapshot) => {
-        console.log("Fetched ledger:", snapshot.docs.map((d) => d.data())); setLedger(
+        setLedger(
           snapshot.docs.map(
             (doc) => ({ id: doc.id, ...doc.data() }) as VendorLedgerEntry,
           ),
@@ -360,7 +365,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     );
 
     const billsPath = `${basePath}/vendor_bills`;
-    const unsubBills = onSnapshot(
+    const unsubBills = !seeMoney ? none : onSnapshot(
       query(collection(db, billsPath)),
       (snapshot) => {
         setBills(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as VendorBill));
@@ -377,7 +382,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
       unsubGRNs();
       unsubBills();
     };
-  }, [projectId]);
+  }, [projectId, seeMoney]);
 
   const handleAddReceipt = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2041,14 +2046,9 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             Ledger and Vendors off the edge with nothing to say they were there. */}
         <div className="flex flex-wrap gap-2 bg-panel/50 p-1 md:p-1.5 rounded-xl md:rounded-2xl w-full md:w-auto md:min-w-0 md:flex-1 ring-1 ring-slate-200/50">
           {(
-            [
-              "purchase_orders",
-              "goods_receipt",
-              "bills",
-              "receipts",
-              "ledger",
-              "vendors",
-            ] as Tab[]
+            (seeMoney
+              ? ["purchase_orders", "goods_receipt", "bills", "receipts", "ledger", "vendors"]
+              : ["purchase_orders", "goods_receipt"]) as Tab[]
           ).map((tab) => (
             <button
               key={tab}
@@ -2070,7 +2070,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
           ))}
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto md:shrink-0">
+        {seeMoney && <div className="flex items-center gap-3 w-full md:w-auto md:shrink-0">
           <div className="hidden sm:flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 bg-warning/12 rounded-lg md:rounded-2xl">
             <Users className="w-3.5 h-3.5 text-primary-strong" />
             <span className="text-[10px] md:text-[10px] font-black text-primary-strong uppercase tracking-widest">
@@ -2097,7 +2097,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             <Download className="w-3.5 h-3.5" /> {t("common.exportPdf")}
           </button>
         </div>
-        </div>
+        </div>}
       </div>
 
       <AnimatePresence mode="wait">

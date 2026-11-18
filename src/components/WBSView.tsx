@@ -71,6 +71,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { calculateCPM, autoShiftTasks } from "../services/schedulingService";
 import { RoleGuard } from "./RoleGuard";
 import { useTaskStore, useProjectDataStore } from "../store";
+import { useCanSeeMoney } from "../lib/moneyAccess";
 import { useTasksQuery } from "../hooks/queries";
 import { orderTasksByWbs, wbsOptionLabel } from "../lib/wbsOrder";
 import { tasksToTemplateNodes } from "../lib/wbsTemplates";
@@ -93,6 +94,9 @@ interface WBSViewProps {
 }
 
 export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
+  // Budget, actual and resource value are not for roles that do not see
+  // money (lib/moneyAccess.ts).
+  const seeMoney = useCanSeeMoney();
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -932,6 +936,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                 {task.freeFloat || 0}d
               </span>
             </div>
+            {seeMoney && <>
             <div className="w-auto sm:w-24 md:w-28 flex flex-col items-end shrink-0">
               <span className="text-[8px] sm:text-xs font-black text-ink tracking-tighter">
                 ₹
@@ -957,6 +962,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                 Act
               </span>
             </div>
+            </>}
 
             <div className="w-10 sm:w-28 md:w-32 flex flex-col items-end gap-1.5 shrink-0">
               <div className="flex-1 h-1.5 w-full bg-panel rounded-full overflow-hidden shadow-inner ring-1 ring-divider/50 hidden sm:block relative">
@@ -1251,8 +1257,8 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
               <div className="flex items-center gap-1.5 md:gap-4 lg:gap-6 px-1.5 md:px-4 shrink-0">
                 <div className="w-24 hidden xl:block">{t("dashboard.timeline")}</div>
                 <div className="w-16 hidden xl:block text-center">Spare days</div>
-                <div className="w-14 sm:w-24 md:w-28 text-right">{t("dashboard.budget")}</div>
-                <div className="w-14 sm:w-24 md:w-28 text-right">{t("an.actual")}</div>
+                {seeMoney && <div className="w-14 sm:w-24 md:w-28 text-right">{t("dashboard.budget")}</div>}
+                {seeMoney && <div className="w-14 sm:w-24 md:w-28 text-right">{t("an.actual")}</div>}
                 <div className="w-14 sm:w-28 md:w-32 text-center text-white/80">
                   {t("an.moduleProgress")}
                 </div>
@@ -2655,11 +2661,11 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                                           {res.name}
                                         </div>
                                         <div className="text-[8px] md:text-[10px] font-medium text-ink-muted mt-0.5 uppercase tracking-wider">
-                                          {res.unit} • ₹
-                                          {res.costPerUnit.toLocaleString(
+                                          {res.unit}
+                                          {seeMoney && <>{" • ₹"}{res.costPerUnit.toLocaleString(
                                             "en-IN",
                                             { maximumFractionDigits: 0 },
-                                          )}
+                                          )}</>}
                                         </div>
                                       </div>
                                       <input
@@ -2972,6 +2978,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                   )}
 
                   {/* Financial Summary Sheet */}
+                  {seeMoney && (
                   <div
                     className={
                       breakpoint !== "desktop"
@@ -3169,6 +3176,7 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
                       )}
                     </AnimatePresence>
                   </div>
+                  )}
                 </div>
 
                 <div className="px-6 md:px-10 py-5 md:py-8 bg-surface border-t border-divider flex items-center justify-between shrink-0">

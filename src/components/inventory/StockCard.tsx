@@ -12,6 +12,7 @@ import { db } from "../../firebase";
 import { confirmDialog, toast } from "../../lib/feedback";
 import { DialogBehaviour } from "../../lib/useDialog";
 import type { InventoryItem } from "../../types";
+import { canSeeMoney } from "../../lib/moneyAccess";
 
 /**
  * One material's stock card (Inventory > Stock Ledger > tap a material):
@@ -38,6 +39,7 @@ export const StockCard: React.FC<{ item: InventoryItem; projectId: string; onClo
   const [openingEdit, setOpeningEdit] = useState<string | null>(null);
   const [savingOpening, setSavingOpening] = useState(false);
   const isManager = ["Owner", "Admin", "Project Manager", "Project Director"].includes(String(user?.role));
+  const seeMoney = canSeeMoney(user?.role); // the receipt rate is money (lib/moneyAccess.ts)
 
   const card = useMemo(
     () => stockCard(item, grns, dailyLogs as any[], (id) => tasks.find((t: any) => t.id === id)?.name || ""),
@@ -177,7 +179,7 @@ export const StockCard: React.FC<{ item: InventoryItem; projectId: string; onClo
                     </div>
                     <div className="text-right shrink-0">
                       <p className={`text-sm font-black font-mono ${r.kind === "out" ? "text-danger" : "text-success"}`}>{r.kind === "out" ? "−" : "+"}{q(r.qty)}</p>
-                      {r.rate ? <p className="text-[10px] text-ink-muted font-mono">@ ₹{r.rate.toLocaleString("en-IN")}</p> : null}
+                      {r.rate && seeMoney ? <p className="text-[10px] text-ink-muted font-mono">@ ₹{r.rate.toLocaleString("en-IN")}</p> : null}
                       <p className="text-[10px] text-ink-muted font-mono">Bal {q(r.balance)}</p>
                     </div>
                   </div>

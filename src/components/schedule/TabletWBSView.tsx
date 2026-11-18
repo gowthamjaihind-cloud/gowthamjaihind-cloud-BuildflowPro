@@ -24,6 +24,7 @@ import { Tooltip } from "../Tooltip";
 import { EmptyState } from "../EmptyState";
 
 import { useTranslation } from "../../i18n";
+import { canSeeMoney } from "../../lib/moneyAccess";
 export interface TabletWBSViewProps {
   projectId: string;
   onOpenFullForm: (task?: Task, parentId?: string | null) => void;
@@ -199,11 +200,13 @@ export const TabletWBSView: React.FC<TabletWBSViewProps> = ({
               </div>
 
               {/* Cost */}
+              {canSeeMoney(useAuthStore.getState().user?.role) && (
               <div className="w-24 shrink-0 text-right">
                 <span className="text-sm font-mono font-bold text-ink">
                   {taskCost > 0 ? `₹${taskCost.toLocaleString("en-IN")}` : "—"}
                 </span>
               </div>
+              )}
             </div>
 
             <Tooltip label={"Edit task"}>
@@ -600,6 +603,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
                 {planStart || "--"} → {planFinish || "--"}
               </span>
             </div>
+            {canSeeMoney(useAuthStore.getState().user?.role) && (
             <div className="flex justify-between items-center py-1">
               <span className="text-sm font-bold text-ink-muted">
                 Resource Value
@@ -608,6 +612,7 @@ const TabletTaskSheet: React.FC<TabletTaskSheetProps> = ({
                 ₹{totalRes.toLocaleString("en-IN")}
               </span>
             </div>
+            )}
           </div>
 
           <div className="my-6 border-t border-divider" />

@@ -174,7 +174,7 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
                         {log.labour.length > 0 && (
                           <div>
                             <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest flex items-center gap-1 mb-1.5 opacity-70">
-                              <Users className="w-3 h-3" /> Labor
+                              <Users className="w-3 h-3" /> Labour
                             </span>
                             <ul className="space-y-1 text-xs">
                               {log.labour.map((l, i) => (

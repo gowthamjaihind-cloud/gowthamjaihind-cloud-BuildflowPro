@@ -23,6 +23,7 @@ import { Tooltip } from "../Tooltip";
 import { EmptyState } from "../EmptyState";
 
 import { useTranslation } from "../../i18n";
+import { canSeeMoney } from "../../lib/moneyAccess";
 export interface MobileWBSViewProps {
   projectId: string;
   onOpenFullForm: (task?: Task, parentId?: string | null) => void;
@@ -527,6 +528,7 @@ const MobileTaskSheet: React.FC<MobileTaskSheetProps> = ({
                 {planStart || "--"} → {planFinish || "--"}
               </span>
             </div>
+            {canSeeMoney(useAuthStore.getState().user?.role) && (
             <div className="flex justify-between items-center py-1">
               <span className="text-xs font-bold text-ink-muted">
                 Resource Value
@@ -535,6 +537,7 @@ const MobileTaskSheet: React.FC<MobileTaskSheetProps> = ({
                 ₹{totalRes.toLocaleString("en-IN")}
               </span>
             </div>
+            )}
           </div>
 
           <div className="my-6 border-t border-divider" />

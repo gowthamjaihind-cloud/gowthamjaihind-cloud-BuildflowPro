@@ -58,6 +58,7 @@ import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
 import { DialogBehaviour } from "../lib/useDialog";
+import { useCanSeeMoney } from "../lib/moneyAccess";
 
 /** Units Indian sites buy and issue in. Editable under Configuration. */
 const DEFAULT_UNITS = ["bag", "kg", "MT", "nos", "cum", "cft", "sqft", "sqm", "rmt", "litre", "load", "box"];
@@ -68,6 +69,7 @@ interface InventoryViewProps {
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
   const { t } = useTranslation();
+  const seeMoney = useCanSeeMoney(); // stock value and unit cost are money (lib/moneyAccess.ts)
   const projectLabel = useProjectLabel(projectId);
   const { user } = useAuthStore();
   const basePath = user?.currentOrgId ? `organizations/${user.currentOrgId}/projects/${projectId}` : `projects/${projectId}`;
@@ -527,8 +529,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       "Group Code",
       "In Stock Qty",
       "Unit",
-      "Unit Cost (₹)",
-      "Total Value (₹)",
+      ...(seeMoney ? ["Unit Cost (₹)", "Total Value (₹)"] : []),
       "Min Threshold",
     ];
     const rows = filteredItems.map((item) => {
@@ -544,8 +545,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         // up as 297.79999999999995.
         round3(avail),
         item.unit || "MT",
-        round2(cost),
-        round2(avail * cost),
+        ...(seeMoney ? [round2(cost), round2(avail * cost)] : []),
         item.minThreshold || 0,
       ];
     });
@@ -560,8 +560,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
       "Category",
       "Stock Qty",
       "Unit",
-      "Unit Cost (₹)",
-      "Total Value (₹)",
+      ...(seeMoney ? ["Unit Cost (₹)", "Total Value (₹)"] : []),
     ];
     const rows = filteredItems.map((item) => {
       const avail = Math.max(0, item.quantity - (item.consumed || 0));
@@ -572,8 +571,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         item.category || "Material",
         qty(avail),
         item.unit || "MT",
-        `₹${money(cost)}`,
-        `₹${money(avail * cost)}`,
+        ...(seeMoney ? [`₹${money(cost)}`, `₹${money(avail * cost)}`] : []),
       ];
     });
     const dateStr = new Date().toISOString().split("T")[0];
@@ -670,8 +668,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6">
+      {/* Stats Grid. Valuation and allocated cost are money (lib/moneyAccess.ts). */}
+      {!seeMoney && stats.overConsumed > 0 && (
+        <p role="status" className="text-xs font-bold text-warning bg-warning/12 border border-warning/25 rounded-xl px-4 py-3">
+          {stats.overConsumed} item{stats.overConsumed > 1 ? "s" : ""} logged more usage than stock received. Record the missing goods receipts.
+        </p>
+      )}
+      <div className={`grid grid-cols-1 ${seeMoney ? "sm:grid-cols-3" : ""} gap-3 md:gap-6`}>
+        {seeMoney && <>
         <div className="bg-surface-dark p-4 md:p-5 rounded-2xl text-white relative overflow-hidden group shadow-xl">
           <div className="relative z-10">
             <div className="flex items-center justify-between gap-2 mb-2 md:mb-6">
@@ -723,6 +727,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
             </h3>
           </div>
         </div>
+        </>}
 
         <div className="bg-surface p-4 md:p-5 rounded-2xl border border-divider shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
@@ -1030,7 +1035,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                         </div>
                       ),
                     },
-                  ]}
+                  ].filter((c) => seeMoney || (c.key !== "unitCost" && c.key !== "totalValue"))}
                 />
               ) : (
                 <div className="flex flex-col gap-2 p-4 h-[60vh] min-h-[400px] overflow-y-auto bg-panel/30">
@@ -1085,6 +1090,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                           <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-0.5">Stock</p>
                           <p className="text-[13px] font-mono font-black text-ink">{qty(item.quantity - (item.consumed || 0))} {item.unit}</p>
                         </div>
+                        {seeMoney && <>
                         <div className="flex-1">
                           <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-0.5">Unit Cost</p>
                           <p className="text-[13px] font-mono font-black text-ink">₹{money(item.unitCost)}</p>
@@ -1093,6 +1099,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ projectId }) => {
                           <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-0.5">Value</p>
                           <p className="text-[13px] font-mono font-black text-ink">₹{money((item.quantity - (item.consumed || 0)) * item.unitCost)}</p>
                         </div>
+                        </>}
                       </div>
                     </div>
                   ))}

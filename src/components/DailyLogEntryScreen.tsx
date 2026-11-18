@@ -37,6 +37,7 @@ import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { newestLogFirst } from "../lib/timeKey";
 import { sameDayLogs, whoSaved } from "../lib/duplicateLog";
+import { useCanSeeMoney } from "../lib/moneyAccess";
 
 interface DailyLogEntryScreenProps {
   projectId: string;
@@ -53,6 +54,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
   onClose,
 }) => {
   const { t } = useTranslation();
+  const seeMoney = useCanSeeMoney(); // equipment cost is money (lib/moneyAccess.ts)
   const [selectedTaskId, setSelectedTaskId] = useState<string>(
     editLog?.taskId || taskId || "",
   );
@@ -793,9 +795,9 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                   ) : (
                     <span />
                   )}
-                  <span className="text-xs font-black text-ink font-mono">
+                  {seeMoney && <span className="text-xs font-black text-ink font-mono">
                     {t("dlog.equipmentTotal", { amount: equipmentTotal.toLocaleString("en-IN") })}
-                  </span>
+                  </span>}
                 </div>
               )}
 
