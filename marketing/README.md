@@ -288,25 +288,23 @@ npm run capture:screens                      # -> marketing/video/screens/
 Captures at 3200x2000. The video crops *into* these images, so the resolution
 is load-bearing — do not shrink them.
 
-**There are two sets, and which one you overwrite matters.**
+**Every film shows the app in its LIGHT theme.** Two sets are still kept.
 
 ```bash
-npm run capture:screens                                   # dark  -> video/screens/
-FILM_THEME=light OUT_DIR=marketing/video/screens-light \
-  npm run capture:screens                                 # light -> video/screens-light/
+npm run capture:screens                                   # light -> video/screens-light/
+FILM_THEME=dark npm run capture:screens                   # dark  -> video/screens/ (kept, unused)
 ```
 
-`capture-screens.mjs` defaults to **dark**, and the launch film, the silent
-Hero cut and the walkthrough cut-aways all want it that way — the launch film
-opens and closes on dark brand cards, and white screenshots in its middle gave
-it a 185-luma jump in two frames. The kinetic cut is the one film set in the
-LIGHT theme, and it reads `l-*.png` in `remotion/public`.
+`capture-screens.mjs`, `capture-extras.mjs` and the walkthrough recorder all
+default to **light**. The Remotion films (kinetic, Pulse, launch, Hero, Social)
+read `l-*.png` in `remotion/public`; `video/build.mjs` (vertical and Tamil)
+reads `video/screens-light/`. The launch film's title cards and caption band
+stay on the brand navy around the light screens, so the cuts into and out of
+them are dissolves or flashes rather than a bare 185-luma jump.
 
-So a re-capture that forgets `FILM_THEME=light` does not fail: it overwrites
-the light set with dark frames under light names, and the kinetic cut renders
-dark with ink captions on near-black screens. `marketing/kinetic.spec.ts`
-measures the actual luma of three referenced screenshots for exactly this, and
-skips itself where there is no ffmpeg.
+`marketing/kinetic.spec.ts` measures the actual luma of referenced light
+screenshots, so a dark capture written under light names fails rather than
+rendering quietly. It skips itself where there is no ffmpeg.
 
 The layout is pixel-identical between the two themes, which is why every crop
 in the kinetic cut carried over from the dark version unchanged.

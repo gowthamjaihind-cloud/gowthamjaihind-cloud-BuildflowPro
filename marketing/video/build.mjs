@@ -8,7 +8,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const CHROME = process.env.CHROME_PATH ||
   "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 
-const SCREENS = join(HERE, "screens");
+const SCREENS = join(HERE, "screens-light"); // the light theme, like every film
 const IMG = {
   wbs:  join(SCREENS, "m-03-wbs.png"),
   logs: join(SCREENS, "m-04-daily-logs.png"),

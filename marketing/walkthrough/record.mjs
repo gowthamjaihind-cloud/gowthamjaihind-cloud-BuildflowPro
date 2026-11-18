@@ -43,7 +43,7 @@ const W = 1920, H = 1080;
  * opening than the voice starting over a still-arriving screen.
  */
 /** Which theme the app is recorded in. See the init script. */
-const THEME = process.env.FILM_THEME || "dark";
+const THEME = process.env.FILM_THEME || "light";
 
 const HEAD_TRIM = 2.6;
 
@@ -414,12 +414,13 @@ await ctx.addInitScript((THEME) => {
   } catch {
     /* private mode: the tour will open and the run will report the failures */
   }
-  // Dark mode, set BEFORE the app boots.
+  // The theme, set BEFORE the app boots.
   //
   // uiStore reads `localStorage.darkMode` once, at store creation, and toggles
   // the `dark` class from it. Flipping the theme after load would put light
   // frames at the head of the recording and a re-layout on top of them; this
-  // way the app has never been in light mode. FILM_THEME=light to go back.
+  // way the app is never seen in the other theme. Light by default, like
+  // every film; FILM_THEME=dark for the old look.
   try {
     localStorage.setItem("darkMode", String(THEME !== "light"));
   } catch {

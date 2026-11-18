@@ -95,14 +95,14 @@ const F = {
 } satisfies Record<string, Focus>;
 
 const S = {
-  logs: "m-04-daily-logs.png",
-  wbs: "m-03-wbs.png",
-  inventory: "m-06-inventory.png",
-  procurement: "m-07-procurement.png",
-  cost: "m-09-cost-management-tasks.png",
-  insights: "m-02-insights.png",
-  estimates: "m-10-client-estimates.png",
-  portfolio: "m-00-portfolio.png",
+  logs: "l-04-daily-logs.png",
+  wbs: "l-03-wbs.png",
+  inventory: "l-06-inventory.png",
+  procurement: "l-07-procurement.png",
+  cost: "l-09-cost-management-tasks.png",
+  insights: "l-02-insights.png",
+  estimates: "l-10-client-estimates.png",
+  portfolio: "l-00-portfolio.png",
 };
 
 /**

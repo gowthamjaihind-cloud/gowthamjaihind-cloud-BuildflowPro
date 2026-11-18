@@ -32,12 +32,12 @@ const F = {
 };
 
 const S = {
-  wbs: "m-03-wbs.png",
-  logs: "m-04-daily-logs.png",
-  proc: "m-07-procurement.png",
-  cost: "m-09-cost-management.png",
-  est: "m-10-client-estimates.png",
-  dash: "m-01-dashboard.png",
+  wbs: "l-03-wbs.png",
+  logs: "l-04-daily-logs.png",
+  proc: "l-07-procurement.png",
+  cost: "l-09-cost-management.png",
+  est: "l-10-client-estimates.png",
+  dash: "l-01-dashboard.png",
 };
 
 /** Beat boundaries in frames at 30fps. */

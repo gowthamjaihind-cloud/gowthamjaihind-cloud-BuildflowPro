@@ -4,16 +4,16 @@
 // capture-screens.mjs (serve-demo.mjs on :4173). Prints MISSING for any shot
 // it could not reach instead of failing the run.
 //
-//   FILM_THEME=light OUT_DIR=marketing/video/screens-light node marketing/capture/capture-extras.mjs
+//   node marketing/capture/capture-extras.mjs   # light, into video/screens-light
 import { chromium } from "playwright-core";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const OUT = process.env.OUT_DIR || resolve(HERE, "../video/screens");
+const OUT = process.env.OUT_DIR || resolve(HERE, process.env.FILM_THEME === "dark" ? "../video/screens" : "../video/screens-light");
 const CHROME = process.env.CHROME_PATH || "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 const BASE = process.env.DEMO_URL || "http://localhost:4173";
-const THEME = process.env.FILM_THEME || "dark";
+const THEME = process.env.FILM_THEME || "light"; // every film is light; FILM_THEME=dark for the old set
 
 const browser = await chromium.launch({ executablePath: CHROME, args: ["--no-sandbox"] });
 const ctx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 2, serviceWorkers: "block" });
