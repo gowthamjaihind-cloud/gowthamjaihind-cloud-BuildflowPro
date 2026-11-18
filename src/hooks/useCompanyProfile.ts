@@ -3,6 +3,8 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuthStore } from "../store";
 import type { CompanyProfile } from "../types";
+import { demoRequested } from "../demo";
+import { demoCompany } from "@demo";
 
 /**
  * The company's letterhead details (address, contact, PAN, logo, standard PO
@@ -15,6 +17,11 @@ export function useCompanyProfile() {
   const [loading, setLoading] = useState(!!orgId);
 
   useEffect(() => {
+    if (__DEMO__ && demoRequested()) {
+      setProfile((demoCompany?.profile || {}) as CompanyProfile);
+      setLoading(false);
+      return;
+    }
     if (!orgId) {
       setProfile({});
       setLoading(false);
@@ -50,6 +57,7 @@ export function useCompanyProfile() {
 
 /** Read once, outside React (the PDF export needs it at click time). */
 export async function fetchCompanyProfile(orgId: string | undefined | null): Promise<CompanyProfile> {
+  if (__DEMO__ && demoRequested()) return (demoCompany?.profile || {}) as CompanyProfile;
   if (!orgId) return {};
   try {
     const snap = await getDoc(doc(db, "organizations", orgId, "profile", "company"));

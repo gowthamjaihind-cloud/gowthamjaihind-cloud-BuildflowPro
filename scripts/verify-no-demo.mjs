@@ -19,6 +19,7 @@ const NEEDLES = [
   "Sample Cement Supplier",
   "demo@sitetru.com",
   "Demo Owner",
+  "Demo Constructions",
   // Retired real-sounding names and localities. Kept as needles so a stale
   // copy pasted back in is caught. The landing page deliberately says
   // "Your Project" rather than a fixture name, so nothing here collides with
