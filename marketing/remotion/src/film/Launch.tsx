@@ -77,7 +77,7 @@ const F = {
   wbsWide: { cx: 1950, cy: 1000, w: 2950 },
   wbsIn: { cx: 1930, cy: 1120, w: 2550 },
   invWide: { cx: 1960, cy: 950, w: 2900 },
-  invIn: { cx: 1940, cy: 1020, w: 2520 },
+  invIn: { cx: 1940, cy: 1180, w: 2520 },
   procWide: { cx: 1950, cy: 830, w: 2900 },
   procIn: { cx: 1930, cy: 870, w: 2520 },
   // Cost lands on the TASK COSTS tab, not Overview. The line says "against
@@ -115,10 +115,11 @@ const S = {
  */
 const MARKS = {
   wbs: [{ x: 780, y: 1120, w: 2300, h: 150, label: "task advances" }],
-  inventory: [{ x: 780, y: 900, w: 2320, h: 150, label: "issued from stock" }],
+  // The cement row: what is left after the day's issue, at its value.
+  inventory: [{ x: 780, y: 1450, w: 2340, h: 140, label: "issued from stock" }],
   // PO-2026-0018's amount and its PARTIALLY RECEIVED status: the two things
   // the line is talking about at that moment.
-  procurement: [{ x: 2300, y: 800, w: 800, h: 120, label: "reconciled" }],
+  procurement: [{ x: 2330, y: 868, w: 560, h: 124, label: "reconciled" }],
   // The First floor row's planned total against its actual spend, on the Task
   // Costs tab -- one task's budget, which is the whole point of the line.
   cost: [{ x: 2295, y: 1485, w: 760, h: 112, label: "this task's budget" }],
