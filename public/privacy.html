@@ -46,7 +46,7 @@
 
     <div class="card">
       <h1>Privacy Policy</h1>
-      <p class="meta">Version 2026-08-25 · Last updated 25 August 2026</p>
+      <p class="meta">Version 2026-11-18 · Last updated 18 November 2026</p>
       <p class="lead">This Privacy Policy explains how Sitetru (“Sitetru”, “we”, “us”, or “our”) collects, uses, shares, and protects information when you use the Sitetru web and mobile applications, the Sitetru Telegram bot, and related services (the “Service”). It applies to personal data we process as a business, and describes the choices and rights available to you. It should be read together with our <a href="/terms.html">Terms of Service</a>.</p>
 
       <h2>1. Who is responsible for your data</h2>
@@ -77,7 +77,7 @@
       <p>Our legal bases (where applicable) include performance of our contract with you, our legitimate interests in operating and securing the Service, your consent (which you may withdraw), and compliance with law.</p>
 
       <h2>4. AI processing</h2>
-      <p>When you use AI features (for example, scanning a vendor invoice or generating project insights), the relevant content is sent to a third-party AI provider (currently Google Gemini) to produce a result that is returned to the Service. We send only the content needed for the feature. AI output may be inaccurate and should be reviewed before use. We do not use your Customer Data to train our own models.</p>
+      <p>When you use AI features (for example, scanning a vendor invoice or generating project insights), the relevant content is sent to a third-party AI provider (currently Google Gemini) to produce a result that is returned to the Service. We send only the content needed for the feature. AI output may be inaccurate and should be reviewed before use. We use Gemini on Google’s paid service tier, under which Google does not use the content we send, or the results, to improve its products. We do not use your Customer Data to train our own models.</p>
 
       <h2>5. How we share information</h2>
       <p>We do not sell your personal data. We share it only:</p>
@@ -93,7 +93,9 @@
         <tr><td>Google Firebase (Google Cloud)</td><td>Authentication, database (Firestore), cloud functions, hosting, file storage</td><td>Core infrastructure</td></tr>
         <tr><td>Google Gemini</td><td>AI document reading and insights</td><td>Only content for the requested feature</td></tr>
         <tr><td>Resend</td><td>Transactional email (e.g. invitations)</td><td>Recipient email + message content</td></tr>
-        <tr><td>Telegram</td><td>Optional field-logging bot</td><td>Only if you connect Telegram</td></tr>
+        <tr><td>Telegram</td><td>Optional field-logging bot</td><td>Only if you connect Telegram. Bot messages and photos pass through Telegram’s servers and are not end-to-end encrypted</td></tr>
+        <tr><td>Razorpay</td><td>Subscription payments</td><td>Your name and email to start a payment; card, UPI and bank details are entered with Razorpay directly and never reach Sitetru</td></tr>
+        <tr><td>Sentry</td><td>Error monitoring for the app and its servers</td><td>Error reports with your account ID, email and browser/device details; no session recording</td></tr>
       </table>
       </div>
 
