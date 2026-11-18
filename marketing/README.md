@@ -19,8 +19,9 @@ surfaces later, when a video is doing well.
 | `remotion/out/sitetru-launch.mp4` | The launch film. Argues. Cut from stills. Voiceover + score. | ~79s |
 | `remotion/out/sitetru-hero.mp4` | The same stills, SILENT, captions only. The autoplay cut for the site. | ~83s |
 | `walkthrough/out/sitetru-walkthrough.mp4` | The walkthrough. Explains. The product actually running. | ~2:30 |
-| `remotion/out/sitetru-kinetic.mp4` | The kinetic cut. The landing-page hero. A scene per feature, explained in the app's own words, narrated. Scored, LIGHT theme, 16:9. | ~60s |
-| `remotion/out/sitetru-kinetic-music.mp4` | The same picture with no narration: the score at full level and a sound on each of the picture's effects. | ~60s |
+| `remotion/out/sitetru-kinetic.mp4` | The kinetic cut. The landing-page hero. A scene per feature, explained in the app's own words, narrated. Scored, LIGHT theme, 16:9. | ~74s |
+| `remotion/out/sitetru-kinetic-music.mp4` | The same picture with no narration: the score at full level and a sound on each of the picture's effects. | ~74s |
+| `remotion/out/sitetru-pulse.mp4` / `-vertical.mp4` | **Pulse**, the fast cut. 40 shots in 40 seconds, every cut on a beat, kinetic type, two drops. Music only. 16:9 and 9:16. | 40s |
 
 Different jobs, on purpose. The launch film opens on the evening a contractor
 spends finding out what happened today, names the one genuinely unusual thing
@@ -228,6 +229,31 @@ of them came along — so the films were rendered in the retired brand around
 screenshots that show the current one, the walkthrough's click ring pinged
 orange over a cobalt product, and nothing caught any of it, because
 `marketing/` is a separate package with no CI step of its own.
+
+### Pulse, the fast cut
+
+`remotion/src/pulse/` -- `pulse.json` is the whole film: 40 shots, each a whole
+number of beats at 120 BPM (15 frames), each with its cut effect (punch-in,
+whip pan with motion blur, 3D spin, iris zoom, chromatic glitch, flash,
+stutter). Shots marked `hit` are the impacts: the logo, the first montage
+shot, the second drop and the end card.
+
+```bash
+node marketing/films/pulse.mjs            # score -> 16:9 and 9:16 -> mix
+node marketing/films/pulse.mjs --mux-only # re-score and re-mix only
+```
+
+`films/pulse.mjs` reads the cut and impact times out of `pulse.json` and hands
+them to `music/score.py pulse`, so the kick, the whooshes on the montage cuts,
+the stabs on the one-beat cuts and the drop impacts sit on the picture by
+construction. Same rule as the other films: nothing on screen that the app
+does not have. Every frame is a demo screenshot or the film's own type.
+
+Camera targets are measured, not guessed: `capture/locate.mjs` asks the demo
+where an element sits (in screenshot pixels) and writes `pulse/boxes.json`.
+Shots behind a click (stock card, purchase order and its document, Share with
+client, Do it for me) come from `capture/capture-extras.mjs`, saved as
+`l-x-*.png`.
 
 ## Requirements
 

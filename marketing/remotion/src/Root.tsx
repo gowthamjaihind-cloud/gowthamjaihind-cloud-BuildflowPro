@@ -5,6 +5,7 @@ import { WalkEndCard } from "./film/Titles";
 import { LAUNCH_FPS, LAUNCH_FRAMES, Launch } from "./film/Launch";
 import { Kinetic, KineticVertical } from "./kinetic/Kinetic";
 import { FPS as KINETIC_FPS, KINETIC_FRAMES } from "./kinetic/grid";
+import { Pulse, PULSE_FPS, PULSE_FRAMES } from "./pulse/Pulse";
 
 export const RemotionRoot: React.FC = () => (
   <>
@@ -71,6 +72,13 @@ export const RemotionRoot: React.FC = () => (
       width={1080}
       height={1920}
     />
+
+    {/*
+      Pulse: the fast cut. 40s at 120 BPM, every cut on a beat; the score is
+      composed from the same pulse.json (films/pulse.mjs). Wide and tall.
+    */}
+    <Composition id="Pulse" component={Pulse} durationInFrames={PULSE_FRAMES} fps={PULSE_FPS} width={1920} height={1080} />
+    <Composition id="PulseVertical" component={Pulse} durationInFrames={PULSE_FRAMES} fps={PULSE_FPS} width={1080} height={1920} />
 
     {/* The earlier silent cuts, kept: they are the captioned versions, which
         still suit a muted autoplay on a page where the launch film would not. */}
