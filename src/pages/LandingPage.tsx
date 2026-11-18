@@ -564,6 +564,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
         </div>
       </section>
 
+      {/* YOUR DATA — every line here is enforced by firestore.rules or the
+          Privacy & Data panel, and matches public/privacy.html. Change them together. */}
+      <section id="your-data" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <p className="eyebrow text-primary mb-3">{"Your data"}</p>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{"Your rates and margins stay yours"}</h2>
+          <p className="text-ink-muted font-medium">{"Never sold. Never used to train AI. Your project records are stored on Google Cloud in Singapore."}</p>
+        </div>
+        <div className="grid md:grid-cols-2 gap-5">
+          {[
+            { icon: FolderLock, title: "Only your team sees it", body: "Each company's data is walled off from every other company by the database itself, not just hidden on screen." },
+            { icon: ShieldCheck, title: "Site engineers don't see money", body: "Engineers log the day, but costs, rates and margins are blocked for them. Owners and Admins choose each person's role." },
+            { icon: Users, title: "Clients see progress, not prices", body: "Share with client shows how the job is going. Notes, costs, rates, materials and vendor details are never shown." },
+            { icon: FileText, title: "Export or delete any time", body: "Download your data from Settings → Privacy & Data, or delete your account or your whole company for good." },
+          ].map((d) => (
+            <div key={d.title} className="soft-card rounded-3xl p-6 flex items-start gap-4">
+              <div className="w-12 h-12 shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                <d.icon weight="duotone" className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg tracking-tight mb-1">{d.title}</h3>
+                <p className="text-sm text-ink-muted leading-relaxed">{d.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-center text-sm text-ink-muted mt-8">
+          {"Payments go through Razorpay; your card and UPI details never reach us. "}
+          <a href={PRIVACY_URL} className="text-primary font-semibold hover:underline">{"Read the privacy policy"}</a>
+        </p>
+      </section>
+
       {/* PRICING */}
       <section id="pricing" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
         <div className="text-center max-w-2xl mx-auto mb-8">
@@ -653,7 +685,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       <section className="max-w-6xl mx-auto px-5 sm:px-8 pb-20">
         <div className="soft-card rounded-[32px] p-10 md:p-16 text-center">
           <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{t("land.finalHeading")}</h2>
-          <p className="text-ink-muted font-medium max-w-lg mx-auto mb-8">{"Start free on Lite, or try every feature free for 30 days — no card required."}</p>
+          <p className="text-ink-muted font-medium max-w-lg mx-auto mb-8">{"Try Starter free for 14 days — no card required."}</p>
           <div className="flex justify-center">
             <CTA label={t("land.getStartedFree")} className="bg-primary text-on-primary text-base px-8 py-4 rounded-2xl hover:bg-primary-deep shadow-xl shadow-primary/20" />
           </div>
