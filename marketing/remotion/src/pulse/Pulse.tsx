@@ -185,7 +185,10 @@ const CardShot: React.FC<{ s: Shot; f: number; len: number; w: number; h: number
   const tall = h > w;
   const bw = tall ? w - 120 : w * 0.8;
   const bh = tall ? h * 0.6 : h * 0.66;
-  const cam = camAt(s.from, s.to!, f / len);
+  // A phone-width card cannot hold the app's full width legibly: frame tighter
+  // on the same target in the tall cut.
+  const raw = camAt(s.from, s.to!, f / len);
+  const cam: Cam = tall ? [raw[0], raw[1], raw[2] * 0.5] : raw;
   const drift = (f / len) * (tall ? 0 : 1);
   return (
     <AbsoluteFill style={{ background: GROUND }}>
