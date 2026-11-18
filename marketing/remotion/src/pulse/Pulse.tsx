@@ -37,6 +37,8 @@ interface Shot {
   style?: "outline" | "invert" | "accent";
   hit?: boolean;
   breakdown?: boolean;
+  /** Tall cut only: where to frame, when the wide framing would land on empty space. */
+  vto?: Cam;
 }
 
 export const PULSE_FPS = film.fps;
@@ -188,7 +190,7 @@ const CardShot: React.FC<{ s: Shot; f: number; len: number; w: number; h: number
   // A phone-width card cannot hold the app's full width legibly: frame tighter
   // on the same target in the tall cut.
   const raw = camAt(s.from, s.to!, f / len);
-  const cam: Cam = tall ? [raw[0], raw[1], raw[2] * 0.5] : raw;
+  const cam: Cam = !tall ? raw : s.vto ? [s.vto[0], s.vto[1], s.vto[2] * lerp(1.12, 1, smooth(clamp(f / len)))] : [raw[0], raw[1], raw[2] * 0.5];
   const drift = (f / len) * (tall ? 0 : 1);
   return (
     <AbsoluteFill style={{ background: GROUND }}>

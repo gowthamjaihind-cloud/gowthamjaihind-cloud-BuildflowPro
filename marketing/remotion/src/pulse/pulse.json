@@ -62,7 +62,12 @@
    ],
    "word": "LOGGED",
    "sub": "Daily logs",
-   "fx": "whipL"
+   "fx": "whipL",
+   "vto": [
+    1150,
+    860,
+    1050
+   ]
   },
   {
    "kind": "card",
@@ -80,7 +85,12 @@
    ],
    "word": "TRACK",
    "sub": "Progress \u00b7 spend \u00b7 what's slipping",
-   "fx": "whipR"
+   "fx": "whipR",
+   "vto": [
+    1200,
+    684,
+    1150
+   ]
   },
   {
    "kind": "card",
@@ -98,7 +108,12 @@
    ],
    "word": "PLAN",
    "sub": "Work breakdown",
-   "fx": "spin"
+   "fx": "spin",
+   "vto": [
+    1300,
+    900,
+    1200
+   ]
   },
   {
    "kind": "card",
@@ -152,7 +167,12 @@
    ],
    "word": "ORDER",
    "sub": "Purchase orders",
-   "fx": "whipR"
+   "fx": "whipR",
+   "vto": [
+    1500,
+    932,
+    1150
+   ]
   },
   {
    "kind": "card",
@@ -188,7 +208,12 @@
    ],
    "word": "RECEIVED",
    "sub": "Goods receipt",
-   "fx": "punch"
+   "fx": "punch",
+   "vto": [
+    1250,
+    900,
+    1100
+   ]
   },
   {
    "kind": "card",
@@ -206,7 +231,12 @@
    ],
    "word": "PAY",
    "sub": "Labour rates \u00b7 RA bills",
-   "fx": "whipL"
+   "fx": "whipL",
+   "vto": [
+    1200,
+    960,
+    1000
+   ]
   },
   {
    "kind": "card",
@@ -260,7 +290,12 @@
    ],
    "word": "ESTIMATE",
    "sub": "What the client approved",
-   "fx": "punch"
+   "fx": "punch",
+   "vto": [
+    1500,
+    900,
+    1150
+   ]
   },
   {
    "kind": "card",
@@ -278,7 +313,12 @@
    ],
    "word": "REPORT",
    "sub": "A report you can send",
-   "fx": "whipL"
+   "fx": "whipL",
+   "vto": [
+    1350,
+    1000,
+    1150
+   ]
   },
   {
    "kind": "card",
@@ -296,7 +336,12 @@
    ],
    "word": "FILED",
    "sub": "Document Vault",
-   "fx": "whipR"
+   "fx": "whipR",
+   "vto": [
+    1300,
+    1000,
+    1150
+   ]
   },
   {
    "kind": "card",
