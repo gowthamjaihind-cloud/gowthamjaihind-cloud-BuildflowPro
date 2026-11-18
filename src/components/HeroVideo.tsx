@@ -15,7 +15,7 @@ import { Play } from "@phosphor-icons/react";
  * `preload="none"` (browsers still range-request metadata for a src they can
  * see). Until then the cost is the poster, at 48 KB.
  *
- * The film this plays is the KINETIC cut: 60 seconds, one scene per feature on
+ * The film this plays is the KINETIC cut: 74 seconds, one scene per feature on
  * a 120 BPM grid, each explained on screen in the app's own words and spoken
  * by a narrator, over a score. It replaced the 83-second silent cut, which still exists at
  * /media/sitetru-hero.mp4 and is still the better file for a context that
@@ -66,14 +66,14 @@ export const HeroVideo: React.FC<{ className?: string }> = ({ className = "" }) 
         <button
           type="button"
           onClick={start}
-          aria-label="Play the Sitetru film, 60 seconds, with sound"
+          aria-label="Play the Sitetru film, 74 seconds, with sound"
           className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink/35 hover:bg-ink/25 apple-transition focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/40"
         >
           <span className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/95 text-surface-dark flex items-center justify-center shadow-xl">
             <Play weight="fill" className="w-7 h-7 md:w-9 md:h-9 translate-x-0.5" />
           </span>
           <span className="text-white text-xs font-bold uppercase tracking-widest drop-shadow">
-            Watch · 60 seconds · with sound
+            Watch · 74 seconds · with sound
           </span>
         </button>
       )}
