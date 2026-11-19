@@ -134,3 +134,22 @@ export function rzpPeriod(period: "monthly" | "annual"): "monthly" | "yearly" {
 export function totalCycles(period: "monthly" | "annual"): number {
   return period === "annual" ? 10 : 120; // ten years either way
 }
+
+/**
+ * Does Razorpay's refusal to cancel still mean the mandate will never charge?
+ *
+ * Already cancelled or finished: yes. And "The id provided does not exist":
+ * also yes -- the account these keys belong to has no such subscription, so it
+ * cannot charge it. That is exactly the state of every subscription bought
+ * with TEST keys once LIVE keys are saved: live Razorpay has never heard of
+ * them, and before this the app reported "couldn't reach the payment provider"
+ * and left the customer holding test slots nobody could remove.
+ */
+export function cancelResponseMeansStopped(body: string): boolean {
+  return /already cancelled|not in a valid state|completed/i.test(body) || subscriptionUnknownToRazorpay(body);
+}
+
+/** Razorpay's answer when the account these keys belong to has no such subscription. */
+export function subscriptionUnknownToRazorpay(body: string): boolean {
+  return /id provided does not exist/i.test(body);
+}

@@ -3,7 +3,7 @@ import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import * as crypto from "crypto";
 import { db } from "./db";
-import { subscriptionPatch, planCacheKey, rzpPeriod, totalCycles } from "./rzpSubscription";
+import { subscriptionPatch, planCacheKey, rzpPeriod, totalCycles, cancelResponseMeansStopped, subscriptionUnknownToRazorpay } from "./rzpSubscription";
 import { isPlanId, planAmountPaise, planPatch, PlanId, OVERAGE_RATE, slotPurchasePatch, prorateUpgrade, effectiveProjectCap, addGst, GST_RATE_PCT } from "./plans";
 import { captureError } from "./sentry";
 import { CALLABLE_OPTS } from "./callable";
@@ -416,6 +416,16 @@ export const createSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 
  * refuses to record a local cancellation it could not actually enforce.
  */
 export async function cancelRazorpaySubscription(subscriptionId: string): Promise<boolean> {
+  return (await cancelRazorpaySubscriptionDetailed(subscriptionId)) !== false;
+}
+
+/**
+ * As cancelRazorpaySubscription, but says WHY the mandate is stopped:
+ * "stopped" = Razorpay cancelled it (or it was already over), "unknown" = the
+ * account these keys belong to has no such subscription (one bought with test
+ * keys, after live keys were saved), false = we could not tell.
+ */
+export async function cancelRazorpaySubscriptionDetailed(subscriptionId: string): Promise<"stopped" | "unknown" | false> {
   const cfg = await getRazorpayConfig();
   if (!cfg) return false;
   const auth = Buffer.from(`${cfg.keyId}:${cfg.keySecret}`).toString("base64");
@@ -425,15 +435,15 @@ export async function cancelRazorpaySubscription(subscriptionId: string): Promis
       headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
       body: JSON.stringify({ cancel_at_cycle_end: 1 }),
     });
-    if (res.ok) return true;
-    // Already cancelled or already finished is success for our purposes: the
-    // mandate will not charge again, which is all the caller needs.
+    if (res.ok) return "stopped";
     const body = await res.text().catch(() => "");
-    return /already cancelled|not in a valid state|completed/i.test(body);
+    if (subscriptionUnknownToRazorpay(body)) return "unknown";
+    return cancelResponseMeansStopped(body) ? "stopped" : false;
   } catch {
     return false;
   }
 }
+
 
 /**
  * The Razorpay plan one extra project slot is billed on: OVERAGE_RATE a month,
@@ -646,17 +656,23 @@ export const cancelSlotSubscription = onCall({ ...CALLABLE_OPTS, timeoutSeconds:
   if (!["Owner", "Admin"].includes((org.members || {})[uid])) {
     throw new HttpsError("permission-denied", "Only an Owner or Admin can cancel project slots.");
   }
-  const stopped = await cancelRazorpaySubscription(subId);
+  const stopped = await cancelRazorpaySubscriptionDetailed(subId);
   if (!stopped) {
     throw new HttpsError("unavailable", "We couldn't reach the payment provider to stop this. Nothing has changed — please try again in a moment.");
   }
+  // A subscription the current Razorpay account has never heard of was bought
+  // with test keys: nothing was paid for its period, so it ends now rather
+  // than holding a project slot until a date nobody paid up to.
+  const endNow = stopped === "unknown";
+  const now = Date.now();
   const existing = (org.slotSubs || {})[subId];
   if (existing) {
-    await orgRef.set({ slotSubs: { [subId]: { ...existing, status: "cancelling" } } }, { merge: true });
+    const next = endNow ? { ...existing, status: "cancelled", until: now } : { ...existing, status: "cancelling" };
+    await orgRef.set({ slotSubs: { [subId]: next } }, { merge: true });
     await refreshSlotSummary(rec.orgId);
   }
-  await subSnap.ref.set({ cancelRequestedAt: Date.now(), cancelRequestedBy: uid }, { merge: true });
-  return { canceled: true, effectiveAt: Number(existing?.until) || null };
+  await subSnap.ref.set({ cancelRequestedAt: now, cancelRequestedBy: uid, ...(endNow ? { endedAsUnknown: true } : {}) }, { merge: true });
+  return { canceled: true, effectiveAt: endNow ? now : Number(existing?.until) || null };
 });
 
 // ---- Checkout: create a server-priced order ----

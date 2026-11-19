@@ -192,3 +192,31 @@ describe("cancellation reaches Razorpay", () => {
     expect(body).toMatch(/throw new HttpsError\(\s*"unavailable"/);
   });
 });
+
+describe("cancelling a subscription Razorpay no longer knows", () => {
+  it("treats a test-mode subscription, unknown to live keys, as stopped", async () => {
+    const { cancelResponseMeansStopped } = await import("./rzpSubscription");
+    const notFound = JSON.stringify({ error: { code: "BAD_REQUEST_ERROR", description: "The id provided does not exist" } });
+    expect(cancelResponseMeansStopped(notFound)).toBe(true);
+    expect(cancelResponseMeansStopped(JSON.stringify({ error: { description: "Subscription is already cancelled" } }))).toBe(true);
+  });
+  it("does not treat an outage or a bad key as stopped", async () => {
+    const { cancelResponseMeansStopped } = await import("./rzpSubscription");
+    expect(cancelResponseMeansStopped(JSON.stringify({ error: { code: "BAD_REQUEST_ERROR", description: "Authentication failed" } }))).toBe(false);
+    expect(cancelResponseMeansStopped("")).toBe(false);
+  });
+});
+
+describe("a subscription unknown to the current Razorpay account", () => {
+  it("is recognised separately, so its slot can end at once", async () => {
+    const { subscriptionUnknownToRazorpay } = await import("./rzpSubscription");
+    expect(subscriptionUnknownToRazorpay('{"error":{"description":"The id provided does not exist"}}')).toBe(true);
+    expect(subscriptionUnknownToRazorpay('{"error":{"description":"Subscription is already cancelled"}}')).toBe(false);
+  });
+  it("ends the slot now only in that case", () => {
+    const src = readFileSync(join(HERE, "razorpay.ts"), "utf8");
+    const body = src.slice(src.indexOf("export const cancelSlotSubscription"));
+    expect(body).toMatch(/stopped === "unknown"/);
+    expect(body).toMatch(/status: "cancelled", until: now/);
+  });
+});
