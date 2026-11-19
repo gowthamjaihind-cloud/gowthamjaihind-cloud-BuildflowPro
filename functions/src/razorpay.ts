@@ -908,7 +908,7 @@ export const verifyRazorpayPayment = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 
 });
 
 // ---- Webhook: the authoritative auto-activation ----
-export const razorpayWebhook = onRequest({ region: "asia-southeast1" }, async (req, res) => {
+export const razorpayWebhook = onRequest({ region: "asia-south1" }, async (req, res) => {
   try {
     const cfg = await getRazorpayConfig();
     if (!cfg?.webhookSecret) {

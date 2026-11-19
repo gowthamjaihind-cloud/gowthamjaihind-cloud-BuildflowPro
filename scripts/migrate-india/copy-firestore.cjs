@@ -18,8 +18,8 @@
  * - Writes with set(), so a second run overwrites rather than duplicates. Run
  *   it again after any late writes to the old database.
  *
- * Prints a count per top-level collection, then re-counts the target and
- * fails if any collection came out short.
+ * Prints a count per top-level collection, then compares document counts per
+ * collection id (source vs target, via count queries) and fails on any shortfall.
  */
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, DocumentReference, Timestamp, GeoPoint } = require("firebase-admin/firestore");
@@ -69,33 +69,37 @@ writer.onWriteError((err) => {
 let failures = 0;
 let copied = 0;
 
-async function copyCollection(colRef, perTop) {
-  const refs = await colRef.listDocuments();
-  for (let i = 0; i < refs.length; i += 200) {
-    const chunk = refs.slice(i, i + 200);
-    const snaps = await src.getAll(...chunk);
-    for (const snap of snaps) {
-      if (snap.exists) {
-        writer.set(dst.doc(snap.ref.path), convert(snap.data()));
-        copied++;
-        perTop.count++;
-      }
-      for (const sub of await snap.ref.listCollections()) await copyCollection(sub, perTop);
-    }
-  }
+// Run fn over items with at most `limit` in flight. Each Firestore call is a
+// round trip from the CI runner (US) to Singapore or Mumbai; one at a time,
+// a few thousand documents took over half an hour.
+async function pool(items, limit, fn) {
+  let i = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (i < items.length) { const item = items[i++]; await fn(item); }
+  });
+  await Promise.all(workers);
 }
 
-async function countAll(db, colRef) {
-  let n = 0;
+// Source count per collection id (a collection group), for verification.
+const groupCounts = new Map();
+
+async function copyCollection(colRef, perTop) {
   const refs = await colRef.listDocuments();
-  for (let i = 0; i < refs.length; i += 200) {
-    const snaps = await db.getAll(...refs.slice(i, i + 200));
-    for (const s of snaps) {
-      if (s.exists) n++;
-      for (const sub of await s.ref.listCollections()) n += await countAll(db, sub);
+  for (let i = 0; i < refs.length; i += 300) {
+    const chunk = refs.slice(i, i + 300);
+    const snaps = await src.getAll(...chunk);
+    for (const snap of snaps) {
+      if (!snap.exists) continue;
+      writer.set(dst.doc(snap.ref.path), convert(snap.data()));
+      copied++;
+      perTop.count++;
+      groupCounts.set(colRef.id, (groupCounts.get(colRef.id) || 0) + 1);
+      if (copied % 1000 === 0) console.log(`  ... ${copied} documents`);
     }
+    await pool(chunk, 40, async (ref) => {
+      for (const sub of await ref.listCollections()) await copyCollection(sub, perTop);
+    });
   }
-  return n;
 }
 
 (async () => {
@@ -111,14 +115,18 @@ async function countAll(db, colRef) {
   await writer.close();
   console.log(`copied ${copied} documents, rewrote ${rewrites} file links, ${failures} failed writes`);
 
-  console.log("verifying target counts…");
+  console.log("verifying: documents per collection, source vs target…");
   let short = 0;
-  for (const r of report) {
-    const n = await countAll(dst, dst.collection(r.name));
-    const ok = n >= r.count;
+  await pool([...groupCounts.keys()], 10, async (id) => {
+    const [a, b] = await Promise.all([
+      src.collectionGroup(id).count().get(),
+      dst.collectionGroup(id).count().get(),
+    ]);
+    const n = a.data().count, m = b.data().count;
+    const ok = m >= n;
     if (!ok) short++;
-    console.log(`  ${r.name}: source ${r.count}, target ${n}${ok ? "" : "  <-- SHORT"}`);
-  }
+    console.log(`  ${id}: source ${n}, target ${m}${ok ? "" : "  <-- SHORT"}`);
+  });
   if (failures || short) {
     console.error(`FAILED: ${failures} failed writes, ${short} short collections`);
     process.exit(1);

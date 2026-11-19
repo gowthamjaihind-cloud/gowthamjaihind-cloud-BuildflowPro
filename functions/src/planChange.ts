@@ -96,7 +96,7 @@ export const cancelScheduledPlanChange = onCall({ ...CALLABLE_OPTS, timeoutSecon
 
 // Apply scheduled downgrades whose effective date has passed. Runs daily.
 export const applyScheduledPlanChanges = onSchedule(
-  { schedule: "15 4 * * *", timeZone: "Asia/Kolkata", region: "asia-southeast1" },
+  { schedule: "15 4 * * *", timeZone: "Asia/Kolkata", region: "asia-south1" },
   async () => {
     const now = Date.now();
     const snap = await db

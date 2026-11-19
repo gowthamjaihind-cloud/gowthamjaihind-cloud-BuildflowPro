@@ -570,7 +570,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
         <div className="text-center max-w-2xl mx-auto mb-14">
           <p className="eyebrow text-primary mb-3">{"Your data"}</p>
           <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{"Your rates and margins stay yours"}</h2>
-          <p className="text-ink-muted font-medium">{"Never sold. Never used to train AI. Stored securely on Google Cloud."}</p>
+          <p className="text-ink-muted font-medium">{"Never sold. Never used to train AI. Stored on Google Cloud in India."}</p>
         </div>
         <div className="grid md:grid-cols-2 gap-5">
           {[

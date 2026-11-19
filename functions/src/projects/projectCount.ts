@@ -1,3 +1,4 @@
+import { REGION } from "../callable";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
 import { refreshSlotSummary } from "../slotRefresh";
@@ -18,7 +19,7 @@ import { refreshSlotSummary } from "../slotRefresh";
 export const onOrgProjectWritten = onDocumentWritten(
   {
     document: "organizations/{orgId}/projects/{projectId}",
-    database: FIRESTORE_DATABASE_ID,
+    region: REGION, database: FIRESTORE_DATABASE_ID,
   },
   async (event: any) => {
     const before = event.data?.before?.exists;

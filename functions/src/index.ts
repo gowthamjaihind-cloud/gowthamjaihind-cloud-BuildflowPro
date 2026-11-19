@@ -1,10 +1,14 @@
 import * as admin from "firebase-admin";
 import { initSentry } from "./sentry";
+import { STORAGE_BUCKET } from "./bucket";
 
 // Start error tracking as early as possible (no-op until SENTRY_DSN is set).
 initSentry();
 
-admin.initializeApp();
+// The file bucket is named, not left to the project default: the default is
+// the US bucket, and the app's files live in the Mumbai one. Every
+// admin.storage().bucket() call reads this.
+admin.initializeApp({ storageBucket: STORAGE_BUCKET });
 // Firestore access goes through ./db, which binds to the app's named database
 // and applies its own settings. Never call admin.firestore() directly.
 

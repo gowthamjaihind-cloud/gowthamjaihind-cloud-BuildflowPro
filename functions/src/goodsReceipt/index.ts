@@ -1,3 +1,4 @@
+import { REGION } from "../callable";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
 import { FieldValue } from "firebase-admin/firestore";
@@ -206,7 +207,7 @@ export const onProjectGRNWritten = onDocumentWritten(
   // this listens for ever lands in "(default)".
   {
     document: "projects/{projectId}/goodsReceiptNotes/{grnId}",
-    database: FIRESTORE_DATABASE_ID,
+    region: REGION, database: FIRESTORE_DATABASE_ID,
   },
   async (event: any) => {
     const { projectId } = event.params;
@@ -219,7 +220,7 @@ export const onProjectGRNWritten = onDocumentWritten(
 export const onOrgGRNWritten = onDocumentWritten(
   {
     document: "organizations/{orgId}/projects/{projectId}/goodsReceiptNotes/{grnId}",
-    database: FIRESTORE_DATABASE_ID,
+    region: REGION, database: FIRESTORE_DATABASE_ID,
   },
   async (event: any) => {
     const { orgId, projectId } = event.params;

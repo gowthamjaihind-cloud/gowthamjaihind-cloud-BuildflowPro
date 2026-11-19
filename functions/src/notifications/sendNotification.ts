@@ -1,3 +1,4 @@
+import { REGION } from "../callable";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
@@ -7,7 +8,7 @@ import { FieldValue } from "firebase-admin/firestore";
 // Bound to the app's NAMED Firestore database; without `database` a v2
 // trigger listens on "(default)", where no approval is ever written.
 export const onApprovalCreated = onDocumentCreated(
-  { document: "approvals/{approvalId}", database: FIRESTORE_DATABASE_ID },
+  { document: "approvals/{approvalId}", region: REGION, database: FIRESTORE_DATABASE_ID },
   async (event) => {
   const snapshot = event.data;
   if (!snapshot) return;
