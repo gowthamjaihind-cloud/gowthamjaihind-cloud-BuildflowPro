@@ -1,3 +1,4 @@
+import { MODELS } from "../ai/geminiPolicy";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { db } from "../db";
@@ -16,7 +17,7 @@ const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
 /** Questions per person per day. Help is free, so it is capped, not metered. */
 export const HELP_DAILY_LIMIT = 40;
-const HELP_MODELS = ["gemini-2.5-flash-lite", "gemini-flash-lite-latest", "gemini-2.5-flash", "gemini-flash-latest"];
+const HELP_MODELS = MODELS;
 
 const istDay = (ms = Date.now()) => new Date(ms + 5.5 * 3600_000).toISOString().slice(0, 10);
 const fmt = (ms: unknown) => {

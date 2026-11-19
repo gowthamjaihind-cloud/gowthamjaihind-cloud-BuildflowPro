@@ -1,3 +1,4 @@
+import { LITE_MODELS as POLICY_LITE, FULL_MODELS as POLICY_FULL } from "../ai/geminiPolicy";
 import { HttpsError } from "firebase-functions/v2/https";
 import { db } from "../db";
 import { geminiText } from "../ai/gemini";
@@ -29,8 +30,9 @@ import { paymentDirection, methodOf, cleanPayment } from "./receipt";
 // Requests are read by Flash-Lite first (about 4x cheaper, and quicker); a
 // reading too weak to show (parse.ts needsBetterRead) is read again by full
 // Flash. One AI use either way.
-const LITE_MODELS = ["gemini-2.5-flash-lite", "gemini-flash-lite-latest"];
-const FULL_MODELS = ["gemini-2.5-flash", "gemini-flash-latest"];
+const LITE_MODELS = POLICY_LITE;
+// A re-read wants the stronger model, but must not fail just because it is slow.
+const FULL_MODELS = [...POLICY_FULL, ...POLICY_LITE];
 const PENDING_MS = 30 * 60_000;
 const istToday = () => new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);
 const base = (orgId: string, projectId: string) => `organizations/${orgId}/projects/${projectId}`;
@@ -268,7 +270,7 @@ QUESTION: ${q.question}
 FACTS (JSON): ${JSON.stringify(facts).slice(0, 12000)}`;
   const { text } = await geminiText(
     { contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 800 } },
-    c.key, 40_000, { perAttemptMs: 20_000, models: ["gemini-2.5-flash-lite", "gemini-flash-lite-latest", "gemini-2.5-flash"], forModel: noThinking },
+    c.key, 40_000, { perAttemptMs: 20_000, models: [...POLICY_LITE, ...POLICY_FULL], forModel: noThinking },
   );
   return String(text || "").trim().slice(0, 2000) || "I couldn't find that in this project's data.";
 }

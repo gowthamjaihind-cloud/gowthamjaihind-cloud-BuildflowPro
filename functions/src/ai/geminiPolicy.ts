@@ -18,8 +18,25 @@ export function classifyGeminiStatus(status: number): GeminiOutcome {
   return "fatal";
 }
 
+/**
+ * Model names, in one place.
+ *
+ * Google retired the 1.5, 2.0 and 2.5 Flash families for this key in
+ * November 2026: each answered 404 "no longer available ... use
+ * gemini-3.8-flash / gemini-3.5-flash-lite". Every list in the backend had
+ * those first, so bill scans spent their time on dead names and then timed
+ * out on gemini-flash-latest. The operator's AI self-test (19 Nov) showed
+ * gemini-flash-lite-latest answering a real bot request in 1.1s.
+ *
+ * Lite first everywhere: it is the one confirmed fast. gemini-3.8-flash is
+ * Google's named replacement for full Flash; it follows as the fallback until
+ * the self-test shows its speed. geminiModels.test.ts keeps retired names out.
+ */
+export const LITE_MODELS = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest"];
+export const FULL_MODELS = ["gemini-3.8-flash"];
+
 /** Gemini models to try, best first. */
-export const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-1.5-flash"];
+export const MODELS = [...LITE_MODELS, ...FULL_MODELS];
 
 /** Waits between attempts on the SAME model, ms. Two retries, then the next model. */
 export const BACKOFF_MS = [1500, 4000];

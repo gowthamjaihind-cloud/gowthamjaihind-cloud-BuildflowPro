@@ -1,3 +1,4 @@
+import { MODELS } from "../ai/geminiPolicy";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { CALLABLE_OPTS } from "../callable";
@@ -61,7 +62,7 @@ MATERIALS:
 ${ask.map((n) => `- ${n}`).join("\n")}`;
       const { text } = await geminiText(
         { contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0, responseMimeType: "application/json", maxOutputTokens: 4096 } },
-        GEMINI_API_KEY.value(), 70_000, { perAttemptMs: 30_000, models: ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite"], forModel: noThinking },
+        GEMINI_API_KEY.value(), 70_000, { perAttemptMs: 30_000, models: MODELS, forModel: noThinking },
       );
       for (const it of parseModelJson(text)?.items || []) {
         const name = ask.find((n) => n === String(it?.name ?? "").trim());

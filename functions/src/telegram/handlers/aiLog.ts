@@ -1,3 +1,4 @@
+import { LITE_MODELS, FULL_MODELS } from "../../ai/geminiPolicy";
 import type { ChatId } from "../session";
 import { setSession, getSession } from "../session";
 import { db } from "../../db";
@@ -30,7 +31,7 @@ const esc = (s: unknown) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g,
  * project's own lists does not need the larger models, and the "lite" ones
  * answer in a second or two. Retired names answer 404 and are skipped.
  */
-export const BOT_LOG_MODELS = ["gemini-2.5-flash-lite", "gemini-flash-lite-latest", "gemini-2.5-flash", "gemini-flash-latest"];
+export const BOT_LOG_MODELS = [...LITE_MODELS, ...FULL_MODELS];
 
 /** The exact request the bot sends for a typed report. Shared with the operator's AI self-test. */
 export function botLogRequest(text: string, ctx: AiLogContext) {
