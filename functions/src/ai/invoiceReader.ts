@@ -1,3 +1,4 @@
+import { MODELS } from "./geminiPolicy";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import * as admin from "firebase-admin";
@@ -296,8 +297,8 @@ async function callGeminiJSON(prompt: string, key: string): Promise<any> {
 const sum = (a: number[]) => a.reduce((x, y) => x + (y || 0), 0);
 const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
 
-/** Models for reading a bill, most careful first. Retired names are left out. */
-export const INVOICE_MODELS = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-flash-lite-latest"];
+/** Models for reading a bill: the confirmed-fast lite models, then full Flash (see geminiPolicy). */
+export const INVOICE_MODELS = MODELS;
 /** Leaves the bot's queue worker (120s) time to store the file and reply. */
 const INVOICE_BUDGET_MS = 95_000;
 

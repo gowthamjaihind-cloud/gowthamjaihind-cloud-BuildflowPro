@@ -44,8 +44,10 @@ describe.skipIf(!hasFunctionsDeps)("a Gemini request that stalls", () => {
       return ok("{}");
     }));
     const geminiText = await load();
+    // Its own names, so the test checks the behaviour rather than today's model list.
     await geminiText({ generationConfig: { temperature: 0.2 } }, "k", 10_000, {
-      forModel: (m, b) => (m.startsWith("gemini-2.5") ? { ...b, generationConfig: { ...b.generationConfig, thinkingConfig: { thinkingBudget: 0 } } } : b),
+      models: ["model-tuned", "model-plain"],
+      forModel: (m, b) => (m === "model-tuned" ? { ...b, generationConfig: { ...b.generationConfig, thinkingConfig: { thinkingBudget: 0 } } } : b),
     });
     expect(bodies[0].generationConfig).toEqual({ temperature: 0.2, thinkingConfig: { thinkingBudget: 0 } });
   });

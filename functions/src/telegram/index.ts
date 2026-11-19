@@ -141,7 +141,8 @@ export const telegramAiSelfTest = onCall({ ...CALLABLE_OPTS, secrets: [GEMINI_AP
             return { status: e?.name === "TimeoutError" ? "timed out" : scrub(`error: ${String(e?.message || e).slice(0, 80)}`), seconds: Math.round((Date.now() - t0) / 100) / 10, sample: "" };
         }
     };
-    const models = [...new Set([...aiLog.BOT_LOG_MODELS, "gemini-2.0-flash", "gemini-2.0-flash-lite"])];
+    // What the bot uses, plus the slow alias, so the operator sees its speed too.
+    const models = [...new Set([...aiLog.BOT_LOG_MODELS, "gemini-flash-latest"])];
     const results = await Promise.all(models.map(async (model) => ({
         model,
         tiny: await once(model, tiny),
