@@ -7,6 +7,7 @@ import { geminiText } from "../../ai/gemini";
 import { chargeAiUsage, refundAiUsage, isQuotaError } from "../../ai/usage";
 import { buildAiLogPrompt, looksLikeLogText, parseModelJson, sanitizeAiLogs, type AiLogContext, type AiLogDraft } from "../../bot/aiLog";
 import { recordBotError } from "../botErrors";
+import { MASTER_PREFIX, isMasterId, mastersNotInProject } from "../../bot/masterMaterials";
 import { showMenu } from "./log";
 
 /**
@@ -48,12 +49,18 @@ export function botLogRequest(text: string, ctx: AiLogContext) {
 }
 
 export async function loadContext(base: string): Promise<AiLogContext> {
-  const [tasks, inv, roles, equip] = await Promise.all([
+  // The company's Master data too: a material not yet stocked on this
+  // project can still be matched, and is added to the project on Save.
+  const orgPath = base.includes("/projects/") ? base.slice(0, base.indexOf("/projects/")) : null;
+  const [tasks, inv, roles, equip, masters] = await Promise.all([
     db.collection(`${base}/tasks`).get(),
     db.collection(`${base}/inventory`).get(),
     db.collection(`${base}/labor_rate_cards`).get(),
     db.collection(`${base}/equipment`).get(),
+    orgPath ? db.collection(`${orgPath}/materials`).get().catch(() => null) : Promise.resolve(null),
   ]);
+  const stocked = inv.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+  const fromMaster = mastersNotInProject((masters?.docs || []).map((d) => ({ id: d.id, ...(d.data() as any) })), stocked);
   // A task with children is a heading in the schedule: its progress is rolled
   // up from them, so it is never logged against directly.
   const parents = new Set(tasks.docs.map((d) => String((d.data() as any).parentId || "")).filter(Boolean));
@@ -67,7 +74,11 @@ export async function loadContext(base: string): Promise<AiLogContext> {
       .filter((t) => t.name)
       .sort((a, b) => Number(a.progress >= 100) - Number(b.progress >= 100))
       .slice(0, 150),
-    materials: inv.docs.map((d) => ({ id: d.id, name: String((d.data() as any).name || "").slice(0, 60), unit: String((d.data() as any).unit || "") })).filter((m) => m.name).slice(0, 150),
+    // Project stock first; Master data after it, under MASTER_PREFIX ids.
+    materials: [
+      ...stocked.map((m) => ({ id: m.id, name: String(m.name || "").slice(0, 60), unit: String(m.unit || "") })),
+      ...fromMaster.map((m) => ({ id: `${MASTER_PREFIX}${m.id}`, name: String(m.name || "").slice(0, 60), unit: String(m.unit || "") })),
+    ].filter((m) => m.name).slice(0, 200),
     // Lump-sum rate cards are amounts, not roles a head count can be logged against.
     roles: roles.docs.filter((d) => (d.data() as any).unit !== "Lumpsum").map((d) => ({ id: d.id, name: String((d.data() as any).roleName || (d.data() as any).role || (d.data() as any).name || "") })).filter((r) => r.name).slice(0, 80),
     equipment: equip.docs.map((d) => ({ id: d.id, name: String((d.data() as any).name || "") })).filter((e) => e.name).slice(0, 80),
@@ -164,7 +175,9 @@ export async function handleFreeText(api: any, chatId: ChatId, session: any, tex
   }
   result.drafts.forEach((d, i) => {
     if (total > 1) lines.push("", `<b>${i + 1}. ${esc(d.taskName)}</b>`);
-    for (const m of d.materials) lines.push(`• ${esc(m.name)}: <b>${m.quantity}</b> ${esc(m.unit)}`);
+    // 🆕 = from Master data, added to this project when saved. A symbol, not
+    // words, so it reads the same in both languages.
+    for (const m of d.materials) lines.push(`• ${isMasterId(m.materialId) ? "🆕 " : ""}${esc(m.name)}: <b>${m.quantity}</b> ${esc(m.unit)}`);
     for (const l of d.labour) lines.push(`• ${esc(l.roleName)}: <b>${l.headcount}</b>`);
     for (const e of d.equipment) lines.push(`• ${esc(e.name)}: <b>${e.quantity}</b> ${e.unit}`);
     if (!d.materials.length && !d.labour.length && !d.equipment.length) lines.push(tt(lang, "aiNoItems"));
