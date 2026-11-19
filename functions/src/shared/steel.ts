@@ -22,11 +22,15 @@ export function barDiameter(name: string): number | null {
   return BAR_SIZES_MM.includes(d) ? d : null;
 }
 
-/** A reinforcement bar with a known size: TMT, rebar, tor steel, Fe500, steel rod/bar. */
+/**
+ * A reinforcement bar with a known size: TMT, rebar, tor steel, Fe500, steel
+ * rod/bar, or plain "Steel 8mm" -- on a site that name means the bar, and
+ * contractors' material lists use it as often as "TMT".
+ */
 export function isRebar(name: string): boolean {
   const n = String(name || "").toLowerCase();
-  if (/binding|wire|mesh|angle|channel|plate|sheet|pipe|tube/.test(n)) return false;
-  return /\b(tmt|rebar|tor|fe\s?\d{3}d?|kambi)\b|steel\s*(rod|bar)|\b(rod|bar)s?\b/.test(n) && barDiameter(n) !== null;
+  if (/binding|wire|mesh|angle|channel|plate|sheet|pipe|tube|flat|beam|joist|section/.test(n)) return false;
+  return /\b(tmt|rebar|tor|fe\s?\d{3}d?|kambi|steel)\b|\b(rod|bar)s?\b/.test(n) && barDiameter(n) !== null;
 }
 
 /** "kg" or "t" when the material is stocked by weight, else null. */
