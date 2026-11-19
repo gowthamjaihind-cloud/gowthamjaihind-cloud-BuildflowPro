@@ -1,0 +1,157 @@
+name: Move data to India (Mumbai)
+
+# One-off move of Sitetru's data from Singapore (database) and the US (files)
+# to Mumbai (asia-south1). MANUAL only: Actions tab -> "Move data to India
+# (Mumbai)" -> Run workflow -> pick the step.
+#
+#   prepare  Safe at any time; users notice nothing. Creates the Mumbai
+#            database and file bucket, links the bucket to Firebase, applies
+#            the security rules, indexes and CORS, and turns on backups.
+#   copy     Run at the switch, in a quiet hour. Copies every file, then every
+#            database record (rewriting saved file links to the new bucket),
+#            then checks the counts. Safe to re-run; it overwrites, never
+#            duplicates. Nothing in the old database or bucket is changed or
+#            deleted -- they stay as the fallback.
+#
+# Uses the same FIREBASE_SERVICE_ACCOUNT as the deploys. If a step fails with
+# a permission error, the log says which; grant the service account these
+# roles in Google Cloud -> IAM, then re-run:
+#   Cloud Datastore Owner (roles/datastore.owner)       database + backups
+#   Storage Admin (roles/storage.admin)                 bucket + file copy
+#   Firebase Admin (roles/firebase.admin)               link bucket to Firebase
+
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: "prepare (safe any time) or copy (at the switch)"
+        required: true
+        type: choice
+        options: [prepare, copy]
+
+concurrency:
+  group: migrate-to-india
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  PROJECT_ID: jewel-ledger
+  REGION: asia-south1
+  OLD_DB: ai-studio-97ffdc85-b348-4a76-9ede-baa3db65adee
+  NEW_DB: sitetru-india
+  OLD_BUCKET: jewel-ledger.firebasestorage.app
+  NEW_BUCKET: sitetru-india-files
+
+jobs:
+  prepare:
+    if: inputs.step == 'prepare'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Create the Mumbai database
+        run: |
+          if gcloud firestore databases describe --database="$NEW_DB" --project="$PROJECT_ID" >/dev/null 2>&1; then
+            echo "Database $NEW_DB already exists."
+          else
+            gcloud firestore databases create --database="$NEW_DB" --location="$REGION" \
+              --type=firestore-native --project="$PROJECT_ID"
+          fi
+          gcloud firestore databases describe --database="$NEW_DB" --project="$PROJECT_ID" --format="value(locationId)"
+
+      - name: Create the Mumbai file bucket
+        run: |
+          if gcloud storage buckets describe "gs://$NEW_BUCKET" --project="$PROJECT_ID" >/dev/null 2>&1; then
+            echo "Bucket $NEW_BUCKET already exists."
+          else
+            gcloud storage buckets create "gs://$NEW_BUCKET" --location="$REGION" \
+              --uniform-bucket-level-access --project="$PROJECT_ID"
+          fi
+          gcloud storage buckets describe "gs://$NEW_BUCKET" --format="value(location)"
+
+      - name: Link the bucket to Firebase Storage
+        run: |
+          TOKEN=$(gcloud auth print-access-token)
+          CODE=$(curl -sS -o /tmp/link.json -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+            -H "x-goog-user-project: $PROJECT_ID" \
+            "https://firebasestorage.googleapis.com/v1beta/projects/$PROJECT_ID/buckets/$NEW_BUCKET:addFirebase" -d '{}')
+          cat /tmp/link.json; echo
+          if [ "$CODE" != "200" ] && [ "$CODE" != "409" ]; then
+            echo "::error::Linking the bucket to Firebase failed (HTTP $CODE). Grant the service account Firebase Admin, or add the bucket in the Firebase console: Storage -> Add bucket -> Import existing bucket."
+            exit 1
+          fi
+
+      - name: Allow the website to read photos (CORS)
+        run: gcloud storage buckets update "gs://$NEW_BUCKET" --cors-file=storage.cors.json --project="$PROJECT_ID"
+
+      - name: Apply security rules, indexes and storage rules
+        run: |
+          cat > firebase.migrate.json <<EOF
+          {
+            "firestore": [{ "database": "$NEW_DB", "rules": "firestore.rules", "indexes": "firestore.indexes.json" }],
+            "storage": [{ "bucket": "$NEW_BUCKET", "rules": "storage.rules" }]
+          }
+          EOF
+          npx firebase-tools@latest deploy --only firestore,storage --config firebase.migrate.json \
+            --project "$PROJECT_ID" --non-interactive
+
+      - name: Turn on backups for the Mumbai database
+        run: |
+          gcloud firestore databases update --project="$PROJECT_ID" --database="$NEW_DB" --enable-pitr
+          gcloud firestore backups schedules create --project="$PROJECT_ID" --database="$NEW_DB" \
+            --recurrence=daily --retention=7d || echo "Daily schedule exists or was rejected; continuing."
+          gcloud firestore backups schedules create --project="$PROJECT_ID" --database="$NEW_DB" \
+            --recurrence=weekly --retention=14w --day-of-week=SUNDAY || echo "Weekly schedule exists or was rejected; continuing."
+
+  copy:
+    if: inputs.step == 'copy'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Copy every file to Mumbai
+        run: |
+          gcloud storage rsync -r "gs://$OLD_BUCKET" "gs://$NEW_BUCKET" --project="$PROJECT_ID"
+          echo "Files in old bucket: $(gcloud storage ls -r "gs://$OLD_BUCKET/**" | grep -vc '/$' || true)"
+          echo "Files in new bucket: $(gcloud storage ls -r "gs://$NEW_BUCKET/**" | grep -vc '/$' || true)"
+
+      # Saved photo links carry a Firebase download token, stored on the file
+      # as custom metadata. If the copy dropped it, every link would 403.
+      - name: Check download tokens came across
+        run: |
+          N=0; BAD=0
+          for OBJ in $(gcloud storage ls -r "gs://$OLD_BUCKET/**" | grep -v '/$' | head -20); do
+            REL="${OBJ#gs://$OLD_BUCKET/}"
+            A=$(gcloud storage objects describe "gs://$OLD_BUCKET/$REL" --format="value(metadata.firebaseStorageDownloadTokens)" 2>/dev/null)
+            B=$(gcloud storage objects describe "gs://$NEW_BUCKET/$REL" --format="value(metadata.firebaseStorageDownloadTokens)" 2>/dev/null)
+            N=$((N+1)); if [ "$A" != "$B" ]; then BAD=$((BAD+1)); echo "token mismatch: $REL"; fi
+          done
+          echo "checked $N files, $BAD mismatched"
+          [ "$BAD" = "0" ] || { echo "::error::Download tokens did not copy; saved links would break."; exit 1; }
+
+      - name: Install the database client
+        run: npm ci --prefix functions
+
+      - name: Copy every database record to Mumbai
+        env:
+          SOURCE_DB: ${{ env.OLD_DB }}
+          TARGET_DB: ${{ env.NEW_DB }}
+          NODE_PATH: functions/node_modules
+        run: node scripts/migrate-india/copy-firestore.cjs
