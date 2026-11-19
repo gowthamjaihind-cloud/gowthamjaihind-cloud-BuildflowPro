@@ -11,6 +11,7 @@
  *
  * Pure: no Firestore and no network, so the checking is unit-tested.
  */
+import { barsToStockUnit } from "../shared/steel";
 
 export interface AiLogContext {
   tasks: Array<{ id: string; name: string; progress: number }>;
@@ -70,6 +71,7 @@ Site shorthand engineers use (match by MEANING, not exact spelling):
 - "mestri" / "maistry" = mason or head mason; "bar bender" = steel fixer; "carpenter" = shuttering carpenter.
 - "no.", "nos", "nos." after a number = that many people or pieces.
 - Units: "bags", "kg", "MT"/"ton", "cft", "cum"/"m3", "sqft", "rmt". Spelling mistakes are common ("lentel" = lintel, "cement bag" = bags of cement).
+- Tamil Nadu material names: "jalli" = crushed stone aggregate ("big jalli" / "40mm jalli" = 40mm aggregate; "small jalli" / "20mm jalli" / "12mm jalli" = that size); "msand" / "M-sand" = manufactured sand; "psand" / "P-sand" = plastering sand; "kambi" = steel bar; "sengal" = brick. Match them to the material that means the same.
 - Location words ("first floor", "south side", "above lintel") help you choose the task; also keep them in "note".
 
 Rules:
@@ -82,6 +84,7 @@ Rules:
 - A finished task (progress 100) can still be reported on; match it like any other.
 - Each entry's "progressPercent" is that task's TOTAL progress after today (0-100). If the message gives an increase ("10% more", "another 10 percent"), add it to the current progress. If it says the task is finished, use 100. If progress is not mentioned, use null.
 - Quantities are numbers in the material's own unit as listed. Do not convert units; if the unit in the message differs from the listed unit, put the item in "unmatched" instead.
+- One exception: steel bars given as a COUNT ("Steel 8mm 20 nos", "12mm kambi 15 rods") for a bar material listed in kg or MT of the SAME size. Give {"materialId":"...","nos":20} with no "quantity"; the weight is worked out for you. Never work out a weight yourself.
 - "equipment[].unit" is "hours" or "days".
 - "workDate" is the date the work was done if the message states one, as "YYYY-MM-DD". Dates are written day first in India: "12/11/26" is 12 November 2026. Use null if no date is given. Today is ${ctx.today || "unknown"}.
 - Each entry's "note" is anything worth recording about that task that is not captured above (weather, delays, instructions), in English, at most 200 characters. Empty string if nothing.
@@ -123,11 +126,22 @@ export function sanitizeAiLog(raw: any, ctx: AiLogContext): AiLogResult {
     return [...map.values()];
   };
 
+  const steelWorking: string[] = [];
   const materials = merge(
     (Array.isArray(raw.materials) ? raw.materials : []).flatMap((m: any) => {
       const item = ctx.materials.find((x) => x.id === String(m?.materialId ?? ""));
+      if (!item) return [];
+      // Bars by count: the weight is arithmetic (shared/steel, the same as
+      // purchase orders), never the model's guess, and the working is shown.
+      const nos = posNum(m?.nos);
+      if (nos && !posNum(m?.quantity)) {
+        const conv = barsToStockUnit(item.name, item.unit || "", nos);
+        if (!conv) return [];
+        steelWorking.push(conv.working);
+        return [{ materialId: item.id, name: item.name, unit: item.unit || "", quantity: conv.qty }];
+      }
       const quantity = posNum(m?.quantity);
-      return item && quantity ? [{ materialId: item.id, name: item.name, unit: item.unit || "", quantity }] : [];
+      return quantity ? [{ materialId: item.id, name: item.name, unit: item.unit || "", quantity }] : [];
     }),
     (r: any) => r.materialId, "quantity",
   ) as AiLogDraft["materials"];
@@ -157,7 +171,7 @@ export function sanitizeAiLog(raw: any, ctx: AiLogContext): AiLogResult {
       // current figure back (or answers 0 for "not mentioned") did not, and
       // the engineer is told progress was kept as it was.
       taskId: task.id, taskName: task.name, currentProgress: current, progressPercent, progressGiven: given && progressPercent > current,
-      materials, labour, equipment, note: clip(raw.note, 200), unmatched,
+      materials, labour, equipment, note: clip([clip(raw.note, 200), ...steelWorking.map((w) => `Steel ${w}`)].filter(Boolean).join("; "), 300), unmatched,
       ...(workDate ? { workDate } : {}),
     },
   };

@@ -179,3 +179,26 @@ describe("sectioned messages", () => {
   });
 });
 
+
+describe("site terms and steel by count", () => {
+  it("teaches the model Tamil Nadu material names", () => {
+    const p = buildAiLogPrompt("Big jalli 3 units", ctx);
+    expect(p).toMatch(/jalli.*aggregate/i);
+    expect(p).toMatch(/kambi/);
+    expect(p).toMatch(/"nos":20/);
+  });
+
+  it("turns bars counted in nos into the stock unit, with the working in the note", () => {
+    // 20 bars of 8mm: 20 × 12 m × 64/162 kg/m = 94.8 kg, rounded to 90 kg (as on purchase orders).
+    const r = sanitizeAiLog({ intent: "daily_log", taskId: "t1", materials: [{ materialId: "m2", nos: 20 }], note: "" }, ctx);
+    if (r.kind !== "log") throw new Error("expected a log");
+    expect(r.draft.materials).toEqual([{ materialId: "m2", name: "Steel 8mm", unit: "kg", quantity: 90 }]);
+    expect(r.draft.note).toMatch(/Steel 8mm: 20 nos × 12 m/);
+  });
+
+  it("does not convert a count for something that is not a sized bar stocked by weight", () => {
+    const r = sanitizeAiLog({ intent: "daily_log", taskId: "t1", materials: [{ materialId: "m1", nos: 20 }] }, ctx);
+    if (r.kind !== "log") throw new Error("expected a log");
+    expect(r.draft.materials).toEqual([]);
+  });
+});

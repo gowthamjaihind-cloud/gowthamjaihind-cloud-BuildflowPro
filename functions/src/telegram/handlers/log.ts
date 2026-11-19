@@ -4,6 +4,7 @@ import * as crypto from "crypto";
 import { getSession, setSession, clearStep, type ChatId } from "../session";
 import { db } from "../../db";
 import { tt, normalizeLang } from "../i18n";
+import { resolveMasterMaterials } from "./masterMaterials";
 const projPath = (orgId, projectId) => orgId ? `organizations/${orgId}/projects/${projectId}` : `projects/${projectId}`;
 const todayISO = () => {
     const now = new Date(Date.now() + 5.5 * 60 * 60 * 1000); // Asia/Kolkata
@@ -372,6 +373,8 @@ export async function saveLog(tg: any, chatId: ChatId, messageId, session) {
     const lang = normalizeLang(session?.lang);
     const d = session.draft || {};
     const base = projPath(session.orgId, session.activeProjectId);
+    // Materials matched from Master data join the project's inventory first.
+    const materials = await resolveMasterMaterials(base, session.activeProjectId, d.materials || []);
     // Same payload shape as the web app, so the existing dailyLogs Cloud Function
     // handles task progress and inventory rollups automatically.
     await db.collection(`${base}/dailyLogs`).doc(d.logId).set({
@@ -380,7 +383,7 @@ export async function saveLog(tg: any, chatId: ChatId, messageId, session) {
         workDate: d.workDate,
         progressPercent: d.progressPercent,
         markComplete: d.progressPercent === 100,
-        materials: d.materials || [],
+        materials,
         labour: d.labour || [],
         equipment: d.equipment || [],
         note: d.note || "",
