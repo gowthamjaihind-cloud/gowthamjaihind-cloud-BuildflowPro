@@ -471,7 +471,10 @@ export const OperatorPanel: React.FC = () => {
           <p className="text-[10px] text-ink-muted leading-relaxed">
             Use <b>test</b> keys (rzp_test_…) first — no KYC needed. In the Razorpay dashboard, add a webhook pointing to{" "}
             <span className="font-mono">{typeof window !== "undefined" ? window.location.origin : "https://sitetru.com"}/api/razorpay-webhook</span>{" "}
-            for events <span className="font-mono">payment.captured</span> and <span className="font-mono">order.paid</span>, and paste its signing secret above. Switch to live keys after completing KYC.
+            for events <span className="font-mono">payment.captured</span>, <span className="font-mono">order.paid</span> and every{" "}
+            <span className="font-mono">subscription.*</span> event (activated, charged, pending, halted, cancelled, completed): monthly renewals and
+            cancellations only reach Sitetru through those. Paste the webhook's secret above. Test and live mode each need their own webhook.
+            Switch to live keys after completing KYC.
           </p>
         </div>
       </section>
