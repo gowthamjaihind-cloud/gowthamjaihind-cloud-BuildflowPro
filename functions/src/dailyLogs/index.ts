@@ -1,3 +1,4 @@
+import { REGION } from "../callable";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import { db, FIRESTORE_DATABASE_ID } from "../db";
@@ -190,7 +191,7 @@ export const onProjectDailyLogWritten = onDocumentWritten(
   // this listens for ever lands in "(default)".
   {
     document: "projects/{projectId}/dailyLogs/{logId}",
-    database: FIRESTORE_DATABASE_ID,
+    region: REGION, database: FIRESTORE_DATABASE_ID,
   },
   async (event: any) => {
     const { projectId } = event.params;
@@ -223,7 +224,7 @@ export const onProjectDailyLogWritten = onDocumentWritten(
 export const onOrgDailyLogWritten = onDocumentWritten(
   {
     document: "organizations/{orgId}/projects/{projectId}/dailyLogs/{logId}",
-    database: FIRESTORE_DATABASE_ID,
+    region: REGION, database: FIRESTORE_DATABASE_ID,
   },
   async (event: any) => {
     const { orgId, projectId } = event.params;

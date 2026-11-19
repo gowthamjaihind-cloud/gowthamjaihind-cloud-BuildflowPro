@@ -51,7 +51,7 @@ export const whatsappLogReminder = onSchedule(
   {
     schedule: "0 17 * * 1-6", // 17:00 Mon-Sat, matching the Telegram nudge
     timeZone: "Asia/Kolkata",
-    region: "asia-southeast1",
+    region: "asia-south1",
     secrets: [WA_TOKEN, WA_PHONE_ID],
   },
   async () => {
@@ -91,7 +91,7 @@ export const whatsappPlanReminder = onSchedule(
   {
     schedule: "0 10 * * 1-6", // 10:00 Mon-Sat, matching the Telegram prompt
     timeZone: "Asia/Kolkata",
-    region: "asia-southeast1",
+    region: "asia-south1",
     secrets: [WA_TOKEN, WA_PHONE_ID],
   },
   async () => {

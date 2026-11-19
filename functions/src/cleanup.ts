@@ -20,7 +20,7 @@ export const cleanupAbandonedSignups = onSchedule(
   {
     schedule: "30 3 * * *", // 03:30 daily (quiet hours) in the timezone below
     timeZone: "Asia/Kolkata",
-    region: "asia-southeast1",
+    region: "asia-south1",
   },
   async () => {
     const cutoff = Date.now() - GRACE_MS;

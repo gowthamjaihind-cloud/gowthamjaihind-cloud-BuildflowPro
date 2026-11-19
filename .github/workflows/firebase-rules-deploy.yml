@@ -56,4 +56,4 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Apply Storage CORS settings
-        run: gcloud storage buckets update gs://jewel-ledger.firebasestorage.app --cors-file=storage.cors.json --project jewel-ledger
+        run: gcloud storage buckets update gs://sitetru-india-files --cors-file=storage.cors.json --project jewel-ledger

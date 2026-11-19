@@ -44,17 +44,16 @@ export const APPCHECK_ENFORCED = process.env.APPCHECK_ENFORCE === "true";
  * plan, inviting a teammate and every AI call made a round trip from Madurai to
  * Iowa and back: roughly 250-300ms added per call, over site mobile data.
  *
- * Singapore rather than Mumbai (asia-south1) because the rest of the backend is
- * already there and splitting it again would be the same mistake in a new place.
+ * Mumbai (asia-south1), beside the database (sitetru-india) and the file
+ * bucket (sitetru-india-files), which moved there from Singapore and the US so
+ * customer data is stored in India.
  *
- * NOT applied to the Firestore triggers. A v2 Firestore trigger has to sit in a
- * region compatible with the DATABASE's location, which is a console setting
- * this repository cannot see — and the fact that those triggers deploy and run
- * in us-central1 today is good evidence the database is US-located. Moving them
- * on that guess would break them, and unlike a callable nobody waits on a
- * trigger, so there is no latency to win. They stay put deliberately.
+ * The Firestore triggers run here too. A v2 Firestore trigger must sit in a
+ * region compatible with its DATABASE's location; the database is in this
+ * region, so they share it. (They used to run in us-central1 next to a
+ * Singapore database, on the guess that the database was in the US.)
  */
-export const REGION = "asia-southeast1";
+export const REGION = "asia-south1";
 
 export const CALLABLE_OPTS = {
   enforceAppCheck: APPCHECK_ENFORCED,

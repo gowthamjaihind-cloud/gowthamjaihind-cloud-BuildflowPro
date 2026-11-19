@@ -12,21 +12,21 @@
         "source": "/api/telegram-status",
         "function": {
           "functionId": "telegramStatus",
-          "region": "asia-southeast1"
+          "region": "asia-south1"
         }
       },
       {
         "source": "/api/razorpay-webhook",
         "function": {
           "functionId": "razorpayWebhook",
-          "region": "asia-southeast1"
+          "region": "asia-south1"
         }
       },
       {
         "source": "/api/client-share",
         "function": {
           "functionId": "clientShareView",
-          "region": "asia-southeast1"
+          "region": "asia-south1"
         }
       },
       {
@@ -111,12 +111,15 @@
       }
     ]
   },
-  "storage": {
-    "rules": "storage.rules"
-  },
+  "storage": [
+    {
+      "bucket": "sitetru-india-files",
+      "rules": "storage.rules"
+    }
+  ],
   "firestore": [
     {
-      "database": "ai-studio-97ffdc85-b348-4a76-9ede-baa3db65adee",
+      "database": "sitetru-india",
       "rules": "firestore.rules",
       "indexes": "firestore.indexes.json"
     }

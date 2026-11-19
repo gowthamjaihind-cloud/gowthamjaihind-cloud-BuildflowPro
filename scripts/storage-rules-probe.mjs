@@ -10,7 +10,7 @@
 
 const PROJ = "demo-sitetru";
 const HOST = process.env.FIREBASE_STORAGE_EMULATOR_HOST || "127.0.0.1:9199";
-const BUCKET = process.env.PROBE_BUCKET || "jewel-ledger.firebasestorage.app";
+const BUCKET = process.env.PROBE_BUCKET || "sitetru-india-files";
 const BASE = `http://${HOST}/v0/b/${BUCKET}/o`;
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");

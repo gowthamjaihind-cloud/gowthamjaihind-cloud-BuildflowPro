@@ -16,7 +16,7 @@
 // script; the app paths beside them must stay ALLOWED. Exits non-zero on FAIL.
 
 const PROJ = "demo-sitetru";
-const DB = "ai-studio-97ffdc85-b348-4a76-9ede-baa3db65adee";
+const DB = "sitetru-india";
 const HOST = process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
 const BASE = `http://${HOST}/v1/projects/${PROJ}/databases/${DB}/documents`;
 

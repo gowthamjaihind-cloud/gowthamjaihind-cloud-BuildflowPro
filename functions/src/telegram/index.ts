@@ -1,3 +1,4 @@
+import { REGION } from "../callable";
 import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
 import { timingSafeEqual } from "node:crypto";
 import { CALLABLE_OPTS } from "../callable";
@@ -30,7 +31,7 @@ const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 // Lightweight status endpoint for the web app's "Bot Online" badge.
 // Exposed to the frontend via a Firebase Hosting rewrite: /api/telegram-status
 export const telegramStatus = onRequest({
-    region: "asia-southeast1",
+    region: "asia-south1",
     secrets: [BOT_TOKEN],
     cors: true,
     // NO warm instance. This used to be minInstances: 1, which reserves a Cloud
@@ -68,7 +69,7 @@ export const telegramStatus = onRequest({
  * look identical from a phone. This reports what Telegram itself says.
  */
 const expectedWebhookUrl = () =>
-    `https://asia-southeast1-${process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT}.cloudfunctions.net/telegramWebhook`;
+    `https://asia-south1-${process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT}.cloudfunctions.net/telegramWebhook`;
 
 async function botDiagnostics(tg: TelegramApi, secret: string) {
     const [me, info] = await Promise.all([tg.getMe(), tg.getWebhookInfo()]);
@@ -167,7 +168,7 @@ export const telegramReconnect = onCall({ ...CALLABLE_OPTS, secrets: [BOT_TOKEN,
 });
 
 export const telegramWebhook = onRequest({
-    region: "asia-southeast1",
+    region: "asia-south1",
     secrets: [BOT_TOKEN, WEBHOOK_SECRET, GEMINI_API_KEY],
     cors: false,
     // Reads invoices with Gemini; capped like the AI callables (ai/access.ts).
@@ -634,7 +635,7 @@ async function enqueueBotJob(job: BotJob) {
  */
 export const onBotJobCreated = onDocumentCreated({
     document: "bot_jobs/{jobId}",
-    database: FIRESTORE_DATABASE_ID,
+    region: REGION, database: FIRESTORE_DATABASE_ID,
     secrets: [BOT_TOKEN, GEMINI_API_KEY],
     timeoutSeconds: 120,
     maxInstances: 10,
@@ -696,7 +697,7 @@ export const onUserUnlinked = onDocumentUpdated({
     document: "users/{userId}",
     // Without this the trigger listens on "(default)" and never fires.
     database: FIRESTORE_DATABASE_ID,
-    region: "asia-southeast1",
+    region: "asia-south1",
     secrets: [BOT_TOKEN],
 }, async (event) => {
     const beforeData = event.data?.before.data();
@@ -723,7 +724,7 @@ export const onUserUnlinked = onDocumentUpdated({
 export const dailyLogReminder = onSchedule({
     schedule: "0 17 * * 1-6", // 17:00 Mon–Sat (0=Sun) in the timezone below
     timeZone: "Asia/Kolkata",
-    region: "asia-southeast1",
+    region: "asia-south1",
     secrets: [BOT_TOKEN],
 }, async () => {
     const tg = new TelegramApi(BOT_TOKEN.value());
@@ -763,7 +764,7 @@ export const dailyLogReminder = onSchedule({
 export const dailyPlanReminder = onSchedule({
     schedule: "0 10 * * 1-6", // 10:00 Mon–Sat in the timezone below
     timeZone: "Asia/Kolkata",
-    region: "asia-southeast1",
+    region: "asia-south1",
     secrets: [BOT_TOKEN],
 }, async () => {
     const tg = new TelegramApi(BOT_TOKEN.value());

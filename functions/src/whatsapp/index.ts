@@ -49,7 +49,7 @@ const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
  */
 
 export const whatsappStatus = onRequest(
-  { region: "asia-southeast1", secrets: [WA_TOKEN, WA_PHONE_ID], cors: true, minInstances: 0 },
+  { region: "asia-south1", secrets: [WA_TOKEN, WA_PHONE_ID], cors: true, minInstances: 0 },
   async (_req, res) => {
     try {
       const wa = new WhatsAppApi(WA_TOKEN.value(), WA_PHONE_ID.value());
@@ -64,7 +64,7 @@ export const whatsappStatus = onRequest(
 
 export const whatsappWebhook = onRequest(
   {
-    region: "asia-southeast1",
+    region: "asia-south1",
     secrets: [WA_TOKEN, WA_PHONE_ID, WA_VERIFY_TOKEN, WA_APP_SECRET, GEMINI_API_KEY],
     cors: false,
     // Reads invoices with Gemini; capped like the AI callables (ai/access.ts).

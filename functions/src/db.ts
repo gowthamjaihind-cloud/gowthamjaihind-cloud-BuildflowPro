@@ -13,7 +13,7 @@ import { getFirestore } from "firebase-admin/firestore";
  */
 export const FIRESTORE_DATABASE_ID =
   process.env.FIRESTORE_DATABASE_ID ||
-  "ai-studio-97ffdc85-b348-4a76-9ede-baa3db65adee";
+  "sitetru-india";
 
 export const db = getFirestore(FIRESTORE_DATABASE_ID);
 

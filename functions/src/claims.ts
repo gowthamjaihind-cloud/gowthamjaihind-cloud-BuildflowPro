@@ -1,3 +1,4 @@
+import { REGION } from "./callable";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getAuth } from "firebase-admin/auth";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
@@ -102,7 +103,7 @@ export const syncMyClaims = onCall({ ...CALLABLE_OPTS, timeoutSeconds: 30 }, asy
 export const onOrgMembersChanged = onDocumentWritten(
   {
     document: "organizations/{orgId}",
-    database: FIRESTORE_DATABASE_ID,
+    region: REGION, database: FIRESTORE_DATABASE_ID,
   },
   async (event) => {
     const before = (event.data?.before?.data() as any)?.members ?? {};

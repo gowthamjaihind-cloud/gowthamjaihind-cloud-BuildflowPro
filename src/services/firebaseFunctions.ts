@@ -7,7 +7,7 @@ import { getApp } from "firebase/app";
  * does not fail the build or the deploy — every callable just starts returning
  * "not found" at runtime. TelegramBotStatus.test.ts asserts the two agree.
  */
-export const FUNCTIONS_REGION = "asia-southeast1";
+export const FUNCTIONS_REGION = "asia-south1";
 
 // Helper to reliably get the functions instance (assumes getApp() is ready)
 const getFunctionsInstance = () => getFunctions(getApp(), FUNCTIONS_REGION);

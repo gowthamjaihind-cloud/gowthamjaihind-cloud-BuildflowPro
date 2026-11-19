@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: jewel-ledger
-      DATABASE: ai-studio-97ffdc85-b348-4a76-9ede-baa3db65adee
+      DATABASE: sitetru-india
     steps:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2

@@ -307,7 +307,7 @@ export const runSubscriptionLifecycle = onSchedule(
   {
     schedule: "45 4 * * *", // after the 03:30 cleanup and 04:15 plan changes
     timeZone: "Asia/Kolkata",
-    region: "asia-southeast1",
+    region: "asia-south1",
   },
   async () => {
     const now = Date.now();
@@ -394,7 +394,7 @@ export const runSlotNotices = onSchedule(
   {
     schedule: "0 5 * * *", // after the 04:45 subscription lifecycle
     timeZone: "Asia/Kolkata",
-    region: "asia-southeast1",
+    region: "asia-south1",
   },
   async () => {
     const now = Date.now();

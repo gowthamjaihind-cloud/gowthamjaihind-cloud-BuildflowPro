@@ -18,7 +18,7 @@
 // unset during a query, so thisOrgUnclaimed() defaults to true. The fix is to
 // split the verb into `allow get` / `allow list: if false` -- the client only
 // ever reads organizations by document id, never as a collection.
-const PROJ='demo-sitetru', DB='ai-studio-97ffdc85-b348-4a76-9ede-baa3db65adee', REGION='asia-southeast1';
+const PROJ='demo-sitetru', DB='sitetru-india', REGION='asia-south1';
 const AUTH='http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1';
 const BASE=`http://127.0.0.1:8080/v1/projects/${PROJ}/databases/${DB}/documents`;
 const su=async(e,p)=>{await fetch(`${AUTH}/accounts:signUp?key=fake`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e,password:p,returnSecureToken:true})}).catch(()=>{});

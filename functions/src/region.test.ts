@@ -74,7 +74,7 @@ describe("every user-facing function names its region", () => {
 
   it("puts that region in CALLABLE_OPTS, which every callable spreads", () => {
     expect(CALLABLE_OPTS.region).toBe(REGION);
-    expect(REGION).toBe("asia-southeast1");
+    expect(REGION).toBe("asia-south1");
   });
 
   it("names only the one region across the backend", () => {
@@ -109,5 +109,40 @@ describe("hosting rewrites point at the right region", () => {
     for (const r of rewrites) {
       expect(r.function.region, `rewrite for ${r.function.functionId}`).toBe(REGION);
     }
+  });
+});
+
+describe("data lives in India, and every part of the app agrees where", () => {
+  const cfg = JSON.parse(readFileSync(join(ROOT, "firebase-applet-config.json"), "utf8"));
+  const fb = JSON.parse(readFileSync(join(ROOT, "firebase.json"), "utf8"));
+  const dbSrc = readFileSync(join(ROOT, "functions/src/db.ts"), "utf8");
+  const bucketSrc = readFileSync(join(ROOT, "functions/src/bucket.ts"), "utf8");
+
+  it("runs in Mumbai", () => {
+    expect(REGION).toBe("asia-south1");
+  });
+
+  it("names one database in the app, the server and the rules deploy", () => {
+    expect(cfg.firestoreDatabaseId).toBe("sitetru-india");
+    expect(dbSrc).toContain(`"${cfg.firestoreDatabaseId}"`);
+    expect(fb.firestore.map((f: any) => f.database)).toEqual([cfg.firestoreDatabaseId]);
+  });
+
+  it("names one file bucket in the app, the server and the storage rules deploy", () => {
+    expect(cfg.storageBucket).toBe("sitetru-india-files");
+    expect(bucketSrc).toContain(`"${cfg.storageBucket}"`);
+    expect(fb.storage.map((s: any) => s.bucket)).toEqual([cfg.storageBucket]);
+    expect(readFileSync(join(ROOT, "functions/src/index.ts"), "utf8")).toMatch(/initializeApp\(\{ storageBucket: STORAGE_BUCKET \}\)/);
+  });
+
+  it("puts every Firestore trigger in the database's region", () => {
+    const missing: string[] = [];
+    for (const { rel, src } of sources) {
+      for (const m of src.matchAll(/export const (\w+)\s*=\s*onDocument\w+\(/g)) {
+        const opts = optionsOf(src, m.index! + m[0].length - 1);
+        if (!/region:/.test(opts)) missing.push(`${rel}: ${m[1]}`);
+      }
+    }
+    expect(missing).toEqual([]);
   });
 });
