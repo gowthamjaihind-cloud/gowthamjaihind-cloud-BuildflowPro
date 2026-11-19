@@ -35,3 +35,12 @@ describe("Gemini model names", () => {
     expect(hits).toEqual([]);
   });
 });
+
+describe("the bot's site-message reader", () => {
+  it("tries gemini-flash-lite-latest first, then the rest, once each", async () => {
+    const { BOT_LOG_MODELS } = await import("./geminiPolicy");
+    expect(BOT_LOG_MODELS[0]).toBe("gemini-flash-lite-latest");
+    expect(new Set(BOT_LOG_MODELS).size).toBe(BOT_LOG_MODELS.length);
+    expect([...BOT_LOG_MODELS].sort()).toEqual([...MODELS].sort());
+  });
+});

@@ -38,6 +38,14 @@ export const FULL_MODELS = ["gemini-3.8-flash"];
 /** Gemini models to try, best first. */
 export const MODELS = [...LITE_MODELS, ...FULL_MODELS];
 
+/**
+ * The bot's site-message reader: gemini-flash-lite-latest first. In the 19 Nov
+ * self-test it read "Block work south side. Mason 2 no, MC 1 no, FC 1 no" as a
+ * daily log (1.7s), where gemini-3.5-flash-lite called it "other" and the bot
+ * would have asked the engineer what they meant.
+ */
+export const BOT_LOG_MODELS = ["gemini-flash-lite-latest", ...MODELS.filter((m) => m !== "gemini-flash-lite-latest")];
+
 /** Waits between attempts on the SAME model, ms. Two retries, then the next model. */
 export const BACKOFF_MS = [1500, 4000];
 
