@@ -111,6 +111,11 @@ const plans = [
     monthly: "₹99",
     annual: "₹82",
     annualTotal: "₹990 billed yearly, per project",
+    // ₹99 / 30 days = ₹3.30 and ₹990 / 365 = ₹2.71, so "about" and "under" are
+    // both true; a bare "₹3 a day" beside ₹99 a month would not be.
+    // LandingPage.test.ts checks the arithmetic against src/lib/plans.ts.
+    perDay: { monthly: "About ₹3 a day, per project", annual: "Under ₹3 a day, per project" },
+    perUnit: "/ project / month",
     tag: "For solo & small contractors",
     features: [
       "Pay for the projects you run — ₹99 each, per month",
@@ -639,7 +644,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               ? (p as any).per
               : billing === "annual"
                 ? "/ mo"
-                : "/ org / month";
+                : (p as any).perUnit || "/ org / month";
+            const perDay = (p as any).perDay?.[billing === "annual" ? "annual" : "monthly"] as string | undefined;
             return (
               <div key={p.name} className={`rounded-3xl p-7 flex flex-col ${p.highlight ? "bg-surface-dark text-white shadow-2xl shadow-surface-dark/20 ring-1 ring-primary/40" : "soft-card"}`}>
                 {p.highlight && <span className="inline-block self-start text-[10px] font-black uppercase tracking-widest bg-primary text-on-primary px-3 py-1 rounded-full mb-4">{"Most popular"}</span>}
@@ -651,6 +657,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 <p className={`text-[11px] font-semibold mb-1 h-4 ${p.highlight ? "text-white/50" : "text-ink-muted"}`}>
                   {!p.fixed && billing === "annual" ? p.annualTotal : ""}
                 </p>
+                {perDay && (
+                  <p className={`text-sm font-bold mb-2 ${p.highlight ? "text-white" : "text-success"}`}>{perDay}</p>
+                )}
                 <div className={`inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 ${p.highlight ? "bg-white/10 text-white" : "bg-primary/12 text-primary-deep"}`}>
                   <Stack weight="bold" className="w-3.5 h-3.5" /> {p.projects}
                 </div>

@@ -249,21 +249,24 @@ const TypeShot: React.FC<{ s: Shot; f: number; w: number; h: number }> = ({ s, f
 
 const LogoShot: React.FC<{ f: number; w: number; h: number; end?: boolean }> = ({ f, w, h, end }) => {
   const tall = h > w;
-  const size = tall ? 260 : 230;
+  // The wide END card holds the address and the price as well, and at full
+  // size it ran off the frame (logo cut at the top, price at the bottom).
+  const compact = end && !tall;
+  const size = tall ? 260 : compact ? 170 : 230;
   const word = arrive(clamp((f - 8) / 10));
   const line = arrive(clamp((f - 18) / 10));
   const url = arrive(clamp((f - 34) / 12));
   return (
-    <AbsoluteFill style={{ background: GROUND, alignItems: "center", justifyContent: "center", fontFamily: SANS, flexDirection: "column", gap: 26 }}>
+    <AbsoluteFill style={{ background: GROUND, alignItems: "center", justifyContent: "center", fontFamily: SANS, flexDirection: "column", gap: compact ? 16 : 26 }}>
       <Mark size={size} t={f} at={0} rise={BEAT * 0.6} stagger={BEAT * 0.25} />
-      <div style={{ fontWeight: 800, fontSize: tall ? 150 : 170, letterSpacing: -6, color: C.white, opacity: word, transform: `translateY(${(1 - word) * 40}px)` }}>Sitetru</div>
+      <div style={{ fontWeight: 800, fontSize: tall ? 150 : compact ? 128 : 170, letterSpacing: -6, color: C.white, opacity: word, transform: `translateY(${(1 - word) * 40}px)` }}>Sitetru</div>
       <div style={{ fontWeight: 600, fontSize: tall ? 46 : 50, color: C.primaryOnDark, opacity: line, transform: `translateY(${(1 - line) * 24}px)` }}>
         Truth, reported from site.
       </div>
       {end && (
         <div style={{ marginTop: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: 18, opacity: url, transform: `translateY(${(1 - url) * 24}px)` }}>
           <div style={{ fontFamily: MONO, fontWeight: 600, fontSize: tall ? 54 : 58, color: C.white, padding: "14px 34px", borderRadius: 18, background: C.primary }}>sitetru.com</div>
-          <div style={{ fontSize: tall ? 34 : 36, fontWeight: 600, color: "rgba(255,255,255,0.75)" }}>14-day free trial · no card needed</div>
+          <div style={{ fontSize: tall ? 34 : 36, fontWeight: 600, color: "rgba(255,255,255,0.75)" }}>14-day free trial · ₹99 a month · about ₹3 a day</div>
         </div>
       )}
     </AbsoluteFill>

@@ -20,7 +20,7 @@ export interface Beat {
   text: string;
 }
 
-export const TOTAL_SECONDS = 78.465;
+export const TOTAL_SECONDS = 80.204;
 
 /** The tempo the picture is cut to. See the film's script for why. */
 export const BPM = 100;
@@ -41,7 +41,7 @@ export const BEATS: Beat[] = [
   {"id":"client","shot":"estimates","seconds":6.747,"hold":0.3,"startsAt":54.636,"beatSeconds":7.047,"text":"Bill your client off the same breakdown you already built. No re-typing, and no second version of the truth."},
   {"id":"scale","shot":"portfolio","seconds":1.596,"hold":0.3,"startsAt":61.683,"beatSeconds":1.896,"text":"One job, or all of them."},
   {"id":"thesis","shot":"thesis","seconds":5.177,"hold":1.3,"startsAt":63.579,"beatSeconds":6.477,"text":"A building site doesn't stop for paperwork. So the paperwork has to keep up with the site."},
-  {"id":"end","shot":"end","seconds":6.209,"hold":2.2,"startsAt":70.056,"beatSeconds":8.409,"text":"Sitetru. Fourteen days free, then ninety nine rupees a project, a month. Sitetru dot com."},
+  {"id":"end","shot":"end","seconds":7.948,"hold":2.2,"startsAt":70.056,"beatSeconds":10.148,"text":"Sitetru. Fourteen days free, then ninety nine rupees a project, a month. About three rupees a day. Sitetru dot com."},
 ];
 
 /** Beat lookup by id, for a composition that names its shots. */

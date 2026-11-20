@@ -154,7 +154,7 @@ export const WALKTHROUGH = {
       cutTo: "walk-endcard.png",
       cutAfter: 6,
       cutHold: true,
-      vo: "That's Sitetru. One place, fed from site. Fourteen days free, then ninety nine rupees a project, a month. Sitetru dot com.",
+      vo: "That's Sitetru. One place, fed from site. Fourteen days free, then ninety nine rupees a project, a month. About three rupees a day. Sitetru dot com.",
       hold: 2.0,
       nav: "Dashboard",
     },
