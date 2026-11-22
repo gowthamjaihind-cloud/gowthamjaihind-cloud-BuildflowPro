@@ -623,7 +623,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       <section id="pricing" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
         <div className="text-center max-w-2xl mx-auto mb-8">
           <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{t("land.pricingHeading")}</h2>
-          <p className="text-ink-muted font-medium">{"Pick a plan by how many projects you run. Start free, or try any paid plan free for 30 days — no credit card to start."}</p>
+          <p className="text-ink-muted font-medium">{"Pick a plan by how many projects you run. Start with a 14-day free trial of Starter — no credit card."}</p>
         </div>
 
         {/* Monthly / annual toggle */}
