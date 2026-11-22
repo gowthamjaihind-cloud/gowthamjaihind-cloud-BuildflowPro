@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "../i18n";
 import { BrandLogo } from "../components/BrandLogo";
 import { HeroVideo } from "../components/HeroVideo";
+import { GuidesPlayer } from "../components/GuidesPlayer";
+import { GUIDES, GUIDES_READY } from "../content/guides";
 import { TERMS_URL, PRIVACY_URL, REFUND_URL, SHIPPING_URL, CONTACT_URL, stashPendingConsent } from "../lib/legal";
 import { useAuthStore } from "../store";
 import {
@@ -111,6 +113,11 @@ const plans = [
     monthly: "₹99",
     annual: "₹82",
     annualTotal: "₹990 billed yearly, per project",
+    // ₹99 / 30 days = ₹3.30 and ₹990 / 365 = ₹2.71, so "about" and "under" are
+    // both true; a bare "₹3 a day" beside ₹99 a month would not be.
+    // LandingPage.test.ts checks the arithmetic against src/lib/plans.ts.
+    perDay: { monthly: "About ₹3 a day, per project", annual: "Under ₹3 a day, per project" },
+    perUnit: "/ project / month",
     tag: "For solo & small contractors",
     features: [
       "Pay for the projects you run — ₹99 each, per month",
@@ -284,6 +291,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <a href="#audience" className="hover:text-ink apple-transition">{t("land.navServe")}</a>
             <a href="#solutions" className="hover:text-ink apple-transition">{t("land.navSolutions")}</a>
             <a href="#features" className="hover:text-ink apple-transition">{t("land.navFeatures")}</a>
+            {GUIDES_READY && <a href="#guides" className="hover:text-ink apple-transition">{"Guides"}</a>}
             <a href="#pricing" className="hover:text-ink apple-transition">{t("land.navPricing")}</a>
             <a
               href="/demo/?demo=1"
@@ -313,6 +321,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <a href="#audience" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navServe")}</a>
             <a href="#solutions" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navSolutions")}</a>
             <a href="#features" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navFeatures")}</a>
+            {GUIDES_READY && <a href="#guides" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{"Guides"}</a>}
             <a href="#pricing" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navPricing")}</a>
             <a
               href="/demo/?demo=1"
@@ -564,6 +573,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
         </div>
       </section>
 
+      {/* VIDEO GUIDES — one short film per module, recorded in the real app.
+          Open to everyone: a contractor can see exactly how each part works
+          before paying, and the same guides are in the app's Help after. */}
+      {GUIDES_READY && (
+      <section id="guides" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24 scroll-mt-20">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <p className="eyebrow text-primary mb-3">{"Video guides"}</p>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{"Learn Sitetru, one module at a time"}</h2>
+          <p className="text-ink-muted font-medium">{`${GUIDES.length} short videos, each showing one part of the app with sample data. Watch them before you sign up, or any time from Help inside the app.`}</p>
+        </div>
+        <GuidesPlayer />
+      </section>
+      )}
+
       {/* YOUR DATA — every line here is enforced by firestore.rules or the
           Privacy & Data panel, and matches public/privacy.html. Change them together. */}
       <section id="your-data" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
@@ -600,7 +623,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
       <section id="pricing" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24">
         <div className="text-center max-w-2xl mx-auto mb-8">
           <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{t("land.pricingHeading")}</h2>
-          <p className="text-ink-muted font-medium">{"Pick a plan by how many projects you run. Start free, or try any paid plan free for 30 days — no credit card to start."}</p>
+          <p className="text-ink-muted font-medium">{"Pick a plan by how many projects you run. Start with a 14-day free trial of Starter — no credit card."}</p>
         </div>
 
         {/* Monthly / annual toggle */}
@@ -639,7 +662,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
               ? (p as any).per
               : billing === "annual"
                 ? "/ mo"
-                : "/ org / month";
+                : (p as any).perUnit || "/ org / month";
+            const perDay = (p as any).perDay?.[billing === "annual" ? "annual" : "monthly"] as string | undefined;
             return (
               <div key={p.name} className={`rounded-3xl p-7 flex flex-col ${p.highlight ? "bg-surface-dark text-white shadow-2xl shadow-surface-dark/20 ring-1 ring-primary/40" : "soft-card"}`}>
                 {p.highlight && <span className="inline-block self-start text-[10px] font-black uppercase tracking-widest bg-primary text-on-primary px-3 py-1 rounded-full mb-4">{"Most popular"}</span>}
@@ -651,6 +675,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
                 <p className={`text-[11px] font-semibold mb-1 h-4 ${p.highlight ? "text-white/50" : "text-ink-muted"}`}>
                   {!p.fixed && billing === "annual" ? p.annualTotal : ""}
                 </p>
+                {perDay && (
+                  <p className={`text-sm font-bold mb-2 ${p.highlight ? "text-white" : "text-success"}`}>{perDay}</p>
+                )}
                 <div className={`inline-flex self-start items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full mb-3 ${p.highlight ? "bg-white/10 text-white" : "bg-primary/12 text-primary-deep"}`}>
                   <Stack weight="bold" className="w-3.5 h-3.5" /> {p.projects}
                 </div>

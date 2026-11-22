@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import { GuidesPlayer } from "./GuidesPlayer";
+import { GUIDES_READY } from "../content/guides";
 import { ChatCircleDots, X, PaperPlaneRight, Wrench, CheckCircle, WarningCircle, XCircle, Info, Microphone, Stop, Lightning } from "@phosphor-icons/react";
 import { useAuthStore, useUIStore, useProjectStore } from "../store";
 import {
@@ -102,7 +104,7 @@ export const HelpChat: React.FC = () => {
   const [diagMode, setDiagMode] = useState(false);
   const [lastProblem, setLastProblem] = useState<{ text: string; checks: HelpCheck[] } | null>(null);
   const [reportId, setReportId] = useState("");
-  const [mode, setMode] = useState<"ask" | "do">("ask");
+  const [mode, setMode] = useState<"ask" | "do" | "guides">("ask");
   const [poDraft, setPoDraft] = useState<CommandPoDraft | null>(null);
   const activeProject = useProjectStore((s) => s.activeProject);
   const voice = useVoiceNote((audio) => runCommand({ audio }));
@@ -382,7 +384,7 @@ export const HelpChat: React.FC = () => {
           </div>
 
           <div className="flex gap-1 px-4 pt-2" role="tablist">
-            {(["ask", "do"] as const).map((k) => (
+            {(GUIDES_READY ? (["ask", "do", "guides"] as const) : (["ask", "do"] as const)).map((k) => (
               <button
                 key={k}
                 role="tab"
@@ -390,11 +392,18 @@ export const HelpChat: React.FC = () => {
                 onClick={() => { setMode(k); setDiagMode(false); setError(""); }}
                 className={`flex-1 text-xs font-bold py-1.5 rounded-lg cursor-pointer ${mode === k ? "bg-surface-dark text-white" : "text-ink-muted hover:bg-surface-2"}`}
               >
-                {k === "ask" ? "Ask" : "Do it for me"}
+                {k === "ask" ? "Ask" : k === "do" ? "Do it for me" : "Video guides"}
               </button>
             ))}
           </div>
 
+          {/* The same module guides as sitetru.com/#guides. */}
+          {mode === "guides" && (
+            <div className="flex-1 overflow-y-auto px-4 py-3 text-sm">
+              <GuidesPlayer compact />
+            </div>
+          )}
+          {mode !== "guides" && (<>
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm">
             {mode === "do" && turns.length === 0 && (
               <div className="space-y-2 text-ink-muted">
@@ -532,6 +541,7 @@ export const HelpChat: React.FC = () => {
               <PaperPlaneRight weight="fill" className="w-5 h-5" />
             </button>
           </form>
+          </>)}
           <p className="text-[10px] text-ink-muted text-center pb-2 -mt-1">AI answers can be wrong. Fixes never delete anything on the server.</p>
         </div>
       )}

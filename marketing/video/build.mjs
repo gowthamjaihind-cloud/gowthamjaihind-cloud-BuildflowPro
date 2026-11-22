@@ -66,7 +66,7 @@ const COPY_EN = {
   introK: "How many calls?", introS: "How many registers?",
   introSub: "To find out what happened on your site today.",
   outroH: "Sitetru", outroTag: "truth, reported from site.",
-  outroL: ["14-day free trial", "Then from ₹99 / month", "No card needed"],
+  outroL: ["14-day free trial", "₹99 / month · about ₹3 a day", "No card needed"],
   url: "sitetru.com",
 };
 const COPY_TA = {

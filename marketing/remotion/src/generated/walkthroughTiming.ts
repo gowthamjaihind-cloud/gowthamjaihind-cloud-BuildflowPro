@@ -20,7 +20,7 @@ export interface Beat {
   text: string;
 }
 
-export const TOTAL_SECONDS = 152.377;
+export const TOTAL_SECONDS = 154.377;
 
 /** The tempo the picture is cut to. See the film's script for why. */
 export const BPM = 90;
@@ -39,7 +39,7 @@ export const BEATS: Beat[] = [
   {"id":"insights","seconds":8.335,"hold":0.8,"startsAt":114.03,"beatSeconds":9.135,"text":"And if you'd rather be told than go looking: insights reads the costs, the schedule and the logs, and says plainly what needs attention."},
   {"id":"estimates","seconds":9.326,"hold":0.7,"startsAt":123.165,"beatSeconds":10.026,"text":"Client side, you bill from the same breakdown. Contract value, cost to date, margin, G S T — and a running account bill you can send."},
   {"id":"vault","seconds":7.762,"hold":0.7,"startsAt":133.191,"beatSeconds":8.462,"text":"Drawings, approvals and invoices sit with the job, so the file you need on site is on your phone rather than in the office."},
-  {"id":"close","seconds":8.724,"hold":2,"startsAt":141.653,"beatSeconds":10.724,"text":"That's Sitetru. One place, fed from site. Fourteen days free, then ninety nine rupees a project, a month. Sitetru dot com."},
+  {"id":"close","seconds":10.724,"hold":2,"startsAt":141.653,"beatSeconds":12.724,"text":"That's Sitetru. One place, fed from site. Fourteen days free, then ninety nine rupees a project, a month. About three rupees a day. Sitetru dot com."},
 ];
 
 /** Beat lookup by id, for a composition that names its shots. */

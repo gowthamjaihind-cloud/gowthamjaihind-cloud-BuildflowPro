@@ -22,7 +22,14 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "nod
 
 import { BRAND } from "../brand.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
-const OUT = resolve(HERE, "out");
+/**
+ * Which film to record. "walkthrough" is the full tour; "guide-<module>" is one
+ * of the module-by-module guides (marketing/films/guides/<module>.script.mjs),
+ * recorded by the same machinery into out/guides/<film>/.
+ */
+const FILM = process.env.FILM || "walkthrough";
+const IS_GUIDE = FILM.startsWith("guide-");
+const OUT = IS_GUIDE ? resolve(HERE, "out", "guides", FILM) : resolve(HERE, "out");
 const RAW = join(OUT, "raw");
 const FONTS = join(HERE, "fonts");
 const CHROME = process.env.CHROME_PATH || "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
@@ -215,7 +222,7 @@ const nav = (page, label) => page.getByRole("button", { name: label, exact: true
  * and the two are locked together by construction rather than by care.
  */
 const VOICE = JSON.parse(
-  readFileSync(resolve(HERE, "../films/out/walkthrough/manifest.json"), "utf8"),
+  readFileSync(resolve(HERE, `../films/out/${FILM}/manifest.json`), "utf8"),
 );
 
 /** What each beat DOES. The words and the timing come from the manifest. */
@@ -368,6 +375,53 @@ const visit = (label, scrollTo, scrollMax) => async (page, budget = 6000) => {
   await glideScroll(page, 0, 800);
 };
 
+/**
+ * Declarative steps, for the module guides. A guide beat lists what to do on
+ * screen -- go to a module, open a tab, open a form, click a row, close it --
+ * and whatever time its narration still needs afterwards is spent looking
+ * around the screen (scroll, or a pointer tour when there is nowhere to
+ * scroll), exactly as the walkthrough's default beat does.
+ *
+ *   { nav: "Inventory" }            sidebar module
+ *   { tab: "Reconciliation" }       a button inside the page, by name (any case)
+ *   { open: "OPC 53 Grade Cement" } click visible text (a row, a card)
+ *   { esc: true }                   close the dialog or panel
+ *   { scroll: 600 }                 scroll the content to a depth
+ *   { wait: 1200 }                  hold
+ */
+const inMain = (page, name) =>
+  page.locator("main").getByRole("button", {
+    name: new RegExp(`^\\s*${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`, "i"),
+  }).first();
+
+async function doSteps(page, steps, budget) {
+  const t0 = Date.now();
+  for (const st of steps) {
+    if (st.nav) await click(page, nav(page, st.nav), { settle: 2000 });
+    else if (st.tab) await click(page, inMain(page, st.tab), { settle: 1500 });
+    else if (st.open) await click(page, page.getByText(st.open, { exact: true }).first(), { settle: 1600 });
+    else if (st.esc) { await page.keyboard.press("Escape"); await sleep(700); }
+    else if (st.scroll !== undefined) { await glideScroll(page, st.scroll, SCROLL_MS); await sleep(DWELL_MS); }
+    else if (st.wait) await sleep(st.wait);
+  }
+  const left = Math.max(budget - (Date.now() - t0), 0);
+  if (left < 600) return;
+  // Inside an open form or panel, keep the pointer moving over it rather than
+  // scrolling the page behind it.
+  const dialog = await page.locator("[role=dialog]").count();
+  if (dialog) { await tour(page, left); return; }
+  const range = await scrollRange(page);
+  page.__range = range;
+  if (range < 200) { await tour(page, left); return; }
+  const reach = Math.min(range, 1400);
+  const stops = [360, 720, 1080, 720, 360].filter((d) => d <= reach + 360).map((d) => Math.min(d, reach));
+  await fill(Math.max(left - 900, 0), stops.map((to) => [STEP_COST, async () => {
+    await glideScroll(page, to, SCROLL_MS);
+    await sleep(DWELL_MS);
+  }]));
+  await glideScroll(page, 0, 800);
+}
+
 const BEATS = VOICE.beats.map((b) => ({
   id: b.id,
   say: b.text,
@@ -377,7 +431,9 @@ const BEATS = VOICE.beats.map((b) => ({
   /** Seconds the narration needs; the runner pads the beat to cover it. */
   voice: b.seconds,
   hold: b.hold,
-  run: ACTIONS[b.id] ?? visit(b.nav, b.scroll, b.scrollMax),
+  run: b.do
+    ? (page, budget) => doSteps(page, b.do, budget)
+    : ACTIONS[b.id] ?? visit(b.nav, b.scroll, b.scrollMax),
 }));
 
 /* ------------------------------------------------------------------- run -- */
@@ -533,7 +589,7 @@ await browser.close();
 
 /* ---------------------------------------------------------------- output -- */
 mkdirSync(OUT, { recursive: true });
-const mp4 = join(OUT, "walkthrough.mp4");
+const mp4 = join(OUT, `${IS_GUIDE ? FILM : "walkthrough"}-silent.mp4`.replace("walkthrough-silent", "walkthrough"));
 
 // Composite any beat that declared a cutTo, over exactly the window that beat
 // occupied. Because the window comes from the measured run rather than a
@@ -695,14 +751,14 @@ const ts = (ms, sep = ",") => {
 };
 
 writeFileSync(
-  join(OUT, "walkthrough.srt"),
+  join(OUT, `${IS_GUIDE ? FILM : "walkthrough"}.srt`),
   shifted.map((b, i) =>
     `${i + 1}\n${ts(b.start)} --> ${ts(b.end)}\n${b.say}\n`).join("\n"),
 );
 
 const total = shifted.at(-1)?.end ?? 0;
 writeFileSync(
-  join(OUT, "walkthrough.md"),
+  join(OUT, `${IS_GUIDE ? FILM : "walkthrough"}.md`),
   [
     "# Sitetru walkthrough — voiceover script",
     "",
@@ -724,7 +780,7 @@ writeFileSync(
 // describing -- and lays the score under it, ducked.
 // The deliverable. `walkthrough.mp4` beside it is the silent picture, kept
 // because a re-mix does not need a re-record.
-const narrated = join(OUT, "sitetru-walkthrough.mp4");
+const narrated = join(OUT, IS_GUIDE ? `sitetru-${FILM}.mp4` : "sitetru-walkthrough.mp4");
 try {
   const timed = {
     ...VOICE,
@@ -735,7 +791,7 @@ try {
   };
   writeFileSync(join(OUT, "timed-manifest.json"), JSON.stringify(timed, null, 2));
   const { mixWithManifest } = await import("../films/mix.mjs");
-  mixWithManifest("walkthrough", timed, mp4, narrated);
+  mixWithManifest(FILM, timed, mp4, narrated);
 } catch (e) {
   console.log(`  audio mix skipped: ${String(e).split("\n")[0].slice(0, 120)}`);
 }
@@ -743,7 +799,7 @@ try {
 const failed = shifted.filter((m) => m.failed);
 console.log(`\n  runtime ${(total / 1000).toFixed(1)}s`);
 console.log(`  ${mp4}`);
-console.log(`  ${join(OUT, "walkthrough.srt")}`);
-console.log(`  ${join(OUT, "walkthrough.md")}`);
+console.log(`  ${narrated}`);
+
 if (failed.length) console.log(`  ${failed.length} beat(s) FAILED: ${failed.map((f) => f.id).join(", ")}`);
 rmSync(RAW, { recursive: true, force: true });

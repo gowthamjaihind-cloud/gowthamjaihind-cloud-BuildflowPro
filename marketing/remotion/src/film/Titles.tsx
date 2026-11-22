@@ -272,7 +272,7 @@ export const EndCard: React.FC = () => {
               catalog in src/lib/plans.ts. It read "Free to start · ₹999/month ·
               English & <Tamil>": no plan costs ₹999, there is no free tier, and
               the web app is English only. */}
-          14 days free · ₹99 / project / month
+          14 days free · ₹99 / project / month · about ₹3 a day
         </div>
         <div
           style={{

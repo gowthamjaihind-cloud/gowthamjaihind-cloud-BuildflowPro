@@ -209,7 +209,7 @@ export const EndCard: React.FC = () => {
             films.spec.ts guards these strings. */}
         <span>14-day free trial</span>
         <span style={{ color: C.primaryOnDark }}>·</span>
-        <span>From ₹99 / month</span>
+        <span>From ₹99 / month · about ₹3 a day</span>
         <span style={{ color: C.primaryOnDark }}>·</span>
         <span>No card to start</span>
       </div>

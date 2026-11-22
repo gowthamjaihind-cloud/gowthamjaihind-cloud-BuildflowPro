@@ -92,3 +92,51 @@ describe("landing page makes no retired claim", () => {
     expect(SRC).not.toMatch(/[஀-௿]/);
   });
 });
+
+describe("the per-day price", () => {
+  /*
+    "₹99 a month" is pitched as about ₹3 a day. ₹99 / 30 = ₹3.30, so a bare
+    "₹3 a day" next to "₹99 a month" is a claim a customer can check and find
+    short; "about" (monthly) and "under" (yearly, ₹990 / 365 = ₹2.71) are true.
+    Every per-day claim in the landing page and the films must say one of them,
+    and the arithmetic must still hold for the catalog as it stands.
+  */
+  const starter = PLANS.starter;
+  const perDayMonthly = starter.monthly! / 30;
+  const perDayAnnual = starter.annual! / 365;
+  const MARKETING = [
+    "src/pages/LandingPage.tsx",
+    "marketing/remotion/src/film/Titles.tsx",
+    "marketing/remotion/src/Type.tsx",
+    "marketing/remotion/src/pulse/Pulse.tsx",
+    "marketing/video/build.mjs",
+    "marketing/films/launch.script.mjs",
+    "marketing/films/walkthrough.script.mjs",
+  ].map((rel) => ({ rel, src: readFileSync(join(HERE, "../..", rel), "utf8") }));
+
+  it("still rounds to about ₹3 a month-day, and is under ₹3 a year-day", () => {
+    expect(Math.round(perDayMonthly)).toBe(3);
+    expect(perDayAnnual).toBeLessThan(3);
+  });
+
+  it("is always qualified: about (monthly) or under (yearly), never a bare ₹3", () => {
+    for (const { rel, src } of MARKETING) {
+      for (const m of src.matchAll(/(\w+)\s+(?:₹3|three rupees)\s+a day/gi)) {
+        expect(["about", "under"], `${rel}: "${m[0]}"`).toContain(m[1].toLowerCase());
+      }
+    }
+  });
+
+  it("says 'under' only where the yearly price makes it true", () => {
+    expect(SRC).toMatch(/annual: "Under ₹3 a day/);
+    for (const { rel, src } of MARKETING.filter((x) => x.rel !== "src/pages/LandingPage.tsx")) {
+      expect(src, `${rel} pairs 'under ₹3' with the monthly price`).not.toMatch(/under (?:₹3|three rupees) a day/i);
+    }
+  });
+
+  it("appears in every marketing item that quotes ₹99", () => {
+    for (const { rel, src } of MARKETING) {
+      if (/₹99|ninety nine rupees/.test(src)) expect(src, rel).toMatch(/(?:₹3|three rupees) a day/i);
+    }
+  });
+});
