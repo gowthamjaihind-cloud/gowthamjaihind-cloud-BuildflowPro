@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "../i18n";
 import { BrandLogo } from "../components/BrandLogo";
 import { HeroVideo } from "../components/HeroVideo";
+import { GuidesPlayer } from "../components/GuidesPlayer";
+import { GUIDES, GUIDES_READY } from "../content/guides";
 import { TERMS_URL, PRIVACY_URL, REFUND_URL, SHIPPING_URL, CONTACT_URL, stashPendingConsent } from "../lib/legal";
 import { useAuthStore } from "../store";
 import {
@@ -289,6 +291,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <a href="#audience" className="hover:text-ink apple-transition">{t("land.navServe")}</a>
             <a href="#solutions" className="hover:text-ink apple-transition">{t("land.navSolutions")}</a>
             <a href="#features" className="hover:text-ink apple-transition">{t("land.navFeatures")}</a>
+            {GUIDES_READY && <a href="#guides" className="hover:text-ink apple-transition">{"Guides"}</a>}
             <a href="#pricing" className="hover:text-ink apple-transition">{t("land.navPricing")}</a>
             <a
               href="/demo/?demo=1"
@@ -318,6 +321,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
             <a href="#audience" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navServe")}</a>
             <a href="#solutions" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navSolutions")}</a>
             <a href="#features" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navFeatures")}</a>
+            {GUIDES_READY && <a href="#guides" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{"Guides"}</a>}
             <a href="#pricing" onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-ink-muted py-1">{t("land.navPricing")}</a>
             <a
               href="/demo/?demo=1"
@@ -568,6 +572,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggingIn, onLogin, 
           ))}
         </div>
       </section>
+
+      {/* VIDEO GUIDES — one short film per module, recorded in the real app.
+          Open to everyone: a contractor can see exactly how each part works
+          before paying, and the same guides are in the app's Help after. */}
+      {GUIDES_READY && (
+      <section id="guides" className="max-w-6xl mx-auto px-5 sm:px-8 py-16 md:py-24 scroll-mt-20">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <p className="eyebrow text-primary mb-3">{"Video guides"}</p>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mb-4">{"Learn Sitetru, one module at a time"}</h2>
+          <p className="text-ink-muted font-medium">{`${GUIDES.length} short videos, each showing one part of the app with sample data. Watch them before you sign up, or any time from Help inside the app.`}</p>
+        </div>
+        <GuidesPlayer />
+      </section>
+      )}
 
       {/* YOUR DATA — every line here is enforced by firestore.rules or the
           Privacy & Data panel, and matches public/privacy.html. Change them together. */}

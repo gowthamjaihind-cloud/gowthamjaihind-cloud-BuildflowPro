@@ -76,6 +76,9 @@ const MUSIC_DB = { launch: -5, walkthrough: -11 };
  */
 export function mixWithManifest(id, manifest, videoIn, videoOut) {
   const voDir = join(HERE, "out", id);
+  // Module guides share the walkthrough's cue and levels: the same kind of
+  // film (a real session, explained), just shorter.
+  const cue = id.startsWith("guide-") ? "walkthrough" : id;
   mkdirSync(dirname(videoOut), { recursive: true });
 
   // Length comes from the PICTURE, not the script: the render adds a tail of
@@ -104,7 +107,7 @@ export function mixWithManifest(id, manifest, videoIn, videoOut) {
   if (bloom.length) {
     console.error(`  voice ends ${voiceEnds.toFixed(1)}s, ${(seconds - voiceEnds).toFixed(1)}s of bed alone`);
   }
-  execFileSync("python3", [join(ROOT, "marketing/music/score.py"), id, musicWav, String(seconds), ...bpm, ...bloom], {
+  execFileSync("python3", [join(ROOT, "marketing/music/score.py"), cue, musicWav, String(seconds), ...bpm, ...bloom], {
     stdio: ["ignore", "ignore", "inherit"],
     cwd: ROOT,
   });
@@ -128,7 +131,7 @@ export function mixWithManifest(id, manifest, videoIn, videoOut) {
   // CTA and the launch film's 2.2 dB under its body. The launch cue also
   // already resolves on purpose, so it gets a correction rather than an event.
   const LIFT = { launch: 3.0, walkthrough: 7.5 };
-  const LIFT_DB = LIFT[id] ?? 0, LEAD = 1.5, RISE = 2.3;
+  const LIFT_DB = LIFT[cue] ?? 0, LEAD = 1.5, RISE = 2.3;
   const lin = 10 ** (LIFT_DB / 20) - 1;
   const t0 = voiceEnds - LEAD;
   const tailLift =
@@ -147,7 +150,7 @@ export function mixWithManifest(id, manifest, videoIn, videoOut) {
     `[vo]aresample=48000,aformat=channel_layouts=stereo,apad=whole_dur=${seconds.toFixed(3)}[vox]`,
     `[vox]asplit=2[voxa][voxb]`,
     // The score, level-set then ducked by the voice.
-    `[1:a]aresample=48000,aformat=channel_layouts=stereo,volume=${MUSIC_DB[id] ?? -16}dB[mus]`,
+    `[1:a]aresample=48000,aformat=channel_layouts=stereo,volume=${MUSIC_DB[cue] ?? -16}dB[mus]`,
     // A broadcast duck: enough to get out of the way, not enough to disappear.
     // ratio 7 with a low threshold was a gate wearing a compressor's name.
     `[mus][voxb]sidechaincompress=threshold=0.05:ratio=4:attack=12:release=380:makeup=1[musd]`,
