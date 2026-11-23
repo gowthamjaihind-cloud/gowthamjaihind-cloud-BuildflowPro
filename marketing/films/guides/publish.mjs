@@ -28,6 +28,10 @@ mkdirSync(OUT, { recursive: true });
 const seconds = (f) =>
   Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f], { encoding: "utf8" }));
 
+// Where the middle lands on a page load or a dimmed dialog, a hand-picked
+// second (checked on a contact sheet) where the module is on screen, settled.
+const POSTER_AT = { "getting-started": 21, inventory: 22, procurement: 30, vault: 17 };
+
 let list = readFileSync(LIST, "utf8");
 for (const id of want) {
   const src = join(ROOT, `marketing/walkthrough/out/guides/guide-${id}/sitetru-guide-${id}.mp4`);
@@ -37,8 +41,10 @@ for (const id of want) {
   execFileSync("ffmpeg", ["-loglevel", "error", "-y", "-i", src,
     "-vf", "scale=1280:720", "-c:v", "libx264", "-preset", "slow", "-crf", "28", "-pix_fmt", "yuv420p",
     "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", mp4]);
-  // A frame after the project has opened, so the poster shows the module.
-  execFileSync("ffmpeg", ["-loglevel", "error", "-y", "-ss", "6", "-i", mp4, "-frames:v", "1", "-vf", "scale=1280:720", "-q:v", "5", jpg]);
+  // Every guide opens on the same portfolio screen, so take the poster from
+  // the middle, where the module itself is on screen.
+  const mid = String(POSTER_AT[id] ?? (seconds(mp4) * 0.45).toFixed(2));
+  execFileSync("ffmpeg", ["-loglevel", "error", "-y", "-ss", mid, "-i", mp4, "-frames:v", "1", "-vf", "scale=1280:720", "-q:v", "5", jpg]);
   const s = Math.round(seconds(mp4));
   list = list.replace(new RegExp(`(\\{ id: "${id}",[^\\n]*seconds: )\\d+`), `$1${s}`);
   console.log(`  ${id}: ${s}s, ${(statSync(mp4).size / 1e6).toFixed(1)} MB, poster ${(statSync(jpg).size / 1e3).toFixed(0)} KB`);
