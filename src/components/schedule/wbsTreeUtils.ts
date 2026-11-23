@@ -85,6 +85,7 @@ export interface GroupNode {
 }
 
 import { useMemo, useState } from "react";
+import { orderGroupKeys } from "../../lib/groupOrder";
 
 export function useLocationDrilldown(tasks: Task[]) {
   const [currentLocation, setCurrentLocation] = useState<string | null>(null);
@@ -194,10 +195,12 @@ export function buildPhaseLocationGroups(roots: any[]) {
     if (!pMap.get(p)!.has(l)) pMap.get(p)!.set(l, []);
     pMap.get(p)!.get(l)!.push(t);
   });
-  return Array.from(pMap.keys()).map((p) => ({
+  // Phases and locations in the order their work is scheduled.
+  const byPhase = new Map(Array.from(pMap.entries()).map(([p, locs]) => [p, Array.from(locs.values()).flat()]));
+  return orderGroupKeys(byPhase, (t: any) => t.startDate).map((p) => ({
     id: `phase::${p}`,
     name: p,
-    children: Array.from(pMap.get(p)!.keys()).map((l) => ({
+    children: orderGroupKeys(pMap.get(p)!, (t: any) => t.startDate).map((l) => ({
       id: `loc::${p}::${l}`,
       name: l,
       children: pMap.get(p)!.get(l)!,
@@ -219,15 +222,8 @@ export function buildLocationGroupedTree(tasks: Task[]): GroupNode[] {
     locMap.get(loc)!.push(rootTask);
   });
 
-  const getSortScore = (name: string, unassignedNames: string[]) =>
-    unassignedNames.includes(name) ? 1 : 0;
-
-  const locations = Array.from(locMap.keys()).sort((a, b) => {
-    const aScore = getSortScore(a, ["Unassigned Location"]);
-    const bScore = getSortScore(b, ["Unassigned Location"]);
-    if (aScore !== bScore) return aScore - bScore;
-    return a.localeCompare(b);
-  });
+  // Locations in the order their work is scheduled; "Unassigned" last.
+  const locations = orderGroupKeys(locMap, (t: any) => t.startDate);
 
   return locations.map((locName) => {
     const locTasks = locMap.get(locName)!;

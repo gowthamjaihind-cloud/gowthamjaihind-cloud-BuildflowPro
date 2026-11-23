@@ -26,6 +26,7 @@ import {
   Rows,
 } from "@phosphor-icons/react";
 import { Tooltip } from "./Tooltip";
+import { orderGroupKeys } from "../lib/groupOrder";
 
 type GroupBy = "hierarchy" | "phase" | "location" | "status" | "tag";
 
@@ -310,8 +311,11 @@ export const GanttChart: React.FC<GanttChartProps> = ({
       groups.get(k)!.push(t);
     });
     const result: Row[] = [];
-    Array.from(groups.keys())
-      .sort((a, b) => a.localeCompare(b))
+    // Phases and locations in the order their work is scheduled; status and
+    // tag groups have no schedule of their own, so they stay A to Z.
+    (groupBy === "phase" || groupBy === "location"
+      ? orderGroupKeys(groups, (t) => t.startDate)
+      : Array.from(groups.keys()).sort((a, b) => a.localeCompare(b)))
       .forEach((k) => {
         const groupTasks = groups
           .get(k)!
