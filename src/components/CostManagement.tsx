@@ -72,6 +72,7 @@ import { DialogBehaviour } from "../lib/useDialog";
 
 import { chartChrome, chartSeries } from "../lib/chartTheme";
 import { standaloneIssues } from "../lib/dailyLogIssues";
+import { orderPhaseLocationGroups } from "../lib/groupOrder";
 interface CostManagementProps {
   projectId: string;
 }
@@ -236,22 +237,14 @@ export const CostManagement: React.FC<CostManagementProps> = ({
       }
     });
 
-    // Sort phases and locations alphabetically, and tasks by startDate
-    const sortedPhases: Record<string, Record<string, Task[]>> = {};
-    Object.keys(phases)
-      .sort()
-      .forEach((phase) => {
-        sortedPhases[phase] = {};
-        Object.keys(phases[phase])
-          .sort()
-          .forEach((location) => {
-            sortedPhases[phase][location] = [...phases[phase][location]].sort(
-              (a, b) => (a.startDate || "").localeCompare(b.startDate || ""),
-            );
-          });
-      });
-
-    return sortedPhases;
+    // Phases and locations in the order their work is scheduled, and the
+    // tasks in each by start date.
+    for (const locs of Object.values(phases)) {
+      for (const l of Object.keys(locs)) {
+        locs[l] = [...locs[l]].sort((a, b) => (a.startDate || "").localeCompare(b.startDate || ""));
+      }
+    }
+    return orderPhaseLocationGroups(phases, (t) => t.startDate);
   }, [tasks, filterTag, searchTerm]);
 
   // Helper to calculate roll-ups for a task

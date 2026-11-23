@@ -6,6 +6,12 @@ import { collection, db } from "../firebase";
 import { useAuthStore } from "../store";
 import { getProjectSubCollectionPath } from "../utils/projectPath";
 import { expectedProgress, SLIP_TOLERANCE } from "../lib/projectMetrics";
+import { compareGroups } from "../lib/groupOrder";
+
+// The phase timeline in the order the work runs: earliest start first.
+const startOrNull = (d: Date) => (Number.isFinite(d.getTime()) ? d.getTime() : null);
+const byPhaseStart = (a: { name: string; startDate: Date }, b: { name: string; startDate: Date }) =>
+  compareGroups(a.name, startOrNull(a.startDate), b.name, startOrNull(b.startDate));
 
 export type TaskStatus = 'scheduled' | 'in_progress' | 'blocked' | 'done';
 
@@ -98,7 +104,7 @@ export function useScheduleData(projectId: string) {
             scheduleHealth: behind ? "behind" : "on_schedule",
             healthLabel: behind ? "Behind Schedule" : "On Track",
           };
-        }) as any,
+        }).sort(byPhaseStart) as any,
       );
       setLoading(false);
       return;
@@ -177,7 +183,7 @@ export function useScheduleData(projectId: string) {
       });
 
       setTasks(parsedTasks);
-      setPhases(parsedPhases);
+      setPhases(parsedPhases.sort(byPhaseStart));
       setLoading(false);
     });
 

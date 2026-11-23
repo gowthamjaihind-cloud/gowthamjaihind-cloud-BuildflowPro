@@ -88,6 +88,7 @@ import { useProjectCostTotals } from "../hooks/useProjectCostTotals";
 import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { DialogBehaviour } from "../lib/useDialog";
+import { orderNameList, orderPhaseLocationGroups } from "../lib/groupOrder";
 
 interface WBSViewProps {
   projectId: string;
@@ -202,15 +203,12 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
   ];
 
   const projectPhases = useMemo(() => {
-    const phases = new Set(DEFAULT_PHASES);
-    tasks.forEach((t) => t.phase && phases.add(t.phase));
-    return Array.from(phases).sort();
+    // The project's own phases in schedule order, then the other suggestions.
+    return orderNameList(tasks as Task[], (t) => t.phase, (t) => t.startDate, DEFAULT_PHASES);
   }, [tasks]);
 
   const projectLocations = useMemo(() => {
-    const locations = new Set(DEFAULT_LOCATIONS);
-    tasks.forEach((t) => t.location && locations.add(t.location));
-    return Array.from(locations).sort();
+    return orderNameList(tasks as Task[], (t) => t.location, (t) => t.startDate, DEFAULT_LOCATIONS);
   }, [tasks]);
 
   const projectActivityCodes = useMemo(() => {
@@ -612,7 +610,8 @@ export const WBSView: React.FC<WBSViewProps> = ({ projectId }) => {
       });
     });
 
-    return phases;
+    // Phases and locations in the order their work is scheduled.
+    return orderPhaseLocationGroups(phases, (t) => t.startDate);
   }, [tasks, filterTag]);
 
   const allTags = useMemo(() => {

@@ -1,0 +1,17 @@
+WEBVTT
+
+1
+00:00:02.505 --> 00:00:10.530
+Inventory is the stock on site: every material, how much is in hand, and its value.
+
+2
+00:00:10.531 --> 00:00:20.840
+Click any material to open its stock card. It shows every delivery, who it came from, and where it was used, with the balance after each.
+
+3
+00:00:20.841 --> 00:00:28.261
+Under Reconciliation, enter a physical count, and Sitetru shows the difference from what the system expects.
+
+4
+00:00:28.261 --> 00:00:35.577
+To stock a new material, press Add Item, or bring one in from your company's master list with From Master.

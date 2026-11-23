@@ -3,6 +3,7 @@ import { ScheduleTask } from '../../hooks/useScheduleData';
 import { addDays, eachDayOfInterval, format, differenceInDays, startOfDay, isBefore, isAfter, isToday } from 'date-fns';
 import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 import { Tooltip } from "../Tooltip";
+import { orderGroupKeys } from '../../lib/groupOrder';
 
 interface Props {
   tasks: ScheduleTask[];
@@ -81,7 +82,10 @@ export const MiniGantt: React.FC<Props> = ({ tasks, onTaskClick }) => {
       groups.get(k)!.push(t);
     });
     const result: MiniRow[] = [];
-    Array.from(groups.keys()).sort((a, b) => a.localeCompare(b)).forEach(k => {
+    // Phases and locations in the order their work is scheduled.
+    (groupBy === 'phase' || groupBy === 'location'
+      ? orderGroupKeys(groups, t => t.startDate)
+      : Array.from(groups.keys()).sort((a, b) => a.localeCompare(b))).forEach(k => {
       const groupTasks = groups.get(k)!;
       result.push({ kind: 'group', label: k, count: groupTasks.length });
       groupTasks.forEach(task => result.push({ kind: 'task', task }));
