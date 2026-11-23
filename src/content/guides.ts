@@ -38,8 +38,41 @@ export const GUIDES: Guide[] = [
   { id: "vault", title: "Document Vault", description: "Drawings, approvals and bills, kept with the project.", seconds: 29 },
 ];
 
-export const guideVideo = (id: string) => `/media/guides/${id}.mp4`;
+/** Heights the guides are encoded at (marketing/films/guides/publish.mjs). */
+export type Rendition = 480 | 720 | 1080;
+export const RENDITIONS: Rendition[] = [480, 720, 1080];
+
+export const guideVideo = (id: string, r: Rendition = 720) => `/media/guides/${id}-${r}.mp4`;
+/** JPEG poster, 1280 wide: the <video> poster and the fallback without WebP. */
 export const guidePoster = (id: string) => `/media/guides/${id}.jpg`;
+export const guidePosterWebp = (id: string, w: 640 | 1280) => `/media/guides/${id}-${w}.webp`;
+export const guideCaptions = (id: string) => `/media/guides/${id}.vtt`;
+
+export interface Viewing {
+  /** CSS width of the player, in px. */
+  width: number;
+  devicePixelRatio: number;
+  /** The screen's long side in CSS px (what full screen fills). */
+  screenWidth: number;
+  fullscreen: boolean;
+  /** navigator.connection: Data Saver on, and the measured connection type. */
+  saveData?: boolean;
+  effectiveType?: string;
+}
+
+/**
+ * Which encode to play. Phones get 480p (about half the 720p file, and a
+ * phone shows the player under 600 px wide); tablets and the desktop page get
+ * 720p; going full screen on a laptop or monitor steps up to 1080p so the
+ * app's small text stays sharp. Data Saver or a 2G/3G connection always gets
+ * 480p: on a site with one bar, a video that plays beats one that is sharp.
+ */
+export function guideRendition(v: Viewing): Rendition {
+  if (v.saveData || /^(slow-2g|2g|3g)$/.test(v.effectiveType ?? "")) return 480;
+  // A phone's screen is under 1,200 CSS px even on its side: 720p fills it.
+  if (v.fullscreen) return v.screenWidth >= 1200 && v.screenWidth * Math.min(v.devicePixelRatio, 2) >= 1600 ? 1080 : 720;
+  return v.width < 600 ? 480 : 720;
+}
 
 /** "0:48" */
 export const fmtLength = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;

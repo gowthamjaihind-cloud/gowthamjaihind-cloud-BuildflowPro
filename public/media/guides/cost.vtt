@@ -1,0 +1,21 @@
+WEBVTT
+
+1
+00:00:02.596 --> 00:00:10.697
+Cost Management shows where the money is going, against the budget.
+
+2
+00:00:10.697 --> 00:00:15.462
+The overview shows cost by category and the latest transactions.
+
+3
+00:00:15.462 --> 00:00:25.834
+Task Costs breaks it down by WBS task: material, labour and direct costs, planned against actual, with a status for each.
+
+4
+00:00:25.835 --> 00:00:39.824
+Direct Costs are expenses that aren't material or labour. Press Add Transaction to record one, with its amount, type, category and date.
+
+5
+00:00:39.824 --> 00:00:50.411
+Full Report is the project cost analysis with the variance on every task, and Payments is the cash book: money in, money out, and the balance.
