@@ -23,6 +23,8 @@ import { confirmDialog, toast } from "../lib/feedback";
 import { Tooltip } from "./Tooltip";
 import { EmptyState } from "./EmptyState";
 import { DialogBehaviour } from "../lib/useDialog";
+import { LedgerFilterBar } from "./LedgerFilterBar";
+import { EMPTY_FILTER, matchesFilter, periodBalances, type LedgerFilter } from "../lib/ledgerFilter";
 
 interface PaymentsViewProps {
   projectId: string;
@@ -139,6 +141,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
       type: "CLIENT" | "VENDOR" | "DIRECT_COST";
       originalId: string;
       method?: string;
+      vendorId?: string;
     }[] = [];
 
     clientPayments.forEach((p) => {
@@ -169,6 +172,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
           outward: l.amount || 0,
           type: "VENDOR",
           originalId: l.id,
+          vendorId: l.vendorId,
         });
       });
 
@@ -199,9 +203,39 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
     });
   }, [clientPayments, vendorLedger, vendors, costEntries]);
 
+  // Filters (lib/ledgerFilter.ts). The running balance on each row is the
+  // true cash position on that date, whatever is hidden; opening and closing
+  // follow the date range. The table and the exports read `cashView`.
+  const [cashFilter, setCashFilter] = useState<LedgerFilter>(EMPTY_FILTER);
+  const CASH_KINDS = [
+    { id: "CLIENT", label: "Client receipts" },
+    { id: "VENDOR", label: "Vendor payments" },
+    { id: "DIRECT_COST", label: "Direct costs" },
+  ];
+  const cashView = useMemo(() => {
+    const rows = combinedLedger.map((e) => ({
+      entry: e,
+      date: e.date,
+      partyId: e.vendorId,
+      direction: (e.inward > 0 ? "in" : "out") as "in" | "out",
+      kind: e.type,
+      amount: e.inward > 0 ? e.inward : e.outward,
+      text: [e.description, e.reference, e.method, CASH_KINDS.find((k) => k.id === e.type)?.label].filter(Boolean).join(" "),
+    }));
+    const b = periodBalances(rows, { ...cashFilter, parties: [] }, 0);
+    const shown = rows.filter((r) => matchesFilter(r, cashFilter));
+    const totalIn = shown.reduce((s, r) => s + (r.direction === "in" ? r.amount : 0), 0);
+    const totalOut = shown.reduce((s, r) => s + (r.direction === "out" ? r.amount : 0), 0);
+    return { opening: b.opening, closing: b.closing, shown: shown.map((r) => r.entry), totalIn, totalOut, dated: !!(cashFilter.from || cashFilter.to) };
+  }, [combinedLedger, cashFilter]);
+  const cashParties = useMemo(
+    () => vendors.filter((v) => combinedLedger.some((e) => e.vendorId === v.id)).map((v) => ({ id: v.id, name: v.name })),
+    [vendors, combinedLedger],
+  );
+
   const handleExportCSV = () => {
     const headers = ["Date", "Description", "Reference", "Type", "Inward Received (₹)", "Outward Paid (₹)", "Running Balance (₹)"];
-    const rows = combinedLedger.map((row) => [
+    const rows = cashView.shown.map((row) => [
       row.date || "",
       row.description || "",
       row.reference || "",
@@ -216,7 +250,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
 
   const handleExportPDF = () => {
     const headers = ["Date", "Description", "Ref", "Type", "Inward (₹)", "Outward (₹)", "Balance (₹)"];
-    const rows = combinedLedger.map((row) => [
+    const rows = cashView.shown.map((row) => [
       row.date || "",
       row.description || "",
       row.reference || "",
@@ -228,7 +262,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
     const dateStr = new Date().toISOString().split("T")[0];
     exportToPDF(
       "INTEGRATED CASH BOOK LEDGER",
-      `Project: ${projectLabel} | Inward: ₹${totalClientReceived.toLocaleString("en-IN")} | Outward: ₹${(totalVendorPaid + totalDirectCosts).toLocaleString("en-IN")}`,
+      `Project: ${projectLabel} | ${cashView.dated ? `${cashFilter.from || "start"} to ${cashFilter.to || "today"} | Opening: ₹${cashView.opening.toLocaleString("en-IN")} | Closing: ₹${cashView.closing.toLocaleString("en-IN")} | ` : ""}Inward: ₹${cashView.totalIn.toLocaleString("en-IN")} | Outward: ₹${cashView.totalOut.toLocaleString("en-IN")}`,
       headers,
       rows,
       `Cash_Book_Ledger_${dateStr}`
@@ -340,6 +374,22 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
           </div>
         </div>
 
+        <div className="px-4 pb-4">
+          <LedgerFilterBar
+            value={cashFilter}
+            onChange={setCashFilter}
+            parties={cashParties}
+            kinds={CASH_KINDS}
+            directionLabels={{ in: "Inward (received)", out: "Outward (paid)" }}
+            summary={
+              <>
+                Showing {cashView.shown.length} of {combinedLedger.length} entries · In ₹{cashView.totalIn.toLocaleString("en-IN", { maximumFractionDigits: 0 })} · Out ₹{cashView.totalOut.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                {cashView.dated ? ` · Opening ₹${cashView.opening.toLocaleString("en-IN", { maximumFractionDigits: 0 })} · Closing ₹${cashView.closing.toLocaleString("en-IN", { maximumFractionDigits: 0 })}` : ""}
+              </>
+            }
+          />
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -354,7 +404,14 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
               </tr>
             </thead>
             <tbody className="text-sm">
-              {combinedLedger.length === 0 ? (
+              {combinedLedger.length > 0 && cashView.shown.length === 0 ? (
+                <EmptyState
+                  colSpan={7}
+                  icon={Receipt}
+                  title="Nothing matches these filters"
+                  body="Change or clear the filters to see more entries."
+                />
+              ) : combinedLedger.length === 0 ? (
                 <EmptyState
                   colSpan={7}
                   icon={Receipt}
@@ -362,7 +419,7 @@ export const ClientPaymentsView: React.FC<PaymentsViewProps> = ({
                   body="Client invoices and receipts will appear here as they are entered."
                 />
               ) : (
-                [...combinedLedger].reverse().map((entry) => (
+                [...cashView.shown].reverse().map((entry) => (
                   <tr
                     key={entry.id}
                     className="border-b last:border-0 hover:bg-panel/50 transition-colors"
