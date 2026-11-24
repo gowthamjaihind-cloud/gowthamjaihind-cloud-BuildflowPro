@@ -114,4 +114,17 @@ describe("a contractor's RA statement", () => {
     const s = vendorStatement({ logs: [d1, d2, d3, c1], bills: [b1], isCO, inPeriod: (d) => d <= "2026-11-24" });
     expect(s.unbilled.map((l) => l.date)).toEqual(["2026-11-24"]);
   });
+
+  it("a bill that settles earlier logs lists each as an adjustment, not as new work", () => {
+    const edited = { ...d1, items: [{ ...d1.items[0], headcount: 5, cost: 4500 }] };
+    const r = reconcile({ logs: [edited, d2], bills: [b1], changeOrder: false, isCO });
+    const b2 = { id: "b2", billNumber: "RA-XYZ-0002", billDate: "2026-11-27", createdAt: "2026-11-27T09:00:00Z", isChangeOrder: false, netAmount: 900, logIds: [],
+      adjustments: r.adjustments.map((a) => ({ logId: a.logId, billNumber: a.billNumber, diff: a.diff, deleted: a.deleted })),
+      ...billRecord([], r.adjustments, false, isCO) };
+    const s = vendorStatement({ logs: [edited, d2], bills: [b1, b2], isCO });
+    const latest = s.certified[0];
+    expect(latest.bill.billNumber).toBe("RA-XYZ-0002");
+    expect(latest.lines.map((l) => [l.amount, l.adjustment])).toEqual([[900, { billNumber: "RA-XYZ-0001", deleted: false }]]);
+    expect(s.adjustments).toEqual([]);
+  });
 });

@@ -18,7 +18,7 @@ interface Props {
   onClose: () => void;
 }
 
-const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+const inr = (n: number) => `${n < 0 ? "−" : ""}₹${Math.abs(Math.round(n)).toLocaleString("en-IN")}`;
 const fmtDate = (d: string) => {
   if (!d) return "";
   const [y, m, dd] = d.split("-").map(Number);
@@ -41,11 +41,17 @@ const Lines: React.FC<{ lines: StatementLine[] }> = ({ lines }) => (
           <tr key={`${l.logId}-${l.changeOrder}`} className={l.deleted ? "text-ink-muted" : "text-ink"}>
             <td className="py-2 pr-3 whitespace-nowrap font-mono">{l.deleted ? "—" : fmtDate(l.date)}</td>
             <td className="py-2 pr-3">
-              {l.deleted ? <span className="italic">Daily log since deleted</span> : l.tasks}
+              {l.adjustment ? (
+                <span className="italic">
+                  Adjustment to {l.adjustment.billNumber}: log {l.adjustment.deleted ? "deleted" : "changed"}{l.tasks ? ` (${l.tasks})` : ""}
+                </span>
+              ) : l.deleted ? <span className="italic">Daily log since deleted</span> : l.tasks}
               {l.changeOrder && !l.deleted && <span className="ml-1.5 px-1.5 py-0.5 rounded bg-primary/15 text-primary-strong text-[9px] font-black uppercase">CO</span>}
             </td>
             <td className="py-2 pr-3">{l.crew}</td>
-            <td className="py-2 text-right font-mono font-bold whitespace-nowrap">{inr(l.amount)}</td>
+            <td className="py-2 text-right font-mono font-bold whitespace-nowrap">
+              {l.adjustment ? `${l.amount >= 0 ? "+" : "−"}${inr(Math.abs(l.amount))}` : inr(l.amount)}
+            </td>
           </tr>
         ))}
       </tbody>
@@ -59,7 +65,8 @@ const Lines: React.FC<{ lines: StatementLine[] }> = ({ lines }) => (
  * to be certified. Opened by clicking the contractor on RA Billing.
  */
 export const RAVendorStatement: React.FC<Props> = ({ vendor, statement: s, paid, openLumpSum, marginPct, onClose }) => {
-  const [open, setOpen] = useState<string | null>(s.certified[0]?.bill.id ?? null);
+  // Bills open independently, so two can be compared; the newest starts open.
+  const [open, setOpen] = useState<Set<string>>(() => new Set(s.certified[0] ? [s.certified[0].bill.id] : []));
   const toCertify = s.unbilledTotal + s.adjustmentTotal + openLumpSum;
   const withMargin = toCertify * (1 + (marginPct || 0) / 100);
 
@@ -151,12 +158,12 @@ export const RAVendorStatement: React.FC<Props> = ({ vendor, statement: s, paid,
             ) : (
               <div className="space-y-2">
                 {s.certified.map(({ bill, lines }) => {
-                  const isOpen = open === bill.id;
+                  const isOpen = open.has(bill.id);
                   return (
                     <div key={bill.id} className="border border-divider rounded-2xl overflow-hidden">
                       <button
                         type="button"
-                        onClick={() => setOpen(isOpen ? null : bill.id)}
+                        onClick={() => setOpen((o) => { const n = new Set(o); if (n.has(bill.id)) n.delete(bill.id); else n.add(bill.id); return n; })}
                         aria-expanded={isOpen}
                         className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-panel/60 hover:bg-panel text-left cursor-pointer"
                       >

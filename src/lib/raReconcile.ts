@@ -28,6 +28,8 @@ export interface BillLike {
   logIds?: string[];
   logAmounts?: Record<string, number>;
   workKeys?: string[];
+  /** Earlier bills' logs settled on this one. */
+  adjustments?: { logId: string; billNumber: string; diff: number; deleted: boolean }[];
 }
 
 export interface LogItemLike { taskId: string; cost: number }
@@ -175,6 +177,8 @@ export interface StatementLine {
   changeOrder: boolean;
   /** On a bill, the log has since been deleted. */
   deleted?: boolean;
+  /** On a bill, this line settles a log billed earlier: amount is the difference. */
+  adjustment?: { billNumber: string; deleted: boolean };
 }
 
 export interface StatementBill<B extends BillLike = BillLike> {
@@ -222,8 +226,17 @@ export function vendorStatement<B extends BillLike & { netAmount?: number }>(opt
       const kinds = bill.isChangeOrder === true ? [true] : bill.isChangeOrder === false ? [false] : [false, true];
       const ids = [...new Set([...(bill.logIds || []), ...Object.keys(bill.logAmounts || {})])];
       const lines: StatementLine[] = [];
+      const settled = new Map((bill.adjustments || []).map((a) => [a.logId, a]));
+      const own = new Set(bill.logIds || []);
       for (const id of ids) {
         const log = byId.get(id) as StatementLogLike | undefined;
+        const adj = settled.get(id);
+        if (adj && !own.has(id)) {
+          // Not new work on this bill: the change to a log billed earlier.
+          const base = log ? lineOf(log, bill.isChangeOrder === true, isCO) : { logId: id, date: "", tasks: "", crew: "", amount: 0, changeOrder: bill.isChangeOrder === true };
+          lines.push({ ...base, amount: Number(adj.diff) || 0, deleted: adj.deleted || !log, adjustment: { billNumber: adj.billNumber, deleted: adj.deleted } });
+          continue;
+        }
         const recorded = bill.logAmounts?.[id];
         if (!log) {
           lines.push({ logId: id, date: "", tasks: "", crew: "", amount: Number(recorded) || 0, changeOrder: bill.isChangeOrder === true, deleted: true });
