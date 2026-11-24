@@ -31,7 +31,7 @@ export const GUIDES: Guide[] = [
   { id: "inventory", title: "Inventory and the stock card", description: "Stock on site, reconciliation, and each material's history.", seconds: 37 },
   { id: "procurement", title: "Procurement", description: "Purchase orders with GST, goods receipts, bill scanning and vendor accounts.", seconds: 57 },
   { id: "consumption", title: "Consumption History", description: "Every material and labour entry used on the job, searchable and exportable.", seconds: 34 },
-  { id: "cost", title: "Cost Management", description: "Budget against actual for every task, direct costs, and the project cash book.", seconds: 52 },
+  { id: "cost", title: "Cost Management", description: "Budget against actual for every task, direct costs, and the project cash book.", seconds: 55 },
   { id: "insights", title: "Project Insights", description: "Analytics on cost, labour and progress, with a plain-language digest.", seconds: 35 },
   { id: "estimates", title: "Client Estimates", description: "Estimates for your client, with margin and GST.", seconds: 30 },
   { id: "reports", title: "Progress Reports", description: "Daily, weekly and monthly progress reports, ready to send.", seconds: 30 },
