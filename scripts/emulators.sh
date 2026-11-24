@@ -38,4 +38,19 @@ export NO_PROXY="*"
 #      grep -c 'rules runtime error' <log>   # must be 0
 unset JAVA_TOOL_OPTIONS
 
-exec firebase emulators:start --project "$PROJECT_ID" "$@"
+# 4. Storage as a single rules file. firebase.json lists storage as an array
+#    with the named bucket (sitetru-india-files), which is right for deploys
+#    but the emulator refuses an array entry without a deploy "target":
+#      "Error: Must supply 'target' in Storage configuration"
+#    So the emulator gets a copy of the config with storage as { rules } and
+#    everything else unchanged. The copy sits beside firebase.json (paths in it
+#    are relative) and is git-ignored.
+CONFIG=firebase.emulators.json
+node -e '
+  const fs = require("fs");
+  const c = JSON.parse(fs.readFileSync("firebase.json", "utf8"));
+  if (Array.isArray(c.storage)) c.storage = { rules: c.storage[0].rules };
+  fs.writeFileSync(process.argv[1], JSON.stringify(c, null, 2));
+' "$CONFIG"
+
+exec firebase emulators:start --project "$PROJECT_ID" --config "$CONFIG" "$@"

@@ -1,4 +1,6 @@
 import { isValidGstin, stateCodeOf, GST_STATES } from "../lib/poTax";
+import { LedgerFilterBar } from "./LedgerFilterBar";
+import { EMPTY_FILTER, periodBalances, type LedgerFilter, type LedgerRow } from "../lib/ledgerFilter";
 import React, { useState, useEffect, useMemo } from "react";
 import { useProjectLabel } from "../hooks/useProjectLabel";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
@@ -114,6 +116,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [receipts, setReceipts] = useState<MaterialReceipt[]>([]);
   const [ledger, setLedger] = useState<VendorLedgerEntry[]>([]);
+  const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>(EMPTY_FILTER);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [grns, setGrns] = useState<GoodsReceiptNote[]>([]);
@@ -824,10 +827,10 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
         round2(b.grandTotal),
       ]);
     } else if (activeTab === "ledger") {
-      const filteredLedger = selectedVendor
-        ? ledger.filter((e) => e.vendorId === selectedVendor.id)
-        : ledger;
-      title = selectedVendor ? `Vendor Ledger - ${selectedVendor.name}` : "General Vendor Ledger";
+      // What is on screen: the filters apply to the export too.
+      const filteredLedger = ledgerView.shown.map((r) => r.entry);
+      const period = ledgerView.dated ? ` (${ledgerView.eff.from ? new Date(ledgerView.eff.from).toLocaleDateString("en-IN") : "start"} to ${ledgerView.eff.to ? new Date(ledgerView.eff.to).toLocaleDateString("en-IN") : "today"})` : "";
+      title = (selectedVendor ? `Vendor Ledger - ${selectedVendor.name}` : "General Vendor Ledger") + period;
       baseFileName = selectedVendor
         ? `ledger_${selectedVendor.name.replace(/\s+/g, "_")}_${dateSuffix}`
         : `ledger_all_${dateSuffix}`;
@@ -858,6 +861,46 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
     );
     exportToPDF(title, `Project: ${projectLabel}`, headers, formattedRows, baseFileName);
   };
+
+  // The vendor ledger as filtered (lib/ledgerFilter.ts): one vendor when opened
+  // from Vendors, otherwise the vendors picked in the filter. The opening and
+  // closing balances follow the date range; type, amount and search only hide
+  // rows. The table, its totals and the exports all read this.
+  const LEDGER_KINDS = [
+    { id: "GRN", label: "Material invoice" },
+    { id: "BILL", label: "Bill" },
+    { id: "PAYMENT", label: "Payment" },
+    { id: "RETURN", label: "Return" },
+    { id: "LABOR", label: "Labour" },
+    { id: "LABOR_CO", label: "Change-order labour" },
+    { id: "REVERSAL", label: "Reversal" },
+  ];
+  const ledgerKindOf = (e: VendorLedgerEntry) =>
+    e.referenceType === "LABOR_DEPLOYMENT" ? (e.isChangeOrder ? "LABOR_CO" : "LABOR")
+      : e.referenceType === "GRN_REVERSAL" || e.referenceType === "LABOR_REVERSAL" ? "REVERSAL"
+      : e.referenceType || "OTHER";
+  const ledgerView = useMemo(() => {
+    const eff: LedgerFilter = selectedVendor ? { ...ledgerFilter, parties: [selectedVendor.id] } : ledgerFilter;
+    const vendorName = (id: string) => vendors.find((v) => v.id === id)?.name || "Unknown Partner";
+    const rows: (LedgerRow & { entry: VendorLedgerEntry })[] = ledger.map((e) => ({
+      entry: e,
+      date: e.date,
+      partyId: e.vendorId,
+      direction: e.type === "CREDIT" ? "in" : "out",
+      kind: ledgerKindOf(e),
+      amount: Number(e.amount) || 0,
+      text: [vendorName(e.vendorId), LEDGER_KINDS.find((k) => k.id === ledgerKindOf(e))?.label, e.description, e.referenceId, e.overrideReason].filter(Boolean).join(" "),
+    }));
+    // Today's outstanding of the vendors in view, and what their entries net
+    // to: the difference is the balance before the first entry (as before).
+    const inScope = (vid: string) => !eff.parties.length || eff.parties.includes(vid);
+    const outstanding = vendors.filter((v) => inScope(v.id)).reduce((acc, v) => acc + (v.outstandingBalance || 0), 0);
+    const netAll = rows.filter((r) => inScope(r.partyId!)).reduce((acc, r) => acc + (r.direction === "in" ? r.amount : -r.amount), 0);
+    const b = periodBalances(rows, eff, outstanding - netAll);
+    const shown = [...b.shown].sort((x, y) => new Date(x.date).getTime() - new Date(y.date).getTime());
+    const scopedCount = rows.filter((r) => inScope(r.partyId!)).length;
+    return { ...b, shown, scopedCount, outstanding, eff, dated: !!(eff.from || eff.to) };
+  }, [ledger, vendors, selectedVendor, ledgerFilter]);
 
   // Net of the vendor's ledger rows (credits - debits) — the same figure the
   // ledger view subtracts from outstandingBalance to display opening balance.
@@ -1609,31 +1652,18 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
   );
 
   const renderLedger = () => {
-    const filteredLedger = selectedVendor
-      ? ledger.filter((e) => e.vendorId === selectedVendor.id)
-      : ledger;
-
-    // Sort ledger by date ASC
-    const sortedLedger = [...filteredLedger].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-    );
-
-    const totals = sortedLedger.reduce(
-      (acc, curr) => {
-        if (curr.type === "CREDIT") acc.credit += curr.amount;
-        else acc.debit += curr.amount;
-        return acc;
-      },
-      { credit: 0, debit: 0 },
-    );
-
-    // Calculate the implied total opening balance based on the current outstanding balance vs statement sum
-    const currentTotalOutstanding = selectedVendor
-      ? selectedVendor.outstandingBalance || 0
-      : vendors.reduce((acc, v) => acc + (v.outstandingBalance || 0), 0);
-
-    const netStatementBalance = totals.credit - totals.debit;
-    const openingBalance = currentTotalOutstanding - netStatementBalance;
+    const sortedLedger = ledgerView.shown.map((r) => r.entry);
+    // Opening = the balance at the start of the date range (or before the
+    // first entry); the footer is the balance at its end (today's outstanding
+    // when no range is set).
+    const openingBalance = ledgerView.opening;
+    const currentTotalOutstanding = ledgerView.closing;
+    const fmt = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+    const scopeName = selectedVendor
+      ? selectedVendor.name
+      : ledgerView.eff.parties.length === 1
+        ? vendors.find((v) => v.id === ledgerView.eff.parties[0])?.name || "1 vendor"
+        : ledgerView.eff.parties.length > 1 ? `${ledgerView.eff.parties.length} vendors` : "All Vendors";
 
     return (
       <div className="space-y-6 md:space-y-10">
@@ -1658,6 +1688,20 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
             )}
           </div>
         </div>
+
+        <LedgerFilterBar
+          value={ledgerFilter}
+          onChange={setLedgerFilter}
+          parties={selectedVendor ? undefined : vendors.filter((v) => ledger.some((e) => e.vendorId === v.id)).map((v) => ({ id: v.id, name: v.name }))}
+          kinds={LEDGER_KINDS}
+          directionLabels={{ in: "Credit (bills, invoices)", out: "Debit (payments)" }}
+          summary={
+            <>
+              Showing {sortedLedger.length} of {ledgerView.scopedCount} entries · CR {fmt(ledgerView.totalIn)} · DR {fmt(ledgerView.totalOut)}
+              {ledgerView.dated ? " · balances are for the period" : ""}
+            </>
+          }
+        />
 
         <div className="bg-surface rounded-2xl shadow-sm border border-divider/40 overflow-hidden">
           {breakpoint === "desktop" ? (
@@ -1693,10 +1737,10 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       -
                     </td>
                     <td className="px-6 md:px-10 py-5 md:py-8 text-ink-muted text-sm md:text-base font-bold">
-                      {selectedVendor ? selectedVendor.name : "All Vendors"}
+                      {scopeName}
                     </td>
                     <td className="px-6 md:px-10 py-5 md:py-8 text-ink-muted text-xs font-bold tracking-widest uppercase">
-                      OPENING BALANCE
+                      OPENING BALANCE{ledgerView.eff.from ? ` · ${new Date(ledgerView.eff.from).toLocaleDateString("en-IN")}` : ""}
                     </td>
                     <td className="px-6 md:px-10 py-5 md:py-8 text-right font-bold text-ink text-base md:text-lg font-mono">
                       {openingBalance >= 0
@@ -1847,7 +1891,7 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
                       colSpan={3}
                       className="px-6 md:px-10 py-6 md:py-10 text-right uppercase tracking-[0.4em] text-white/20 text-[10px] md:text-[10px]"
                     >
-                      Outstanding Statement Balance
+                      {ledgerView.eff.to ? `Balance at ${new Date(ledgerView.eff.to).toLocaleDateString("en-IN")}` : "Outstanding Statement Balance"}
                     </td>
                     <td
                       colSpan={!isAdminOrOwner ? 2 : 3}
@@ -1867,10 +1911,10 @@ export const ProcurementView: React.FC<ProcurementViewProps> = ({
               <div className="bg-surface-dark p-4 rounded-2xl shadow-sm flex flex-col mb-2">
                 <div className="flex justify-between items-start mb-3">
                   <div className="font-bold text-white text-sm tracking-tight leading-none mb-1">
-                    {selectedVendor ? selectedVendor.name : "All Vendors"}
+                    {scopeName}
                   </div>
                   <div className="text-[10px] font-black text-white/70 uppercase tracking-widest bg-surface-dark/40 px-2 py-1 rounded-lg">
-                    OPENING BALANCE
+                    OPENING BALANCE{ledgerView.eff.from ? ` · ${new Date(ledgerView.eff.from).toLocaleDateString("en-IN")}` : ""}
                   </div>
                 </div>
                 <div className="flex items-center justify-between">

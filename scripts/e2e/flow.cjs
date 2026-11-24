@@ -84,7 +84,8 @@ const pick = async (sel, re) => { const o = await sel.locator('option').allInner
   });
   await step(p, 'Add a project from the Residential G+1 template', async () => {
     await pageBtn(p, /add project/i).click();
-    await p.getByPlaceholder('e.g. Sample Villa').fill('Sample Villa');
+    // The first field (Project Name); its example text changes with the copy.
+    await p.locator('input[type=text], input:not([type])').filter({ visible: true }).first().fill('Sample Villa');
     await p.getByPlaceholder('e.g. RR-2026-01').fill('SV-01');
     await p.getByPlaceholder(/Project scope/).fill('G+1 residential villa, 2,400 sq ft');
     await p.locator('input[type=date]').nth(0).fill('2026-11-01');
