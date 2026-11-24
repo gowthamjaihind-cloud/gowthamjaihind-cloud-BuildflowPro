@@ -27,7 +27,7 @@ export const GUIDES: Guide[] = [
   { id: "dashboard", title: "Dashboard", description: "How the job is doing today: progress, budget, the schedule, and sharing with your client.", seconds: 53 },
   { id: "wbs", title: "WBS: planning the work", description: "Break the job into phases and tasks, with dates and budgets, and log work against them.", seconds: 43 },
   { id: "daily-logs", title: "Daily Logs and the Telegram bot", description: "Record each day's progress, labour and material, from the app or from Telegram.", seconds: 40 },
-  { id: "labour", title: "Labour & Billing", description: "Rates for each labour role and contractor, and running account bills.", seconds: 39 },
+  { id: "labour", title: "Labour & Billing", description: "Rates for each labour role and contractor, and running account bills.", seconds: 72 },
   { id: "inventory", title: "Inventory and the stock card", description: "Stock on site, reconciliation, and each material's history.", seconds: 37 },
   { id: "procurement", title: "Procurement", description: "Purchase orders with GST, goods receipts, bill scanning and vendor accounts.", seconds: 57 },
   { id: "consumption", title: "Consumption History", description: "Every material and labour entry used on the job, searchable and exportable.", seconds: 34 },

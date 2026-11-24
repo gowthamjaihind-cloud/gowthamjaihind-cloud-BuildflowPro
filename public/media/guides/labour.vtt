@@ -1,17 +1,25 @@
 WEBVTT
 
 1
-00:00:02.507 --> 00:00:10.527
+00:00:02.717 --> 00:00:11.656
 Labour and Billing is where you keep what you pay for labour.
 
 2
-00:00:10.527 --> 00:00:21.628
+00:00:11.659 --> 00:00:23.617
 Under Pricing, each contractor has a rate card: a rate for each role, such as mason or helper. The headcounts from the daily logs are priced with these rates.
 
 3
-00:00:21.628 --> 00:00:31.776
-Under RA Billing, you prepare running account bills for each contractor for a bill period, and see the gross and net amount and the status of each.
+00:00:23.618 --> 00:00:36.190
+Under RA Billing, each contractor's work that is not yet certified is gathered into a running account bill for the period you choose. Certify it, and it is added to what you owe them.
 
 4
-00:00:31.776 --> 00:00:38.010
+00:00:36.190 --> 00:00:49.121
+Click a contractor's name to see their statement: what is certified and paid, and every day's work still waiting to be certified.
+
+5
+00:00:49.122 --> 00:01:05.565
+Each certified bill lists the daily logs it paid for. If a billed day is changed later, the difference is settled on the next bill, and a day already paid is never billed twice.
+
+6
+00:01:05.565 --> 00:01:10.955
 Export any of it to CSV or PDF to share with your accountant.
