@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { orderTasksByWbs } from "../lib/wbsOrder";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -254,6 +255,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
     "equipment",
   );
 
+  const queryClient = useQueryClient();
   const saveMutation = useSaveDailyLog(projectId);
   const updateMutation = useUpdateDailyLog(projectId);
 
@@ -307,6 +309,12 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
   };
 
   const handleAddEquipment = () => {
+    // Nothing in the project's equipment list yet: an empty dropdown has
+    // nothing to pick, so open the quick-add instead.
+    if (equipmentMaster.length === 0) {
+      setShowNewEquipment(true);
+      return;
+    }
     setEquipment([
       ...equipment,
       { equipmentId: "", name: "", unit: "hours", quantity: 0 },
@@ -348,14 +356,29 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
       if (!equipmentPath) return;
       const hourly = parseFloat(newEquipmentHourly);
       const daily = parseFloat(newEquipmentDaily);
-      await addDoc(collection(db, equipmentPath), {
+      const item: Omit<EquipmentItem, "id"> = {
         name,
         ownership: newEquipmentOwnership,
         ...(isNaN(hourly) ? {} : { hourlyRate: hourly }),
         ...(isNaN(daily) ? {} : { dailyRate: daily }),
-        createdAt: new Date().toISOString(),
+      };
+      const ref = await addDoc(collection(db, equipmentPath), { ...item, createdAt: new Date().toISOString() });
+      // The equipment list is fetched once and cached (not live), so the new
+      // machine never reached the dropdown until a reload: put it in the
+      // cache now, refresh it from the server, and pick it on the log.
+      const added: EquipmentItem = { id: ref.id, ...item };
+      queryClient.setQueriesData<EquipmentItem[]>({ queryKey: ["projectData", projectId, "equipment"] }, (old) =>
+        old && !old.some((e) => e.id === added.id) ? [...old, added] : old,
+      );
+      queryClient.invalidateQueries({ queryKey: ["projectData", projectId, "equipment"] });
+      const unit: "hours" | "days" = added.hourlyRate === undefined && added.dailyRate !== undefined ? "days" : "hours";
+      const rate = (unit === "days" ? added.dailyRate : added.hourlyRate) ?? 0;
+      const line = { equipmentId: added.id, name: added.name, ownership: added.ownership, unit, quantity: 0, rate, cost: 0 };
+      setEquipment((rows) => {
+        const empty = rows.findIndex((r) => !r.equipmentId);
+        return empty >= 0 ? rows.map((r, i) => (i === empty ? { ...line, quantity: r.quantity || 0, cost: rate * (r.quantity || 0) } : r)) : [...rows, line];
       });
-      // useProjectData is realtime, so the new item appears in the dropdowns.
+      toast.success(`${added.name} added. Enter how long it was used.`);
       setNewEquipmentName("");
       setNewEquipmentOwnership("Owned");
       setNewEquipmentHourly("");
