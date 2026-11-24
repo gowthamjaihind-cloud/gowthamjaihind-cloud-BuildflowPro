@@ -38,7 +38,7 @@ export default {
     },
     {
       "id": "ra",
-      "vo": "Under RA Billing, you prepare running account bills for each contractor for a bill period, and see the gross and net amount and the status of each.",
+      "vo": "Under RA Billing, each contractor's work that is not yet certified is gathered into a running account bill for the period you choose. Certify it, and it is added to what you owe them.",
       "hold": 0.8,
       "do": [
         {
@@ -47,10 +47,36 @@ export default {
       ]
     },
     {
+      "id": "statement",
+      "vo": "Click a contractor's name to see their statement: what is certified and paid, and every day's work still waiting to be certified.",
+      "hold": 0.6,
+      "do": [
+        {
+          "open": "Sample Labour Contractor"
+        },
+        {
+          "wait": 700
+        }
+      ]
+    },
+    {
+      "id": "bills",
+      "vo": "Each certified bill lists the daily logs it paid for. If a billed day is changed later, the difference is settled on the next bill, and a day already paid is never billed twice.",
+      "hold": 0.7,
+      "do": [
+        {
+          "wait": 400
+        }
+      ]
+    },
+    {
       "id": "export",
       "vo": "Export any of it to CSV or PDF to share with your accountant.",
       "hold": 0.6,
       "do": [
+        {
+          "esc": true
+        },
         {
           "tab": "Pricing"
         }
