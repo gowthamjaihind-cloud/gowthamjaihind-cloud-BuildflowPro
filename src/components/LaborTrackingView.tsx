@@ -1,5 +1,6 @@
 import { wageRate, isLumpSum, marginPctOf, contractorBill, LUMP_SUM_UNIT } from "../lib/labourCost";
-import { billRecord, kindAmount, reconcile, type Adjustment, type Reentry } from "../lib/raReconcile";
+import { billRecord, kindAmount, reconcile, vendorStatement, type Adjustment, type Reentry } from "../lib/raReconcile";
+import { RAVendorStatement } from "./RAVendorStatement";
 import React, { useState, useEffect, useMemo } from "react";
 import { useProjectLabel } from "../hooks/useProjectLabel";
 import {
@@ -302,6 +303,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
           vendorId: vendor.id,
           vendorName: vendor.name,
           billDate: new Date().toISOString().split("T")[0],
+          createdAt: new Date().toISOString(),
           billNumber,
           grossAmount: gross,
           // The contractor's margin is added, not deducted (lib/labourCost.ts).
@@ -627,6 +629,36 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     );
   };
 
+  // RA statement for one contractor (click a contractor on RA Billing).
+  const [statementVendorId, setStatementVendorId] = useState<string | null>(null);
+  const renderStatement = () => {
+    const vendor = allVendors.find((v) => v.id === statementVendorId);
+    if (!vendor) return null;
+    const isCO = (taskId: string) => tasks.find((t) => t.id === taskId)?.isChangeOrder === true;
+    const statement = vendorStatement({
+      logs: laborLogs.filter((l) => l.vendorId === vendor.id) as any,
+      bills: raBills.filter((b) => b.vendorId === vendor.id),
+      isCO,
+    });
+    const paid = ledger
+      .filter((e) => e.vendorId === vendor.id && e.referenceType === "PAYMENT" && e.type === "DEBIT")
+      .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const billedLumps = new Set(raBills.flatMap((b) => b.lumpSumIds || []));
+    const openLumpSum = rateCards
+      .filter((r) => r.vendorId === vendor.id && isLumpSum(r) && !billedLumps.has(r.id))
+      .reduce((a, r) => a + (Number(r.rate) || 0), 0);
+    return (
+      <RAVendorStatement
+        vendor={vendor}
+        statement={statement}
+        paid={paid}
+        openLumpSum={openLumpSum}
+        marginPct={marginPctOf(vendor.id, allVendors)}
+        onClose={() => setStatementVendorId(null)}
+      />
+    );
+  };
+
   const renderBilling = () => {
     // RA Bill Logic — base-contract and change-order labor are certified on
     // separate bills so a vendor can be paid for change-order work separately.
@@ -775,7 +807,14 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                   <div>
                     <div className="flex items-center gap-2.5 mb-2 flex-wrap">
                       <h3 className="text-xl md:text-3xl font-black text-ink tracking-tighter leading-none truncate max-w-[160px] md:max-w-none">
-                        {bill.vendor.name}
+                        <button
+                          type="button"
+                          onClick={() => setStatementVendorId(bill.vendor.id)}
+                          className="underline decoration-dotted decoration-2 underline-offset-4 hover:text-primary cursor-pointer text-left"
+                          title="See what is certified and what is still to certify"
+                        >
+                          {bill.vendor.name}
+                        </button>
                       </h3>
                       <span
                         className={`px-2.5 py-1 rounded-full text-[10px] md:text-[10px] font-black uppercase tracking-[0.12em] ${
@@ -916,7 +955,9 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                   <div className="flex justify-between items-start mb-4">
                     <div className="pr-4">
                       <h4 className="font-black text-ink text-base md:text-lg tracking-tight leading-none mb-2">
-                        {bill.vendorName}
+                        <button type="button" onClick={() => setStatementVendorId(bill.vendorId)} className="underline decoration-dotted underline-offset-4 hover:text-primary cursor-pointer text-left">
+                          {bill.vendorName}
+                        </button>
                       </h4>
                       <div className="flex items-center gap-2">
                         <span className="font-black text-primary tracking-tighter text-xs md:text-sm">
@@ -1062,7 +1103,9 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         </td>
                         <td className="px-6 md:px-10 py-6 md:py-8">
                           <div className="font-black text-ink text-base md:text-lg tracking-tight leading-none truncate max-w-[150px] md:max-w-none">
-                            {bill.vendorName}
+                            <button type="button" onClick={() => setStatementVendorId(bill.vendorId)} className="underline decoration-dotted underline-offset-4 hover:text-primary cursor-pointer text-left">
+                              {bill.vendorName}
+                            </button>
                           </div>
                         </td>
                         <td className="px-6 md:px-10 py-6 md:py-8 text-right font-black text-ink-muted font-mono text-base md:text-lg tracking-tighter">
@@ -1233,6 +1276,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         >
           {activeTab === "rates" && renderRates()}
           {activeTab === "billing" && renderBilling()}
+          {statementVendorId && renderStatement()}
         </motion.div>
       </AnimatePresence>
 

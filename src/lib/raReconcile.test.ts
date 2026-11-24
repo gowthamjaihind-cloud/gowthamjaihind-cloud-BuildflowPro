@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { billRecord, billsForDailyLog, reconcile, type BillLike, type LogLike } from "./raReconcile";
+import { billRecord, billsForDailyLog, reconcile, vendorStatement, type BillLike, type LogLike } from "./raReconcile";
 
 const isCO = (t: string) => t.startsWith("co-");
 const log = (id: string, date: string, cost: number, taskId = "brick"): LogLike => ({ id: `${id}_xyz`, vendorId: "xyz", date, items: [{ taskId, cost }] });
@@ -70,5 +70,48 @@ describe("after an RA bill is certified", () => {
   it("finds the bills a daily log is on", () => {
     expect(billsForDailyLog("d1", [bill]).map((b) => b.billNumber)).toEqual(["RA-XYZ-0001"]);
     expect(billsForDailyLog("d7", [bill])).toEqual([]);
+  });
+
+  it("bills certified the same day are read in the order they were certified, not by number", () => {
+    // Settled on b3 (deleted log -> 0), but b3's number sorts before b2's.
+    const b2: BillLike = { id: "b2", billNumber: "RA-XYZ-9000", billDate: "2026-11-22", createdAt: "2026-11-22T10:00:00Z", isChangeOrder: false, logIds: [], logAmounts: { d1_xyz: 4500 } };
+    const b3: BillLike = { id: "b3", billNumber: "RA-XYZ-1000", billDate: "2026-11-22", createdAt: "2026-11-22T10:05:00Z", isChangeOrder: false, logIds: [], logAmounts: { d1_xyz: 0 } };
+    const r = reconcile({ logs: [d2], bills: [b3, bill, b2], changeOrder: false, isCO });
+    expect(r.adjustments).toEqual([]);
+  });
+});
+
+describe("a contractor's RA statement", () => {
+  const mk = (id: string, date: string, task: string, role: string, n: number, rate = 900): LogLike & { items: any[] } =>
+    ({ id: `${id}_xyz`, vendorId: "xyz", date, items: [{ taskId: task, taskName: task === "brick" ? "Brickwork" : "Extra room", role, headcount: n, cost: n * rate }] });
+  const d1 = mk("d1", "2026-11-17", "brick", "Mason", 4);
+  const d2 = mk("d2", "2026-11-18", "brick", "Mason", 3);
+  const d3 = mk("d3", "2026-11-24", "brick", "Mason", 2);
+  const c1 = mk("c1", "2026-11-25", "co-room", "Helper", 5, 600);
+  const b1 = { id: "b1", billNumber: "RA-XYZ-0001", billDate: "2026-11-20", createdAt: "2026-11-20T09:00:00Z", isChangeOrder: false, netAmount: 6300, logIds: [d1.id, d2.id], ...billRecord([d1, d2], [], false, isCO) };
+
+  it("lists what is certified, on which bill, and what is still to certify", () => {
+    const s = vendorStatement({ logs: [d1, d2, d3, c1], bills: [b1], isCO });
+    expect(s.certified.map((c) => [c.bill.billNumber, c.lines.map((l) => [l.date, l.crew, l.amount])])).toEqual([
+      ["RA-XYZ-0001", [["2026-11-17", "Mason × 4", 3600], ["2026-11-18", "Mason × 3", 2700]]],
+    ]);
+    expect(s.certifiedTotal).toBe(6300);
+    expect(s.unbilled.map((l) => [l.date, l.tasks, l.crew, l.amount, l.changeOrder])).toEqual([
+      ["2026-11-24", "Brickwork", "Mason × 2", 1800, false],
+      ["2026-11-25", "Extra room", "Helper × 5", 3000, true],
+    ]);
+    expect(s.unbilledTotal).toBe(4800);
+  });
+
+  it("keeps a bill's lines at the amount billed, and shows a deleted one", () => {
+    const edited = { ...d1, items: [{ ...d1.items[0], headcount: 5, cost: 4500 }] };
+    const s = vendorStatement({ logs: [edited, d3], bills: [b1], isCO });
+    expect(s.certified[0].lines.map((l) => [l.amount, !!l.deleted])).toEqual([[3600, false], [2700, true]].sort((a, b) => (a[1] ? -1 : 1) - (b[1] ? -1 : 1)));
+    expect(s.adjustmentTotal).toBe(900 - 2700);
+  });
+
+  it("a period limits what is still to certify", () => {
+    const s = vendorStatement({ logs: [d1, d2, d3, c1], bills: [b1], isCO, inPeriod: (d) => d <= "2026-11-24" });
+    expect(s.unbilled.map((l) => l.date)).toEqual(["2026-11-24"]);
   });
 });

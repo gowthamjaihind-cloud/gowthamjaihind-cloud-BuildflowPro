@@ -22,6 +22,8 @@ export interface BillLike {
   id: string;
   billNumber: string;
   billDate?: string;
+  /** When it was certified (ISO). Orders bills certified on the same day. */
+  createdAt?: string;
   isChangeOrder?: boolean;
   logIds?: string[];
   logAmounts?: Record<string, number>;
@@ -81,7 +83,12 @@ export function reconcile(opts: {
   const { logs, changeOrder, isCO } = opts;
   const bills = opts.bills
     .filter((b) => billCovers(b, changeOrder))
-    .sort((a, b) => String(a.billDate || "").localeCompare(String(b.billDate || "")) || a.billNumber.localeCompare(b.billNumber));
+    // Oldest first, so the latest recorded amount wins. Bill numbers end in
+    // clock digits that do not sort by time, so same-day bills go by when they
+    // were certified (createdAt); bills from before that field by number.
+    .sort((a, b) =>
+      String(a.createdAt || a.billDate || "").localeCompare(String(b.createdAt || b.billDate || "")) ||
+      a.billNumber.localeCompare(b.billNumber));
   const byId = new Map(logs.map((l) => [l.id, l]));
 
   // The latest amount each log was billed at, by a bill that recorded it.
@@ -148,4 +155,98 @@ export function billRecord(
 export function billsForDailyLog<T extends BillLike>(dailyLogId: string, bills: T[]): T[] {
   const prefix = `${dailyLogId}_`;
   return bills.filter((b) => (b.logIds || []).some((id) => id.startsWith(prefix)) || Object.keys(b.logAmounts || {}).some((id) => id.startsWith(prefix)));
+}
+
+// ---------------------------------------------------------------------------
+// A contractor's RA statement: what is certified, on which bill, and what is
+// still to be certified (RA Billing > click a contractor).
+
+export interface StatementLogLike extends LogLike {
+  items: (LogItemLike & { taskName?: string; role?: string; headcount?: number })[];
+}
+
+export interface StatementLine {
+  logId: string;
+  date: string;
+  tasks: string;
+  /** "Mason × 4, Helper × 6" */
+  crew: string;
+  amount: number;
+  changeOrder: boolean;
+  /** On a bill, the log has since been deleted. */
+  deleted?: boolean;
+}
+
+export interface StatementBill<B extends BillLike = BillLike> {
+  bill: B;
+  lines: StatementLine[];
+}
+
+function lineOf(log: StatementLogLike, changeOrder: boolean, isCO: (t: string) => boolean): StatementLine {
+  const items = (log.items || []).filter((i) => isCO(i.taskId) === changeOrder);
+  const tasks = [...new Set(items.map((i) => i.taskName || i.taskId))].join(", ");
+  const crew = items.map((i) => `${i.role || "Labour"} × ${Number(i.headcount) || 0}`).join(", ");
+  return { logId: log.id, date: day(log.date), tasks, crew, amount: kindAmount(log, changeOrder, isCO), changeOrder };
+}
+
+/**
+ * Everything for one contractor: the logs still to certify (both kinds, in
+ * the period if one is set), the adjustments and held-back repeats, and each
+ * certified bill with the logs it paid for (at the amount billed when the
+ * bill recorded it, else today's). Newest bill first; lines oldest first.
+ */
+export function vendorStatement<B extends BillLike & { netAmount?: number }>(opts: {
+  logs: StatementLogLike[];
+  bills: B[];
+  isCO: (taskId: string) => boolean;
+  inPeriod?: (date: string) => boolean;
+}) {
+  const { logs, bills, isCO } = opts;
+  const inPeriod = opts.inPeriod || (() => true);
+  const byId = new Map(logs.map((l) => [l.id, l]));
+  const unbilled: StatementLine[] = [];
+  const adjustments: (Adjustment & { changeOrder: boolean })[] = [];
+  const reentries: (Reentry & { changeOrder: boolean })[] = [];
+  for (const changeOrder of [false, true]) {
+    const r = reconcile({ logs, bills, changeOrder, isCO });
+    for (const l of r.toBill) if (inPeriod(day(l.date))) unbilled.push(lineOf(l as StatementLogLike, changeOrder, isCO));
+    adjustments.push(...r.adjustments.map((a) => ({ ...a, changeOrder })));
+    reentries.push(...r.reentries.map((x) => ({ ...x, changeOrder })));
+  }
+  unbilled.sort((a, b) => a.date.localeCompare(b.date));
+
+  const certified: StatementBill<B>[] = [...bills]
+    .sort((a, b) => String(b.createdAt || b.billDate || "").localeCompare(String(a.createdAt || a.billDate || "")) || b.billNumber.localeCompare(a.billNumber))
+    .map((bill) => {
+      // Legacy bills (no flag) covered both kinds.
+      const kinds = bill.isChangeOrder === true ? [true] : bill.isChangeOrder === false ? [false] : [false, true];
+      const ids = [...new Set([...(bill.logIds || []), ...Object.keys(bill.logAmounts || {})])];
+      const lines: StatementLine[] = [];
+      for (const id of ids) {
+        const log = byId.get(id) as StatementLogLike | undefined;
+        const recorded = bill.logAmounts?.[id];
+        if (!log) {
+          lines.push({ logId: id, date: "", tasks: "", crew: "", amount: Number(recorded) || 0, changeOrder: bill.isChangeOrder === true, deleted: true });
+          continue;
+        }
+        for (const k of kinds) {
+          const line = lineOf(log, k, isCO);
+          if (recorded !== undefined) line.amount = Number(recorded) || 0;
+          if (line.amount || recorded !== undefined) lines.push(line);
+        }
+      }
+      lines.sort((a, b) => a.date.localeCompare(b.date));
+      return { bill, lines };
+    });
+
+  const sum = (xs: { amount: number }[]) => Math.round(xs.reduce((s, x) => s + (Number(x.amount) || 0), 0) * 100) / 100;
+  return {
+    unbilled,
+    unbilledTotal: sum(unbilled),
+    adjustments,
+    adjustmentTotal: Math.round(adjustments.reduce((s, a) => s + a.diff, 0) * 100) / 100,
+    reentries,
+    certified,
+    certifiedTotal: Math.round(bills.reduce((s, b) => s + (Number(b.netAmount) || 0), 0) * 100) / 100,
+  };
 }

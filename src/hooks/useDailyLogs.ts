@@ -81,7 +81,7 @@ export function useDailyLogsQuery(projectId: string, taskId: string) {
         where("taskId", "==", taskId)
       );
       const snapshot = await getDocs(q);
-      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);
+      const items = snapshot.docs.map((d) => ({ ...d.data(), id: d.id }) as DailyLogEntry);
       return items.sort(newestLogFirst);
     },
     enabled: !!user && !!projectId && !!taskId,
@@ -107,7 +107,7 @@ export function useProjectDailyLogsQuery(projectId: string, date?: string) {
       }
 
       const snapshot = await getDocs(q);
-      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);
+      const items = snapshot.docs.map((d) => ({ ...d.data(), id: d.id }) as DailyLogEntry);
       return items.sort(newestLogFirst);
     },
     enabled: !!user && !!projectId,
@@ -139,7 +139,7 @@ export function useDateRangeLogsQuery(projectId: string, startDate?: string, end
       }
 
       const snapshot = await getDocs(q);
-      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as DailyLogEntry);
+      const items = snapshot.docs.map((d) => ({ ...d.data(), id: d.id }) as DailyLogEntry);
       // Sort in memory to avoid needing a composite index
       return items.sort((a, b) => {
         const dateDiff = byTime(b.workDate, a.workDate);
