@@ -1,4 +1,5 @@
 import { wageRate, isLumpSum, marginPctOf, contractorBill, LUMP_SUM_UNIT } from "../lib/labourCost";
+import { billRecord, kindAmount, reconcile, type Adjustment, type Reentry } from "../lib/raReconcile";
 import React, { useState, useEffect, useMemo } from "react";
 import { useProjectLabel } from "../hooks/useProjectLabel";
 import {
@@ -275,7 +276,10 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     net: number,
     logIds: string[],
     isChangeOrder: boolean = false,
-    extra: { lumpSumIds?: string[]; marginPct?: number; marginAmount?: number; periodFrom?: string; periodTo?: string } = {},
+    extra: {
+      lumpSumIds?: string[]; marginPct?: number; marginAmount?: number; periodFrom?: string; periodTo?: string;
+      logAmounts?: Record<string, number>; workKeys?: string[]; adjustments?: Adjustment[]; adjustmentAmount?: number;
+    } = {},
   ) => {
     if (!isAdminOrOwner) return;
     if (isProcessing) return;
@@ -312,19 +316,28 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
           // The period the bill covers: the chosen range, else the dates of the work on it.
           periodFrom: extra.periodFrom || "",
           periodTo: extra.periodTo || "",
+          // What each log was billed at and the work it covered, so a later
+          // edit or delete is settled on the next bill, and a re-entered day
+          // is not billed twice (lib/raReconcile.ts).
+          logAmounts: extra.logAmounts || {},
+          workKeys: extra.workKeys || [],
+          adjustmentAmount: extra.adjustmentAmount || 0,
+          adjustments: (extra.adjustments || []).map((a) => ({ logId: a.logId, billNumber: a.billNumber, diff: a.diff, deleted: a.deleted })),
         };
 
         transaction.set(billRef, billData);
 
+        // A bill that only gives back money (work removed after an earlier
+        // bill) is a debit to the contractor's account, not a negative credit.
         transaction.set(ledgerRef, {
           projectId,
           vendorId: vendor.id,
           date: new Date().toISOString(),
-          type: "CREDIT",
-          amount: net,
+          type: net >= 0 ? "CREDIT" : "DEBIT",
+          amount: Math.abs(net),
           referenceType: "LABOR_DEPLOYMENT",
           referenceId: billRef.id,
-          description: `RA Bill - ${billNumber}${isChangeOrder ? " (Change Order)" : ""}`,
+          description: `RA Bill - ${billNumber}${isChangeOrder ? " (Change Order)" : ""}${extra.adjustmentAmount ? ` incl. adjustment ₹${Math.round(extra.adjustmentAmount).toLocaleString("en-IN")} to earlier bills` : ""}`,
           isChangeOrder,
         });
         
@@ -654,36 +667,34 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
         marginAmount: number;
         periodFrom: string;
         periodTo: string;
+        adjustments: Adjustment[];
+        adjustmentAmount: number;
+        reentries: Reentry[];
+        logAmounts: Record<string, number>;
+        workKeys: string[];
+        canCertify: boolean;
       }[] = [];
       // Lump sums not yet on a bill go on the base-contract bill.
       const billedLumps = new Set(raBills.flatMap((b) => b.lumpSumIds || []));
       const openLumps = rateCards.filter((r) => r.vendorId === vendor.id && isLumpSum(r) && !billedLumps.has(r.id) && inRaPeriod(r.date));
       const marginPct = marginPctOf(vendor.id, allVendors);
 
+      const vendorBills = raBills.filter((b) => b.vendorId === vendor.id);
       const buildRow = (
         changeOrder: boolean,
-        billedSet: Set<string>,
+        _billedSet: Set<string>,
         label: string,
       ) => {
-        const logs = vendorLogs.filter(
-          (l) =>
-            !billedSet.has(l.id) &&
-            inRaPeriod(l.date) &&
-            (l.items || []).some(
-              (i) => taskIsChangeOrder(i.taskId) === changeOrder,
-            ),
-        );
-        const wages = logs.reduce(
-          (sum, l) =>
-            sum +
-            (l.items || [])
-              .filter((i) => taskIsChangeOrder(i.taskId) === changeOrder)
-              .reduce((s, i) => s + i.cost, 0),
-          0,
-        );
+        // Unbilled work in the period, plus the settling of earlier bills:
+        // billed logs since edited or deleted, and repeats of billed days
+        // held back (lib/raReconcile.ts).
+        const r = reconcile({ logs: vendorLogs, bills: vendorBills, changeOrder, isCO: taskIsChangeOrder });
+        const logs = r.toBill.filter((l) => inRaPeriod(l.date)) as typeof vendorLogs;
+        const wages = logs.reduce((sum, l) => sum + kindAmount(l, changeOrder, taskIsChangeOrder), 0);
         const lumps = changeOrder ? [] : openLumps;
-        const bill = contractorBill(wages, lumps.reduce((a, r) => a + (Number(r.rate) || 0), 0), marginPct);
-        if (bill.wages + bill.lumpSum > 0) {
+        const bill = contractorBill(wages + r.adjustmentTotal, lumps.reduce((a, rc) => a + (Number(rc.rate) || 0), 0), marginPct);
+        const record = billRecord(logs, r.adjustments, changeOrder, taskIsChangeOrder);
+        if (Math.abs(bill.wages + bill.lumpSum) >= 0.5 || r.reentries.length > 0) {
           rows.push({
             vendor,
             isChangeOrder: changeOrder,
@@ -693,13 +704,19 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
             netPayable: bill.total,
             logCount: logs.length,
             logIds: logs.map((l) => l.id),
-            wages: bill.wages,
+            wages,
             lumpSum: bill.lumpSum,
-            lumpSumIds: lumps.map((r) => r.id),
+            lumpSumIds: lumps.map((rc) => rc.id),
             marginPct: bill.marginPct,
             marginAmount: bill.margin,
+            adjustments: r.adjustments,
+            adjustmentAmount: r.adjustmentTotal,
+            reentries: r.reentries,
+            logAmounts: record.logAmounts,
+            workKeys: record.workKeys,
+            canCertify: Math.abs(bill.wages + bill.lumpSum) >= 0.5,
             ...(() => {
-              const days = [...logs.map((l) => dayOf(l.date)), ...lumps.map((r) => dayOf(r.date))].filter(Boolean).sort();
+              const days = [...logs.map((l) => dayOf(l.date)), ...lumps.map((rc) => dayOf(rc.date))].filter(Boolean).sort();
               return { periodFrom: raFrom || days[0] || "", periodTo: raTo || days[days.length - 1] || "" };
             })(),
           });
@@ -783,6 +800,32 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         {bill.marginAmount > 0 && <> + contractor margin {bill.marginPct}% ₹{bill.marginAmount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</>}
                       </p>
                     )}
+                    {bill.adjustments.length > 0 && (
+                      <div className="mt-2 text-[11px] font-semibold bg-warning/10 border border-warning/25 rounded-xl px-3 py-2 max-w-xl">
+                        <p className="font-black text-ink">
+                          Adjustment to earlier bills: {bill.adjustmentAmount >= 0 ? "+" : "−"}₹{Math.abs(bill.adjustmentAmount).toLocaleString("en-IN", { maximumFractionDigits: 0 })} (before margin)
+                        </p>
+                        <ul className="mt-1 space-y-0.5 text-ink-muted">
+                          {bill.adjustments.map((a) => (
+                            <li key={a.logId}>
+                              {a.billNumber}: log {a.deleted ? "deleted" : `changed from ₹${a.billed.toLocaleString("en-IN")} to ₹${a.now.toLocaleString("en-IN")}`} ({a.diff >= 0 ? "+" : "−"}₹{Math.abs(a.diff).toLocaleString("en-IN")})
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {bill.reentries.length > 0 && (
+                      <div className="mt-2 text-[11px] font-semibold bg-danger/8 border border-danger/20 rounded-xl px-3 py-2 max-w-xl">
+                        <p className="font-black text-danger">Not billed: already paid on an earlier bill</p>
+                        <ul className="mt-1 space-y-0.5 text-ink-muted">
+                          {bill.reentries.map((r) => (
+                            <li key={r.logId}>
+                              {r.date}: ₹{r.amount.toLocaleString("en-IN")}, same task and day as {r.billNumber}. If this is extra work, log it against the task separately or raise it with the contractor.
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -822,7 +865,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                   </div>
                 </div>
 
-                {isAdminOrOwner && (
+                {isAdminOrOwner && bill.canCertify && (
                   <button
                     onClick={() =>
                       handleGenerateRABill(
@@ -831,7 +874,10 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                         bill.netPayable,
                         bill.logIds,
                         bill.isChangeOrder,
-                        { lumpSumIds: bill.lumpSumIds, marginPct: bill.marginPct, marginAmount: bill.marginAmount, periodFrom: bill.periodFrom, periodTo: bill.periodTo },
+                        {
+                          lumpSumIds: bill.lumpSumIds, marginPct: bill.marginPct, marginAmount: bill.marginAmount, periodFrom: bill.periodFrom, periodTo: bill.periodTo,
+                          logAmounts: bill.logAmounts, workKeys: bill.workKeys, adjustments: bill.adjustments, adjustmentAmount: bill.adjustmentAmount,
+                        },
                       )
                     }
                     disabled={isProcessing}

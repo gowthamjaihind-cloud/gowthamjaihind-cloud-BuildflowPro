@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useBilledLogGuard } from "../../hooks/useBilledLogGuard";
 import {
   useProjectDailyLogsQuery,
   useDeleteDailyLog,
@@ -48,9 +49,11 @@ export const ProjectDailyLogsTab: React.FC<ProjectDailyLogsTabProps> = ({
   const { data: tasks = [] } = useTasksQuery(projectId);
   const user = useAuthStore((state) => state.user);
   const deleteMutation = useDeleteDailyLog(projectId);
+  const billedGuard = useBilledLogGuard(projectId);
 
   const handleDelete = async () => {
     if (!logToDelete) return;
+    if (!(await billedGuard(logToDelete, "delete"))) return;
     try {
       await deleteMutation.mutateAsync({
         id: logToDelete.id,
