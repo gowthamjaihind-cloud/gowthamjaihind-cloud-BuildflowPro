@@ -196,6 +196,32 @@ export const demoDailyLogs = [
   dayLog(18, "t10", 78, 6, 11, 5), dayLog(20, "t9", 100, 7, 12, 6), dayLog(24, "t9", 64, 7, 13, 6),
 ];
 
+// Two certified RA bills for the labour contractor, on the oldest logs, so
+// RA Billing shows a statement with bills and work still to certify. Amounts
+// are the logs' wages at the rate cards (no contractor margin on v4), worked
+// out here so they always match what the app computes.
+const raWages = (logId: string) => {
+  const log = demoDailyLogs.find((l) => l.id === logId)!;
+  return log.labour.reduce((s, li) => s + li.headcount * (demoLaborRates.find((r) => r.id === li.roleId)?.rate || 0), 0);
+};
+const raBill = (n: number, logs: string[], certifiedDaysAgo: number) => {
+  const logAmounts = Object.fromEntries(logs.map((id) => [`${id}_v4`, raWages(id)]));
+  const amount = Object.values(logAmounts).reduce((a, b) => a + b, 0);
+  const dates = logs.map((id) => demoDailyLogs.find((l) => l.id === id)!.workDate).sort();
+  return {
+    id: `ra${n}`, projectId: DEMO_PROJECT_ID, vendorId: "v4", vendorName: "Sample Labour Contractor",
+    billDate: d(-certifiedDaysAgo), createdAt: `${d(-certifiedDaysAgo)}T17:00:00.000Z`,
+    billNumber: `RA-SAM-000${n}`, grossAmount: amount, deductions: 0, netAmount: amount, status: "Certified" as const,
+    logIds: logs.map((id) => `${id}_v4`), isChangeOrder: false, lumpSumIds: [], marginPct: 0, marginAmount: 0,
+    periodFrom: dates[0], periodTo: dates[dates.length - 1], logAmounts,
+    workKeys: logs.map((id) => { const l = demoDailyLogs.find((x) => x.id === id)!; return `v4|${l.taskId}|${l.workDate}`; }),
+    adjustmentAmount: 0, adjustments: [],
+  };
+};
+export const demoRaBills = [raBill(1, ["dl24", "dl20"], 19), raBill(2, ["dl18", "dl15"], 14)];
+// The first bill is paid (demoLedger l5), so the contractor is owed the second.
+demoVendors.find((v) => v.id === "v4")!.outstandingBalance = demoRaBills[1].netAmount;
+
 export const demoMaterialIssues = [
   { id: "mi1", projectId: DEMO_PROJECT_ID, taskId: "t11", issueDate: d(-2), totalCost: 47355, remarks: "Blockwork — first floor", items: [ { itemId: "i6", materialId: "BLK-AAC", name: "AAC Block 600x200x150", quantity: 770, unitCost: 61.5, totalPrice: 47355 } ] },
   { id: "mi2", projectId: DEMO_PROJECT_ID, taskId: "t11", issueDate: d(-5), totalCost: 61312, remarks: "Blockwork — first floor", items: [ { itemId: "i1", materialId: "CEM-OPC53", name: "OPC 53 Grade Cement", quantity: 150, unitCost: 408.75, totalPrice: 61312 } ] },
@@ -227,6 +253,9 @@ export const demoLedger = [
   { id: "l2", projectId: DEMO_PROJECT_ID, vendorId: "v1", date: d(-9), type: "DEBIT", amount: 292640, referenceType: "PAYMENT", description: "NEFT payment" },
   { id: "l3", projectId: DEMO_PROJECT_ID, vendorId: "v2", date: d(-14), type: "CREDIT", amount: 247200, referenceType: "GRN", referenceId: "g2", description: "GRN-2026-0032 · PO-2026-0019" },
   { id: "l4", projectId: DEMO_PROJECT_ID, vendorId: "v2", date: d(-6), type: "DEBIT", amount: 151000, referenceType: "PAYMENT", description: "Cheque 004512" },
+  // The labour contractor: two certified RA bills, the first paid.
+  ...demoRaBills.map((b) => ({ id: `l-${b.id}`, projectId: DEMO_PROJECT_ID, vendorId: "v4", date: b.createdAt, type: "CREDIT", amount: b.netAmount, referenceType: "LABOR_DEPLOYMENT", referenceId: b.id, description: `RA Bill - ${b.billNumber}`, isChangeOrder: false })),
+  { id: "l5", projectId: DEMO_PROJECT_ID, vendorId: "v4", date: d(-12), type: "DEBIT", amount: demoRaBills[0].netAmount, referenceType: "PAYMENT", description: `NEFT payment · ${demoRaBills[0].billNumber}` },
 ];
 
 // --- Client estimates & documents ------------------------------------------
@@ -313,7 +342,7 @@ export const demoCollections: Record<string, any[]> = {
   dailyLogs: demoDailyLogs,
   material_issues: demoMaterialIssues,
   labor_logs: [],
-  ra_bills: [],
+  ra_bills: demoRaBills,
   equipment: [],
   client_payments: [],
   receipts: [],
