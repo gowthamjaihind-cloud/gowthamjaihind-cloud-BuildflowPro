@@ -1,4 +1,5 @@
 import { labourLineCost, wageRate } from "../lib/labourCost";
+import { uniqueIds } from "../lib/uniqueIds";
 import React, { useState, useMemo } from "react";
 import { useProjectLabel } from "../hooks/useProjectLabel";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
@@ -100,7 +101,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
         if (issue.items && Array.isArray(issue.items)) {
           issue.items.forEach((m) => {
             records.push({
-              id: `${issue.id}-${m.itemId || m.materialId || Math.random()}`,
+              id: `${issue.id}-${m.itemId || m.materialId || "item"}`,
               date: issue.issueDate || issue.date || "",
               taskName: issue.taskName || `Task ${issue.taskId}`,
               materialName: m.name,
@@ -132,7 +133,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
       if (log.materials && Array.isArray(log.materials)) {
         log.materials.forEach((m: any) => {
           records.push({
-            id: `${log.id}-${m.materialId || Math.random()}`,
+            id: `${log.id}-${m.materialId || "item"}`,
             date: log.workDate || "",
             taskName,
             materialName: m.name,
@@ -146,7 +147,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
       }
     });
 
-    return records.sort((a, b) => b.date.localeCompare(a.date));
+    return uniqueIds(records).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
   }, [allIssues, allLogs, tasks]);
 
   // Distinct Materials list for Tabs
@@ -199,7 +200,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
         const headcount = li.headcount || 0;
         const rate = wageRate(rateCard);
         records.push({
-          id: `${log.id}-${li.roleId || li.roleName || Math.random()}`,
+          id: `${log.id}-${li.roleId || li.roleName || "labour"}`,
           date: log.workDate || "",
           taskName,
           role: rateCard?.role || li.roleName || "Labour",
@@ -212,7 +213,10 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
       });
     });
 
-    return records.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    // Row ids are React keys, so they must be unique: one daily log can hold
+    // two lines for the same role, and two keys alike left stale rows on
+    // screen when a filter shrank the list (rows for other roles stayed).
+    return uniqueIds(records).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
   }, [legacyLaborLogs, allLogs, tasks, rateCards, suppliers]);
 
   const distinctLaborTasks = useMemo(
