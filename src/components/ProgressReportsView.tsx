@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useBilledLogGuard } from "../hooks/useBilledLogGuard";
 import { exportToCSV } from "../utils/exportUtils";
 import {
   format,
@@ -84,6 +85,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
   };
 
   const deleteLogMutation = useDeleteDailyLog(projectId);
+  const billedGuard = useBilledLogGuard(projectId);
 
   const handleDeleteLog = (log: DailyLogEntry) => {
     setLogToDelete(log);
@@ -91,6 +93,7 @@ export const ProgressReportsView: React.FC<ProgressReportsViewProps> = ({
 
   const confirmDeleteLog = async () => {
     if (!logToDelete) return;
+    if (!(await billedGuard(logToDelete, "delete"))) return;
         try {
         await deleteLogMutation.mutateAsync({ id: logToDelete.id, oldLog: logToDelete });
         setLogToDelete(null);

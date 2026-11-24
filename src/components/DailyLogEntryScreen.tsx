@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useBilledLogGuard } from "../hooks/useBilledLogGuard";
 import { useQueryClient } from "@tanstack/react-query";
 import { orderTasksByWbs } from "../lib/wbsOrder";
 import { motion, AnimatePresence } from "motion/react";
@@ -256,6 +257,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
   );
 
   const queryClient = useQueryClient();
+  const billedGuard = useBilledLogGuard(projectId);
   const saveMutation = useSaveDailyLog(projectId);
   const updateMutation = useUpdateDailyLog(projectId);
 
@@ -476,6 +478,15 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
     e.preventDefault();
     if (!selectedTaskId) return;
     if (mode === "week" && !editLog) return handleWeekSubmit();
+
+    // A log already on a certified RA bill: say what changing its labour,
+    // task or date means for the contractor's next bill (lib/raReconcile.ts).
+    if (editLog) {
+      const key = (l: { taskId?: string; workDate?: any; labour?: any[] }) =>
+        JSON.stringify([l.taskId, l.workDate, (l.labour || []).map((x) => [x.roleId, Number(x.headcount) || 0])]);
+      const changed = key(editLog) !== key({ taskId: selectedTaskId, workDate, labour: labour.filter((l) => l.roleId && l.headcount > 0) });
+      if (changed && !(await billedGuard(editLog, "edit"))) return;
+    }
 
     // Consuming more than the stock on hand was accepted silently: 500 bags
     // against 45 in stock booked the cost of all 500. It can be legitimate

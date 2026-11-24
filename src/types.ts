@@ -540,6 +540,14 @@ export interface RABill {
   /** The dates of the work the bill covers (the period chosen when certifying). */
   periodFrom?: string;
   periodTo?: string;
+  /** When it was certified (ISO); orders bills certified the same day. */
+  createdAt?: string;
+  /** What each log on this bill was billed at (wages, by laborLog id), and the contractor|task|day each covered (lib/raReconcile.ts). */
+  logAmounts?: Record<string, number>;
+  workKeys?: string[];
+  /** Net change to earlier bills settled on this one (edited or deleted logs), before margin. */
+  adjustmentAmount?: number;
+  adjustments?: { logId: string; billNumber: string; diff: number; deleted: boolean }[];
 }
 
 export interface CostEntry {
