@@ -39,11 +39,52 @@ export default {
     {
       "id": "new",
       "vo": "Press Log Another to add one: choose the location and the task, then the work date, the progress so far, and what was used.",
-      "hold": 0.8,
+      "hold": 0.6,
       "do": [
-        {
-          "tab": "Log Another"
-        }
+        { "tab": "Log Another" },
+        { "pick": { "select": "Choose Location", "option": 1 } },
+        { "pick": { "select": "Choose Task", "option": 1 } }
+      ]
+    },
+    {
+      "id": "week",
+      "vo": "Catching up on several days? Choose A whole week, pick the week, and untick any day with no work.",
+      "hold": 0.6,
+      "do": [
+        { "click": "A whole week" },
+        { "click": "Last week" },
+        { "wait": 500 }
+      ]
+    },
+    {
+      "id": "day",
+      "vo": "Each day has its own labour, materials and equipment. Enter Monday's gang.",
+      "hold": 0.4,
+      "do": [
+        { "click": "Add labour" },
+        { "pick": { "select": "Select Role", "option": "Mason" } },
+        { "type": { "after": "Select Role", "value": "4" } },
+        { "click": "Add labour" },
+        { "pick": { "select": "Select Role", "option": "Helper" } },
+        { "type": { "after": "Select Role", "value": "6" } }
+      ]
+    },
+    {
+      "id": "copy",
+      "vo": "Copy it to the rest of the week, then open any day and change only what was different. A lump sum takes its own amount on each day.",
+      "hold": 0.6,
+      "do": [
+        { "click": "Copy to all days" },
+        { "click": "Next day →" },
+        { "wait": 600 }
+      ]
+    },
+    {
+      "id": "save",
+      "vo": "Save, and each day becomes its own daily log, counted in stock, cost and the contractor's RA bill.",
+      "hold": 0.5,
+      "do": [
+        { "wait": 800 }
       ]
     },
     {
