@@ -1,17 +1,33 @@
 WEBVTT
 
 1
-00:00:02.492 --> 00:00:12.079
+00:00:02.379 --> 00:00:12.251
 Daily Logs is the diary of the site. Each log records the day's progress on a task, the labour, the material used and photos.
 
 2
-00:00:12.079 --> 00:00:18.459
+00:00:12.251 --> 00:00:17.751
 Logs are listed by date. Edit or delete one if something was entered wrongly.
 
 3
-00:00:18.459 --> 00:00:27.180
+00:00:17.751 --> 00:00:26.243
 Press Log Another to add one: choose the location and the task, then the work date, the progress so far, and what was used.
 
 4
-00:00:27.180 --> 00:00:38.847
+00:00:26.243 --> 00:00:37.040
+Catching up on several days? Choose A whole week, pick the week, and untick any day with no work.
+
+5
+00:00:37.041 --> 00:00:50.322
+Each day has its own labour, materials and equipment. Enter Monday's gang.
+
+6
+00:00:50.322 --> 00:01:01.176
+Copy it to the rest of the week, then open any day and change only what was different. A lump sum takes its own amount on each day.
+
+7
+00:01:01.176 --> 00:01:08.844
+Save, and each day becomes its own daily log, counted in stock, cost and the contractor's RA bill.
+
+8
+00:01:08.845 --> 00:01:20.434
 Your site engineers don't need the app for this. They send the day's work to the Sitetru bot on Telegram, in Tamil or English, and it appears here as a daily log.
