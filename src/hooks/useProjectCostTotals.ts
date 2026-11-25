@@ -150,8 +150,8 @@ export const useProjectCostTotals = (projectId: string) => {
         const logLab = laborLogs.filter((log) => log.items.some((item) => item.taskId === taskId)).reduce((sum, log) => sum + log.items.filter((item) => item.taskId === taskId).reduce((s, i) => s + i.cost, 0), 0);
         const dailyLogLab = dailyLogs.filter((log: any) => log.taskId === taskId).reduce((sum: number, log: any) => {
           return sum + (log.labour || []).reduce((s: number, l: any) => {
-            // Wages plus the contractor's margin; never a lump sum per head (lib/labourCost.ts).
-            return s + labourLineCost(l.headcount || 0, laborRates.find((r: any) => r.id === l.roleId), suppliers);
+            // Wages (or a variable lump sum's amount) plus the contractor's margin (lib/labourCost.ts).
+            return s + labourLineCost(l.headcount || 0, laborRates.find((r: any) => r.id === l.roleId), suppliers, l.amount);
           }, 0);
         }, 0);
         actualLabor = entryLab + logLab + dailyLogLab;

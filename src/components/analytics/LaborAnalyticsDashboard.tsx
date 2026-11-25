@@ -57,7 +57,7 @@ export const LaborAnalyticsDashboard: React.FC<{ projectId: string }> = ({ proje
       const date = log.workDate || log.date;
       for (const l of log.labour || []) {
         const hc = l.headcount || 0;
-        const cost = labourLineCost(hc, laborRates.find((r: any) => r.id === l.roleId), suppliers);
+        const cost = labourLineCost(hc, laborRates.find((r: any) => r.id === l.roleId), suppliers, l.amount);
         const name = l.roleName || "—";
         roleCost.set(name, (roleCost.get(name) || 0) + cost);
         hcDays += hc;

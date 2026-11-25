@@ -182,6 +182,8 @@ export interface LaborRateCard {
   unit: "Shift" | "Day" | "Hour" | "Lumpsum";
   /** A lump sum's date (when it counts as cost). */
   date?: string;
+  /** A lump sum whose amount is entered in each daily log (lib/labourCost.ts). */
+  variable?: boolean;
 }
 
 export type POStatus = "Draft" | "Approved" | "Partially Received" | "Closed";
@@ -644,7 +646,8 @@ export interface DailyLogEntry {
   progressPercent: number;
   markComplete: boolean;
   materials: { materialId: string; name: string; quantity: number; unit: string }[];
-  labour: { roleId: string; roleName: string; headcount: number }[];
+  /** headcount for per-head rate cards; amount (₹) for a variable lump sum (lib/labourCost.ts). */
+  labour: { roleId: string; roleName: string; headcount: number; amount?: number }[];
   equipment?: {
     equipmentId: string;
     name: string;

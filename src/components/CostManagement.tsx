@@ -1011,7 +1011,7 @@ export const CostManagement: React.FC<CostManagementProps> = ({
                             const rateCard = rateCards.find((r: any) => r.id === l.roleId);
                             const rate = wageRate(rateCard);
                             // Wages plus the contractor's margin (lib/labourCost.ts).
-                            const subtotal = labourLineCost(l.headcount || 0, rateCard, vendors);
+                            const subtotal = labourLineCost(l.headcount || 0, rateCard, vendors, l.amount);
                             let displayDate = "";
                             if (log.workDate) {
                               if (typeof log.workDate === "string") displayDate = log.workDate;

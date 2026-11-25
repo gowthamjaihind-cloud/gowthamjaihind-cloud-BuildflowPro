@@ -1,4 +1,4 @@
-import { wageRate, isLumpSum, marginPctOf, contractorBill, LUMP_SUM_UNIT } from "../lib/labourCost";
+import { wageRate, isLumpSum, isVariableLumpSum, labourLineWages, marginPctOf, contractorBill, LUMP_SUM_UNIT } from "../lib/labourCost";
 import { billRecord, kindAmount, reconcile, vendorStatement, type Adjustment, type Reentry } from "../lib/raReconcile";
 import { RAVendorStatement } from "./RAVendorStatement";
 import React, { useState, useEffect, useMemo } from "react";
@@ -134,8 +134,9 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
             role: rateCard.role,
             headcount: labourItem.headcount,
             shifts: 1, 
-            rate: wageRate(rateCard),
-            cost: labourItem.headcount * 1 * wageRate(rateCard),
+            // A variable lump sum: the amount entered that day (lib/labourCost.ts).
+            rate: isVariableLumpSum(rateCard) ? labourLineWages(0, rateCard, (labourItem as any).amount) : wageRate(rateCard),
+            cost: labourLineWages(labourItem.headcount, rateCard, (labourItem as any).amount),
           });
         }
       });
@@ -186,18 +187,27 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
     unit: "Shift",
   });
 
+  // Editing an older fixed lump sum (has its own amount and date).
+  const fixedLumpEdit = !!editingRateId && newRate.unit === LUMP_SUM_UNIT && (newRate as any).variable !== true;
+
   const handleAddRate = async (e: React.FormEvent) => {
     e.preventDefault();
     const path = `${basePath}/labor_rate_cards`;
-    if (!(Number(newRate.rate) > 0)) {
+    // A new lump sum is variable: its amount is entered in each daily log
+    // (lib/labourCost.ts). An older fixed one being edited keeps its amount.
+    const variableLump = newRate.unit === LUMP_SUM_UNIT && (!editingRateId || (newRate as any).variable === true);
+    if (!variableLump && !(Number(newRate.rate) > 0)) {
       toast.error("Enter a rate above zero.");
       return;
     }
+    const card = variableLump
+      ? { ...newRate, variable: true, rate: 0, date: null }
+      : newRate.unit === LUMP_SUM_UNIT ? { ...newRate } : { ...newRate, variable: null };
     try {
       if (editingRateId) {
-        await updateDoc(doc(db, path, editingRateId), { ...newRate });
+        await updateDoc(doc(db, path, editingRateId), card as any);
       } else {
-        await addDoc(collection(db, path), { ...newRate, projectId });
+        await addDoc(collection(db, path), { ...card, projectId });
       }
       setIsAddingRate(false);
       setEditingRateId(null);
@@ -602,11 +612,11 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
 
                             <div className="flex justify-between items-baseline border-t border-divider/30 pt-2.5 mt-1">
                               <span className="text-[8px] font-black uppercase tracking-widest text-ink-muted">
-                                {isLumpSum(rate) ? `Lump sum${rate.date ? ` · ${rate.date}` : ""}` : "Daily Yield"}
+                                {isVariableLumpSum(rate) ? "Lump sum · amount per daily log" : isLumpSum(rate) ? `Lump sum${rate.date ? ` · ${rate.date}` : ""}` : "Daily Yield"}
                               </span>
                               <div className="text-right">
                                 <span className="text-sm font-bold text-success font-mono">
-                                  ₹{rate.rate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                                  {isVariableLumpSum(rate) ? "Varies" : `₹${(Number(rate.rate) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
                                 </span>
                                 {!isLumpSum(rate) && (
                                   <span className="text-[10px] text-ink-muted font-bold ml-1">
@@ -1340,7 +1350,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                     const on = u === LUMP_SUM_UNIT ? newRate.unit === LUMP_SUM_UNIT : newRate.unit !== LUMP_SUM_UNIT;
                     return (
                       <button key={u} type="button" role="radio" aria-checked={on}
-                        onClick={() => setNewRate({ ...newRate, unit: u, ...(u === LUMP_SUM_UNIT && !newRate.date ? { date: new Date().toISOString().slice(0, 10) } : {}) })}
+                        onClick={() => setNewRate({ ...newRate, unit: u })}
                         className={`flex-1 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest border ${on ? "bg-surface-dark text-white border-surface-dark" : "bg-panel text-ink-muted border-divider"}`}>
                         {label}
                       </button>
@@ -1349,7 +1359,9 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                 </div>
                 {newRate.unit === LUMP_SUM_UNIT && (
                   <p className="text-[11px] text-ink-muted -mt-2">
-                    A fixed amount for a piece of work. It counts once in labour cost (not per head), goes on this contractor's next RA bill, and is not picked in daily logs.
+                    {fixedLumpEdit
+                      ? "An older fixed lump sum: this amount counts once on the date below, and it is not picked in daily logs. New lump sums take their amount from each daily log."
+                      : "Work paid as a lump sum, not per head. Pick it in a daily log and enter that day's amount; the amount can differ every time. It goes into labour cost and onto this contractor's RA bill."}
                   </p>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
@@ -1367,6 +1379,7 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                       }
                     />
                   </div>
+                  {(newRate.unit !== LUMP_SUM_UNIT || fixedLumpEdit) && (
                   <div className="space-y-1.5 md:space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
                       {newRate.unit === LUMP_SUM_UNIT ? "Lump sum amount (₹)" : "Rate (₹) / Unit"}
@@ -1384,7 +1397,8 @@ export const LaborTrackingView: React.FC<LaborTrackingViewProps> = ({
                       }
                     />
                   </div>
-                  {newRate.unit === LUMP_SUM_UNIT && (
+                  )}
+                  {fixedLumpEdit && (
                     <div className="space-y-1.5 md:space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-ink-muted ml-1">
                         Date
