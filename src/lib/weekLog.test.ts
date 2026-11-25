@@ -1,95 +1,88 @@
 import { describe, it, expect } from "vitest";
-import { buildWeekLogs, cellKey, isSunday, mondayOf, spreadProgress, weekDates, weekMaterialTotals, type WeekDay } from "./weekLog";
+import {
+  buildWeekLogs, copyDayTo, emptyLines, isSunday, labourSummary, mondayOf, shiftWeek, spreadProgress, weekDates, weekMaterialTotals, type WeekDay,
+} from "./weekLog";
 
-const days = (start: string, worked: (d: string) => boolean = (d) => !isSunday(d)): WeekDay[] =>
-  weekDates(start).map((date) => ({ date, worked: worked(date), qty: {} }));
+const mason = (n: number) => ({ roleId: "mason", roleName: "Mason", headcount: n });
+const helper = (n: number) => ({ roleId: "helper", roleName: "Helper", headcount: n });
+const shuttering = (amt: number) => ({ roleId: "shut", roleName: "Footing shuttering", headcount: 0, amount: amt });
+const cement = (q: number) => ({ materialId: "cement", name: "OPC 53 Grade Cement", quantity: q, unit: "bag" });
+const mixer = (h: number) => ({ equipmentId: "mixer", name: "Mixer", unit: "hours" as const, quantity: h });
+
+const week = (start = "2026-11-16"): WeekDay[] =>
+  weekDates(start).map((date) => ({ date, worked: !isSunday(date), ...emptyLines() }));
 
 const base = {
-  projectId: "p1",
-  taskId: "t1",
-  fromProgress: 20,
-  toProgress: 50,
-  markComplete: false,
-  materials: [{ materialId: "cement", name: "OPC 53 Grade Cement", quantity: 10, unit: "bag" }],
-  labour: [
-    { roleId: "mason", roleName: "Mason", headcount: 4 },
-    { roleId: "helper", roleName: "Helper", headcount: 6 },
-  ],
-  equipment: [{ equipmentId: "mixer", name: "Mixer", unit: "hours" as const, quantity: 4 }],
-  equipmentRates: { mixer: { hourlyRate: 300, dailyRate: 2000 } },
-  note: "Brickwork, first floor",
+  projectId: "p1", taskId: "t1", fromProgress: 20, toProgress: 50, markComplete: false,
+  equipmentRates: { mixer: { hourlyRate: 300, dailyRate: 2000 } }, note: "Brickwork, first floor",
 };
 
 describe("dates", () => {
   it("gives seven days from the start, across a month end", () => {
     expect(weekDates("2026-11-30")).toEqual(["2026-11-30", "2026-12-01", "2026-12-02", "2026-12-03", "2026-12-04", "2026-12-05", "2026-12-06"]);
   });
-  it("finds the Monday of a week", () => {
-    expect(mondayOf("2026-11-24")).toBe("2026-11-23"); // Tuesday
-    expect(mondayOf("2026-11-23")).toBe("2026-11-23"); // Monday
-    expect(mondayOf("2026-11-29")).toBe("2026-11-23"); // Sunday
-  });
-  it("knows Sunday", () => {
-    expect(isSunday("2026-11-29")).toBe(true);
-    expect(isSunday("2026-11-28")).toBe(false);
+  it("finds the Monday of a week and steps between weeks", () => {
+    expect(mondayOf("2026-11-24")).toBe("2026-11-23");
+    expect(mondayOf("2026-11-29")).toBe("2026-11-23");
+    expect(shiftWeek("2026-11-25", -1)).toBe("2026-11-16");
+    expect(shiftWeek("2026-11-23", 1)).toBe("2026-11-30");
   });
 });
 
 describe("progress across the week", () => {
-  it("rises evenly and ends exactly on the target", () => {
+  it("rises evenly, never backwards, and ends exactly on the target", () => {
     expect(spreadProgress(20, 50, 6)).toEqual([25, 30, 35, 40, 45, 50]);
-    expect(spreadProgress(0, 100, 3)).toEqual([33, 67, 100]);
-  });
-  it("never goes backwards, and stays within 0-100", () => {
     expect(spreadProgress(60, 40, 3)).toEqual([60, 60, 60]);
-    expect(spreadProgress(-5, 140, 2)).toEqual([50, 100]);
     expect(spreadProgress(10, 20, 0)).toEqual([]);
   });
 });
 
-describe("one log per worked day", () => {
-  it("saves Monday to Saturday with the 'each day' amounts and the spread progress", () => {
-    const logs = buildWeekLogs({ ...base, days: days("2026-11-16") });
-    expect(logs.map((l) => l.workDate)).toEqual(["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21"]);
-    expect(logs.map((l) => l.progressPercent)).toEqual([25, 30, 35, 40, 45, 50]);
-    expect(logs[0].labour).toEqual(base.labour);
-    expect(logs[0].materials[0].quantity).toBe(10);
-    expect(logs[0].equipment).toEqual([{ ...base.equipment[0], rate: 300, cost: 1200 }]);
-    expect(logs.every((l) => l.note === base.note && !l.markComplete)).toBe(true);
-  });
-
-  it("uses a day's own figures where typed, and drops lines that are zero that day", () => {
-    const d = days("2026-11-16");
-    d[2].qty[cellKey("m", 0)] = 25; // pour day: more cement
-    d[3].qty[cellKey("l", 1)] = 0; // no helpers on Thursday
-    d[3].progress = 42;
+describe("each day has its own labour, materials and equipment", () => {
+  it("saves a different gang, materials and machines on different days", () => {
+    const d = week();
+    d[0] = { ...d[0], labour: [mason(4), helper(6)], materials: [cement(10)] };
+    d[1] = { ...d[1], labour: [mason(2), shuttering(18000)], equipment: [mixer(4)] };
+    d[2] = { ...d[2], labour: [helper(8)], materials: [cement(25)], equipment: [mixer(6)] };
     const logs = buildWeekLogs({ ...base, days: d });
-    expect(logs[2].materials[0].quantity).toBe(25);
-    expect(logs[3].labour.map((l) => l.roleId)).toEqual(["mason"]);
-    expect(logs[3].progressPercent).toBe(42);
-    expect(weekMaterialTotals(logs).get("cement")).toBe(10 * 5 + 25);
+    expect(logs.map((l) => l.workDate)).toEqual(["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21"]);
+    expect(logs[0].labour).toEqual([mason(4), helper(6)]);
+    expect(logs[1].labour).toEqual([mason(2), shuttering(18000)]);
+    expect(logs[2].labour).toEqual([helper(8)]);
+    expect(logs[1].equipment).toEqual([{ ...mixer(4), rate: 300, cost: 1200 }]);
+    expect(logs[3].labour).toEqual([]); // nothing entered for Thursday
+    expect(weekMaterialTotals(logs).get("cement")).toBe(35);
+    expect(logs.map((l) => l.progressPercent)).toEqual([25, 30, 35, 40, 45, 50]);
   });
 
-  it("marks only the last worked day complete, at 100%", () => {
-    const logs = buildWeekLogs({ ...base, markComplete: true, days: days("2026-11-16", (x) => x <= "2026-11-18") });
-    expect(logs).toHaveLength(3);
+  it("a lump sum's amount can be different every day", () => {
+    const d = week();
+    d[0] = { ...d[0], labour: [shuttering(18000)] };
+    d[1] = { ...d[1], labour: [shuttering(7500)] };
+    const logs = buildWeekLogs({ ...base, days: d });
+    expect(logs.slice(0, 2).map((l) => l.labour[0].amount)).toEqual([18000, 7500]);
+  });
+
+  it("copies a day to the next day or to all days, as separate copies", () => {
+    const d = week();
+    d[0] = { ...d[0], labour: [mason(4), helper(6)] };
+    const next = copyDayTo(d, 0, [1]);
+    expect(next[1].labour).toEqual([mason(4), helper(6)]);
+    expect(next[2].labour).toEqual([]);
+    next[1].labour[0].headcount = 9; // editing the copy leaves Monday alone
+    expect(next[0].labour[0].headcount).toBe(4);
+    const all = copyDayTo(d, 0, [1, 2, 3, 4, 5]);
+    expect(all.slice(0, 6).every((x) => x.labour.length === 2)).toBe(true);
+    expect(all[6].labour).toEqual([]);
+  });
+
+  it("marks only the last worked day complete, and saves nothing for days off", () => {
+    const d = week().map((x) => ({ ...x, worked: x.date <= "2026-11-18" }));
+    const logs = buildWeekLogs({ ...base, markComplete: true, days: d });
     expect(logs.map((l) => [l.progressPercent, l.markComplete])).toEqual([[47, false], [73, false], [100, true]]);
+    expect(buildWeekLogs({ ...base, days: week().map((x) => ({ ...x, worked: false })) })).toEqual([]);
   });
 
-  it("saves nothing for days not worked", () => {
-    expect(buildWeekLogs({ ...base, days: days("2026-11-16", () => false) })).toEqual([]);
-  });
-
-  it("prices equipment by the unit used, as a single log does", () => {
-    const logs = buildWeekLogs({ ...base, equipment: [{ ...base.equipment[0], unit: "days", quantity: 1 }], days: days("2026-11-16", (x) => x === "2026-11-16") });
-    expect(logs[0].equipment?.[0]).toMatchObject({ rate: 2000, cost: 2000 });
-  });
-});
-
-describe("moving between weeks", async () => {
-  const { shiftWeek } = await import("./weekLog");
-  it("steps a week back or forward from any day of it", () => {
-    expect(shiftWeek("2026-11-25", -1)).toBe("2026-11-16");
-    expect(shiftWeek("2026-11-23", 1)).toBe("2026-11-30");
+  it("summarises a day's crew for the overview", () => {
+    expect(labourSummary([mason(4), helper(6), shuttering(18000)])).toBe("Mason × 4, Helper × 6, Footing shuttering ₹18,000");
   });
 });

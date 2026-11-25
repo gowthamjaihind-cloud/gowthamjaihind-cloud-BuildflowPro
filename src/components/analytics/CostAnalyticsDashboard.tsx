@@ -168,7 +168,7 @@ export const CostAnalyticsDashboard: React.FC<CostAnalyticsDashboardProps> = ({
     // Daily-log labour, costed from the rate cards.
     for (const log of dailyLogs as any[]) {
       const total = (log.labour || []).reduce((s: number, l: any) => {
-        return s + labourLineCost(l.headcount || 0, laborRates.find((r: any) => r.id === l.roleId), suppliers);
+        return s + labourLineCost(l.headcount || 0, laborRates.find((r: any) => r.id === l.roleId), suppliers, l.amount);
       }, 0);
       add(log.workDate || log.date, total);
     }

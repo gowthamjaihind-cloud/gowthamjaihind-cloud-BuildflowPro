@@ -40,8 +40,9 @@ import { Tooltip } from "./Tooltip";
 import { newestLogFirst } from "../lib/timeKey";
 import { sameDayLogs, whoSaved } from "../lib/duplicateLog";
 import { useCanSeeMoney } from "../lib/moneyAccess";
-import { WeekLogGrid, type WeekLine } from "./WeekLogGrid";
-import { buildWeekLogs, dayProgress, isSunday, mondayOf, shiftWeek, weekDates, weekMaterialTotals, type WeekDay } from "../lib/weekLog";
+import { isVariableLumpSum, usableInDailyLog } from "../lib/labourCost";
+import { WeekLogGrid, dayLabel } from "./WeekLogGrid";
+import { buildWeekLogs, copyDayTo, copyLines, dayProgress, emptyLines, isSunday, mondayOf, shiftWeek, weekDates, weekMaterialTotals, type WeekDay } from "../lib/weekLog";
 
 interface DailyLogEntryScreenProps {
   projectId: string;
@@ -108,8 +109,11 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
   const [mode, setMode] = useState<"day" | "week">("day");
   const [weekStart, setWeekStart] = useState<string>(() => mondayOf(initialDate || today));
   const freshWeek = (start: string): WeekDay[] =>
-    weekDates(start).map((date) => ({ date, worked: !isSunday(date) && date <= today, qty: {} }));
+    weekDates(start).map((date) => ({ date, worked: !isSunday(date) && date <= today, ...emptyLines() }));
   const [weekDays, setWeekDays] = useState<WeekDay[]>(() => freshWeek(mondayOf(initialDate || today)));
+  // The day whose labour, materials and equipment are in the editors below.
+  // Each day has its own; switching days stores the open one first.
+  const [activeDay, setActiveDay] = useState(0);
   const [weekEnd, setWeekEnd] = useState<number | null>(null);
   const [weekSaving, setWeekSaving] = useState("");
 
@@ -179,14 +183,34 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
     }
     return m;
   }, [weekDays, existingLogs, selectedTaskId]);
-  // Removing a line shifts the ones after it, so a day's typed numbers for
-  // that kind would land on the wrong item: drop them.
-  const clearWeekKind = (kind: "m" | "l" | "e") =>
-    setWeekDays((ds) => ds.map((d) => ({ ...d, qty: Object.fromEntries(Object.entries(d.qty).filter(([k]) => !k.startsWith(`${kind}:`))) })));
+  // The week with the open day's editors written back into it.
+  const committedDays = (): WeekDay[] =>
+    weekDays.map((d, i) => (i === activeDay ? { ...d, ...copyLines({ materials, labour, equipment }) } : d));
+  const openDay = (days: WeekDay[], i: number) => {
+    const l = copyLines(days[i]);
+    setMaterials(l.materials);
+    setLabour(l.labour);
+    setEquipment(l.equipment);
+    setActiveDay(i);
+  };
+  const selectDay = (i: number) => {
+    if (i === activeDay) return;
+    const ds = committedDays();
+    setWeekDays(ds);
+    openDay(ds, i);
+  };
+  const copyOpenDayTo = (targets: number[]) => {
+    if (targets.length === 0) return;
+    setWeekDays(copyDayTo(committedDays(), activeDay, targets));
+    toast.success(`Copied ${dayLabel(weekDays[activeDay].date)} to ${targets.length === 1 ? dayLabel(weekDays[targets[0]].date) : `${targets.length} days`}.`);
+  };
+  const nextWorkedDay = weekDays.findIndex((d, i) => i > activeDay && d.worked);
   const changeWeek = (start: string) => {
     if (!start) return;
+    const ds = freshWeek(start);
     setWeekStart(start);
-    setWeekDays(freshWeek(start));
+    setWeekDays(ds);
+    openDay(ds, Math.max(0, ds.findIndex((d) => d.worked)));
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -299,10 +323,14 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
     const newItems = [...labour];
     if (field === "roleId") {
       const role = rateCards.find((r) => r.id === value);
+      // Switching between a per-head role and a lump sum: clear the other field.
+      const lump = isVariableLumpSum(role);
       newItems[index] = {
         ...newItems[index],
         roleId: value,
         roleName: role?.role || "",
+        headcount: lump ? 0 : newItems[index].headcount,
+        amount: lump ? newItems[index].amount : undefined,
       };
     } else {
       newItems[index] = { ...newItems[index], [field]: value };
@@ -394,25 +422,14 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
     }
   };
 
-  // A column per line that has its item chosen; `index` stays the line's own,
-  // which is what the day cells are keyed by.
-  const weekLines: WeekLine[] = [
-    ...materials.flatMap((m, index) => (m.materialId ? [{ kind: "m" as const, index, label: m.name, unit: m.unit || "qty", each: m.quantity }] : [])),
-    ...labour.flatMap((l, index) => (l.roleId ? [{ kind: "l" as const, index, label: l.roleName, unit: "workers", each: l.headcount }] : [])),
-    ...equipment.flatMap((q, index) => (q.equipmentId ? [{ kind: "e" as const, index, label: q.name, unit: q.unit === "days" ? "days" : "hours", each: q.quantity }] : [])),
-  ];
-
   const handleWeekSubmit = async () => {
     const logs = buildWeekLogs({
       projectId,
       taskId: selectedTaskId,
-      days: weekDays,
+      days: committedDays(),
       fromProgress: weekFrom,
       toProgress: weekTarget,
       markComplete,
-      materials,
-      labour,
-      equipment,
       equipmentRates: Object.fromEntries(equipmentMaster.map((e) => [e.id, { hourlyRate: e.hourlyRate, dailyRate: e.dailyRate }])),
       note,
     });
@@ -483,8 +500,8 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
     // task or date means for the contractor's next bill (lib/raReconcile.ts).
     if (editLog) {
       const key = (l: { taskId?: string; workDate?: any; labour?: any[] }) =>
-        JSON.stringify([l.taskId, l.workDate, (l.labour || []).map((x) => [x.roleId, Number(x.headcount) || 0])]);
-      const changed = key(editLog) !== key({ taskId: selectedTaskId, workDate, labour: labour.filter((l) => l.roleId && l.headcount > 0) });
+        JSON.stringify([l.taskId, l.workDate, (l.labour || []).map((x) => [x.roleId, Number(x.headcount) || 0, Number(x.amount) || 0])]);
+      const changed = key(editLog) !== key({ taskId: selectedTaskId, workDate, labour: labour.filter((l) => l.roleId && (l.headcount > 0 || (l.amount || 0) > 0)) });
       if (changed && !(await billedGuard(editLog, "edit"))) return;
     }
 
@@ -531,7 +548,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
         progressPercent: markComplete ? 100 : progressPercent,
         markComplete,
         materials: materials.filter((m) => m.materialId && m.quantity > 0),
-        labour: labour.filter((l) => l.roleId && l.headcount > 0),
+        labour: labour.filter((l) => l.roleId && (l.headcount > 0 || (l.amount || 0) > 0)).map((l) => (l.amount ? l : { roleId: l.roleId, roleName: l.roleName, headcount: l.headcount })),
         equipment: equipment.filter((e) => e.equipmentId && e.quantity > 0),
         note,
       };
@@ -781,10 +798,40 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
 
                 <div className="space-y-2">
                   <p className="text-xs font-black text-ink-muted uppercase tracking-widest">The week, day by day</p>
-                  <WeekLogGrid days={weekDays} onChange={setWeekDays} lines={weekLines} progress={weekProgress} logged={weekLogged} />
+                  <WeekLogGrid
+                    days={weekDays}
+                    active={activeDay}
+                    activeLines={{ materials, labour, equipment }}
+                    onSelect={selectDay}
+                    onToggle={(i, worked) => setWeekDays((ds) => ds.map((d, j) => (j === i ? { ...d, worked } : d)))}
+                    onProgress={(i, v) => setWeekDays((ds) => ds.map((d, j) => (j === i ? { ...d, progress: v } : d)))}
+                    progress={weekProgress}
+                    logged={weekLogged}
+                  />
                   <p className="text-[10px] text-ink-muted font-bold">
-                    Untick a day with no work. Add labour, materials and equipment below with what is used each day; a blank cell uses that amount, a number changes it for that day only, and 0 means none that day.
+                    Each day has its own labour, materials and equipment: tap a day, enter what was used that day below, then go to the next. Untick a day with no work.
                   </p>
+                </div>
+
+                <div className="sticky top-0 z-[5] -mx-6 md:-mx-8 px-6 md:px-8 py-3 bg-surface/95 backdrop-blur border-y border-divider flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-black text-ink">
+                    {dayLabel(weekDays[activeDay].date)}
+                    <span className="block text-[10px] font-bold text-ink-muted uppercase tracking-widest">Labour, materials and equipment for this day</span>
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button type="button" disabled={nextWorkedDay < 0} onClick={() => copyOpenDayTo([nextWorkedDay])}
+                      className="px-3 py-2 text-[11px] font-bold text-ink-muted bg-panel border border-divider rounded-lg hover:text-ink cursor-pointer disabled:opacity-40">
+                      Copy to next day
+                    </button>
+                    <button type="button" onClick={() => copyOpenDayTo(weekDays.map((d, i) => (d.worked && i !== activeDay ? i : -1)).filter((i) => i >= 0))}
+                      className="px-3 py-2 text-[11px] font-bold text-ink-muted bg-panel border border-divider rounded-lg hover:text-ink cursor-pointer">
+                      Copy to all days
+                    </button>
+                    <button type="button" disabled={nextWorkedDay < 0} onClick={() => selectDay(nextWorkedDay)}
+                      className="px-3 py-2 text-[11px] font-bold text-on-primary bg-primary rounded-lg hover:bg-primary-deep cursor-pointer disabled:opacity-40">
+                      Next day →
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (<>
@@ -860,7 +907,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
-                  {t("dlog.materialsConsumed")}{mode === "week" && !editLog ? " · each day" : ""}
+                  {t("dlog.materialsConsumed")}{mode === "week" && !editLog ? ` · ${dayLabel(weekDays[activeDay].date)}` : ""}
                 </label>
                 <button
                   type="button"
@@ -901,7 +948,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     <button aria-label="Remove material row"
                       type="button"
                       onClick={() =>
-                        { setMaterials(materials.filter((_, idx) => idx !== i)); clearWeekKind("m"); }
+                        { setMaterials(materials.filter((_, idx) => idx !== i)); }
                       }
                       className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
                     >
@@ -916,7 +963,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-black text-ink-muted uppercase tracking-widest">
-                  {t("dlog.laborDeployed")}{mode === "week" && !editLog ? " · each day" : ""}
+                  {t("dlog.laborDeployed")}{mode === "week" && !editLog ? ` · ${dayLabel(weekDays[activeDay].date)}` : ""}
                 </label>
                 <button
                   type="button"
@@ -934,13 +981,25 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     className="flex-[2] bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none"
                   >
                     <option value="">{t("dlog.selectRole")}</option>
-                    {/* A lump sum is an amount, never head count x rate (lib/labourCost.ts). */}
-                    {rateCards.filter((r) => r.unit !== "Lumpsum").map((r) => (
+                    {/* Per-head roles, and variable lump sums (an amount per log); older fixed lump sums count on their own (lib/labourCost.ts). */}
+                    {rateCards.filter(usableInDailyLog).map((r) => (
                       <option key={r.id} value={r.id}>
-                        {r.role}
+                        {r.role}{isVariableLumpSum(r) ? " (lump sum)" : ""}
                       </option>
                     ))}
                   </select>
+                  {isVariableLumpSum(rateCards.find((r) => r.id === l.roleId)) ? (
+                    <input
+                      type="number"
+                      placeholder="₹ amount"
+                      aria-label={`Lump sum amount for ${l.roleName || "this work"} (₹)`}
+                      min="1"
+                      step="1"
+                      value={l.amount || ""}
+                      onChange={(e) => updateLabor(i, "amount", Math.max(0, parseFloat(e.target.value) || 0))}
+                      className="flex-1 w-24 bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none font-mono"
+                    />
+                  ) : (
                   <input
                     type="number"
                     placeholder={t("dlog.count")}
@@ -953,11 +1012,12 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     }
                     className="flex-1 w-20 bg-panel p-3 rounded-lg border border-divider text-xs font-bold text-ink outline-none font-mono"
                   />
+                  )}
                   <Tooltip label={"Remove labour row"}>
                     <button aria-label="Remove labour row"
                       type="button"
                       onClick={() =>
-                        { setLabour(labour.filter((_, idx) => idx !== i)); clearWeekKind("l"); }
+                        { setLabour(labour.filter((_, idx) => idx !== i)); }
                       }
                       className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
                     >
@@ -972,7 +1032,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-black text-ink-muted uppercase tracking-widest flex items-center gap-2">
-                  <Truck className="w-4 h-4" /> {t("dlog.equipmentUsed")}{mode === "week" && !editLog ? " · each day" : ""}
+                  <Truck className="w-4 h-4" /> {t("dlog.equipmentUsed")}{mode === "week" && !editLog ? ` · ${dayLabel(weekDays[activeDay].date)}` : ""}
                 </label>
                 <button
                   type="button"
@@ -1021,7 +1081,7 @@ export const DailyLogEntryScreen: React.FC<DailyLogEntryScreenProps> = ({
                     <button aria-label="Remove equipment row"
                       type="button"
                       onClick={() =>
-                        { setEquipment(equipment.filter((_, idx) => idx !== i)); clearWeekKind("e"); }
+                        { setEquipment(equipment.filter((_, idx) => idx !== i)); }
                       }
                       className="p-3 text-danger bg-danger/8 rounded-lg shrink-0"
                     >

@@ -207,7 +207,7 @@ const MaterialConsumptionView: React.FC<MaterialConsumptionViewProps> = ({
           vendorName: vendor?.name || "—",
           headcount,
           shifts: 1,
-          cost: labourLineCost(headcount, rateCard, suppliers),
+          cost: labourLineCost(headcount, rateCard, suppliers, li.amount),
           source: "Daily Log",
         });
       });

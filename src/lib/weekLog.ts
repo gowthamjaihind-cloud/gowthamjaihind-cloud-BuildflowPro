@@ -1,29 +1,32 @@
 // A week of daily logs entered at once.
 //
 // A site engineer who missed a few days, or who keeps the register on paper
-// and types it up on Saturday, had to open the log form seven times and
-// re-enter the same gang and the same materials each time. The week form
-// takes the task, the days worked, what was used "each day", and the progress
-// at the end of the week, and turns them into one ordinary daily log per day.
-// Each log is saved through the same path as a single log, so stock, cost,
-// the stock card, reports and the task's progress (recomputed on the server
-// from all its logs) treat them exactly like logs entered day by day.
+// and types it up on Saturday, had to open the log form seven times. The week
+// form takes the task, the days worked and, for each day, its own labour,
+// materials and equipment (the gang and the materials change day to day, so
+// every day is entered on its own, with "copy to the next day / all days" to
+// save typing), plus the progress at the end of the week. It turns them into
+// one ordinary daily log per day, saved through the same path as a single
+// log, so stock, cost, the stock card, reports and the task's progress
+// (recomputed on the server from all its logs) treat them exactly like logs
+// entered day by day.
 
 import type { DailyLogEntry } from "../types";
 
-export type LineKind = "m" | "l" | "e";
+export interface DayLines {
+  materials: DailyLogEntry["materials"];
+  labour: DailyLogEntry["labour"];
+  equipment: NonNullable<DailyLogEntry["equipment"]>;
+}
 
-/** A cell in the week grid: the item's line (kind + index) on one day. */
-export const cellKey = (kind: LineKind, index: number) => `${kind}:${index}`;
-
-export interface WeekDay {
+export interface WeekDay extends DayLines {
   date: string; // YYYY-MM-DD
   worked: boolean;
   /** Progress typed for this day; undefined = use the even spread. */
   progress?: number;
-  /** Quantities typed for this day, by cellKey; missing = the line's "each day" amount. */
-  qty: Record<string, number | undefined>;
 }
+
+export const emptyLines = (): DayLines => ({ materials: [], labour: [], equipment: [] });
 
 /** Seven consecutive dates from `start` (YYYY-MM-DD), without time-zone drift. */
 export function weekDates(start: string): string[] {
@@ -66,6 +69,23 @@ export function spreadProgress(from: number, to: number, n: number): number[] {
 
 const clampPct = (v: number) => Math.min(100, Math.max(0, Math.round(Number(v) || 0)));
 
+/** A deep copy of one day's lines, to copy them onto other days. */
+export const copyLines = (l: DayLines): DayLines => JSON.parse(JSON.stringify({ materials: l.materials, labour: l.labour, equipment: l.equipment }));
+
+/** Copy `from`'s lines onto the days at `to` (indexes), leaving everything else. */
+export function copyDayTo(days: WeekDay[], from: number, to: number[]): WeekDay[] {
+  const src = copyLines(days[from]);
+  return days.map((d, i) => (to.includes(i) ? { ...d, ...copyLines(src) } : d));
+}
+
+/** "Mason × 4, Helper × 6, Shuttering ₹18,000" */
+export function labourSummary(labour: DailyLogEntry["labour"]): string {
+  return labour
+    .filter((l) => l.roleId)
+    .map((l) => (l.amount ? `${l.roleName || "Lump sum"} ₹${Math.round(l.amount).toLocaleString("en-IN")}` : `${l.roleName || "Labour"} × ${Number(l.headcount) || 0}`))
+    .join(", ");
+}
+
 export interface WeekInput {
   projectId: string;
   taskId: string;
@@ -76,9 +96,6 @@ export interface WeekInput {
   toProgress: number;
   /** Task finished on the last worked day. */
   markComplete: boolean;
-  materials: DailyLogEntry["materials"];
-  labour: DailyLogEntry["labour"];
-  equipment: NonNullable<DailyLogEntry["equipment"]>;
   /** Rates for equipment, by id (hourly/daily), to snapshot cost as a single log does. */
   equipmentRates?: Record<string, { hourlyRate?: number; dailyRate?: number }>;
   note: string;
@@ -96,38 +113,32 @@ export function dayProgress(input: Pick<WeekInput, "days" | "fromProgress" | "to
   return out;
 }
 
-/** One daily-log payload per worked day, in date order. Lines with no quantity that day are left out. */
+/** One daily-log payload per worked day, in date order, each with that day's own lines. Empty lines are left out. */
 export function buildWeekLogs(input: WeekInput): WeekLogPayload[] {
   const progress = dayProgress(input);
   const worked = input.days.filter((d) => d.worked).sort((a, b) => a.date.localeCompare(b.date));
-  const qty = (day: WeekDay, kind: LineKind, i: number, each: number) => {
-    const v = day.qty[cellKey(kind, i)];
-    return v !== undefined && !Number.isNaN(v) ? Math.max(0, v) : Math.max(0, Number(each) || 0);
-  };
   return worked.map((day, n) => {
     const last = n === worked.length - 1;
-    const pct = progress.get(day.date) ?? 0;
     const complete = last && input.markComplete;
     return {
       taskId: input.taskId,
       projectId: input.projectId,
       workDate: day.date,
-      progressPercent: complete ? 100 : pct,
+      progressPercent: complete ? 100 : progress.get(day.date) ?? 0,
       markComplete: complete,
-      materials: input.materials
-        .map((m, i) => ({ ...m, quantity: qty(day, "m", i, m.quantity) }))
-        .filter((m) => m.materialId && m.quantity > 0),
-      labour: input.labour
-        .map((l, i) => ({ ...l, headcount: Math.round(qty(day, "l", i, l.headcount) * 10) / 10 }))
-        .filter((l) => l.roleId && l.headcount > 0),
-      equipment: input.equipment
-        .map((e, i) => {
-          const quantity = qty(day, "e", i, e.quantity);
+      materials: (day.materials || []).filter((m) => m.materialId && m.quantity > 0),
+      labour: (day.labour || [])
+        .filter((l) => l.roleId && ((Number(l.headcount) || 0) > 0 || (Number(l.amount) || 0) > 0))
+        .map((l) => (Number(l.amount) > 0
+          ? { roleId: l.roleId, roleName: l.roleName, headcount: 0, amount: Number(l.amount) }
+          : { roleId: l.roleId, roleName: l.roleName, headcount: Math.round((Number(l.headcount) || 0) * 10) / 10 })),
+      equipment: (day.equipment || [])
+        .filter((e) => e.equipmentId && e.quantity > 0)
+        .map((e) => {
           const r = input.equipmentRates?.[e.equipmentId];
           const rate = e.unit === "days" ? r?.dailyRate ?? e.rate ?? 0 : r?.hourlyRate ?? e.rate ?? 0;
-          return { ...e, quantity, rate, cost: rate * quantity };
-        })
-        .filter((e) => e.equipmentId && e.quantity > 0),
+          return { ...e, rate, cost: rate * e.quantity };
+        }),
       note: input.note,
     };
   });

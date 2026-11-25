@@ -403,6 +403,24 @@ async function doSteps(page, steps, budget) {
     else if (st.esc) { await page.keyboard.press("Escape"); await sleep(700); }
     else if (st.scroll !== undefined) { await glideScroll(page, st.scroll, SCROLL_MS); await sleep(DWELL_MS); }
     else if (st.wait) await sleep(st.wait);
+    // Filling a form, for guides that show one being used:
+    //   { click: "Copy to all days" }              a button or tab by its name
+    //   { pick: { select: "Choose Location", option: 1 } }   the last select
+    //        showing that text; option = index, or the option's label
+    //   { type: { after: "Select Role", value: "4" } }        the number field
+    //        after the last select showing that text
+    else if (st.click) {
+      const target = page.getByRole("button", { name: st.click, exact: true }).or(page.getByRole("tab", { name: st.click, exact: true })).first();
+      await click(page, target, { settle: 900 });
+    } else if (st.pick) {
+      const sel = page.locator("select").filter({ hasText: st.pick.select }).filter({ visible: true }).last();
+      await sel.selectOption(typeof st.pick.option === "number" ? { index: st.pick.option } : { label: st.pick.option });
+      await sleep(600);
+    } else if (st.type) {
+      const sel = page.locator("select").filter({ hasText: st.type.after }).filter({ visible: true }).last();
+      const box = sel.locator('xpath=following::input[@type="number"][1]');
+      await box.click(); await box.pressSequentially(String(st.type.value), { delay: 90 }); await sleep(500);
+    }
   }
   const left = Math.max(budget - (Date.now() - t0), 0);
   if (left < 600) return;
