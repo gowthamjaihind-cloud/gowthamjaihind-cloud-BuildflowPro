@@ -30,9 +30,12 @@ describe.runIf(GUIDES_READY)("video guides (published)", () => {
   });
 
   it("keeps each file small enough for its screen", () => {
-    const cap = { 480: 1.5 * MB, 720: 3 * MB, 1080: 6 * MB };
+    // Per minute of video, so a longer guide is not held to a short one's
+    // size: about 1.5 MB a minute on a phone is light on site data.
+    const perMinute = { 480: 1.5 * MB, 720: 3 * MB, 1080: 5 * MB };
     for (const g of GUIDES) {
-      for (const r of RENDITIONS) expect(statSync(pub(guideVideo(g.id, r))).size, `${g.id} ${r}p`).toBeLessThan(cap[r]);
+      const minutes = Math.max(1, g.seconds / 60);
+      for (const r of RENDITIONS) expect(statSync(pub(guideVideo(g.id, r))).size, `${g.id} ${r}p`).toBeLessThan(perMinute[r] * minutes);
       // The phone encode is the one that matters on site data: well under the tablet one.
       expect(statSync(pub(guideVideo(g.id, 480))).size).toBeLessThan(statSync(pub(guideVideo(g.id, 720))).size * 0.75);
       expect(statSync(pub(guidePosterWebp(g.id, 640))).size, `${g.id} 640 poster`).toBeLessThan(40 * 1024);

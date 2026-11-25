@@ -42,8 +42,8 @@ export default {
       "hold": 0.6,
       "do": [
         { "tab": "Log Another" },
-        { "pick": { "select": "Choose Location", "option": 1 } },
-        { "pick": { "select": "Choose Task", "option": 1 } }
+        { "pick": { "select": "-- Choose Location --", "option": 1 } },
+        { "pick": { "select": "-- Choose Task --", "option": 1 } }
       ]
     },
     {
