@@ -1,25 +1,29 @@
 WEBVTT
 
 1
-00:00:02.717 --> 00:00:11.656
+00:00:02.460 --> 00:00:10.761
 Labour and Billing is where you keep what you pay for labour.
 
 2
-00:00:11.659 --> 00:00:23.617
+00:00:10.761 --> 00:00:21.869
 Under Pricing, each contractor has a rate card: a rate for each role, such as mason or helper. The headcounts from the daily logs are priced with these rates.
 
 3
-00:00:23.618 --> 00:00:36.190
-Under RA Billing, each contractor's work that is not yet certified is gathered into a running account bill for the period you choose. Certify it, and it is added to what you owe them.
+00:00:21.869 --> 00:00:33.412
+Work paid as a whole, like scaffolding, can be a lump sum. You don't fix its amount here: you enter it in each daily log, so it can be different every time.
 
 4
-00:00:36.190 --> 00:00:49.121
-Click a contractor's name to see their statement: what is certified and paid, and every day's work still waiting to be certified.
+00:00:33.412 --> 00:00:45.994
+Under RA Billing, each contractor's work that is not yet certified is gathered into a running account bill for the period you choose. Certify it, and it is added to what you owe them.
 
 5
-00:00:49.122 --> 00:01:05.565
-Each certified bill lists the daily logs it paid for. If a billed day is changed later, the difference is settled on the next bill, and a day already paid is never billed twice.
+00:00:45.994 --> 00:00:58.324
+Click a contractor's name to see their statement: what is certified and paid, and every day's work still waiting to be certified, lump sums included, each at the amount entered that day.
 
 6
-00:01:05.565 --> 00:01:10.955
+00:00:58.324 --> 00:01:12.893
+Each certified bill lists the daily logs it paid for. If a billed day is changed later, the difference is settled on the next bill, and a day already paid is never billed twice.
+
+7
+00:01:12.894 --> 00:01:18.276
 Export any of it to CSV or PDF to share with your accountant.

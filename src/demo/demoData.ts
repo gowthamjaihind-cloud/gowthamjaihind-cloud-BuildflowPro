@@ -168,6 +168,8 @@ export const demoLaborRates = [
   { id: "lr2", projectId: DEMO_PROJECT_ID, vendorId: "v4", role: "Helper", rate: 650, unit: "Shift" },
   { id: "lr3", projectId: DEMO_PROJECT_ID, vendorId: "v4", role: "Bar Bender", rate: 1050, unit: "Shift" },
   { id: "lr4", projectId: DEMO_PROJECT_ID, vendorId: "v5", role: "Electrician", rate: 1100, unit: "Shift" },
+  // A variable lump sum: the amount is entered in each daily log (lib/labourCost.ts).
+  { id: "lr5", projectId: DEMO_PROJECT_ID, vendorId: "v4", role: "Scaffolding", rate: 0, unit: "Lumpsum", variable: true },
 ];
 
 const dayLog = (n: number, taskId: string, pct: number, mason: number, helper: number, bender: number) => ({
@@ -195,6 +197,11 @@ export const demoDailyLogs = [
   dayLog(12, "t11", 31, 8, 13, 0), dayLog(13, "t11", 26, 9, 15, 2), dayLog(15, "t10", 100, 6, 10, 4),
   dayLog(18, "t10", 78, 6, 11, 5), dayLog(20, "t9", 100, 7, 12, 6), dayLog(24, "t9", 64, 7, 13, 6),
 ];
+// Scaffolding for the first-floor blockwork, paid as a lump sum that differs
+// each time: on two unbilled days, so RA Billing shows both amounts.
+for (const [id, amount] of [["dl9", 12000], ["dl4", 8500]] as const) {
+  demoDailyLogs.find((l) => l.id === id)!.labour.push({ roleId: "lr5", roleName: "Scaffolding", headcount: 0, amount } as any);
+}
 
 // Two certified RA bills for the labour contractor, on the oldest logs, so
 // RA Billing shows a statement with bills and work still to certify. Amounts

@@ -37,6 +37,28 @@ export default {
       ]
     },
     {
+      "id": "lump",
+      "vo": "Work paid as a whole, like scaffolding, can be a lump sum. You don't fix its amount here: you enter it in each daily log, so it can be different every time.",
+      "hold": 0.8,
+      "do": [
+        {
+          "click": "Global Rate Entry"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "click": "Lump sum"
+        },
+        {
+          "wait": 3200
+        },
+        {
+          "esc": true
+        }
+      ]
+    },
+    {
       "id": "ra",
       "vo": "Under RA Billing, each contractor's work that is not yet certified is gathered into a running account bill for the period you choose. Certify it, and it is added to what you owe them.",
       "hold": 0.8,
@@ -48,7 +70,7 @@ export default {
     },
     {
       "id": "statement",
-      "vo": "Click a contractor's name to see their statement: what is certified and paid, and every day's work still waiting to be certified.",
+      "vo": "Click a contractor's name to see their statement: what is certified and paid, and every day's work still waiting to be certified, lump sums included, each at the amount entered that day.",
       "hold": 0.6,
       "do": [
         {
