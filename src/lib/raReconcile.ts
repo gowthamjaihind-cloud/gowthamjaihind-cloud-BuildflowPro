@@ -189,7 +189,8 @@ export interface StatementBill<B extends BillLike = BillLike> {
 function lineOf(log: StatementLogLike, changeOrder: boolean, isCO: (t: string) => boolean): StatementLine {
   const items = (log.items || []).filter((i) => isCO(i.taskId) === changeOrder);
   const tasks = [...new Set(items.map((i) => i.taskName || i.taskId))].join(", ");
-  const crew = items.map((i) => `${i.role || "Labour"} × ${Number(i.headcount) || 0}`).join(", ");
+  // A lump sum has no head count: name it as one (its amount is the line's).
+  const crew = items.map((i) => (Number(i.headcount) > 0 ? `${i.role || "Labour"} × ${Number(i.headcount)}` : `${i.role || "Labour"} (lump sum)`)).join(", ");
   return { logId: log.id, date: day(log.date), tasks, crew, amount: kindAmount(log, changeOrder, isCO), changeOrder };
 }
 

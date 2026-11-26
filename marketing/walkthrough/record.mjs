@@ -410,7 +410,9 @@ async function doSteps(page, steps, budget) {
     //   { type: { after: "Select Role", value: "4" } }        the number field
     //        after the last select showing that text
     else if (st.click) {
-      const target = page.getByRole("button", { name: st.click, exact: true }).or(page.getByRole("tab", { name: st.click, exact: true })).first();
+      const target = page.getByRole("button", { name: st.click, exact: true })
+        .or(page.getByRole("tab", { name: st.click, exact: true }))
+        .or(page.getByRole("radio", { name: st.click, exact: true })).first();
       await click(page, target, { settle: 900 });
     } else if (st.pick) {
       const sel = page.locator("select").filter({ hasText: st.pick.select }).filter({ visible: true }).last();
