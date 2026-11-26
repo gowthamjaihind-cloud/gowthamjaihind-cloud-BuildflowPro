@@ -1,0 +1,10 @@
+[
+  { "kind": "title", "kicker": "For site owners", "title": "5 signs your site has outgrown WhatsApp groups", "sub": "Swipe. If three of these sound like your week, read the last slide." },
+  { "kind": "point", "n": "1", "title": "You find out what happened today at 9 pm.", "body": "Three calls to three supervisors, and the numbers still don't match." },
+  { "kind": "point", "n": "2", "title": "Labour bills don't match the attendance.", "body": "The contractor's count is higher than yours, and you can't prove which day." },
+  { "kind": "point", "n": "3", "title": "Cement goes missing between the GRN and the slab.", "body": "Bags in, bags used, bags left. Nobody can say." },
+  { "kind": "point", "n": "4", "title": "The vendor bill rate isn't the PO rate.", "body": "And you notice after you've paid it." },
+  { "kind": "point", "n": "5", "title": "You only know the real cost when the site is over.", "body": "Too late to fix the margin." },
+  { "kind": "screen", "title": "Sitetru keeps it all in one place.", "body": "Your foreman reports from Telegram. It lands here, live.", "image": "marketing/video/screens-light/m-01-dashboard.png" },
+  { "kind": "cta", "title": "Try it on one site free for 14 days.", "sub": "No card. Then about ₹3 a day per project.", "button": "Link in bio" }
+]

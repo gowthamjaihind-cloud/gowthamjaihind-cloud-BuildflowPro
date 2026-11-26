@@ -1,0 +1,9 @@
+[
+  { "kind": "title", "kicker": "Pricing", "title": "About ₹3 a day per site.", "sub": "₹99 per project a month. What does that replace?" },
+  { "kind": "point", "title": "The paper site diary", "body": "Daily logs with progress, labour by trade, materials, equipment and photos. Export them as PDF reports." },
+  { "kind": "point", "title": "The evening phone calls", "body": "Your foreman sends a message, photo or voice note on Telegram. It becomes the daily log." },
+  { "kind": "point", "title": "The labour spreadsheet", "body": "Rate cards per contractor, RA bills that never bill a day twice, and a statement for each contractor." },
+  { "kind": "point", "title": "Checking bills by hand", "body": "Scan a vendor bill: Sitetru matches it to the PO and flags rate and quantity differences." },
+  { "kind": "point", "title": "Yearly? Under ₹3 a day.", "body": "₹990 per project a year. Your data stays in India and is never sold or used to train AI." },
+  { "kind": "cta", "title": "14-day free trial. No card.", "sub": "Set up your first site in about 15 minutes.", "button": "sitetru.com" }
+]
