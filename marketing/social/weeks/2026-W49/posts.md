@@ -1,7 +1,10 @@
 # Week 49 (30 Nov – 6 Dec 2026): launch week
 
-Status of each post: `draft` → you change it to `approved` (or edit it) →
-`posted`. Nothing is posted for you.
+Status of each post: `draft` → `approved` → `posted`. Approve the week in
+GitHub (Actions → Social posts → Run workflow → approve, week `2026-W49`,
+posts `1,2,3,4`); it then posts itself at each time below. Post 5 needs your
+recording saved as `founder-reel.mp4` first. `schedule.json` is what gets
+posted: edit a caption there, not only here.
 
 Link for every post this week:
 `https://sitetru.com/?utm_source=instagram&utm_medium=social&utm_campaign=2026-w49`
