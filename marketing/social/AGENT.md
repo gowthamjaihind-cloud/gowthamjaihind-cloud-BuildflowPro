@@ -7,8 +7,8 @@ messaged without the founder's approval.
 
 ## Accounts
 
-- Instagram: **@sitetruapp** (instagram.com/sitetruapp). Profile name
-  "Sitetru · Site management app". `@sitetru` is taken: never write it.
+- Instagram: **@sitetru** (instagram.com/sitetru). Profile name
+  "Sitetru · Site management app".
 - Facebook Page: Sitetru, linked to the Instagram account.
 
 ## Who we sell to
