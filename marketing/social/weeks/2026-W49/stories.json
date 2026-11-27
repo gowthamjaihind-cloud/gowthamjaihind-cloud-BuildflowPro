@@ -1,0 +1,31 @@
+[
+  { "id": "mon-1-reel", "kicker": "New reel", "title": "We're live.", "sub": "Your site, reported from the site.", "space": "post",
+    "note": "Share reel 1 to your story on top of this frame." },
+  { "id": "mon-2-poll", "tone": "light", "kicker": "Quick poll", "title": "How do you track site progress today?", "space": "sticker",
+    "note": "Poll sticker, 4 options: WhatsApp / Diary / Excel / App" },
+
+  { "id": "tue-1-post", "kicker": "New post", "title": "5 signs your site has outgrown WhatsApp.", "sub": "How many are true for you?", "space": "post",
+    "note": "Share post 2 to your story on top of this frame. Swipe to slide 3 first if Instagram lets you pick the slide." },
+  { "id": "tue-2-question", "tone": "light", "kicker": "Ask me", "title": "Biggest site headache this week?", "sub": "I'll answer a few on Sunday.", "space": "sticker",
+    "note": "Question sticker. Save this frame to the Start here highlight." },
+
+  { "id": "wed-1-reel", "kicker": "New reel", "title": "Your foreman doesn't need a new app.", "space": "post",
+    "note": "Share reel 3 to your story on top of this frame." },
+  { "id": "wed-2-poll", "tone": "light", "kicker": "Quick poll", "title": "Does your site team use Telegram?", "space": "sticker",
+    "note": "Poll sticker: Yes / No" },
+
+  { "id": "thu-1-price", "kicker": "Pricing", "title": "About ₹3 a day per site.", "sub": "₹99 per project a month. Or ₹990 a year: under ₹3 a day." },
+  { "id": "thu-2-link", "tone": "light", "kicker": "Try it", "title": "14 days free. No card.", "sub": "Set up your first site in about 15 minutes.", "space": "sticker",
+    "note": "Link sticker: https://sitetru.com/?utm_source=instagram&utm_medium=social&utm_campaign=2026-w49  Sticker text: Start free trial. Save both Thursday frames to the Pricing highlight." },
+
+  { "id": "fri-1-new", "kicker": "New in Sitetru", "title": "Lump sums in labour.", "sub": "A one-off job for a contractor goes in as a lump sum: description, amount, date. Counted once, never per head, and billed on their next RA bill." },
+  { "id": "fri-2-week", "kicker": "Also new", "title": "Log a whole week in one go.", "sub": "Each day keeps its own labour, materials and equipment." },
+  { "id": "fri-3-screen", "tone": "light", "kicker": "Labour & Billing", "title": "Rates for every contractor, in one place.", "image": "marketing/video/screens-light/m-05-labour.png", "focus": "28% 0",
+    "note": "Then add your own photo of your desk or a site as the last frame." },
+
+  { "id": "sat-1-reel", "kicker": "New reel", "title": "Why I built Sitetru.", "space": "post",
+    "note": "Only if you posted the founder reel. Share it on top of this frame." },
+
+  { "id": "sun-answer", "tone": "light", "kicker": "You asked", "title": "Your questions, answered.", "space": "sticker",
+    "note": "Open a question box reply, tap Share, choose this frame as background and type your answer below it. Reuse for 2-3 answers." }
+]
