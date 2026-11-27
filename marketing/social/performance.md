@@ -6,4 +6,4 @@ to plan the next week. Leave a cell blank if you don't have it.
 
 | Week | Followers | Reach | Reel plays | Avg watch (s) | Saves | Shares | Profile visits | Link clicks | Trials | Paid projects | Best post | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 2026-W49 | | | | | | | | | | | | launch week |
+| 2026-W49 | 0 | 0 | 0 |  | 0 | 0 |  |  |  |  |  | launch week |
