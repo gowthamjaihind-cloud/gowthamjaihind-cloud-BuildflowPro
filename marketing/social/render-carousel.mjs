@@ -15,8 +15,11 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname, basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+import { createRequire } from "node:module";
 import { BRAND } from "../brand.mjs";
+// marketing/'s playwright-core when installed, else the machine's playwright.
+const require = createRequire(import.meta.url);
+const { chromium } = (() => { try { return require("playwright-core"); } catch { return require("playwright"); } })();
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
