@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadSchedules, duePosts, checkPost, approve, captionOf, graph, publishPost, alreadyPosted, writePerformance } from "./publish.mjs";
+import { loadSchedules, duePosts, checkPost, approve, captionOf, graph, publishPost, alreadyPosted, writePerformance, findUserId } from "./publish.mjs";
 
 const post = (over = {}) => ({
   id: "p1", at: "2026-11-30T19:30:00+05:30", type: "image", media: ["a.png"],
@@ -103,5 +103,20 @@ describe("performance.md", () => {
     const out = writePerformance(md, "2026-W49", { followers: 120, total: { reach: 5000, views: 8000, saved: 60, shares: 25 }, best: "w49-3-telegram" });
     expect(out).toContain("| 2026-W49 | 120 | 5000 | 8000 |  | 60 | 25 | 300 | 40 | 3 | 0 | w49-3-telegram | launch week |");
     expect(writePerformance(out, "2026-W50", { followers: 150, total: { reach: 1, views: 2, saved: 3, shares: 4 }, best: "" })).toMatch(/\| 2026-W50 \| 150 \| 1 \| 2 \|/);
+  });
+});
+
+describe("which Instagram account", () => {
+  const withPages = (data: object[]) => graph({ token: "T", fetchImpl: async () => ({ ok: true, json: async () => ({ data }) }) as any });
+  it("uses IG_USER_ID when set, else the one linked to the token's Page", async () => {
+    expect(await findUserId(withPages([]), "123")).toBe("123");
+    expect(await findUserId(withPages([{ name: "Sitetru", instagram_business_account: { id: "1784", username: "sitetru" } }]))).toBe("1784");
+  });
+  it("refuses to guess between accounts, and says when none is linked", async () => {
+    await expect(findUserId(withPages([{ name: "Sitetru" }]))).rejects.toThrow(/no linked Instagram/);
+    await expect(findUserId(withPages([
+      { name: "A", instagram_business_account: { id: "1", username: "a" } },
+      { name: "B", instagram_business_account: { id: "2", username: "b" } },
+    ]))).rejects.toThrow(/several Instagram accounts \(a, b\)/);
   });
 });

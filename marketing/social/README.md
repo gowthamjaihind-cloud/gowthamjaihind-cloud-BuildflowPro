@@ -37,10 +37,10 @@ branch `social/<ISO week>`. Nothing is posted without your approval.
    `instagram_manage_comments`, `pages_show_list`, `pages_read_engagement`,
    generate a token, then exchange it for a **long-lived** token (60 days;
    the Access Token Debugger has "Extend").
-4. Your Instagram user id: in the Explorer, `GET me/accounts?fields=instagram_business_account`.
-5. GitHub repo → Settings → Secrets and variables → Actions → add
-   `IG_USER_ID` and `IG_ACCESS_TOKEN`. Paste them there only, never in a
-   chat, file or commit.
+4. GitHub repo → Settings → Secrets and variables → Actions → add
+   `IG_ACCESS_TOKEN`. Paste it there only, never in a chat, file or commit.
+   The Instagram account is found from the token's Page; `IG_USER_ID` is
+   needed only if the token reaches more than one account.
 6. Renew the token before 60 days (a reminder is worth setting); the
    workflow log says "Error validating access token" when it has expired.
 

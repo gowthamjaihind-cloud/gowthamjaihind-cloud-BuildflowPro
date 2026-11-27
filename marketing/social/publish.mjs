@@ -173,6 +173,20 @@ export async function publishPost(api, userId, p, urlFor, opts = {}) {
   return { id, permalink };
 }
 
+/**
+ * The Instagram account behind the token: IG_USER_ID if set, else the one
+ * linked to the token's Page (a system user's token sees only the assets
+ * assigned to it). More than one account is an error rather than a guess.
+ */
+export async function findUserId(api, given) {
+  if (given) return given;
+  const { data = [] } = await api.get("me/accounts", { fields: "name,instagram_business_account{id,username}" });
+  const linked = data.filter((p) => p.instagram_business_account?.id);
+  if (linked.length === 1) return linked[0].instagram_business_account.id;
+  if (!linked.length) throw new Error("the token's Pages have no linked Instagram account (Page settings → Linked accounts)");
+  throw new Error(`the token reaches several Instagram accounts (${linked.map((p) => p.instagram_business_account.username || p.name).join(", ")}): set IG_USER_ID`);
+}
+
 // ---------------------------------------------------------------------------
 // Insights -> performance.md
 
@@ -245,12 +259,13 @@ async function main() {
     return;
   }
 
-  const token = process.env.IG_ACCESS_TOKEN, userId = process.env.IG_USER_ID;
-  if (!dry && (!token || !userId)) {
-    console.log("IG_USER_ID / IG_ACCESS_TOKEN are not set: nothing posted. See marketing/social/README.md.");
+  const token = process.env.IG_ACCESS_TOKEN;
+  if (!dry && !token) {
+    console.log("IG_ACCESS_TOKEN is not set: nothing posted. See marketing/social/README.md.");
     return;
   }
   const api = graph({ token, version: process.env.IG_GRAPH_VERSION || "v23.0" });
+  const userId = dry && !token ? "dry-run" : await findUserId(api, process.env.IG_USER_ID);
 
   if (cmd === "publish") {
     const due = duePosts(schedules);
@@ -288,7 +303,7 @@ async function main() {
       md = writePerformance(md, s.week, { ...nums, followers: s === schedules.at(-1) ? followers_count ?? "" : "" });
     }
     writeFileSync(perf, md);
-    console.log("performance.md updated");
+    console.log(`performance.md updated (followers: ${followers_count ?? "n/a"})`);
     return;
   }
 
