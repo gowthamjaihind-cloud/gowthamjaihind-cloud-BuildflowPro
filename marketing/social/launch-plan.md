@@ -102,14 +102,18 @@ better. Never more than you approve per week.
 These are starting guesses for a new account with no following; the agent
 resets them from your real week-1 numbers.
 
-## Phase 2: hands-off posting (when you want it)
+## Posting: automatic, after your approval (live since 27 Nov)
 
-Instagram allows scheduled posting through Meta's Graph API for a Business
-account linked to a Facebook Page. When the drafts are reliably good:
-1. You create a Meta developer app and connect the Instagram account.
-2. The token is saved as a secret on the cloud environment (a secure form,
-   never pasted in chat).
-3. The weekly session then schedules the approved posts. Approval stays with
-   you: only posts you have marked `approved` in `posts.md` are scheduled.
-Until then, use Meta Business Suite's scheduler: upload the week's assets
-on Sunday and schedule them in one sitting (about 20 minutes).
+Feed posts go out by themselves through Instagram's API; nothing posts
+without your approval.
+1. Every Sunday evening the weekly session drafts next week on a branch
+   `social/<ISO week>`. Nothing is live yet.
+2. You read it, then approve: GitHub → Actions → **Social posts** → Run
+   workflow → `approve`, the week, posts `all` or `1,2,4`.
+3. The workflow posts each approved post at its time, adds the first
+   comment, and records the link in `schedule.json`.
+4. Stories are not posted by the API: post them from your phone using the
+   week's `stories/` frames and `stories.md`.
+
+Emergency stop: GitHub → Actions → Social posts → ⋯ → **Disable workflow**.
+Everything stops until you enable it again. Setup details are in `README.md`.
