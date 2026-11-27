@@ -9,7 +9,7 @@ are not the goal; trials are.
 Accounts have to be created by you, on your phone and email. The agent
 never creates accounts or handles passwords.
 
-1. **Instagram**: create `@sitetru` (or `@sitetru.app`), switch to a
+1. **Instagram**: `@sitetruapp` (instagram.com/sitetruapp), switched to a
    **Professional → Business** account, category *Software*.
 2. **Facebook Page** "Sitetru", linked to the Instagram account (needed for
    insights, ads and, later, API posting).

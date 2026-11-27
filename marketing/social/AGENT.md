@@ -5,6 +5,12 @@ this every week (Sunday evening IST), drafts the coming week, and pushes the
 drafts to a branch for the founder to approve. Nothing is posted, boosted or
 messaged without the founder's approval.
 
+## Accounts
+
+- Instagram: **@sitetruapp** (instagram.com/sitetruapp). Profile name
+  "Sitetru · Site management app". `@sitetru` is taken: never write it.
+- Facebook Page: Sitetru, linked to the Instagram account.
+
 ## Who we sell to
 
 Indian construction businesses that have outgrown spreadsheets, WhatsApp
