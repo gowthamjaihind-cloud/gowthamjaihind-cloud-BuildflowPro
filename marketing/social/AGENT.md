@@ -5,6 +5,12 @@ this every week (Sunday evening IST), drafts the coming week, and pushes the
 drafts to a branch for the founder to approve. Nothing is posted, boosted or
 messaged without the founder's approval.
 
+## Accounts
+
+- Instagram: **@sitetru** (instagram.com/sitetru). Profile name
+  "Sitetru · Site management app".
+- Facebook Page: Sitetru, linked to the Instagram account.
+
 ## Who we sell to
 
 Indian construction businesses that have outgrown spreadsheets, WhatsApp
@@ -90,8 +96,23 @@ or two where they help. Hashtags: 5–8, mixed size, at the end of the caption.
    demo recordings with the walkthrough recorder when a new feature needs one.
 5. Note in `posts.md` what worked last week (from `performance.md`) and what
    this week changes because of it.
-6. Commit to a new branch `social/<ISO week>`, push, and stop. No PR, no
-   merge, no posting.
+6. Write `weeks/<ISO week>/schedule.json` beside it: one entry per feed post
+   (id, at with +05:30, type reel|carousel|image, media files in that folder,
+   caption without hashtags, hashtags, firstComment, status "draft"). This is
+   what the publisher posts once the founder approves; `node
+   marketing/social/publish.mjs publish --dry-run` must not report it blocked
+   (a [founder records] reel stays listed, its file missing, until recorded).
+7. Commit to a new branch `social/<ISO week>`, push, and stop. No PR, no
+   merge, no posting, never status "approved".
+
+## Posting (automatic, after approval)
+
+`.github/workflows/social.yml` posts every approved post at its time through
+Instagram's publishing API, adds the first comment, and records the link in
+`schedule.json`. On Sundays it writes the week's numbers into
+`performance.md`. The founder approves a week from GitHub (Actions → Social
+posts → Run workflow → approve, week, posts). Stories are not posted by the
+API here: they stay a 2-minute daily job on the phone.
 
 ## What we measure
 

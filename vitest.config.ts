@@ -15,6 +15,7 @@ export default defineConfig({
       "src/**/*.test.tsx",
       "functions/src/**/*.test.ts",
       "marketing/*.spec.ts",
+      "marketing/social/*.spec.ts",
     ],
   },
 });
