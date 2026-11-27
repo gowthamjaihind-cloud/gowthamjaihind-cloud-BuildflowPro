@@ -133,6 +133,8 @@ Free for 14 days, no card. Link in bio.
 
 ## Stories (daily, 2–4 frames)
 
+Ready-made frames: `stories/`, with what to add to each in `stories.md`.
+
 | Day | Story |
 |---|---|
 | Mon | Share reel 1 · poll: "How do you track site progress today? WhatsApp / Diary / Excel / App" |

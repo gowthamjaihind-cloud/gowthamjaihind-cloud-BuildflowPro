@@ -94,6 +94,9 @@ or two where they help. Hashtags: 5–8, mixed size, at the end of the caption.
 4. Make the assets it can: carousels with `render-carousel.mjs`, reel cuts
    from existing films/guides with ffmpeg (9:16, burned-in captions), and new
    demo recordings with the walkthrough recorder when a new feature needs one.
+   Story frames: `weeks/<ISO week>/stories.json` rendered with
+   `render-story.mjs`, plus `stories.md` saying which sticker goes on which
+   frame (stories are posted by hand from the phone).
 5. Note in `posts.md` what worked last week (from `performance.md`) and what
    this week changes because of it.
 6. Write `weeks/<ISO week>/schedule.json` beside it: one entry per feed post
